@@ -21,7 +21,7 @@ typedef enum
 #define LOG_INPUT_BUFFER_NUMBER        4
 #define LOG_INPUT_BUFFER_SIZE          50
 
-typedef void(*log_input_f)(_u8* data,_u32 dataLen);
+typedef void(*log_cmd_cb_f)(_u8* data,_u32 dataLen);
 
 //void log_init(log_mode_e traceMode,log_input_f inputCb);
 

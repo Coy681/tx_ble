@@ -30,18 +30,22 @@ typedef struct log_database_t log_database_t;
 typedef void(*log_databaseInit_f)(log_database_t*,_u8*,_u16,_u16);
 typedef int(*log_getWritePointer_f)(log_database_t*);
 typedef int(*log_getReadPointer_f)(log_database_t*);
-typedef int(*log_blockAvailble)(log_database_t*);
+typedef int(*log_blockAvailble_f)(log_database_t*);
+typedef void(*log_databaseBlockPush_f)(log_database_t*,_u8*,_u32);
+typedef void(*log_databaseBlockPop_f)(log_database_t*);
 typedef struct log_database_t
 {
-	_u8*                  pointer;
-    _u32                  blockSize;
-    _u16                  blockNum;
-    _u8                   blockWptr;
-    _u8                   blockRptr;
-	log_databaseInit_f    init;
-	log_getWritePointer_f getWritePointer;
-	log_getReadPointer_f  getReadPointer;
-	log_blockAvailble     blockAvailble;
+	_u8*                    pointer;
+    _u32                    blockSize;
+    _u16                    blockNum;
+    _u8                     blockWptr;
+    _u8                     blockRptr;
+	log_databaseInit_f      init;
+	log_getWritePointer_f   getWritePointer;
+	log_getReadPointer_f    getReadPointer;
+	log_blockAvailble_f     blockAvailble;
+	log_databaseBlockPush_f databasePush;
+	log_databaseBlockPop_f  databasePop;
 }log_database_t;
 
 /*************************define log object**************************/
@@ -62,12 +66,12 @@ typedef struct
 	log_popDataToApp_f            dataPop;
 }logInput_t;
 /*************************define log output object**************************/
-typedef void(*log_receDataFromApp_f)(_u8 string,_u8 data,_u32 dataLen);
+typedef void(*log_receiveDataFromApp_f)(_u8 string,_u8 data,_u32 dataLen);
 typedef void(*log_pushDataToHardware_f)(_u8 data,_u32 dataLen);
 typedef struct
 {
 	log_object_t                  log;
-	log_receDataFromApp_f         dataPush;
+	log_receiveDataFromApp_f      dataPush;
 	log_pushDataToHardware_f      dataPop;
 }logOutput_t;
 
@@ -126,11 +130,18 @@ void log_database_init(log_database_t *database,_u8* pointer,_u16 num,_u32 size)
     database->getWritePointer = log_database_get_write_pointer;
 }
 
-/********************************define log object function*******************/
-void log_processing(void)
+/********************************define log input function*******************/
+void log_input_receive_data_from_hardware(_u8* data,_u32 dataLen)
+{
+    _u8 *pLog = 
+}
+
+void log_input_pop_data_to_app(_u8* data,_u32 dataLen)
 {
 
 }
+
+
 //
 //typedef void(*log_status_f)(_u8);
 ///***************************define log input***************************/
