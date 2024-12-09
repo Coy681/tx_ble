@@ -5,8 +5,8 @@
  *      Author: Admin
  */
 #include"driver.h"
-#include"../../../common/common.h"
 #include"../../hal/uart.h"
+#include "../../../../common/txCommon.h"
 
 hal_uart_rx_task hal_uart_rx_cb = NULL;
 hal_uart_tx_task hal_uart_tx_cb = NULL;

@@ -7,7 +7,7 @@
 
 #ifndef HAL_UART_H_
 #define HAL_UART_H_
-#include"../../common/common.h"
+#include "../../common/txCommon.h"
 typedef enum
 {
 	HAL_UART_BAUDRATE_9600     = 9600,

@@ -5,8 +5,8 @@
  *      Author: 12407
  */
 
-#ifndef BUFFER_H_
-#define BUFFER_H_
+#ifndef TXBUFFER_H_
+#define TXBUFFER_H_
 
 typedef struct {
     unsigned int        size;
@@ -17,4 +17,4 @@ typedef struct {
 }buffer_t;
 
 
-#endif /* BUFFER_H_ */
+#endif /* TXBUFFER_H_ */

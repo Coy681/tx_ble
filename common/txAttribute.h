@@ -5,8 +5,8 @@
  *      Author: Admin
  */
 
-#ifndef ATTRIBUTE_H_
-#define ATTRIBUTE_H_
+#ifndef TXATTRIBUTE_H_
+#define TXATTRIBUTE_H_
 
 #define _RAM_CODE                __attribute__((section(".ram_code")))
 
@@ -18,4 +18,4 @@
 
 #define _NO_INLINE               __attribute__((noinline)) 
 
-#endif /* ATTRIBUTE_H_ */
+#endif /* TXATTRIBUTE_H_ */

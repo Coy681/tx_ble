@@ -7,7 +7,7 @@
 
 #ifndef BUFFER_C_
 #define BUFFER_C_
-#include"buffer.h"
+#include "txBuffer.h"
 
 
 #endif /* BUFFER_C_ */

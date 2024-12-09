@@ -6,7 +6,8 @@
  */
 #include"driver.h"
 #include"../../hal/stimer.h"
-#include"../../../common/common.h"
+
+#include "../../../../common/txCommon.h"
 static hal_stimer_task hal_stimer_irq_cb = NULL;
 
 /**

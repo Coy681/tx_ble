@@ -1,6 +1,6 @@
 
-#include"type.h"
-#include"attribute.h"
+#include "txAttribute.h"
+#include "txType.h"
 
 void txMemcpy(void *pO, void *pI, _u32 length);
 

@@ -1,4 +1,4 @@
-#include"general.h"
+#include "txGeneral.h"
 
 _RAM_CODE _NO_INLINE
 void txMemcpy(void *pO, void *pI, _u32 length)

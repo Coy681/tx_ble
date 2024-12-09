@@ -5,8 +5,8 @@
  *      Author: Admin
  */
 
-#ifndef TYPE_H_
-#define TYPE_H_
+#ifndef TXTYPE_H_
+#define TXTYPE_H_
 
 typedef unsigned int   _u32;
 typedef unsigned short _u16;
@@ -18,4 +18,4 @@ typedef   signed char  _s8;
 
 
 
-#endif /* TYPE_H_ */
+#endif /* TXTYPE_H_ */
