@@ -54,21 +54,21 @@ typedef struct
 
 /*************************define log input object**************************/
 typedef void(*log_receiveDataFromHardware_f)(_u8*,_u32);
-typedef void(*log_popDataToApp)(_u8*,_u32);
+typedef void(*log_popDataToApp_f)(_u8*,_u32);
 typedef struct
 {
 	log_object_t                  log;
 	log_receiveDataFromHardware_f dataPush;
-	log_popDataToApp              dataPop;
+	log_popDataToApp_f            dataPop;
 }logInput_t;
 /*************************define log output object**************************/
-typedef void(*log_receDataFromApp)(_u8 string,_u8 data,_u32 dataLen);
-typedef void(*log_pushDataToHardware)(_u8 data,_u32 dataLen);
+typedef void(*log_receDataFromApp_f)(_u8 string,_u8 data,_u32 dataLen);
+typedef void(*log_pushDataToHardware_f)(_u8 data,_u32 dataLen);
 typedef struct
 {
-	log_object_t            log;
-	log_receDataFromApp     dataPush;
-	log_pushDataToHardware  dataPop;
+	log_object_t                  log;
+	log_receDataFromApp_f         dataPush;
+	log_pushDataToHardware_f      dataPop;
 }logOutput_t;
 
 /******************************global values*************************/
