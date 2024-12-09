@@ -30,7 +30,7 @@ typedef struct
 /***************************define log function*************************/ 
 typedef void(*log_optput)(_u8*,_u8*,_u32);
 typedef void(*log_loop)(void);
-typedef void(*log_status)(u8 status);
+typedef void(*log_status)(_u8 status);
 
 
 //todo,define a totally status change function
