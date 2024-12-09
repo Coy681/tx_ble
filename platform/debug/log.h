@@ -7,7 +7,7 @@
 
 #ifndef DEBUG_LOG_H_
 #define DEBUG_LOG_H_
-
+#include "../../common/txCommon.h"
 typedef enum
 {   
 	LOG_HARDWARE_NONE   = 0,
@@ -23,6 +23,6 @@ typedef enum
 
 typedef void(*log_input_f)(_u8* data,_u32 dataLen);
 
-void log_init(log_mode_e traceMode,log_input_f inputCb);
+//void log_init(log_mode_e traceMode,log_input_f inputCb);
 
 #endif /* DEBUG_LOG_H_ */

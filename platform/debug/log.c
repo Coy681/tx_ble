@@ -6,40 +6,131 @@
  */
 
 #include "log.h"
-
-#include "../../common/txCommon.h"
 #include"../../platform/platform.h"
 
-/**************************define log status*****************************/
-typedef void(*log_status_f)(_u8);
-typedef struct
+/**********************define log status**************************/
+#define LOG_STATUS_SET                1
+#define LOG_STATUS_GET                2
+#define LOG_STATUS_CLEAR              3
+
+#define LOG_STATUS_BUSY               BIT(0)
+
+typedef struct log_status_t log_status_t;
+typedef int(*log_status_f)(log_status_t*,_u8);
+typedef struct log_status_t
 {
 	_u8  value;
 	_u8  reserved0;
 	_u16 reserved1;
-	log_status_f statusOprtation;
+	log_status_f operation;
 }log_status_t;
-/**************************define log database*****************************/
-typedef void(*log_database_f)(_u8 object);
-typedef struct
+
+/**********************define log database**************************/
+typedef struct log_database_t log_database_t;
+typedef void(*log_databaseInit_f)(log_database_t*,_u8*,_u16,_u16);
+typedef int(*log_getWritePointer_f)(log_database_t*);
+typedef int(*log_getReadPointer_f)(log_database_t*);
+typedef int(*log_blockAvailble)(log_database_t*);
+typedef struct log_database_t
 {
-	buffer_t       buffer;
-	log_database_f databaseInit;
-	log_database_f databaseGetWptr;
-	log_database_f databaseGetWptr;
+	_u8*                  pointer;
+    _u32                  blockSize;
+    _u16                  blockNum;
+    _u8                   blockWptr;
+    _u8                   blockRptr;
+	log_databaseInit_f    init;
+	log_getWritePointer_f getWritePointer;
+	log_getReadPointer_f  getReadPointer;
+	log_blockAvailble     blockAvailble;
 }log_database_t;
 
+/*************************define log object**************************/
+typedef void(*log_processing_f)(_u8* data,_u32 dataLen);
 typedef struct
 {
-	log_status_t   status;
-	log_database_t database;
-    _u8 setDataBase;
-    _u8 function;
-    _u8 process;
+	log_status_t     status;
+	log_database_t   database;
 }log_object_t;
 
+/*************************define log input object**************************/
+typedef void(*log_receiveDataFromHardware_f)(_u8*,_u32);
+typedef void(*log_popDataToApp)(_u8*,_u32);
+typedef struct
+{
+	log_object_t                  log;
+	log_receiveDataFromHardware_f dataPush;
+	log_popDataToApp              dataPop;
+}logInput_t;
+/*************************define log output object**************************/
+typedef void(*log_receDataFromApp)(_u8 string,_u8 data,_u32 dataLen);
+typedef void(*log_pushDataToHardware)(_u8 data,_u32 dataLen);
+typedef struct
+{
+	log_object_t            log;
+	log_receDataFromApp     dataPush;
+	log_pushDataToHardware  dataPop;
+}logOutput_t;
+
+/******************************global values*************************/
+logInput_t  logInput;
+logOutput_t logOutput;
 
 
+/********************define log status function***********************/
+int log_status_operation(log_status_t* status,_u8 operation)
+{
+
+    if(operation == LOG_STATUS_SET)
+    {
+    	status->value |= LOG_STATUS_BUSY;
+    }
+    else if(operation == LOG_STATUS_GET)
+    {
+        return status->value;
+    }
+    else if(operation == LOG_STATUS_CLEAR)
+    {
+    	status->value &= (~LOG_STATUS_BUSY);
+    }
+    return 0;
+}
+
+/********************define log database function***********************/
+
+_u8* log_database_get_write_pointer(log_database_t* database)
+{
+	_u8* pRet = database->pointer+(database->blockWptr&(database->blockNum-1))*database->blockSize;
+    return pRet;
+}
+_u8* log_database_get_read_pointer(log_database_t* database)
+{
+	_u8* pRet = database->pointer+(database->blockRptr&(database->blockNum-1))*database->blockSize;
+    return pRet;
+}
+
+int log_database_block_availble(log_database_t* database)
+{
+    if(database->blockWptr!=database->blockRptr)
+    {
+        return 1;
+    }
+    return 0;
+}
+void log_database_init(log_database_t *database,_u8* pointer,_u16 num,_u32 size)
+{
+	database->pointer         = pointer;
+	database->blockNum        = num;
+	database->blockSize       = size;
+	database->blockWptr       = database->blockRptr = 0;
+	database->getReadPointer  = log_database_get_read_pointer;
+    database->getWritePointer = log_database_get_write_pointer;
+}
+
+/********************************define log object function*******************/
+void log_processing(void)
+{
+
+}
 //
 //typedef void(*log_status_f)(_u8);
 ///***************************define log input***************************/

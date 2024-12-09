@@ -12,7 +12,7 @@ static void system_rf_task(void);
 
 void system_init()
 {
-	log_init(TRACE_MODE_UART);
+//	log_init(TRACE_MODE_UART);
 	hal_stimer_register_task(system_timer_task);
 }
 
