@@ -8,6 +8,7 @@
 #include "log.h"
 #include"../../platform/platform.h"
 
+//volatile _u8      strToHex[] = "0123456789abcdef";
 /**********************define log status**************************/
 #define LOG_STATUS_SET                1
 #define LOG_STATUS_GET                2
@@ -24,15 +25,16 @@ typedef struct log_status_t
 	_u16 reserved1;
 	log_status_f operation;
 }log_status_t;
-
+log_status_t* pStatus = NULL;
+#define STATUS_CAST(object)  (pStatus = object)
 /**********************define log database**************************/
 typedef struct log_database_t log_database_t;
-typedef void(*log_databaseInit_f)(log_database_t*,_u8*,_u16,_u16);
-typedef int(*log_getWritePointer_f)(log_database_t*);
-typedef int(*log_getReadPointer_f)(log_database_t*);
-typedef int(*log_blockAvailble_f)(log_database_t*);
-typedef void(*log_databaseBlockPush_f)(log_database_t*,_u8*,_u32);
-typedef void(*log_databaseBlockPop_f)(log_database_t*);
+typedef void(*log_databaseInit_f)(_u8*,_u16,_u16);
+typedef _u8*(*log_getWritePointer_f)(void);
+typedef _u8*(*log_getReadPointer_f)(void);
+typedef int(*log_blockAvailble_f)(void);
+typedef void(*log_databaseBlockPush_f)(_u8*,_u32);
+typedef _u8*(*log_databaseBlockPop_f)(void);
 typedef struct log_database_t
 {
 	_u8*                    pointer;
@@ -47,6 +49,8 @@ typedef struct log_database_t
 	log_databaseBlockPush_f databasePush;
 	log_databaseBlockPop_f  databasePop;
 }log_database_t;
+log_database_t* pDatabase = NULL;
+#define DATABASE_CAST(object)  (pDatabase = object)
 
 /*************************define log object**************************/
 typedef void(*log_processing_f)(_u8* data,_u32 dataLen);
@@ -81,64 +85,74 @@ logOutput_t logOutput;
 
 
 /********************define log status function***********************/
-int log_status_operation(log_status_t* status,_u8 operation)
+int log_status_operation(_u8 operation)
 {
 
     if(operation == LOG_STATUS_SET)
     {
-    	status->value |= LOG_STATUS_BUSY;
+    	pStatus->value |= LOG_STATUS_BUSY;
     }
     else if(operation == LOG_STATUS_GET)
     {
-        return status->value;
+        return pStatus->value;
     }
     else if(operation == LOG_STATUS_CLEAR)
     {
-    	status->value &= (~LOG_STATUS_BUSY);
+    	pStatus->value &= (~LOG_STATUS_BUSY);
     }
     return 0;
 }
 
 /********************define log database function***********************/
 
-_u8* log_database_get_write_pointer(log_database_t* database)
+_u8* log_database_get_write_pointer(void)
 {
-	_u8* pRet = database->pointer+(database->blockWptr&(database->blockNum-1))*database->blockSize;
+	_u8* pRet = pDatabase->pointer+(pDatabase->blockWptr&(pDatabase->blockNum-1))*pDatabase->blockSize;
     return pRet;
 }
-_u8* log_database_get_read_pointer(log_database_t* database)
+_u8* log_database_get_read_pointer(void)
 {
-	_u8* pRet = database->pointer+(database->blockRptr&(database->blockNum-1))*database->blockSize;
+	_u8* pRet = pDatabase->pointer+(pDatabase->blockRptr&(pDatabase->blockNum-1))*pDatabase->blockSize;
     return pRet;
 }
 
-int log_database_block_availble(log_database_t* database)
+int log_database_block_availble(void)
 {
-    if(database->blockWptr!=database->blockRptr)
+    if(pDatabase->blockWptr!=pDatabase->blockRptr)
     {
         return 1;
     }
     return 0;
 }
-void log_database_init(log_database_t *database,_u8* pointer,_u16 num,_u32 size)
+void log_database_init(_u8* pointer,_u16 num,_u32 size)
 {
-	database->pointer         = pointer;
-	database->blockNum        = num;
-	database->blockSize       = size;
-	database->blockWptr       = database->blockRptr = 0;
-	database->getReadPointer  = log_database_get_read_pointer;
-    database->getWritePointer = log_database_get_write_pointer;
+	pDatabase->pointer         = pointer;
+	pDatabase->blockNum        = num;
+	pDatabase->blockSize       = size;
+	pDatabase->blockWptr       = pDatabase->blockRptr = 0;
+	pDatabase->getReadPointer  = log_database_get_read_pointer;
+	pDatabase->getWritePointer = log_database_get_write_pointer;
 }
 
-/********************************define log input function*******************/
-void log_input_receive_data_from_hardware(_u8* data,_u32 dataLen)
+void log_database_push_data(_u8* data,_u32 dataLen)
 {
-    _u8 *pLog = 
+    _u8* pLog = pDatabase->getWritePointer();
+    pLog++ = dataLen&0xff;
+    pLog++ = (dataLen>>8)&0xff;
+    pLog++ = 0;
+    pLog++ = 0;
+    while(dataLen--)//data length valid judged by upper function layer
+    {
+    	*pLog++ = *data++;
+    }
+    pDatabase->blockWptr++;
 }
 
-void log_input_pop_data_to_app(_u8* data,_u32 dataLen)
+_u8* log_database_pop_data(void)
 {
-
+    _u8* pLog = pDatabase->getReadPointer();
+    pDatabase->blockRptr++;
+    return pLog;
 }
 
 
@@ -186,7 +200,7 @@ void log_input_pop_data_to_app(_u8* data,_u32 dataLen)
 //}log_object_t;
 //
 //static  log_object_t  log;
-//volatile _u8      strToHex[] = "0123456789abcdef";
+
 //void log_init(log_hardware_e logHardware,log_input_t inputCb)
 //{
 //    if(logHardware == LOG_HARDWARE_UART)
