@@ -8,6 +8,9 @@
 #ifndef TXTYPE_H_
 #define TXTYPE_H_
 
+
+#define NULL 0
+
 typedef unsigned int   _u32;
 typedef unsigned short _u16;
 typedef unsigned char  _u8;

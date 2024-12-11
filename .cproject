@@ -89,43 +89,10 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
-					<folderInfo id="ilg.gnumcueclipse.managedbuild.cross.riscv.config.elf.release.1116550882.321457886" name="/" resourcePath="common">
-						<toolChain id="ilg.gnumcueclipse.managedbuild.cross.riscv.toolchain.elf.release.752914164" name="RISC-V Cross GCC" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.toolchain.elf.release" unusedChildren="">
-							<option id="ilg.gnumcueclipse.managedbuild.cross.riscv.option.addtools.createflash.2085956103.628527419" name="Create flash image" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.option.addtools.createflash.2085956103"/>
-							<option id="ilg.gnumcueclipse.managedbuild.cross.riscv.option.addtools.createlisting.1103418697.332218458" name="Create extended listing" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.option.addtools.createlisting.1103418697"/>
-							<option id="ilg.gnumcueclipse.managedbuild.cross.riscv.option.addtools.printsize.1938403892.285973235" name="Print size" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.option.addtools.printsize.1938403892"/>
-							<option id="ilg.gnumcueclipse.managedbuild.cross.riscv.option.optimization.level.553489419.356992985" name="Optimization Level" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.option.optimization.level.553489419"/>
-							<option id="ilg.gnumcueclipse.managedbuild.cross.riscv.option.optimization.messagelength.220271471.186721858" name="Message length (-fmessage-length=0)" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.option.optimization.messagelength.220271471"/>
-							<option id="ilg.gnumcueclipse.managedbuild.cross.riscv.option.optimization.signedchar.1475862446.1157294768" name="'char' is signed (-fsigned-char)" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.option.optimization.signedchar.1475862446"/>
-							<option id="ilg.gnumcueclipse.managedbuild.cross.riscv.option.optimization.functionsections.1356267658.9907744" name="Function sections (-ffunction-sections)" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.option.optimization.functionsections.1356267658"/>
-							<option id="ilg.gnumcueclipse.managedbuild.cross.riscv.option.optimization.datasections.241027432.1906976146" name="Data sections (-fdata-sections)" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.option.optimization.datasections.241027432"/>
-							<option id="ilg.gnumcueclipse.managedbuild.cross.riscv.option.debugging.level.893131272.110304557" name="Debug level" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.option.debugging.level.893131272"/>
-							<option id="ilg.gnumcueclipse.managedbuild.cross.riscv.option.debugging.format.165794964.1357989179" name="Debug format" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.option.debugging.format.165794964"/>
-							<option id="ilg.gnumcueclipse.managedbuild.cross.riscv.option.toolchain.name.468470137.1156597269" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.option.toolchain.name.468470137"/>
-							<option id="ilg.gnumcueclipse.managedbuild.cross.riscv.option.command.prefix.1407566193.635470332" name="Prefix" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.option.command.prefix.1407566193"/>
-							<option id="ilg.gnumcueclipse.managedbuild.cross.riscv.option.command.c.1972231461.1282055968" name="C compiler" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.option.command.c.1972231461"/>
-							<option id="ilg.gnumcueclipse.managedbuild.cross.riscv.option.command.cpp.402382615.1385737807" name="C++ compiler" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.option.command.cpp.402382615"/>
-							<option id="ilg.gnumcueclipse.managedbuild.cross.riscv.option.command.ar.1377178706.845379009" name="Archiver" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.option.command.ar.1377178706"/>
-							<option id="ilg.gnumcueclipse.managedbuild.cross.riscv.option.command.objcopy.1332531103.1919402159" name="Hex/Bin converter" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.option.command.objcopy.1332531103"/>
-							<option id="ilg.gnumcueclipse.managedbuild.cross.riscv.option.command.objdump.540076178.1072446189" name="Listing generator" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.option.command.objdump.540076178"/>
-							<option id="ilg.gnumcueclipse.managedbuild.cross.riscv.option.command.size.421249784.96242044" name="Size command" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.option.command.size.421249784"/>
-							<option id="ilg.gnumcueclipse.managedbuild.cross.riscv.option.command.make.174080075.1001381762" name="Build command" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.option.command.make.174080075"/>
-							<option id="ilg.gnumcueclipse.managedbuild.cross.riscv.option.command.rm.1846298631.941027273" name="Remove command" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.option.command.rm.1846298631"/>
-							<option id="ilg.gnumcueclipse.managedbuild.cross.riscv.option.toolchain.id.109386572.542405978" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.option.toolchain.id.109386572"/>
-							<tool id="ilg.gnumcueclipse.managedbuild.cross.riscv.tool.assembler.1387223229" name="GNU RISC-V Cross Assembler" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.tool.assembler.660434803"/>
-							<tool id="ilg.gnumcueclipse.managedbuild.cross.riscv.tool.c.compiler.348172612" name="GNU RISC-V Cross C Compiler" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.tool.c.compiler.340251769"/>
-							<tool id="ilg.gnumcueclipse.managedbuild.cross.riscv.tool.cpp.compiler.1978367966" name="GNU RISC-V Cross C++ Compiler" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.tool.cpp.compiler.1330087628"/>
-							<tool id="ilg.gnumcueclipse.managedbuild.cross.riscv.tool.c.linker.744481166" name="GNU RISC-V Cross C Linker" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.tool.c.linker.156280580"/>
-							<tool id="ilg.gnumcueclipse.managedbuild.cross.riscv.tool.cpp.linker.564662682" name="GNU RISC-V Cross C++ Linker" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.tool.cpp.linker.26598048"/>
-							<tool id="ilg.gnumcueclipse.managedbuild.cross.riscv.tool.archiver.2029661732" name="GNU RISC-V Cross Archiver" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.tool.archiver.356231568"/>
-							<tool id="ilg.gnumcueclipse.managedbuild.cross.riscv.tool.createflash.2089787913" name="GNU RISC-V Cross Create Flash Image" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.tool.createflash.776639513"/>
-							<tool id="ilg.gnumcueclipse.managedbuild.cross.riscv.tool.createlisting.136167588" name="GNU RISC-V Cross Create Listing" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.tool.createlisting.629723613"/>
-							<tool id="ilg.gnumcueclipse.managedbuild.cross.riscv.tool.printsize.1161452548" name="GNU RISC-V Cross Print Size" superClass="ilg.gnumcueclipse.managedbuild.cross.riscv.tool.printsize.1699620940"/>
-						</toolChain>
-					</folderInfo>
 					<sourceEntries>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="boot"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="common"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="module"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="platform"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="system"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="tx_ble"/>
@@ -155,6 +122,7 @@
 		<configuration configurationName="test">
 			<resource resourceType="PROJECT" workspacePath="/tx_text"/>
 		</configuration>
+		<configuration configurationName="proj_build"/>
 		<configuration configurationName="tx_ble">
 			<resource resourceType="PROJECT" workspacePath="/tx_text"/>
 		</configuration>
