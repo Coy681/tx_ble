@@ -111,12 +111,31 @@ tx_malloc_e tx_free(_u8* PfreeNode)
 	}
 	if(pNode->next == NULL)
 	{
-		pPrevious->next = NULL;
-		txMemsetByte((_u8*)pNode,0,12+pNode->size);
+        if(pPrevious->usedFlag==0)
+        {
+		    pPrevious->next = NULL;
+            pPrevious+=(12+pNode->size);
+		    txMemsetByte((_u8*)pNode,0,12+pNode->size);
+        }
+        else
+        {
+            pNode->usedFlag = 0;
+            pNode->size = 0;
+            txMemsetByte((_u8*)pNode+12,0,pNode->size);
+        }
 	}
 	else
 	{
-		txMallocNode_t *pNext = pNode->next;
+        if(pPrevious->usedFlag == 0)
+        {
+
+        }
+        txMallocNode_t *pNext = pNode->next;
+        if(pNode->next.usedFlag == 0)
+        {
+            
+        }
+
 		pPrevious->next = pNext;
 		pNext->previous = pPrevious;
 		pPrevious->size+=(12+pNode->size);
