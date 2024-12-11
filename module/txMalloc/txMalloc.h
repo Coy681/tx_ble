@@ -8,6 +8,14 @@
 #ifndef TXMALLOC_TXMALLOC_H_
 #define TXMALLOC_TXMALLOC_H_
 
+#define TX_MALLOC_BUFFER_SIZE     20*1024
 
+typedef enum
+{
+	TX_MALLOC_FREE_SUCCESS       = 0,
+	TX_MALLOC_INVALID_PARAMETER  = 1,
+	TX_MALLOC_NOT_FROUND         = 2,
+
+}tx_malloc_e;
 
 #endif /* TXMALLOC_TXMALLOC_H_ */
