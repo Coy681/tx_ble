@@ -18,4 +18,7 @@ typedef enum
 
 }tx_malloc_e;
 
+_u8* tx_malloc(_u16 length);
+
+tx_malloc_e tx_free(_u8* PfreeNode);
 #endif /* TXMALLOC_TXMALLOC_H_ */
