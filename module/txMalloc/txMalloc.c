@@ -124,34 +124,40 @@ tx_malloc_e tx_free(_u8* PfreeNode)
         {
             pPrevious->next = NULL;
             pPrevious->size = pPrevious->size + 12 +pNode->size;
-            txMemsetByte((_u8*)pNode,0,12+pPrevious->size);
+            txMemsetByte((_u8*)pNode,0,12+pNode->size);
         }
         else
         {
             pNode->usedFlag = 0;
+            txMemsetByte((_u8*)pNode+12,0,pNode->size);
         }
         return TX_MALLOC_FREE_SUCCESS;
     }
-    else 
+    else // previous and next not NULL
     {
-        //find previous and next position
-        //find total size
-        if(pPrevious->usedFlag == 0)
+        txMallocNode_t* pStart = pPrevious;
+        txMallocNode_t* pEnd = pNext;
+        _u8* pClear = (_u8*)pNode + 12;
+        _u32 clearSize = pNode->size;
+        if(pPrevious->usedFlag == NULL)
         {
-
+            pStart = pPrevious;
+            pClear =  (_u8*)pNode;
+            clearSize = pNode->size + 12;
         }
-        else if(pNext->usedFlag == 0)
+        if(pNext->usedFlag == NULL)
         {
-
+            pEnd = pNext->next;
+            clearSize+=(12+pNext->size);
         }
-        else if(pPrevious->usedFlag == 0&&pNext->usedFlag == 0)
+        pStart->next = pEnd;
+        pEnd->previous = pStart;
+        if(clearSize!=pNode->size)
         {
-
+            pStart->size += clearSize;
         }
-        else
-        {
+        txMemsetByte(pClear,0,clearSize);
 
-        }
         return TX_MALLOC_FREE_SUCCESS;
     }
 }
