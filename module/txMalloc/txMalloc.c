@@ -28,7 +28,7 @@ typedef struct
 void tx_malloc_init(_u8* buffer,_u32 size)
 {
     txMalloc.totalSize =  size;
-    txMalloc.unusedSize = size-12;
+    txMalloc.unusedSize = size-12;//maybe used in future
     txMalloc.pStart = buffer;
     txMallocNode_t *pNode = (txMallocNode_t*)txMalloc.pStart;
     pNode->previous = NULL;
@@ -39,7 +39,7 @@ void tx_malloc_init(_u8* buffer,_u32 size)
 
 _u8* tx_malloc(_u16 length)
 {
-    _u16 mallocLen = ((length+3)&(~3));
+    _u16 mallocLen = ((length+3)&(~3)) + 12;
     txMallocNode_t* pNode = (txMallocNode_t*)txMalloc.pStart;
     txMallocNode_t* pPreviousNode =  NULL;
     txMallocNode_t* pNext = NULL;
@@ -62,7 +62,7 @@ _u8* tx_malloc(_u16 length)
         pNode->usedFlag = 1;
         if(pNode->size>(mallocLen+16))
         {
-            pNext = (txMallocNode_t*)((_u8*)&pNode->usedFlag + 2 + mallocLen);
+            pNext = (txMallocNode_t*)((_u8*)&pNode + 12 + mallocLen);
             pNode->next = pNext;
             pNext->previous = pNode;
             pNext->next = NULL;
