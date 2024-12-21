@@ -201,10 +201,10 @@ void malloc_test(void)
 //	tx_free(p1);
 //	tx_free(p);
 
-	_u8* p = tx_malloc(34);
+	_u8* p = tx_malloc(4);
 	_u8* p1 = tx_malloc(4);
-	tx_free(p);
-	_u8* p2 = tx_malloc(20);
+	_u8* p2 = tx_malloc(0x14);
+	_u8* p3 = tx_malloc(0x300);
 }
 
 

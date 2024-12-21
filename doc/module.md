@@ -21,6 +21,8 @@ malloc时发现pNode1可用，则直接将usedFlag置起，其余都不需要修
 #### 当前节点的Size大于所需要内存空间
 ![malloc_middle1](picture/malloc_middle1.png "malloc_middle1")
 
+为了内存空间利用最大化，此时需要在原有节点基础上生成新的节点
+
 #### 在所有节点尾部分配
 ![malloc_tail](picture/malloc_tail.png "malloc_tail")
 

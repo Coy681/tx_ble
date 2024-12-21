@@ -21,7 +21,6 @@ void tx_malloc_init(void);
 
 _u8* tx_malloc(_u16 length);
 
-tx_malloc_ret_e tx_free(_u8* PfreeNode);
+tx_malloc_ret_e tx_free(_u8* pFreeNode);
 
-void malloc_test(void);
 #endif /* MALLOC_TXMALLOC_H_ */
