@@ -7,15 +7,17 @@
 
 #include"platform/platform.h"
 #include"platform/debug/log.h"
-#include"module/txMalloc/txMalloc.h"
+#include"module/module.h"
+
 static void system_timer_task(void);
 static void system_rf_task(void);
 
 void system_init()
 {
-//	log_init(TRACE_MODE_UART);
-
+	tx_malloc_init();
+	malloc_test();
 	hal_stimer_register_task(system_timer_task);
+
 }
 
 static void system_timer_task(void)

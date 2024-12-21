@@ -4,10 +4,10 @@
  *  Created on: 2024年12月10日
  *      Author: 12407
  */
+#include <module/malloc/txMalloc.h>
 #include"common/txType.h"
 #include"common/txGeneral.h"
-#include"txMalloc.h"
-_u8 txMallocBuffer[TX_MALLOC_BUFFER_SIZE];
+#include"config.h"
 
 typedef struct
 {
@@ -26,22 +26,28 @@ typedef struct txMallocNode_t
     _u16 usedFlag;
 }txMallocNode_t;
 
+static _u8 txMallocBuffer[TX_MALLOC_BUFFER_SIZE];
+
 static txMalloc_t txMalloc;
 
-void tx_malloc_init(_u8* buffer,_u32 size)
+void tx_malloc_init(void)
 {
-    txMalloc.totalSize =  size;
-    txMalloc.unusedSize = size-12;//maybe used in future
-    txMalloc.pStart = buffer;
+    txMalloc.totalSize =  TX_MALLOC_BUFFER_SIZE;
+    txMalloc.unusedSize = txMalloc.totalSize-12;//now not use,maybe used in future
+    txMalloc.pStart = txMallocBuffer;
     txMallocNode_t *pNode = (txMallocNode_t*)txMalloc.pStart;
     pNode->previous = NULL;
     pNode->usedFlag = 0;
-    pNode->size = size-12;
+    pNode->size = txMalloc.totalSize-12;
     pNode->next = NULL;
 }
 
 _u8* tx_malloc(_u16 length)
 {
+	if(txMalloc.pStart == NULL)
+	{
+        return NULL;
+	}
     _u16 mallocLen = ((length+3)&(~3));
     txMallocNode_t* pNode = (txMallocNode_t*)txMalloc.pStart;
     txMallocNode_t* pPreviousNode =  NULL;
@@ -66,12 +72,13 @@ _u8* tx_malloc(_u16 length)
         pNode->usedFlag = 1;
         if(pNode->size>(mallocLen+16))//size enough to generate new node
         {
-            pNext = (txMallocNode_t*)((_u8*)&pNode + 12 + mallocLen);
+            pNext = (txMallocNode_t*)((_u8*)pNode + 12 + mallocLen);
             pNode->next = pNext;
             pNext->previous = pNode;
             pNext->next = NULL;
             pNext->usedFlag = 0;
             pNext->size = pNode->size - mallocLen - 12;
+            pNode->size = mallocLen;
         }
         return ((_u8*)pNode+12);
     }
@@ -81,7 +88,7 @@ _u8* tx_malloc(_u16 length)
         pNode->usedFlag = 1;
         if(pNode->size>(mallocLen+16))
         {
-            pNew = (txMallocNode_t*)((_u8*)&pNode + 12 + mallocLen);
+            pNew = (txMallocNode_t*)((_u8*)pNode + 12 + mallocLen);
             pNew->usedFlag = 0;
             pNew->next = pNode->next;
             pNew->previous = pNode;
@@ -96,6 +103,10 @@ _u8* tx_malloc(_u16 length)
 
 tx_malloc_ret_e tx_free(_u8* pFreeNode)
 {
+	if(txMalloc.pStart == NULL)
+	{
+        return TX_MALLOC_MALLOC_INVALID;
+	}
 	txMallocNode_t *pNode = (txMallocNode_t*)txMalloc.pStart;
 	txMallocNode_t *pPrevious = NULL;
     txMallocNode_t *pNext = NULL;
@@ -171,6 +182,17 @@ tx_malloc_ret_e tx_free(_u8* pFreeNode)
 
         return TX_MALLOC_FREE_SUCCESS;
     }
+}
+
+
+void malloc_test(void)
+{
+    _u8* p = tx_malloc(4);
+    _u8* p1 = tx_malloc(4);
+    _u8* p2 = tx_malloc(4);
+    _u8* p3 = tx_malloc(4);
+    _u8* p4 = tx_malloc(4);
+    tx_free(p1);
 }
 
 

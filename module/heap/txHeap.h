@@ -5,9 +5,9 @@
  *      Author: 12407
  */
 
-#ifndef TXHEAP_TXHEAP_H_
-#define TXHEAP_TXHEAP_H_
+#ifndef HEAP_TXHEAP_H_
+#define HEAP_TXHEAP_H_
 
 
 
-#endif /* TXHEAP_TXHEAP_H_ */
+#endif /* HEAP_TXHEAP_H_ */

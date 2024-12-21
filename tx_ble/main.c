@@ -2,12 +2,12 @@
 
 #include"driver.h"
 
-#include"../platform/platform.h"
+#include"platform/platform.h"
 
-#include"../system/system.h"
+#include"system/system.h"
 
-#include"../common/txBuffer.h"
-#include"../common/txType.h"
+#include"common/txCommon.h"
+
 /**
  * @brief       This function service to handle all the platform pre-defined interrupt or exception.
  * @return      none
