@@ -16,14 +16,17 @@ typedef struct
     _u32 unusedSize;
     _u8* pStart;
 }txMalloc_t;
-txMalloc_t txMalloc;
-typedef struct
+
+typedef struct txMallocNode_t txMallocNode_t;
+typedef struct txMallocNode_t
 {
-    _u8* previous;
-    _u8* next;
+	txMallocNode_t* previous;
+	txMallocNode_t* next;
     _u16 size;
     _u16 usedFlag;
 }txMallocNode_t;
+
+static txMalloc_t txMalloc;
 
 void tx_malloc_init(_u8* buffer,_u32 size)
 {
@@ -34,15 +37,16 @@ void tx_malloc_init(_u8* buffer,_u32 size)
     pNode->previous = NULL;
     pNode->usedFlag = 0;
     pNode->size = size-12;
-    pNode->next = ((_u8*)&pNode->previous + 2);
+    pNode->next = NULL;
 }
 
 _u8* tx_malloc(_u16 length)
 {
-    _u16 mallocLen = ((length+3)&(~3)) + 12;
+    _u16 mallocLen = ((length+3)&(~3));
     txMallocNode_t* pNode = (txMallocNode_t*)txMalloc.pStart;
     txMallocNode_t* pPreviousNode =  NULL;
     txMallocNode_t* pNext = NULL;
+    txMallocNode_t* pNew = NULL;
     while(pNode != NULL)
     {
         if(!pNode->usedFlag&&pNode->size>mallocLen)
@@ -60,7 +64,7 @@ _u8* tx_malloc(_u16 length)
     if(pNext == NULL)
     {
         pNode->usedFlag = 1;
-        if(pNode->size>(mallocLen+16))
+        if(pNode->size>(mallocLen+16))//size enough to generate new node
         {
             pNext = (txMallocNode_t*)((_u8*)&pNode + 12 + mallocLen);
             pNode->next = pNext;
@@ -69,24 +73,35 @@ _u8* tx_malloc(_u16 length)
             pNext->usedFlag = 0;
             pNext->size = pNode->size - mallocLen - 12;
         }
-        return ((_u8*)&pNode->usedFlag+2);
+        return ((_u8*)pNode+12);
     }
     else
     {
         //process,buffer middle
         pNode->usedFlag = 1;
-        return ((_u8*)&pNode->usedFlag+2);
+        if(pNode->size>(mallocLen+16))
+        {
+            pNew = (txMallocNode_t*)((_u8*)&pNode + 12 + mallocLen);
+            pNew->usedFlag = 0;
+            pNew->next = pNode->next;
+            pNew->previous = pNode;
+            pNew->size = pNode->size - 12 - mallocLen;
+            pNode->size = mallocLen;
+            pNode->next = pNew;
+            pNext->previous = pNew;
+        }
+        return ((_u8*)pNode+12);
     }
 }
 
-tx_malloc_e tx_free(_u8* PfreeNode)
+tx_malloc_ret_e tx_free(_u8* pFreeNode)
 {
 	txMallocNode_t *pNode = (txMallocNode_t*)txMalloc.pStart;
 	txMallocNode_t *pPrevious = NULL;
     txMallocNode_t *pNext = NULL;
     while(pNode!=NULL)
     {
-        if((_u8*)pNode+12 == PfreeNode)
+        if(((_u8*)pNode+12) == pFreeNode)
         {
             break;
         }
@@ -100,7 +115,7 @@ tx_malloc_e tx_free(_u8* PfreeNode)
     pNext = pNode->next;
     if(pPrevious == NULL)
     {
-        if(pNext->usedFlag == 0)
+        if(pNext!=NULL && pNext->usedFlag == 0)
         {
             txMallocNode_t* pNextNext = pNext->next;
             pNode->next = pNextNext;
@@ -111,11 +126,7 @@ tx_malloc_e tx_free(_u8* PfreeNode)
             pNode->size = pNode->size + 12 + pNext->size;
             txMemsetByte((_u8*)pNext,0,12+pNext->size);
         }
-        else
-        {
-            pNode->usedFlag = 0;
-
-        } 
+        pNode->usedFlag = 0;
         return TX_MALLOC_FREE_SUCCESS;
     }
     else if(pNext == NULL)

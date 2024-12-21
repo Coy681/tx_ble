@@ -12,9 +12,14 @@ malloc buffer的结构为：指向前一个结点的指针*previous，指向后�
 ### malloc
 malloc时，分为两种情况，在节点尾部分配以及在节点之间分配
 #### 在已存在节点之间分配
+在已存在节点之间分配，为了使得内存利用率最大化，又存在两种情况
+#### 当前节点刚好满足要求
 ![malloc_middle](picture/malloc_middle.png "malloc_middle")
 
 malloc时发现pNode1可用，则直接将usedFlag置起，其余都不需要修改，这种情况通常发生在pNode1被free掉后，下次malloc进来发现合法
+
+#### 当前节点的Size大于所需要内存空间
+![malloc_middle1](picture/malloc_middle1.png "malloc_middle1")
 
 #### 在所有节点尾部分配
 ![malloc_tail](picture/malloc_tail.png "malloc_tail")

@@ -16,9 +16,9 @@ typedef enum
 	TX_MALLOC_INVALID_PARAMETER  = 1,
 	TX_MALLOC_NOT_FROUND         = 2,
 
-}tx_malloc_e;
+}tx_malloc_ret_e;
 
 _u8* tx_malloc(_u16 length);
 
-tx_malloc_e tx_free(_u8* PfreeNode);
+tx_malloc_ret_e tx_free(_u8* PfreeNode);
 #endif /* TXMALLOC_TXMALLOC_H_ */
