@@ -21,10 +21,17 @@ void trap_entry(void)
 
 int main(void)
 {
-	platform_init();
-	system_init();
 
-	hal_stimer_set_capture(system_clock()+1000*SYSTEM_TIME_MS);
+	//init call function
+	initcall_f pInit;
+	_u32 *pTemp;
+	extern _u32 _INIT_START;
+    extern _u32 _INIT_END;
+    for(pTemp = &_INIT_START;pTemp<&_INIT_END; pTemp++)
+    {
+    	pInit = (initcall_f)(*pTemp);
+    	pInit();
+    }
 
 	while(1)
 	{

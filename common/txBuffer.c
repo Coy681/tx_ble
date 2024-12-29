@@ -14,26 +14,19 @@
 static txBuffer_t* pDatabase = NULL;
 /********************define log database function***********************/
 _RAM_CODE
-txBuffer_t *txBuffer_cast(txBuffer_t* pCast)
-{
-	pDatabase = pCast;
-	return pDatabase;
-}
-
-_RAM_CODE
-_u8* tx_buffer_database_get_write_pointer(void)
+_u8* tx_buffer_database_get_write_pointer(txBuffer_t* pDatabase)
 {
 	_u8* pRet = pDatabase->database.pointer+(pDatabase->database.blockWptr&(pDatabase->database.blockNum-1))*pDatabase->database.blockSize;
     return pRet;
 }
 _RAM_CODE
-_u8* tx_buffer_database_get_read_pointer(void)
+_u8* tx_buffer_database_get_read_pointer(txBuffer_t* pDatabase)
 {
 	_u8* pRet = pDatabase->database.pointer+(pDatabase->database.blockRptr&(pDatabase->database.blockNum-1))*pDatabase->database.blockSize;
     return pRet;
 }
 _RAM_CODE
-int tx_buffer_database_block_availble(void)
+int tx_buffer_database_block_availble(txBuffer_t* pDatabase)
 {
     if(pDatabase->database.blockWptr!=pDatabase->database.blockRptr)
     {
@@ -42,25 +35,24 @@ int tx_buffer_database_block_availble(void)
     return 0;
 }
 _RAM_CODE
-void tx_buffer_database_push_data(_u8* data,_u32 dataLen)
+void tx_buffer_write_pointer_increase(txBuffer_t* pDatabase)
 {
-    _u8* pLog = pDatabase->getWritePointer();
-    _u32 len = (dataLen>pDatabase->database.blockSize?pDatabase->database.blockSize:dataLen);
-    while(len--)
-    {
-    	*pLog++ = *data++;
-    }
     pDatabase->database.blockWptr++;
 }
+
 _RAM_CODE
-_u8* tx_buffer_database_pop_data(void)
+void tx_buffer_read_pointer_increase(txBuffer_t* pDatabase)
 {
-    _u8* pLog = pDatabase->getReadPointer();
     pDatabase->database.blockRptr++;
-    return pLog;
 }
 
-void txBuffer_database_init(_u8* pointer,_u16 num,_u32 size)
+_u32 tx_buffer_get_availble_data_length(txBuffer_t* pDatabase,_u32 dataLen)
+{
+    _u32 len = (dataLen>pDatabase->database.blockSize?pDatabase->database.blockSize:dataLen);
+    return len;
+}
+
+void txBuffer_init(txBuffer_t* pDatabase,_u8* pointer,_u16 num,_u32 size)
 {
 	pDatabase->database.pointer         = pointer;
 	pDatabase->database.blockNum        = num;
@@ -69,8 +61,9 @@ void txBuffer_database_init(_u8* pointer,_u16 num,_u32 size)
 	pDatabase->getReadPointer           = tx_buffer_database_get_read_pointer;
 	pDatabase->getWritePointer          = tx_buffer_database_get_write_pointer;
     pDatabase->blockAvailble            = tx_buffer_database_block_availble;
-    pDatabase->blockPush                = tx_buffer_database_push_data;
-    pDatabase->blockPop                 = tx_buffer_database_pop_data;
+    pDatabase->wPtrIncrease             = tx_buffer_write_pointer_increase;
+    pDatabase->rPtrIncrease             = tx_buffer_read_pointer_increase;
+    pDatabase->getDataLen               = tx_buffer_get_availble_data_length;
 }
 
 

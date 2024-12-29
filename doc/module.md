@@ -43,3 +43,9 @@ free时，分为几种情况
 ![free_middle](picture/malloc/free_middle.png "free_middle")
 
  # message
+
+ 传统的loop查询消息机制，在内存占用，执行效率，代码风格方面都不太好，所以设计了一套统一的消息处理机制，主要是使整体代码更加整洁，高效，模块化形式，方便增删调改。
+ ![message](picture/message/message.png "message")
+
+ 首先，系统内部有多个等级的消息队列，系统会优先处理优先级高的消息队列，依次往下。
+ 其次，在每个消息队列内部，消息队列的每一个node，都有自己的handler处理函数，以及消息子码(例如一个模块内部又分为多个子模块) 

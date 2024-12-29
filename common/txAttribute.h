@@ -18,4 +18,19 @@
 
 #define _NO_INLINE               __attribute__((noinline)) 
 
+/******************define init call functions**********************/
+typedef void(*initcall_f)(void);
+#define _initcall_name(fn,level)    _initcall_##fn##_##level
+#define INITCALL_SECTION(level)     __attribute__((used,section(".initcall."#level".init")))
+#define _initcall(fn,level)    static const initcall_f INITCALL_SECTION(level) _initcall_name(fn,level) = fn;
+
+#define HAREWARE_INIT(fn)           _initcall(fn,0)
+#define ARCH_INIT(fn)               _initcall(fn,1)
+#define DEV_INIT(fn)                _initcall(fn,2)
+#define BROAD_INIT(fn)              _initcall(fn,3)
+#define OS_INIT(fn)                 _initcall(fn,4)
+#define APP_INIT(fn)                _initcall(fn,5)
+
+
+
 #endif /* TXATTRIBUTE_H_ */

@@ -21,6 +21,7 @@ void platform_init(void)
     hal_gpio_led_init();
 
 }
+HAREWARE_INIT(platform_init);
 
 
 

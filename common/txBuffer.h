@@ -18,20 +18,21 @@ typedef struct
     _u8         blockWptr;
     _u8         blockRptr;
 }database_t;
-typedef struct
+
+typedef struct txBuffer_t txBuffer_t;
+
+typedef struct txBuffer_t
 {
     database_t  database;//please don't access database directly
-	_u8*        (*getWritePointer)();
-	_u8*        (*getReadPointer)();
-	int         (*blockAvailble)();
-	void        (*blockPush)(_u8*,_u32);//parameter:data pointer,data length
-	_u8*        (*blockPop)();
+	_u8*        (*getWritePointer)(txBuffer_t*);
+	_u8*        (*getReadPointer)(txBuffer_t*);
+	int         (*blockAvailble)(txBuffer_t*);
+	void        (*wPtrIncrease)(txBuffer_t*);
+	void        (*rPtrIncrease)(txBuffer_t*);
+	_u32        (*getDataLen)(txBuffer_t*,_u32 dataLen);
 }txBuffer_t;
 
 
-void txBuffer_database_init(_u8* pointer,_u16 num,_u32 size);
+void txBuffer_init(txBuffer_t* pDatabase,_u8* pointer,_u16 num,_u32 size);
 
-txBuffer_t* txBuffer_cast(txBuffer_t*);//please don't use this function
-
-#define TX_BUFFER_CAST(object)  (txBuffer_cast(object))//hide pThis
 #endif /* TXBUFFER_H_ */

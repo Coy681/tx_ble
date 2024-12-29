@@ -58,7 +58,17 @@ SECTIONS
 	PROVIDE (_RAMCODE_SIZE = SIZEOF (.ram_code)); 
 	
 	. = ALIGN(LOADADDR (.ram_code) + SIZEOF (.ram_code), 8);
-	.text 			: AT(ALIGN(LOADADDR (.ram_code) + SIZEOF (.ram_code), 8)) 
+    .initcalls : AT(ALIGN(LOADADDR (.ram_code) + SIZEOF (.ram_code),  8))
+            {
+             _INIT_START = .;
+             KEEP(*(.initcall.0.init))
+             KEEP(*(.initcall.1.init))
+             KEEP(*(.initcall.2.init))
+             KEEP(*(.initcall.3.init))
+             KEEP(*(.initcall.4.init))
+             KEEP(*(.initcall.5.init))
+             _INIT_END = .;}
+	.text 			: AT(ALIGN(LOADADDR (.initcalls) + SIZEOF (.initcalls), 8)) 
 		{ *(.text .stub .text.* .gnu.linkonce.t.* ) KEEP(*(.text.*personality* )) *(.gnu.warning )  }
 	.rodata 		: AT(ALIGN(LOADADDR (.text) + SIZEOF (.text), ALIGNOF(.rodata))) 
 		{ *(.rodata .rodata.* .gnu.linkonce.r.* )}
@@ -96,8 +106,7 @@ SECTIONS
 	 */
 	PROVIDE (_BSS_VMA_END = ((. + 3) / 4)*4);
 	
-	
-	    . = ALIGN(4);
+    . = ALIGN(4);
     /* end is the starting address of the heap, the heap grows upward */
     
     /*_edata= .;*/

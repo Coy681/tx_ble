@@ -6,11 +6,13 @@
  */
 
 #include"txMessage.h"
-typedef struct txMessage
+
+typedef struct
 {
-    txMessageNode_t* pHead;
-    txMessageNode_t* pTail;
+    txMessageNode_t* header;
+    txMessageNode_t* tail;
 }txMessage_t;
 
-txMessage_t message;
+txMessage_t txMessage;
 
+void tx_message_add(txMessage_t* message);
