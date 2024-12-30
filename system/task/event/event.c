@@ -25,7 +25,28 @@ void tx_task_init(void)
 
 void tx_add_task(pTaskInit_f init,pTaskProcess_f process,txTaskPriority_e priority)
 {
+	txTask_t* pNew = (txTask_t*)tx_malloc(sizeof(txTask_t));
+	if(pNew)
+	{
+		pNew->init         = init;
+		pNew->process      = process;
+		pNew->taskPriority = priority;
+		pNew->eventMask    = 0;
+		pNew->next         = NULL;
+		if(pHeader)
+		{
+			txTask_t* pSearch = pHeader;
+            while(pNew->taskPriority<pSearch->taskPriority)
+            {
+            	pSearch = pSearch->next;
+            }
 
+		}
+		else
+		{
+			pHeader = pNew;
+		}
+	}
 }
 
 void tx_start_task(void)
