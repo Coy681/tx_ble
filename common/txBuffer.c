@@ -11,7 +11,6 @@
 #include "txType.h"
 #include "txAttribute.h"
 
-static txBuffer_t* pDatabase = NULL;
 /********************define log database function***********************/
 _RAM_CODE
 _u8* tx_buffer_database_get_write_pointer(txBuffer_t* pDatabase)

@@ -7,12 +7,12 @@
 
 #include"txMessage.h"
 
-typedef struct
-{
-    txMessageNode_t* header;
-    txMessageNode_t* tail;
-}txMessage_t;
-
-txMessage_t txMessage;
-
-void tx_message_add(txMessage_t* message);
+//typedef struct
+//{
+//    txMessageNode_t* header;
+//    txMessageNode_t* tail;
+//}txMessage_t;
+//
+//txMessage_t txMessage;
+//
+//void tx_message_add(txMessage_t* message);
