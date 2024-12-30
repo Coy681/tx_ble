@@ -10,3 +10,6 @@
 #include "txGeneral.h"
 #include "txType.h"
 #include "txBit.h"
+#include "malloc/txMalloc.h"
+#include "list/txList.h"
+#include "heap/txHeap.h"

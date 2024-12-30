@@ -7,7 +7,7 @@
 
 #include"platform/platform.h"
 #include"platform/debug/log.h"
-#include"module/module.h"
+#include"common/txCommon.h"
 
 static void system_timer_task(void);
 static void system_rf_task(void);
