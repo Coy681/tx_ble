@@ -1,0 +1,36 @@
+/*
+ * task.h
+ *
+ *  Created on: 2024年12月30日
+ *      Author: 12407
+ */
+
+#ifndef TASK_TASK_H_
+#define TASK_TASK_H_
+
+#include"common/txCommon.h"
+
+
+typedef enum
+{
+	TX_TASK_PRIORITY_0 =0,
+	TX_TASK_PRIORITY_1,
+	TX_TASK_PRIORITY_2,
+	TX_TASK_PRIORITY_3,
+	TX_TASK_PRIORITY_4,
+	TX_TASK_PRIORITY_5,
+	TX_TASK_PRIORITY_6,
+	TX_TASK_PRIORITY_7,
+	TX_TASK_PRIORITY_8,
+	TX_TASK_PRIORITY_9,
+	TX_TASK_PRIORITY_10,
+	TX_TASK_PRIORITY_11,
+	TX_TASK_PRIORITY_12,
+	TX_TASK_PRIORITY_13,
+	TX_TASK_PRIORITY_14,
+	TX_TASK_PRIORITY_15,
+}txTaskPriority_e;
+
+
+
+#endif /* TASK_TASK_H_ */
