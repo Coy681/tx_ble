@@ -206,6 +206,7 @@ void malloc_test(void)
 	_u8* p1 = tx_malloc(4);
 	_u8* p2 = tx_malloc(0x14);
 	_u8* p3 = tx_malloc(0x300);
+    _u8* test = 0;
 }
 
 
