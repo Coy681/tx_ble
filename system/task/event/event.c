@@ -23,7 +23,7 @@ void tx_task_init(void)
     }
 }
 
-void tx_add_task(pTaskInit_f init,pTaskProcess_f process,txTaskPriority_e priority)
+txTask_e tx_task_add(pTaskInit_f init,pTaskProcess_f process,txTaskPriority_e priority)
 {
 	txTask_t* pNew = (txTask_t*)tx_malloc(sizeof(txTask_t));
 	if(pNew)
@@ -36,30 +36,95 @@ void tx_add_task(pTaskInit_f init,pTaskProcess_f process,txTaskPriority_e priori
 		if(pHeader)
 		{
 			txTask_t* pSearch = pHeader;
-            while(pNew->taskPriority<pSearch->taskPriority)
+			txTask_t* pPrev   = NULL;
+            while((pNew->taskPriority>=pSearch->taskPriority)&&pSearch)
             {
+				pPrev = pHeader;
             	pSearch = pSearch->next;
             }
-
+			pNew->next = pSearch;
+			if(pPrev)
+			{
+				pPrev->next = pNew;
+			}
 		}
 		else
 		{
 			pHeader = pNew;
 		}
+		return TX_TASK_SUCCESS;
+	}
+	else
+	{
+		return TX_TASK_MEMORY_INVALID;
 	}
 }
 
-void tx_start_task(void)
+txTask_t* tx_task_next_active(void)
 {
-
+	txTask_t *pActive = pHeader;
+    while(pActive)
+	{
+		if(pActive->eventMask)
+		{
+			return pActive;
+		}
+		pActive = pActive->next;
+	}
+	return NULL;
 }
 
-void tx_set_task_event(_u16 taskId,_u32 event)
+void tx_task_start(void)
 {
-
+    txTask_t* pTask = NULL;
+	while(1)
+	{
+		pTask = tx_task_next_active();
+		if(pTask)
+		{
+			_u16 event = pTask->eventMask;
+			pTask->eventMask = 0;
+			if(pTask->process)
+			{
+				_u16 retEvent = pTask->process(pTask->taskId,event);
+                pTask->eventMask = retEvent;
+			}
+		}
+	}
 }
 
-void tx_clear_task_event(_u16 taskId,_u32 event)
+txTask_t* tx_task_search(_u16 taskId)
 {
+    txTask_t* pSearch = pHeader;
+	while(pSearch)
+	{
+        if(pSearch->taskId == taskId)
+		{
+			return pSearch;
+		}
+		pSearch = pSearch->next;
+	}
+	return NULL;
+}
 
+txTask_e tx_task_set_event(_u16 taskId,_u32 event)
+{
+    txTask_t* pTarget = tx_task_search(taskId);
+	if(pTarget)
+	{
+		pTarget->eventMask |= event;
+		return TX_TASK_SUCCESS;
+	}
+	return TX_TASK_NO_TASK;
+}
+
+txTask_e tx_task_clear_event(_u16 taskId,_u32 event)
+{
+    txTask_t* pTarget = tx_task_search(taskId);
+	if(pTarget)
+	{
+		pTarget->eventMask &= (~event);
+		return TX_TASK_SUCCESS;
+	}
+	return TX_TASK_NO_TASK;
 }
