@@ -10,6 +10,7 @@
 
 #include"common/txCommon.h"
 
+#define TX_TASK_EVENT_MESSAGE      BIT(31)
 
 typedef enum
 {
