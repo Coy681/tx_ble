@@ -28,8 +28,9 @@ typedef void(*initcall_f)(void);
 #define ARCH_INIT(fn)               _initcall(fn,1)
 #define DEV_INIT(fn)                _initcall(fn,2)
 #define BROAD_INIT(fn)              _initcall(fn,3)
-#define OS_INIT(fn)                 _initcall(fn,4)
-#define APP_INIT(fn)                _initcall(fn,5)
+#define TASK_INIT(fn)               _initcall(fn,4)
+#define OS_INIT(fn)                 _initcall(fn,5)
+#define APP_INIT(fn)                _initcall(fn,6)
 
 
 

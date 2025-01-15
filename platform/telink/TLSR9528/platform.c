@@ -19,6 +19,7 @@ void platform_init(void)
     wd_stop();
     core_interrupt_enable();
     hal_gpio_led_init();
+    hal_gpio_debug_init();
 
 }
 HAREWARE_INIT(platform_init);

@@ -22,7 +22,7 @@ typedef enum
 
 typedef enum
 {
-	HAL_UART_PARITY_NONW       = UART_PARITY_NONE,
+	HAL_UART_PARITY_NONE       = UART_PARITY_NONE,
 	HAL_UART_PARITY_EVEN       = UART_PARITY_EVEN,
 	HAL_UART_PARITY_ODD        = UART_PARITY_ODD,
 }hal_uart_parity_e;
@@ -33,7 +33,7 @@ typedef enum
 	HAL_UART_STOP_BITE_TWO     = UART_STOP_BIT_TWO,
 }hal_uart_stopBit_e;
 
-typedef void (*hal_uart_rx_task)(void);
+typedef void (*hal_uart_rx_task)(int len);
 typedef void (*hal_uart_tx_task)(void);
 
 void hal_uart_register_task(hal_uart_baudrate_e baudrate,\
@@ -41,7 +41,6 @@ void hal_uart_register_task(hal_uart_baudrate_e baudrate,\
 							   hal_uart_tx_task txCb,\
 							   hal_uart_parity_e patiry,\
 							   hal_uart_stopBit_e stopBit);
-
 
 void hal_uart_send_data(_u8 *data,_u32 length);
 

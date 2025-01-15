@@ -6,23 +6,23 @@
  */
 
 #include"event.h"
-
+#include"platform/debug/debug_gpio.h"
 txTask_t* pHeader = NULL;
-
 void tx_task_init(void)
 {
-	txTask_t* pActive = pHeader;
-   if(pActive)
-   {
-   	if(pActive->init)
-   	{
-   		pActive->init();
-   	}
-   	pActive = pActive->next;
-   }
+    txTask_t* pActive = pHeader;
+    while(pActive)
+    {
+        if(pActive->init)
+   	    {
+   		    pActive->init();
+   	    }
+   	    pActive = pActive->next;
+    }
 }
+OS_INIT(tx_task_init);
 
-txTask_e tx_task_add(pTaskInit_f init,pTaskProcess_f process,txTaskPriority_e priority)
+txTask_e tx_task_add(pTaskInit_f init,pTaskProcess_f process,txTaskId_e taskId,txTaskPriority_e priority)
 {
 	txTask_t* pNew = (txTask_t*)tx_malloc(sizeof(txTask_t));
 	if(pNew)
@@ -30,17 +30,18 @@ txTask_e tx_task_add(pTaskInit_f init,pTaskProcess_f process,txTaskPriority_e pr
 		pNew->init         = init;
 		pNew->process      = process;
 		pNew->taskPriority = priority;
+		pNew->taskId       = taskId;
 		pNew->eventMask    = 0;
 		pNew->next         = NULL;
 		if(pHeader)
 		{
 			txTask_t* pSearch = pHeader;
 			txTask_t* pPrev   = NULL;
-           while((pNew->taskPriority>=pSearch->taskPriority)&&pSearch)
-           {
+            while((pNew->taskPriority>=pSearch->taskPriority)&&pSearch)
+            {
 				pPrev = pHeader;
-           	pSearch = pSearch->next;
-           }
+           	    pSearch = pSearch->next;
+            }
 			pNew->next = pSearch;
 			if(pPrev)
 			{
@@ -62,7 +63,7 @@ txTask_e tx_task_add(pTaskInit_f init,pTaskProcess_f process,txTaskPriority_e pr
 txTask_t* tx_task_next_active(void)
 {
 	txTask_t *pActive = pHeader;
-   while(pActive)
+    while(pActive)
 	{
 		if(pActive->eventMask)
 		{
@@ -78,14 +79,18 @@ void tx_task_start(void)
    txTask_t* pTask = NULL;
 	while(1)
 	{
+		DEBUG_GPIO_HIGH(GPIO_3);
+		DEBUG_GPIO_LOW(GPIO_3);
 		pTask = tx_task_next_active();
 		if(pTask)
 		{
-			_u16 event = pTask->eventMask;
+			_u32 event = pTask->eventMask;
 			pTask->eventMask = 0;
 			if(pTask->process)
 			{
-				_u16 retEvent = pTask->process(pTask->taskId,event);
+				DEBUG_GPIO_HIGH(GPIO_4);
+				DEBUG_GPIO_LOW(GPIO_4);
+				_u32 retEvent = pTask->process(pTask->taskId,event);
                pTask->eventMask = retEvent;
 			}
 		}

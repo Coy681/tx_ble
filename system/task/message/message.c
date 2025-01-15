@@ -21,7 +21,6 @@ _u8* tx_message_allocate(_u16 len)
     {
         return NULL;
     }
-
 }
 
 txMessage_e tx_message_deallocate(_u8* message)
@@ -39,7 +38,7 @@ txMessage_e tx_message_deallocate(_u8* message)
     return TX_MESSAGE_SUCCESS;
 }
 
-static txMessage_e tx_message_enqueue(_u8* message)
+txMessage_e tx_message_enqueue(_u8* message)
 {
     if(message == NULL)
     {

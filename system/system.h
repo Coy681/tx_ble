@@ -8,6 +8,8 @@
 #ifndef SYSTEM_H_
 #define SYSTEM_H_
 
+#include"task/task.h"
+
 void system_init();
 
 

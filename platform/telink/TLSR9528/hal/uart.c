@@ -6,7 +6,7 @@
  */
 #include"driver.h"
 #include"../../hal/uart.h"
-#include "../../../../common/txCommon.h"
+#include "common/txCommon.h"
 
 hal_uart_rx_task hal_uart_rx_cb = NULL;
 hal_uart_tx_task hal_uart_tx_cb = NULL;
@@ -31,7 +31,8 @@ _RAM_CODE void uart_irq_handler(void)
 	{
     	if(hal_uart_rx_cb)
     	{
-    		hal_uart_rx_cb();
+			_u32 dataLen = uart_get_dma_rev_data_len(UART0,uartRxDma);
+    		hal_uart_rx_cb(dataLen);
     	}
     	uart_clr_irq_status(UART0,UART_RXDONE_IRQ_STATUS);
 	}

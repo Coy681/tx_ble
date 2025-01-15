@@ -70,8 +70,8 @@ target_link_options(proj_build PRIVATE -mcmodel=medium -fmessage-length=0 -fsign
 
 target_link_libraries(proj_build PRIVATE )
 
-
 # prebuild postbuild
+
 
 # add_custom_command(TARGET proj_build POST_BUILD COMMAND riscv32-elf-gcc -v)
 

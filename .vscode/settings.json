@@ -1,0 +1,12 @@
+{
+    "files.associations": {
+        "platform.h": "c",
+        "uart.h": "c",
+        "task.h": "c",
+        "message.h": "c",
+        "log.h": "c",
+        "gpio.h": "c",
+        "system.h": "c",
+        "event.h": "c"
+    }
+}

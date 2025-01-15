@@ -7,22 +7,41 @@
 
 #ifndef DEBUG_LOG_H_
 #define DEBUG_LOG_H_
-#include "../../common/txCommon.h"
-//typedef enum
-//{
-//	LOG_HARDWARE_NONE   = 0,
-//	LOG_HARDWARE_UART   = 1,
-//	LOG_HARDWARE_USB    = 2,
-//}log_hardware_e;
-//
+#include "common/txCommon.h"
+
+/******************define log input and output buffer*********/
 #define LOG_OUTPUT_BUFFER_NUMBER       16
 #define LOG_OUTPUT_BUFFER_SIZE         50
 
 #define LOG_INPUT_BUFFER_NUMBER        4
 #define LOG_INPUT_BUFFER_SIZE          50
-//
-//typedef void(*log_cmd_cb_f)(_u8* data,_u32 dataLen);
 
-//void log_init(log_mode_e traceMode,log_input_f inputCb);
+/******************define log event type**********************/
+#define LOG_TASK_EVENT_TX               BIT(0)
+#define LOG_TASK_EVENT_RX				BIT(1)
+
+/******************define log rx callback function typ********/
+typedef void(*log_receive_cb_f)(_u8* data,_u32 dataLen);
+
+/******************define log rx function*********************/
+
+/**
+ * @brief     This function is used to register log rx callback form hardware.
+ * @param[in] cb - log rx callback from upper layer.
+ * @return    none
+ */
+void log_register_rx_callback(log_receive_cb_f cb);
+
+/**
+ * @brief     This function is used to output log.
+ * @param[in] pString - data description.
+ * @param[in] pData   - data need to output.
+ * @param[in] dataLen - data length.
+ * @return    none
+ */
+void log_output(_u8* pString,_u8* pData,_u32 dataLen);
+
+/******************define log trace***************************/
+#define LOG_TRACE(EN,STR,DATA,LEN)     if(EN){log_output(STR,DATA,LEN);};
 
 #endif /* DEBUG_LOG_H_ */

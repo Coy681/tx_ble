@@ -11,7 +11,7 @@
 #include"../task.h"
 
 typedef void(*pTaskInit_f)(void);
-typedef _u16(*pTaskProcess_f)(_u32,_u32);
+typedef _u32(*pTaskProcess_f)(_u16,_u32);
 typedef struct txEvent txEvent_t;
 
 typedef struct txEvent
@@ -32,7 +32,7 @@ typedef enum
 }txTask_e;
 
 void      tx_task_init(void);
-txTask_e  tx_task_add(pTaskInit_f init,pTaskProcess_f process,txTaskPriority_e priority);
+txTask_e  tx_task_add(pTaskInit_f init,pTaskProcess_f process,txTaskId_e taskId,txTaskPriority_e priority);
 void      tx_task_start(void);
 txTask_t* tx_task_next_active(void);
 txTask_e  tx_task_set_event(_u16 taskId,_u32 event);

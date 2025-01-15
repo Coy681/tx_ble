@@ -32,6 +32,11 @@ typedef enum
 	TX_TASK_PRIORITY_15,
 }txTaskPriority_e;
 
+typedef enum
+{
+    TX_TASK_ID_LOG = 1,
+}txTaskId_e;
+
 
 
 #endif /* TASK_TASK_H_ */
