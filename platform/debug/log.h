@@ -11,10 +11,10 @@
 
 /******************define log input and output buffer*********/
 #define LOG_OUTPUT_BUFFER_NUMBER       16
-#define LOG_OUTPUT_BUFFER_SIZE         120
+#define LOG_OUTPUT_BUFFER_SIZE         240
 
 #define LOG_INPUT_BUFFER_NUMBER        4
-#define LOG_INPUT_BUFFER_SIZE          120
+#define LOG_INPUT_BUFFER_SIZE          240
 
 /******************define log event type**********************/
 #define LOG_TASK_EVENT_TX               BIT(0)
