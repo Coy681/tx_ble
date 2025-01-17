@@ -25,12 +25,12 @@ void trap_entry(void)
 {
 
 }
-
-_u8 test[5] = {0x11,0x22,0x33,0x44,0x55};
-
+void app_rx_cmd(_u8* data,_u32 len)
+{
+	LOG_TRACE(1,"rx data",data,len);
+}
 int main(void)
 {
-
 	//init call function
 	initcall_f pInit;
 	_u32 *pTemp;
@@ -42,23 +42,7 @@ int main(void)
     	pInit();
     }
 
-	LOG_TRACE(1,"log test",test,5)
-	test[0]++;
-
-	LOG_TRACE(1,"log test1",test,5)
-	test[0]++;
-
-	LOG_TRACE(1,"log test2",test,5)
-
-
+	log_register_rx_callback(app_rx_cmd);
 	tx_task_start();
-
-	// while(1)
-	// {
-    //     delay_ms(500);
-    //     LED_TOGGLE(LED_0);
-	// 	DEBUG_GPIO_HIGH(GPIO_0);
-	// 	DEBUG_GPIO_LOW(GPIO_0);
-	// }
     return 0;
 }

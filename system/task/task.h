@@ -34,7 +34,8 @@ typedef enum
 
 typedef enum
 {
-    TX_TASK_ID_LOG = 1,
+    TX_TASK_ID_LOG_TX = 1,
+    TX_TASK_ID_LOG_RX,
 }txTaskId_e;
 
 

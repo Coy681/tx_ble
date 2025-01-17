@@ -45,6 +45,7 @@ void tx_buffer_read_pointer_increase(txBuffer_t* pDatabase)
     pDatabase->database.blockRptr++;
 }
 
+_RAM_CODE
 _u32 tx_buffer_get_availble_data_length(txBuffer_t* pDatabase,_u32 dataLen)
 {
     _u32 len = (dataLen>pDatabase->database.blockSize?pDatabase->database.blockSize:dataLen);

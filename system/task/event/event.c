@@ -74,23 +74,25 @@ txTask_t* tx_task_next_active(void)
 	return NULL;
 }
 
+_u32 AAA_TEST_MASK = 0;
+_u32 AAA_TEST_MASK1 = 0;
 void tx_task_start(void)
 {
    txTask_t* pTask = NULL;
 	while(1)
 	{
-		DEBUG_GPIO_HIGH(GPIO_3);
-		DEBUG_GPIO_LOW(GPIO_3);
 		pTask = tx_task_next_active();
 		if(pTask)
 		{
 			_u32 event = pTask->eventMask;
+			AAA_TEST_MASK = event;
 			pTask->eventMask = 0;
 			if(pTask->process)
 			{
-				DEBUG_GPIO_HIGH(GPIO_4);
-				DEBUG_GPIO_LOW(GPIO_4);
+				DEBUG_GPIO_HIGH(GPIO_0);
+				DEBUG_GPIO_LOW(GPIO_0);
 				_u32 retEvent = pTask->process(pTask->taskId,event);
+				AAA_TEST_MASK1 = retEvent;
                pTask->eventMask = retEvent;
 			}
 		}
@@ -111,7 +113,7 @@ txTask_t* tx_task_search(_u16 taskId)
 	return NULL;
 }
 
-txTask_e tx_task_set_event(_u16 taskId,_u32 event)
+_RAM_CODE txTask_e tx_task_set_event(_u16 taskId,_u32 event)
 {
    txTask_t* pTarget = tx_task_search(taskId);
 	if(pTarget)
@@ -122,7 +124,7 @@ txTask_e tx_task_set_event(_u16 taskId,_u32 event)
 	return TX_TASK_NO_TASK;
 }
 
-txTask_e tx_task_clear_event(_u16 taskId,_u32 event)
+_RAM_CODE txTask_e tx_task_clear_event(_u16 taskId,_u32 event)
 {
    txTask_t* pTarget = tx_task_search(taskId);
 	if(pTarget)

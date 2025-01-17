@@ -11,14 +11,14 @@
 
 /******************define log input and output buffer*********/
 #define LOG_OUTPUT_BUFFER_NUMBER       16
-#define LOG_OUTPUT_BUFFER_SIZE         50
+#define LOG_OUTPUT_BUFFER_SIZE         120
 
 #define LOG_INPUT_BUFFER_NUMBER        4
-#define LOG_INPUT_BUFFER_SIZE          50
+#define LOG_INPUT_BUFFER_SIZE          120
 
 /******************define log event type**********************/
 #define LOG_TASK_EVENT_TX               BIT(0)
-#define LOG_TASK_EVENT_RX				BIT(1)
+#define LOG_TASK_EVENT_RX				BIT(0)
 
 /******************define log rx callback function typ********/
 typedef void(*log_receive_cb_f)(_u8* data,_u32 dataLen);
