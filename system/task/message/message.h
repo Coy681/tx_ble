@@ -1,8 +1,6 @@
 
 #include"common/txCommon.h"
 
-typedef struct txMessageHeader_t txMessageHeader_t;
-
 typedef struct txMessageHeader_t
 {
     _u8*   next;

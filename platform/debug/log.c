@@ -34,6 +34,7 @@ _RAM_CODE static void log_hardware_rx_irq(int len)
 
 static _u32 log_task_event_rx(_u16 taskId,_u32 event)
 {
+
     if(logInputBuffer.blockAvailble(&logInputBuffer))
     {
         _u32 dataLen = 0;
@@ -47,13 +48,20 @@ static _u32 log_task_event_rx(_u16 taskId,_u32 event)
     }
     return (event^LOG_TASK_EVENT_RX);
 }
-
 static _u32 log_task_input_event_message(_u16 taskId,_u32 event)
 {
     _u8* messsage = tx_message_receive(taskId);
-    while(messsage)
+    if(messsage)
+    {
+        LOG_TRACE(1,"log rx event",messsage,4);
+    }
+    while(messsage!=NULL)
     {
         messsage = tx_message_receive(taskId);
+        if(messsage)
+        {
+            LOG_TRACE(1,"log rx event",messsage,4);
+        }
     }
     return (event^TX_TASK_EVENT_MESSAGE);
 }
@@ -113,7 +121,6 @@ void log_output(_u8* pString,_u8* pData,_u32 dataLen)
     else if(calStrLen+3*calDataLen+6>logOutputBuffer.database.blockSize)
     {
         calDataLen = (logOutputBuffer.database.blockSize - calStrLen - 6)/3;
-
     }
 
     totalLen = calStrLen + 3*calDataLen + 2;

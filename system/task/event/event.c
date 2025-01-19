@@ -7,6 +7,7 @@
 
 #include"event.h"
 #include"platform/debug/debug_gpio.h"
+#include"tx_common.h"
 txTask_t* pHeader = NULL;
 void tx_task_init(void)
 {
