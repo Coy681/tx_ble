@@ -1,6 +1,7 @@
 #include"message.h"
 #include"../task.h"
 #include"../event/event.h"
+#include"tx_common.h"
 _u8* txMsgHdr;
 
 _u8* tx_message_allocate(_u16 len)
@@ -10,11 +11,13 @@ _u8* tx_message_allocate(_u16 len)
         return NULL;
     }
     txMessageHeader_t* pMessage = (txMessageHeader_t*)tx_malloc(len + sizeof(txMessageHeader_t));;
+    
     if(pMessage)
     {
         pMessage->next = NULL;
         pMessage->dataLen = len;
         pMessage->taskId = 0;
+        LOG_TRACE(1,"allocate message",(_u8*)&pMessage,4)
         return ((_u8*)(pMessage+1));
     }
     else
@@ -81,6 +84,7 @@ txMessage_e tx_message_send(_u16 destTaskId,_u8* message)
         tx_message_deallocate(message);
     }
     TX_MESSAGE_TASK_ID(message) = destTaskId;
+
     if(tx_message_enqueue(message)!=TX_MESSAGE_SUCCESS)
     {
         //assert
@@ -99,7 +103,7 @@ _u8* tx_message_receive(_u16 taskId)
     {
         if(TX_MESSAGE_TASK_ID(list) == taskId)
         {
-            if(message = NULL)
+            if(message == NULL)
             {
                 message = list;
             }
