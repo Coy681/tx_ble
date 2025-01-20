@@ -17,6 +17,12 @@ volatile static _u8  strToHex[] = "0123456789abcdef";
 txBuffer_t       logInputBuffer;
 log_receive_cb_f logRxCb;
 
+#define LOG_STATUS_BUSY         BIT(0)
+
+#define LOG_GET_STATUS          1
+#define LOG_SET_STATUS          2
+#define LOG_CLEAR_STATUS        3
+
 void log_register_rx_callback(log_receive_cb_f cb)
 {
     logRxCb = cb;
@@ -66,6 +72,7 @@ static _u32 log_task_input_event_message(_u16 taskId,_u32 event)
     return (event^TX_TASK_EVENT_MESSAGE);
 }
 
+
 static _u32 log_task_input_event_process(_u16 taskId,_u32 event)
 {
 
@@ -90,15 +97,31 @@ void log_input_init(void)
 /**************************log output process*******************************/
 txBuffer_t       logOutputBuffer;
 
+_RAM_CODE static int log_status_operation(_u8 operation)
+{
+
+    static _u8 status = 0;
+    if(operation == LOG_SET_STATUS)
+    {
+    	status |= LOG_STATUS_BUSY;
+    }
+    else if(operation == LOG_GET_STATUS)
+    {
+        return status;
+    }
+    else if(operation == LOG_CLEAR_STATUS)
+    {
+    	status &= (~LOG_STATUS_BUSY);
+    }
+    return 0;
+}
+
 _RAM_CODE static void log_hardware_tx_irq(void)
 {
+    log_status_operation(LOG_CLEAR_STATUS);
     if(logOutputBuffer.blockAvailble(&logOutputBuffer))
     {
-        _u32 dataLen = 0;
-        _u8* pData = logOutputBuffer.getReadPointer(&logOutputBuffer);
-        STREAM_TO_U32(dataLen,pData);
-        hal_uart_send_data(pData,dataLen);
-        logOutputBuffer.rPtrIncrease(&logOutputBuffer);
+		tx_task_set_event(TX_TASK_ID_LOG_TX,LOG_TASK_EVENT_TX);
     }
 }
 
@@ -155,13 +178,14 @@ static _u32 log_task_output_event_message(_u16 taskId,_u32 event)
 }
 static _u32 log_task_event_tx(_u16 taskId,_u32 event)
 {
-    if(logOutputBuffer.blockAvailble(&logOutputBuffer))
+    if(logOutputBuffer.blockAvailble(&logOutputBuffer)&&(!log_status_operation(LOG_GET_STATUS)))
     {
         _u32 dataLen = 0;
         _u8* pData = logOutputBuffer.getReadPointer(&logOutputBuffer);
         STREAM_TO_U32(dataLen,pData);
         hal_uart_send_data(pData,dataLen);
         logOutputBuffer.rPtrIncrease(&logOutputBuffer);
+        log_status_operation(LOG_SET_STATUS);
     }
     return (event^LOG_TASK_EVENT_TX);
 }

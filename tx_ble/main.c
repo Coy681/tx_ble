@@ -40,11 +40,12 @@ int main(void)
     	pInit();
     }
 	LOG_TRACE(1,"system start",0,0)
-    _u8* pData = tx_message_allocate(8);
-	pData[0] = 7;
-	pData[1] = 5;
-	LOG_TRACE(1,"message address",(_u8*)&pData,4)	
-	tx_message_send(TX_TASK_ID_LOG_RX,pData);
+//    _u8* pData = tx_message_allocate(8);
+//	pData[0] = 7;
+//	pData[1] = 5;
+//	LOG_TRACE(1,"message address",(_u8*)&pData,4)
+//	tx_message_send(TX_TASK_ID_LOG_RX,pData);
+
 	log_register_rx_callback(app_rx_cmd);
 	tx_task_start();
     return 0;
