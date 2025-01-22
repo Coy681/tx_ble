@@ -40,7 +40,7 @@ typedef enum
     HAL_RF_PHY_CODED_S8,
 }hal_rf_phy_e;
 
-typedef struct hal_rf_t
+typedef struct 
 {
     _u32           accessCode;
     _u32           crc;
@@ -48,12 +48,27 @@ typedef struct hal_rf_t
     hal_rf_phy_e   phy;
     _u8*           txAddress;
     _u8*           rxAddress;
-    void           (*rfPrepare)(void);
-    void           (*setCrc);
-    void           (*setPower);
-    void           (*txAddress);
-    void           (*rxAddress);
+    _u16           updateMask;
+}hal_rf_parameter_t;
 
+typedef enum
+{
+    HAL_RF_PARAM_ACCESS_CODE,
+    HAL_RF_PARAM_CRC,
+    HAL_RF_PARAM_PHY,
+    HAL_RF_PARAM_POWER,
+    HAL_RF_PARAM_TX_ADDRESS,
+    HAL_RF_PARAM_RX_ADDRESS,
+}hal_rf_parameter_e;
+
+typedef struct hal_rf_t
+{
+    hal_rf_parameter_t param;
+    void               (*updateParam)(hal_rf_parameter_e param,void* value);
+    void               (*txPrepare)(_u8*);
+    void               (*rxPrepare)(_u8*);
+    void               (*tx)(_u32);
+    void               (*rx)(_u32,_u32);
 }hal_rf_t;
 
 #define HAL_RF_SET_ADDRESS      0
