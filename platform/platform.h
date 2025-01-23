@@ -8,11 +8,25 @@
 #ifndef PLATFORM_H_
 #define PLATFORM_H_
 
-#include"hal/gpio.h"
-#include"hal/stimer.h"
-#include"hal/rf.h"
-#include"hal/uart.h"
-
 void platform_init(void);
+
+
+#ifndef PLATFORM_FEATURE_DEBUG_GPIO
+#define PLATFORM_FEATURE_DEBUG_GPIO 1
+#endif
+
+#ifndef PLATFORM_FEATURE_LED
+#define PLATFORM_FEATURE_LED 1
+#endif
+
+#ifndef PLATFORM_FEATURE_UART
+#define PLATFORM_FEATURE_UART 1
+#endif
+
+#ifndef PLATFORM_FEATURE_RF
+#define PLATFORM_FEATURE_RF 1
+#endif
+
+
 
 #endif /* PLATFORM_H_ */

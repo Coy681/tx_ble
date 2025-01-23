@@ -29,7 +29,6 @@ typedef enum
     HAL_RF_POWER_N6dBm,
     HAL_RF_POWER_N7dBm,
     HAL_RF_POWER_N8dBm,
-    
 }hal_rf_power_e;
 
 typedef enum
@@ -46,6 +45,8 @@ typedef struct
     _u32           crc;
     hal_rf_power_e power;
     hal_rf_phy_e   phy;
+    _u16           channel;
+    _u16           maxRxSize;        
     _u8*           txAddress;
     _u8*           rxAddress;
     _u16           updateMask;
@@ -57,26 +58,25 @@ typedef enum
     HAL_RF_PARAM_CRC,
     HAL_RF_PARAM_PHY,
     HAL_RF_PARAM_POWER,
-    HAL_RF_PARAM_TX_ADDRESS,
-    HAL_RF_PARAM_RX_ADDRESS,
+    HAL_RF_PARAM_CHANNEL,
+    HAL_RF_PARAM_MAX_RX_SIZE,
+    HAL_RF_PARAM_MAX,
 }hal_rf_parameter_e;
 
 typedef struct hal_rf_t
 {
     hal_rf_parameter_t param;
-    void               (*updateParam)(hal_rf_parameter_e param,void* value);
-    void               (*txPrepare)(_u8*);
-    void               (*rxPrepare)(_u8*);
-    void               (*tx)(_u32);
-    void               (*rx)(_u32,_u32);
+    void               (*updateParam)(hal_rf_parameter_e param,void value);
+    void               (*rfrepare)(void);
+    void               (*tx)(_u32,_u8*);
+    void               (*rx)(_u32,_u32,_u8*);
 }hal_rf_t;
 
-#define HAL_RF_SET_ADDRESS      0
-#define HAL_RF_GET_ADDRESS      1
+typedef void(*hal_rf_f)(void);
 
 void hal_rf_object_cast(hal_rf_t* object);
 
-void hal_rf_init(hal_rf_t* object,_u32 accessCode,_u32 crc);
+void hal_rf_register_task(hal_rf_t* object,_u32 accessCode,_u32 crc);
 
-
+void hal_rf_hardware_init(void);
 #endif /* HAL_RF_H_ */

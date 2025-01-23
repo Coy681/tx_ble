@@ -12,14 +12,20 @@
 
 void platform_init(void)
 {
-
 	sys_init(LDO_1P4_LDO_2P0, VBAT_MAX_VALUE_GREATER_THAN_3V6, GPIO_VOLTAGE_3V3, INTERNAL_CAP_XTAL24M);
     gpio_set_up_down_res(GPIO_SWS, GPIO_PIN_PULLUP_1M);
     wd_32k_stop();
     wd_stop();
     core_interrupt_enable();
-    hal_gpio_led_init();
+	#if(PLATFORM_FEATURE_DEBUG_GPIO)
     hal_gpio_debug_init();
+    #endif
+	#if(PLATFORM_FEATURE_LED)
+    hal_gpio_led_init();
+	#endif
+	#if(PLATFORM_FEATURE_RF)
+    hal_rf_hardware_init();
+	#endif
 
 }
 HAREWARE_INIT(platform_init);
