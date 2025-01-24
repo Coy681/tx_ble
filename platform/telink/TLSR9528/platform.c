@@ -17,16 +17,9 @@ void platform_init(void)
     wd_32k_stop();
     wd_stop();
     core_interrupt_enable();
-	#if(PLATFORM_FEATURE_DEBUG_GPIO)
     hal_gpio_debug_init();
-    #endif
-	#if(PLATFORM_FEATURE_LED)
     hal_gpio_led_init();
-	#endif
-	#if(PLATFORM_FEATURE_RF)
     hal_rf_hardware_init();
-	#endif
-
 }
 HAREWARE_INIT(platform_init);
 

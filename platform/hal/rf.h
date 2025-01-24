@@ -8,7 +8,6 @@
 #ifndef HAL_RF_H_
 #define HAL_RF_H_
 #include"tx_common.h"
-
 typedef enum 
 {
     HAL_RF_POWER_P9dBm = 0,
@@ -66,13 +65,11 @@ typedef enum
 typedef struct hal_rf_t
 {
     hal_rf_parameter_t param;
-    void               (*updateParam)(hal_rf_parameter_e param,void value);
+    void               (*updateParam)(hal_rf_parameter_e,_u32);
     void               (*rfrepare)(void);
     void               (*tx)(_u32,_u8*);
     void               (*rx)(_u32,_u32,_u8*);
 }hal_rf_t;
-
-typedef void(*hal_rf_f)(void);
 
 void hal_rf_object_cast(hal_rf_t* object);
 

@@ -40,12 +40,9 @@ int main(void)
     	pInit();
     }
 	LOG_TRACE(1,"system start",0,0)
-//    _u8* pData = tx_message_allocate(8);
-//	pData[0] = 7;
-//	pData[1] = 5;
-//	LOG_TRACE(1,"message address",(_u8*)&pData,4)
-//	tx_message_send(TX_TASK_ID_LOG_RX,pData);
-
+	DEBUG_GPIO_HIGH(GPIO_1);
+	DEBUG_GPIO_LOW(GPIO_1);
+	hal_stimer_set_capture(system_clock()+1000*SYSTEM_TIME_MS);
 	log_register_rx_callback(app_rx_cmd);
 	tx_task_start();
     return 0;

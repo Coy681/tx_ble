@@ -90,8 +90,6 @@ void tx_task_start(void)
 			pTask->eventMask = 0;
 			if(pTask->process)
 			{
-				DEBUG_GPIO_HIGH(GPIO_0);
-				DEBUG_GPIO_LOW(GPIO_0);
 				_u32 retEvent = pTask->process(pTask->taskId,event);
 				AAA_TEST_MASK1 = retEvent;
                pTask->eventMask = retEvent;
