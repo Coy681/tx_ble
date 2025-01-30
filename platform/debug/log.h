@@ -8,7 +8,7 @@
 #ifndef DEBUG_LOG_H_
 #define DEBUG_LOG_H_
 #include "common/txCommon.h"
-
+#include "config.h"
 /******************define log input and output buffer*********/
 #define LOG_OUTPUT_BUFFER_NUMBER       16
 #define LOG_OUTPUT_BUFFER_SIZE         240
@@ -42,6 +42,9 @@ void log_register_rx_callback(log_receive_cb_f cb);
 void log_output(_u8* pString,_u8* pData,_u32 dataLen);
 
 /******************define log trace***************************/
+#if(TX_DEBUG_LOG_ENABLE)
 #define LOG_TRACE(EN,STR,DATA,LEN)     if(EN){log_output(STR,DATA,LEN);};
-
+#else
+#define LOG_TRACE(EN,STR,DATA,LEN)      
+#endif
 #endif /* DEBUG_LOG_H_ */
