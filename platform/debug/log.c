@@ -5,7 +5,7 @@
  *      Author: Admin
  */
 
-#include "log.h"
+#include"log.h"
 #include"platform/platform.h"
 #include"system/task/task.h"
 #include"system/task/event/event.h"
@@ -217,5 +217,6 @@ void log_task_init(void)
     tx_task_add(log_output_init,log_task_output_event_process,TX_TASK_ID_LOG_TX,TX_TASK_PRIORITY_0);
     tx_task_add(log_input_init,log_task_input_event_process,TX_TASK_ID_LOG_RX,TX_TASK_PRIORITY_0);
 }
+#if(TX_DEBUG_LOG_ENABLE)
 TASK_INIT(log_task_init);
-
+#endif
