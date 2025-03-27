@@ -26,8 +26,8 @@ unsigned char  ble_tx_packet[48] __attribute__ ((aligned (4))) ={3,0,0,0,
 void system_init()
 {
 	tx_malloc_init();
-	hal_stimer_register_task(system_timer_task);
-	hal_rf_register_task(&ble_rf,0xd6be898e,0x555555);
+//	hal_stimer_register_task(system_timer_task);
+//	hal_rf_register_task(&ble_rf,0xd6be898e,0x555555);
 }
 ARCH_INIT(system_init);
 

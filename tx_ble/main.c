@@ -42,7 +42,8 @@ int main(void)
 	LOG_TRACE(1,"system start",0,0)
 	DEBUG_GPIO_HIGH(GPIO_1);
 	DEBUG_GPIO_LOW(GPIO_1);
-	hal_stimer_set_capture(system_clock()+1000*SYSTEM_TIME_MS);
+
+//	hal_stimer_set_capture(system_clock()+1000*SYSTEM_TIME_MS);
 	log_register_rx_callback(app_rx_cmd);
 	tx_task_start();
     return 0;
