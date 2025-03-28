@@ -13,3 +13,4 @@
 #include "malloc/txMalloc.h"
 #include "list/txList.h"
 #include "heap/txHeap.h"
+#include "txUtility.h"

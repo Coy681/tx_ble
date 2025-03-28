@@ -12,6 +12,15 @@
 
 #include"system/task/message/message.h"
 
+#include"system/ble/controller/state.h"
+
+volatile _u32 AAA_Mcause = 0;
+volatile _u32 AAA_Mtval = 0;
+volatile _u32 AAA_Mpec = 0;
+volatile _u32 AAA_Mstatus = 0;
+volatile _u32 AAA_Mdcause = 0;
+volatile _u32 AAA_Ra = 0;
+
 /**
  * @brief       This function service to handle all the platform pre-defined interrupt or exception.
  * @return      none
@@ -20,12 +29,41 @@ void trap_entry(void) __attribute__((interrupt("machine"), aligned(4)));
 
 void trap_entry(void)
 {
-
+	AAA_Mtval   = read_csr(NDS_MTVAL);
+	AAA_Mpec    = read_csr(NDS_MEPC);
+	AAA_Mstatus = read_csr(NDS_MSTATUS);
+	AAA_Mcause  = read_csr(NDS_MCAUSE);
+    AAA_Mdcause = read_csr(NDS_MDCAUSE);
 }
+
 void app_rx_cmd(_u8* data,_u32 len)
 {
 	LOG_TRACE(1,"rx data",data,len)
+	switch(data[0])
+	{
+		case 1:
+			ble_ll_process_event(&bleLLStateMachine,BLE_LL_EVENT_START_ADVERTISING);
+			break;
+		case 2:
+			ble_ll_process_event(&bleLLStateMachine,BLE_LL_EVENT_STOP_ADVERTISING);
+			break;
+		case 3:
+			ble_ll_process_event(&bleLLStateMachine,BLE_LL_EVENT_START_INITIATING);
+			break;
+		case 4:
+			ble_ll_process_event(&bleLLStateMachine,BLE_LL_EVENT_STOP_INITIATING);
+			break;
+		case 5:
+			ble_ll_process_event(&bleLLStateMachine,BLE_LL_EVENT_START_CONNECTION);
+			break;
+		case 6:
+			ble_ll_process_event(&bleLLStateMachine,BLE_LL_EVENT_STOP_CONNECTION);
+			break;
+		default:
+			break;
+	}
 }
+
 
 int main(void)
 {

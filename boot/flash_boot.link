@@ -68,6 +68,7 @@ SECTIONS
              KEEP(*(.initcall.4.init))
              KEEP(*(.initcall.5.init))
              _INIT_END = .;}
+    . = ALIGN(8);       
 	.text 			: AT(ALIGN(LOADADDR (.initcalls) + SIZEOF (.initcalls), 8)) 
 		{ *(.text .stub .text.* .gnu.linkonce.t.* ) KEEP(*(.text.*personality* )) *(.gnu.warning )  }
 	.rodata 		: AT(ALIGN(LOADADDR (.text) + SIZEOF (.text), ALIGNOF(.rodata))) 

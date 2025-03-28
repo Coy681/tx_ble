@@ -42,15 +42,17 @@ typedef enum
 
     BLE_LL_EVENT_START_CONNECTION,
     BLE_LL_EVENT_STOP_CONNECTION,
+
+	BLE_LL_EVENT_MAX,
 }ble_ll_event_e;
 
-typedef ble_ll_state_e(*ble_ll_event_handler)(ble_ll_event_e);
+typedef int(*ble_ll_event_cb)(ble_ll_event_e);
 
-typedef struct 
+typedef struct _PACKED
 {
     ble_ll_state_e       state;
-    ble_ll_event_handler handler;
 }ble_ll_state_machine_t;
 
+void ble_ll_process_event(ble_ll_state_machine_t* sm,ble_ll_event_e event);
 
-
+extern ble_ll_state_machine_t bleLLStateMachine;

@@ -18,6 +18,8 @@
 
 #define _NO_INLINE               __attribute__((noinline)) 
 
+#define _PACKED                  __attribute__((packed))
+
 /******************define init call functions**********************/
 typedef void(*initcall_f)(void);
 #define _initcall_name(fn,level)    _initcall_##fn##_##level
