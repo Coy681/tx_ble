@@ -12,8 +12,15 @@
 
  typedef struct _PACKED
  {
-    _u16 ocf:10; //opcode command field
-    _u16 ogf:6;  //opcode group field,0x3e reserved for specification development,0x3f reserved for vendor-specific debug.
+	 union
+	 {
+		 _u16 opcode;
+		 struct
+		 {
+			_u16 ocf:10; //opcode command field
+			_u16 ogf:6;  //opcode group field,0x3e reserved for specification development,0x3f reserved for vendor-specific debug.
+		 };
+	 };
     _u8  length; //fix size in each specific command.
     _u8  data[1];
  }bt_hci_command_t;
@@ -162,3 +169,7 @@ typedef enum
 
 
 
+
+ void hci_acl_data_packet_process(_u8* data);
+
+ void hci_iso_packet_process(_u8* data);

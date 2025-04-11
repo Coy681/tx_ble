@@ -30,7 +30,7 @@ typedef struct txBuffer_t
 	void        (*wPtrIncrease)(txBuffer_t*);
 	void        (*rPtrIncrease)(txBuffer_t*);
 	_u32        (*getDataLen)(txBuffer_t*,_u32 dataLen);
-}txBuffer_t;
+};
 
 
 void txBuffer_init(txBuffer_t* pDatabase,_u8* pointer,_u16 num,_u32 size);

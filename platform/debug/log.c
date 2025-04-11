@@ -40,7 +40,6 @@ _RAM_CODE static void log_hardware_rx_irq(int len)
 
 static _u32 log_task_event_rx(_u16 taskId,_u32 event)
 {
-
     if(logInputBuffer.blockAvailble(&logInputBuffer))
     {
         _u32 dataLen = 0;
