@@ -1,5 +1,21 @@
 #include"command.h"
 #include"event.h"
+#include"data.h"
+
+typedef void(*hci_command_f)(_u8* data,_u8 length);
+
+typedef struct 
+{
+	hci_command_link_control_e ocf;
+	hci_command_f              process;
+}hci_command_link_policy_t;
+
+static const hci_command_link_policy_t hci_command_link_control[20] = 
+{
+    {HCI_INQUIRY_COMMAND,NULL},
+    {},
+}
+
 
 static void hci_command_link_control(_u16 ocf,_u8 length,_u8* data)
 {
