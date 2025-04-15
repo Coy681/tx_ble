@@ -10,6 +10,7 @@ typedef enum
 	HCI_COMMAND_STATUS_PARAMETERS        = 0x05,
 	HCI_COMMAND_TESTING                  = 0x06,
 	HCI_COMMAND_LE_CONTROLLER            = 0x08,
+	HCI_COMMAND_MAX                      = 0x09,
 }hci_command_e;
 
 typedef enum
@@ -209,7 +210,7 @@ typedef enum{
 	HCI_ENABLE_IMPLEMENTATION_UNDER_TEST_MODE_COMMAND    = 0x03,
 	HCI_WRITE_SIMPLE_PAIRING_DEBUG_MODE_COMMAND          = 0x04,
 	HCI_WRITE_SECURE_CONNECTIONS_TEST_MODE_COMMAND       = 0x0a,
-}hci_command_testing_e
+}hci_command_testing_e;
 
 
 typedef enum 

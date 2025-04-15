@@ -1,9 +1,3 @@
-/*
- * error_code.h
- *
- *  Created on: 2025年4月11日
- *      Author: Admin
- */
 
 #ifndef BLE_CONTROLLER_ERROR_CODE_H_
 #define BLE_CONTROLLER_ERROR_CODE_H_
@@ -52,15 +46,15 @@ typedef enum{
     INSTANT_PASSED                                    = 0x28,
     PAIRING_WITH_UNIT_KEY_NOT_SUPPORTED               = 0x29,
     DIFFERENT_TRANSACTION_COLLISION                   = 0x2A,
-    RESERVED_FOR_FUTURE_USE                           = 0x2B,
+    RESERVED_FOR_FUTURE_USE_0                         = 0x2B,
     QOS_UNACCEPTABLE_PARAMETER                        = 0x2C,
     QOS_REJECTED                                      = 0x2D,
     CHANNEL_CLASSIFICATION_NOT_SUPPORTED              = 0x2E,
     INSUFFICIENT_SECURITY                             = 0x2F,
     PARAMETER_OUT_OF_MANDATORY_RANGE                  = 0x30,
-    RESERVED_FOR_FUTURE_USE                           = 0x31,
+    RESERVED_FOR_FUTURE_USE_1                         = 0x31,
     ROLE_SWITCH_PENDING                               = 0x32,
-    RESERVED_FOR_FUTURE_USE                           = 0x33,
+    RESERVED_FOR_FUTURE_USE_2                         = 0x33,
     RESERVED_SLOT_VIOLATION                           = 0x34,
     ROLE_SWITCH_FAILED                                = 0x35,
     EXTENDED_INQUIRY_RESPONSE_TOO_LARGE               = 0x36,

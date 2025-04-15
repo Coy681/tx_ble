@@ -4,6 +4,7 @@
 #include"system/task//message/message.h"
 #include"command.h"
 #include"data.h"
+#include"platform/platform.h"
 ble_hci_ctrl_t *hciCtrl;
 
 typedef void(*hci_flow_type_f)(_u8*);
@@ -77,7 +78,7 @@ static void ble_hci_tx_init()
 /******************************ble hci rx process********************************/
 void ble_hci_data_distribute(_u8* data,_u32 dataLen)
 {
-    if(data[0]<BLE_HCI_DATA_TYPE_MAX)
+    if(data[0]<BLE_HCI_DATA_TYPE_MAX && hci_packet_distribute[data[0]]!=NULL)
     {
     	hci_packet_distribute[data[0]](&data[1]);
     }
