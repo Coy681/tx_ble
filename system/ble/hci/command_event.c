@@ -1,10 +1,46 @@
-#include"command.h"
-#include"event.h"
 #include"data.h"
-#include"../controller/error_code.h"
+#include"command_event.h"
+#include"hci.h"
+/********************************hci event define*****************************/
+typedef struct _PACKED
+{
+    _u8  status;
+    _u8  numOfCmd;
+    _u16 opcode;
+}hci_event_command_status_t;
+
+static bt_hci_event_t* hci_command_status_event(_u16 opcode,controller_error_code_e status)
+{
+    _u8 data[10];
+    bt_hci_event_t* event = (bt_hci_event_t*)&data[0];
+    hci_event_command_status_t *param = (hci_event_command_status_t*)&event->parameter[0];
+    event->eventCode = HCI_COMMAND_STATUS_EVENT;
+    event->length = sizeof(hci_event_command_status_t);
+    param->numOfCmd = 1;
+    param->opcode = opcode;
+    param->status = status;
+    return event;
+}
+
+typedef struct _PACKED
+{
+    _u8  numOfCmd;
+    _u16 opcode;
+    _u8  data[0];
+}hci_event_command_complete_t;
+
+static void* hci_command_complete_event(_u16 opcode,_u8 len,bt_hci_event_t **event)
+{
+    _u8 data[256];
+    *event = (bt_hci_event_t*)&data[0];
+    (*event)->eventCode = HCI_COMMAND_COMPLETE_EVENT;
+    (*event)->length = len;
+    return (*event)->parameter;
+}
 
 
-typedef controller_error_code_e(*hci_command_f)(_u8* data,_u8 length);
+/********************************hci command define*****************************/
+typedef controller_error_code_e(*hci_command_f)(_u8* data,_u8 length,bt_hci_event_t** event);
 
 typedef struct 
 {
@@ -12,7 +48,9 @@ typedef struct
 	hci_command_f              process;
 }hci_command_t;
 
-#define HCI_COMMAND_LIST_LENGTH(hci_comand_list)      (sizeof(hci_comand_list)/sizeof(hci_comand_list[0]))
+#define HCI_COMMAND_LIST_LENGTH(hci_command_list)      (sizeof(hci_command_list)/sizeof(hci_command_list[0]))
+#define HCI_COMMAND_LENGTH(hci_command_array)          (sizeof(hci_command_array)/sizeof(hci_command_array[0]))
+static _u16 opcode = 0;
 
 static const hci_command_t hci_command_link_control_list[] =
 {
@@ -78,10 +116,30 @@ static const hci_command_t hci_command_link_policy_list[] =
     {HCI_SNIFF_SUBRATING_COMMAND, NULL}
 };
 
+struct hci_command_reset_retParam_t
+{
+    _u8 status;
+};
+controller_error_code_e hci_reset_command(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    struct hci_command_reset_retParam_t* param;
+
+    controller_error_code_e status = ll_reset();
+    if(status == SUCCESS)
+    {
+        param = hci_command_complete_event(opcode,sizeof(struct hci_command_reset_retParam_t),event);
+        param->status = status;
+    }
+    else
+    {
+        return status;
+    }
+}
+
 static const hci_command_t hci_command_controller_baseband_list[] =
 {
     {HCI_SET_EVENT_MASK_COMMAND, NULL},
-    {HCI_RESET_COMMAND, NULL},
+    {HCI_RESET_COMMAND, hci_reset_command},
     {HCI_SET_EVENT_FILTER_COMMAND, NULL},
     {HCI_FLUSH_COMMAND, NULL},
     {HCI_READ_PIN_TYPE_COMMAND, NULL},
@@ -375,36 +433,55 @@ static const hci_command_t hci_command_le_controller_list[] =
     {HCI_LE_FRAME_SPACE_UPDATE_COMMAND, NULL}
 };
 
+static const hci_command_t hci_command_vendor_specific_list[] =
+{
+    {0, NULL},
+};
+
 typedef struct
 {
+    hci_command_e        command;
 	hci_command_t const *pArray;
 	_u32                 conut;
 }hci_command_array_t;
 
 static const hci_command_array_t hci_cmd_handlers[] =
 {
-	{hci_command_link_control_list,            HCI_COMMAND_LIST_LENGTH(hci_command_link_control_list)},
-	{hci_command_link_policy_list,             HCI_COMMAND_LIST_LENGTH(hci_command_link_policy_list)},
-	{hci_command_controller_baseband_list,     HCI_COMMAND_LIST_LENGTH(hci_command_controller_baseband_list)},
-	{hci_command_informational_parameters_list,HCI_COMMAND_LIST_LENGTH(hci_command_informational_parameters_list)},
-	{hci_command_status_parameters_list,       HCI_COMMAND_LIST_LENGTH(hci_command_status_parameters_list)},
-	{hci_command_testing_list,                 HCI_COMMAND_LIST_LENGTH(hci_command_testing_list)},
-	{NULL,                                     0},
-	{hci_command_le_controller_list,           HCI_COMMAND_LIST_LENGTH(hci_command_le_controller_list)},
+	{HCI_COMMAND_LINK_CONTROL,             hci_command_link_control_list,            HCI_COMMAND_LIST_LENGTH(hci_command_link_control_list)},
+	{HCI_COMMAND_LINK_POLICY,              hci_command_link_policy_list,             HCI_COMMAND_LIST_LENGTH(hci_command_link_policy_list)},
+	{HCI_COMMAND_CONTROLLER_BASEBAND,      hci_command_controller_baseband_list,     HCI_COMMAND_LIST_LENGTH(hci_command_controller_baseband_list)},
+	{HCI_COMMAND_INFORMATIONAL_PARAMETERS, hci_command_informational_parameters_list,HCI_COMMAND_LIST_LENGTH(hci_command_informational_parameters_list)},
+	{HCI_COMMAND_STATUS_PARAMETERS,        hci_command_status_parameters_list,       HCI_COMMAND_LIST_LENGTH(hci_command_status_parameters_list)},
+	{HCI_COMMAND_TESTING,                  hci_command_testing_list,                 HCI_COMMAND_LIST_LENGTH(hci_command_testing_list)},
+	{HCI_COMMAND_LE_CONTROLLER,            hci_command_le_controller_list,           HCI_COMMAND_LIST_LENGTH(hci_command_le_controller_list)},
+    {HCI_COMMAND_VENDOR_SPECIFIC,          NULL,                                     0},
 };
 
 void hci_command_packet_process(_u8* data)
 {
 	bt_hci_command_t* hciCommand = (bt_hci_command_t*)data;
-	if(hciCommand->ogf<HCI_COMMAND_MAX && hci_cmd_handlers[hciCommand->ogf].pArray!=NULL)
-	{
-		_u32 listLen = hci_cmd_handlers[hciCommand->ogf].conut;
-		for(_u32 i=0 ;i<listLen;i++)
-		{
-			if(hci_cmd_handlers[hciCommand->ogf].pArray[i].ocf == hciCommand->ocf)
-			{
-				_u32 ret = hci_cmd_handlers[hciCommand->ogf].pArray[i].process(hciCommand->data,hciCommand->length);
-			}
-		}
-	}
+    bt_hci_event_t* event = NULL;
+    int status = UNKNOWN_HCI_COMMAND;
+    for(_u8 i=0;i<HCI_COMMAND_LENGTH(hci_cmd_handlers);i++)
+    {
+        if(hci_cmd_handlers[i].command == hciCommand->ogf)
+        {
+            _u32 listLen = hci_cmd_handlers[hciCommand->ogf].conut;
+            for(_u32 j=0 ;j<listLen;j++)
+            {
+                if(hci_cmd_handlers[hciCommand->ogf].pArray[j].ocf == hciCommand->ocf)
+                {
+                    status = hci_cmd_handlers[hciCommand->ogf].pArray[j].process(hciCommand->data,hciCommand->length,&event);
+                }
+            }
+        }
+    }
+    if(status == UNKNOWN_HCI_COMMAND)
+    {
+        event = hci_command_status_event(hciCommand->opcode,UNKNOWN_HCI_COMMAND);
+    }
+    if(event!=NULL)
+    {
+        ble_hci_send_data(BLE_HCI_EVENT_PACKET,(_u8*)event,2+event->length);
+    }
 }

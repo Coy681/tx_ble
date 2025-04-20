@@ -1,4 +1,10 @@
-#include"common/txCommon.h"
+#ifndef HCI_H_
+#define HCI_H_
+
+#include"../controller/ll.h"
+#include"data.h"
+#include"command_event.h"
+
 
 #ifndef BLE_HCI_TX_BUFFER_NUM
 #define BLE_HCI_TX_BUFFER_NUM 8
@@ -19,7 +25,6 @@
 #define BLE_HCI_EVENT_TX       BIT(0)
 #define BLE_HCI_EVENT_RX       BIT(0)
 
-
 typedef enum
 {
 	BLE_HCI_COMMAND_PACKET          = 0x01,
@@ -37,3 +42,5 @@ typedef struct _PACKET
 }ble_hci_ctrl_t;
 
 void ble_hci_send_data(ble_hci_data_type_e type,_u8* data,_u32 dataLen);
+
+#endif/*HCI_H_*/

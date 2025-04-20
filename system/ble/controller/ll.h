@@ -1,8 +1,7 @@
+#include"common/txCommon.h"
 
-#ifndef BLE_CONTROLLER_ERROR_CODE_H_
-#define BLE_CONTROLLER_ERROR_CODE_H_
-
-typedef enum{
+typedef enum
+{
     SUCCESS                                           = 0x00,
     UNKNOWN_HCI_COMMAND                               = 0x01,
     UNKNOWN_CONNECTION_IDENTIFIER                     = 0x02,
@@ -78,4 +77,6 @@ typedef enum{
     INSUFFICIENT_CHANNELS                             = 0x48,
 }controller_error_code_e;
 
-#endif /* BLE_CONTROLLER_ERROR_CODE_H_ */
+
+
+controller_error_code_e ll_reset(void);

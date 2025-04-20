@@ -9,6 +9,13 @@
         "system.h": "c",
         "event.h": "c",
         "tx_common.h": "c",
-        "state.h": "c"
+        "state.h": "c",
+        "ll.h": "c",
+        "txcommon.h": "c",
+        "data.h": "c",
+        "command.h": "c",
+        "hci.h": "c",
+        "txgeneral.h": "c",
+        "command_event.h": "c"
     }
 }

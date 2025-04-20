@@ -5,6 +5,8 @@
  *      Author: Admin
  */
 
+ #ifndef TX_COMMON_H_
+ #define TX_COMMON_H_
 #include "txAttribute.h"
 #include "txBuffer.h"
 #include "txGeneral.h"
@@ -14,3 +16,4 @@
 #include "list/txList.h"
 #include "heap/txHeap.h"
 #include "txUtility.h"
+#endif

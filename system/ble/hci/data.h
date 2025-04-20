@@ -1,4 +1,5 @@
-
+#ifndef HCI_DATA_H_
+#define HCI_DATA_H_
 #include"common/txCommon.h"
 
 /** HCI command packet format
@@ -173,3 +174,5 @@ typedef enum
  void hci_acl_data_packet_process(_u8* data);
 
  void hci_iso_packet_process(_u8* data);
+
+ #endif/*HCI_DATA_H_ */

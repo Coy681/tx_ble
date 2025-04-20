@@ -1,10 +1,9 @@
-#include"hci.h"
+
 #include"system/task/task.h"
 #include"system/task//event/event.h"
 #include"system/task//message/message.h"
-#include"command.h"
-#include"data.h"
 #include"platform/platform.h"
+#include"hci.h"
 ble_hci_ctrl_t *hciCtrl;
 
 typedef void(*hci_flow_type_f)(_u8*);
@@ -27,7 +26,7 @@ void ble_hci_send_data(ble_hci_data_type_e type,_u8* data,_u32 dataLen)
 		_u8* pBuffer = hciCtrl->txBuffer.getWritePointer(&hciCtrl->txBuffer);
 		U32_TO_STREAM(pBuffer,(dataLen+1));
 	    *pBuffer++ = (_u8)type;
-		tmemcpy(pBuffer,data,dataLen);
+		txMemcpy(pBuffer,data,dataLen);
 		hciCtrl->txBuffer.wPtrIncrease(&hciCtrl->txBuffer);
 	}
 }
