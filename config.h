@@ -11,7 +11,7 @@
 
 #define TX_DEBUG_LED_ENABLE              1
 
-#define TX_DEBUG_LOG_ENABLE              1
+#define TX_DEBUG_LOG_ENABLE              0
 
 /***************** redio configure********************/
 

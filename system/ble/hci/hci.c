@@ -8,8 +8,9 @@ ble_hci_ctrl_t *hciCtrl;
 
 typedef void(*hci_flow_type_f)(_u8*);
 
-hci_flow_type_f hci_packet_distribute[5]=
+hci_flow_type_f hci_packet_distribute[6]=
 {
+	0,
     hci_command_packet_process,
 	hci_acl_data_packet_process,
 	0,//hci_synchronous_data_packet_process,bt use,no process now
@@ -79,14 +80,14 @@ void ble_hci_data_distribute(_u8* data,_u32 dataLen)
 {
     if(data[0]<BLE_HCI_DATA_TYPE_MAX && hci_packet_distribute[data[0]]!=NULL)
     {
-    	hci_packet_distribute[data[0]](&data[1]);
+    	hci_packet_distribute[data[0]](data+1);
     }
 }
 
 static void ble_hci_hardware_rx_irq(int len)
 {
 	_u8* p = hciCtrl->rxBuffer.getWritePointer(&hciCtrl->rxBuffer);
-	STREAM_TO_U32(len,p);
+	U32_TO_STREAM(p,len);
 	tx_task_set_event(TX_TASK_ID_HCI_CONTROLLER_RX,BLE_HCI_EVENT_RX);
 	hciCtrl->rxBuffer.wPtrIncrease(&hciCtrl->rxBuffer);
     _u8* pReveive = hciCtrl->rxBuffer.getWritePointer(&hciCtrl->rxBuffer);
@@ -136,8 +137,8 @@ static void ble_hci_rx_init()
 static void ble_hci_init(void)
 {
 	hal_uart_register_task(HAL_UART_BAUDRATE_1000000,ble_hci_hardware_rx_irq,ble_hci_hardware_tx_irq,HAL_UART_PARITY_NONE,HAL_UART_STOP_BITE_ONE);
-    tx_task_add(ble_hci_rx_init,ble_hci_rx_event_process,TX_TASK_ID_HCI_CONTROLLER_TX,TX_TASK_PRIORITY_15);
-    tx_task_add(ble_hci_tx_init,ble_hci_tx_evet_process,TX_TASK_ID_HCI_CONTROLLER_RX,TX_TASK_PRIORITY_15);
+    tx_task_add(ble_hci_rx_init,ble_hci_rx_event_process,TX_TASK_ID_HCI_CONTROLLER_RX,TX_TASK_PRIORITY_15);
+    tx_task_add(ble_hci_tx_init,ble_hci_tx_evet_process,TX_TASK_ID_HCI_CONTROLLER_TX,TX_TASK_PRIORITY_15);
     //tx buffer malloc
     hciCtrl = (ble_hci_ctrl_t*)tx_malloc(sizeof(ble_hci_ctrl_t));
     if(hciCtrl == NULL)
