@@ -75,9 +75,12 @@ static void ble_hci_tx_init()
     txBuffer_init(&hciCtrl->txBuffer,buffer,BLE_HCI_TX_BUFFER_NUM,BLE_HCI_TX_BUFFER_SIZE);
 }
 
+volatile _u8 AAA_HCI_BUFFER[16];
 /******************************ble hci rx process********************************/
 void ble_hci_data_distribute(_u8* data,_u32 dataLen)
 {
+	txMemcpy(AAA_HCI_BUFFER,data,10);
+	AAA_HCI_BUFFER[5] = 0x77;
     if(data[0]<BLE_HCI_DATA_TYPE_MAX && hci_packet_distribute[data[0]]!=NULL)
     {
     	hci_packet_distribute[data[0]](data+1);
@@ -146,4 +149,5 @@ static void ble_hci_init(void)
     	//assert
     }
 }
+
 TASK_INIT(ble_hci_init);

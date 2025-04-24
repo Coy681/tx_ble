@@ -29,12 +29,15 @@ typedef struct _PACKED
     _u8  data[0];
 }hci_event_command_complete_t;
 
+_u8 hci_event_data[256];
 static void* hci_command_complete_event(_u16 opcode,_u8 len,bt_hci_event_t **event)
 {
-    _u8 data[256];
-    *event = (bt_hci_event_t*)&data[0];
+    *event = (bt_hci_event_t*)&hci_event_data[0];
     (*event)->eventCode = HCI_COMMAND_COMPLETE_EVENT;
     (*event)->length = len;
+    hci_event_command_complete_t * command = (hci_event_command_complete_t *)(*event)->length
+
+
     return (*event)->parameter;
 }
 
@@ -120,15 +123,18 @@ struct hci_command_reset_retParam_t
 {
     _u8 status;
 };
+
+volatile _u8 AAA_RETURN_PARAM[20];
+
 controller_error_code_e hci_reset_command(_u8* data,_u8 length,bt_hci_event_t** event)
 {
     struct hci_command_reset_retParam_t* param;
-
     controller_error_code_e status = ll_reset();
     if(status == SUCCESS)
     {
         param = hci_command_complete_event(opcode,sizeof(struct hci_command_reset_retParam_t),event);
-        param->status = status;
+        param->status = 0x88;
+		txMemcpy((_u8*)AAA_RETURN_PARAM,*event,20);
     }
     else
     {
@@ -457,31 +463,40 @@ static const hci_command_array_t hci_cmd_handlers[] =
     {HCI_COMMAND_VENDOR_SPECIFIC,          NULL,                                     0},
 };
 
+volatile _u8 AAA_COMMAND_BUFFER[16];
+volatile _u8 AAA_COMMAND_i;
+volatile _u8 AAA_COMMAND_j;
+volatile _u32 AAA_COMMAND_ADDRESS;
 void hci_command_packet_process(_u8* data)
 {
+    txMemcpy((_u8*)AAA_COMMAND_BUFFER,data,10);
 	bt_hci_command_t* hciCommand = (bt_hci_command_t*)data;
     bt_hci_event_t* event = NULL;
     int status = UNKNOWN_HCI_COMMAND;
+
     for(_u8 i=0;i<HCI_COMMAND_LENGTH(hci_cmd_handlers);i++)
     {
         if(hci_cmd_handlers[i].command == hciCommand->ogf)
         {
-            _u32 listLen = hci_cmd_handlers[hciCommand->ogf].conut;
+            _u32 listLen = hci_cmd_handlers[i].conut;
             for(_u32 j=0 ;j<listLen;j++)
             {
-                if(hci_cmd_handlers[hciCommand->ogf].pArray[j].ocf == hciCommand->ocf)
+                if(hci_cmd_handlers[i].pArray[j].ocf == hciCommand->ocf)
                 {
-                    status = hci_cmd_handlers[hciCommand->ogf].pArray[j].process(hciCommand->data,hciCommand->length,&event);
+                	AAA_COMMAND_i = i;
+                	AAA_COMMAND_j = j;
+                    status = hci_cmd_handlers[i].pArray[j].process(hciCommand->data,hciCommand->length,&event);
                 }
             }
         }
     }
-    if(status == UNKNOWN_HCI_COMMAND)
-    {
-        event = hci_command_status_event(hciCommand->opcode,UNKNOWN_HCI_COMMAND);
-    }
-    if(event!=NULL)
-    {
-        ble_hci_send_data(BLE_HCI_EVENT_PACKET,(_u8*)event,2+event->length);
-    }
+    AAA_COMMAND_ADDRESS = (_u32)(event);
+//    if(status == UNKNOWN_HCI_COMMAND)
+//    {
+//        event = hci_command_status_event(hciCommand->opcode,UNKNOWN_HCI_COMMAND);
+//    }
+//    if(event!=NULL)
+//    {
+//        ble_hci_send_data(BLE_HCI_EVENT_PACKET,(_u8*)event,2+event->length);
+//    }
 }
