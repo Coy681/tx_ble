@@ -2,21 +2,34 @@
 #include"command_event.h"
 #include"hci.h"
 /********************************hci event define*****************************/
+static _u8  hci_event_buffer[256];
+static _u16 hciCommandOpcode; 
+#define HCI_NUMBER_OF_COMMAND_PACKETS               1
+
+
+static void* hci_event(_s32 eventCode,_u8 len,bt_hci_event_t** event)
+{
+    *event = (bt_hci_event_t*)hci_event_buffer;
+    (*event)->eventCode = eventCode;
+    (*event)->length    = len;
+    return (*event)->parameter;
+}
+
+
 typedef struct _PACKED
 {
     _u8  status;
     _u8  numOfCmd;
     _u16 opcode;
 }hci_event_command_status_t;
-
 static bt_hci_event_t* hci_command_status_event(_u16 opcode,controller_error_code_e status)
 {
     _u8 data[10];
-    bt_hci_event_t* event = (bt_hci_event_t*)&data[0];
+    bt_hci_event_t* event = (bt_hci_event_t*)hci_event_buffer;
     hci_event_command_status_t *param = (hci_event_command_status_t*)&event->parameter[0];
     event->eventCode = HCI_COMMAND_STATUS_EVENT;
     event->length = sizeof(hci_event_command_status_t);
-    param->numOfCmd = 1;
+    param->numOfCmd = HCI_NUMBER_OF_COMMAND_PACKETS;
     param->opcode = opcode;
     param->status = status;
     return event;
@@ -28,19 +41,13 @@ typedef struct _PACKED
     _u16 opcode;
     _u8  data[0];
 }hci_event_command_complete_t;
-
-_u8 hci_event_data[256];
 static void* hci_command_complete_event(_u16 opcode,_u8 len,bt_hci_event_t **event)
 {
-    *event = (bt_hci_event_t*)&hci_event_data[0];
-    (*event)->eventCode = HCI_COMMAND_COMPLETE_EVENT;
-    (*event)->length = len;
-    hci_event_command_complete_t * command = (hci_event_command_complete_t *)(*event)->length
-
-
-    return (*event)->parameter;
+    hci_event_command_complete_t * command =  (hci_event_command_complete_t*)hci_event((_s32)HCI_COMMAND_COMPLETE_EVENT,3,event);
+    command->numOfCmd = HCI_NUMBER_OF_COMMAND_PACKETS;
+    command->opcode   = opcode;
+    return command->data;
 }
-
 
 /********************************hci command define*****************************/
 typedef controller_error_code_e(*hci_command_f)(_u8* data,_u8 length,bt_hci_event_t** event);
@@ -53,7 +60,6 @@ typedef struct
 
 #define HCI_COMMAND_LIST_LENGTH(hci_command_list)      (sizeof(hci_command_list)/sizeof(hci_command_list[0]))
 #define HCI_COMMAND_LENGTH(hci_command_array)          (sizeof(hci_command_array)/sizeof(hci_command_array[0]))
-static _u16 opcode = 0;
 
 static const hci_command_t hci_command_link_control_list[] =
 {
@@ -132,7 +138,7 @@ controller_error_code_e hci_reset_command(_u8* data,_u8 length,bt_hci_event_t** 
     controller_error_code_e status = ll_reset();
     if(status == SUCCESS)
     {
-        param = hci_command_complete_event(opcode,sizeof(struct hci_command_reset_retParam_t),event);
+        param = hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_reset_retParam_t),event);
         param->status = 0x88;
 		txMemcpy((_u8*)AAA_RETURN_PARAM,*event,20);
     }
@@ -491,12 +497,12 @@ void hci_command_packet_process(_u8* data)
         }
     }
     AAA_COMMAND_ADDRESS = (_u32)(event);
-//    if(status == UNKNOWN_HCI_COMMAND)
-//    {
-//        event = hci_command_status_event(hciCommand->opcode,UNKNOWN_HCI_COMMAND);
-//    }
-//    if(event!=NULL)
-//    {
-//        ble_hci_send_data(BLE_HCI_EVENT_PACKET,(_u8*)event,2+event->length);
-//    }
+   if(status == UNKNOWN_HCI_COMMAND)
+   {
+       event = hci_command_status_event(hciCommand->opcode,UNKNOWN_HCI_COMMAND);
+   }
+   if(event!=NULL)
+   {
+       ble_hci_send_data(BLE_HCI_EVENT_PACKET,(_u8*)event,2+event->length);
+   }
 }

@@ -29,6 +29,7 @@ void ble_hci_send_data(ble_hci_data_type_e type,_u8* data,_u32 dataLen)
 	    *pBuffer++ = (_u8)type;
 		txMemcpy(pBuffer,data,dataLen);
 		hciCtrl->txBuffer.wPtrIncrease(&hciCtrl->txBuffer);
+		tx_task_set_event(TX_TASK_ID_HCI_CONTROLLER_TX,BLE_HCI_EVENT_TX);
 	}
 }
 
