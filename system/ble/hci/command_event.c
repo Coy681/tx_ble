@@ -24,9 +24,8 @@ typedef struct _PACKED
 }hci_event_command_status_t;
 static bt_hci_event_t* hci_command_status_event(_u16 opcode,controller_error_code_e status)
 {
-    _u8 data[10];
     bt_hci_event_t* event = (bt_hci_event_t*)hci_event_buffer;
-    hci_event_command_status_t *param = (hci_event_command_status_t*)&event->parameter[0];
+    hci_event_command_status_t *param = (hci_event_command_status_t*)event->parameter;
     event->eventCode = HCI_COMMAND_STATUS_EVENT;
     event->length = sizeof(hci_event_command_status_t);
     param->numOfCmd = HCI_NUMBER_OF_COMMAND_PACKETS;
@@ -41,9 +40,10 @@ typedef struct _PACKED
     _u16 opcode;
     _u8  data[0];
 }hci_event_command_complete_t;
+
 static void* hci_command_complete_event(_u16 opcode,_u8 len,bt_hci_event_t **event)
 {
-    hci_event_command_complete_t * command =  (hci_event_command_complete_t*)hci_event((_s32)HCI_COMMAND_COMPLETE_EVENT,3,event);
+    hci_event_command_complete_t * command =  (hci_event_command_complete_t*)hci_event((_s32)HCI_COMMAND_COMPLETE_EVENT,len+3,event);
     command->numOfCmd = HCI_NUMBER_OF_COMMAND_PACKETS;
     command->opcode   = opcode;
     return command->data;
@@ -129,9 +129,6 @@ struct hci_command_reset_retParam_t
 {
     _u8 status;
 };
-
-volatile _u8 AAA_RETURN_PARAM[20];
-
 controller_error_code_e hci_reset_command(_u8* data,_u8 length,bt_hci_event_t** event)
 {
     struct hci_command_reset_retParam_t* param;
@@ -139,13 +136,10 @@ controller_error_code_e hci_reset_command(_u8* data,_u8 length,bt_hci_event_t** 
     if(status == SUCCESS)
     {
         param = hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_reset_retParam_t),event);
-        param->status = 0x88;
-		txMemcpy((_u8*)AAA_RETURN_PARAM,*event,20);
+        param->status = (_u8)SUCCESS;
+
     }
-    else
-    {
-        return status;
-    }
+    return SUCCESS;
 }
 
 static const hci_command_t hci_command_controller_baseband_list[] =
@@ -284,13 +278,25 @@ static const hci_command_t hci_command_testing_list[] =
     {HCI_WRITE_SECURE_CONNECTIONS_TEST_MODE_COMMAND, NULL}
 };
 
-
+struct _PACKED hci_command_read_local_supported_features_retParam_t
+{
+	_u8  status;
+    _u64 feature;
+};
+controller_error_code_e hci_read_local_supported_features(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+	struct hci_command_read_local_supported_features_retParam_t *param = \
+    hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_read_local_supported_features_retParam_t),event);
+	param->status  = (_u8)SUCCESS;;
+	param->feature = ll_get_feature();
+	return SUCCESS;
+}
 static const hci_command_t hci_command_le_controller_list[] =
 {
     {HCI_LE_SET_EVENT_MASK_COMMAND, NULL},
     {HCI_LE_READ_BUFFER_SIZE_COMMAND, NULL},
     {HCI_LE_READ_BUFFER_SIZE_COMMAND_V2, NULL},
-    {HCI_LE_READ_LOCAL_SUPPORTED_FEATURES_PAGE0_COMMAND, NULL},
+    {HCI_LE_READ_LOCAL_SUPPORTED_FEATURES_PAGE0_COMMAND, hci_read_local_supported_features},
     {HCI_LE_SET_RANDOM_ADDRESS_COMMAND, NULL},
     {HCI_LE_SET_ADVERTISING_PARAMETERS_COMMAND, NULL},
     {HCI_LE_READ_ADVERTISING_PHYSICAL_CHANNEL_TX_POWER_COMMAND, NULL},
@@ -472,7 +478,6 @@ static const hci_command_array_t hci_cmd_handlers[] =
 volatile _u8 AAA_COMMAND_BUFFER[16];
 volatile _u8 AAA_COMMAND_i;
 volatile _u8 AAA_COMMAND_j;
-volatile _u32 AAA_COMMAND_ADDRESS;
 void hci_command_packet_process(_u8* data)
 {
     txMemcpy((_u8*)AAA_COMMAND_BUFFER,data,10);
@@ -489,20 +494,24 @@ void hci_command_packet_process(_u8* data)
             {
                 if(hci_cmd_handlers[i].pArray[j].ocf == hciCommand->ocf)
                 {
+                	hciCommandOpcode = hciCommand->opcode;
                 	AAA_COMMAND_i = i;
                 	AAA_COMMAND_j = j;
-                    status = hci_cmd_handlers[i].pArray[j].process(hciCommand->data,hciCommand->length,&event);
+                	if(hci_cmd_handlers[i].pArray[j].process!=NULL)
+                	{
+                		status = hci_cmd_handlers[i].pArray[j].process(hciCommand->data,hciCommand->length,&event);
+                	}
                 }
             }
         }
     }
-    AAA_COMMAND_ADDRESS = (_u32)(event);
-   if(status == UNKNOWN_HCI_COMMAND)
-   {
-       event = hci_command_status_event(hciCommand->opcode,UNKNOWN_HCI_COMMAND);
-   }
-   if(event!=NULL)
-   {
-       ble_hci_send_data(BLE_HCI_EVENT_PACKET,(_u8*)event,2+event->length);
-   }
+    if(status == UNKNOWN_HCI_COMMAND)
+    {
+        event = hci_command_status_event(hciCommand->opcode,UNKNOWN_HCI_COMMAND);
+    }
+    if(event!=NULL)
+    {
+        ble_hci_send_data(BLE_HCI_EVENT_PACKET,(_u8*)event,2+event->length);
+    }
 }
+

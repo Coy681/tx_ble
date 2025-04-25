@@ -18,7 +18,6 @@ hci_flow_type_f hci_packet_distribute[6]=
 	hci_iso_packet_process,
 };
 
-
 /******************************ble hci tx process********************************/
 void ble_hci_send_data(ble_hci_data_type_e type,_u8* data,_u32 dataLen)
 {
