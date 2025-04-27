@@ -564,6 +564,55 @@ controller_error_code_e ll_reset(void);
 
 _u64 ll_get_feature(void);
 
+/***********************Bluetooth LE LL config **************************/
+void ll_init(_u8 number);
 /***********************Bluetooth LE Advertising **************************/
+typedef enum
+{
+    LL_ADV_IND                     = 0x00,//connectable and scannable undirected advertising,default.
+    LL_ADV_DIRECT_IND_HIGH_DUTY    = 0x01,//connectable high duty directed advertising.
+    LL_ADV_SCAN_IND                = 0x02,//scannable undirected advertising.
+    LL_ADV_NONCONN_IND             = 0x03,//none connectable undirected advertising.
+    LL_ADV_DIRECT_IND_LOW_DUTY     = 0x04,//connectable low duty directed advertising.
+}ll_advertising_type_e;
 
-controller_error_code_e ll_set_advertising_parameters();
+typedef enum
+{
+    LL_PUBLIC_DEVICE_ADDRESS              = 0x00,
+    LL_RANDOM_DEVICE_ADDRESS              = 0x01,
+    LL_RESOLVABLE_PRIVATE_PUBLIC_ADDRESS  = 0x02,
+    LL_RESOLVABLE_PRIVATE_RANDOM_ADDRESS  = 0x03,
+}ll_own_address_type_e;
+
+typedef enum
+{
+    LL_PUBLIC_DEVICE_OR_IDENTITY_ADDRESS  = 0x00,
+    LL_RANDOM_DEVICE_OR_IDENTITY_ADDRESS  = 0x01,
+}ll_peer_address_type_e;
+
+typedef enum
+{
+    LL_FILTER_LIST_NOT_USE                        = 0x00,
+    LL_FILTER_SCAN_REQUEST                        = 0x01,
+    LL_FILTER_CONNECTION_REQUEST                  = 0x02,
+    LL_FILTER_SCAN_REQUEST_AND_CONNECTION_REQUEST = 0x03,
+}ll_advertising_filter_policy_e;
+
+typedef enum
+{
+    LL_ADVERTISING_ENABLE  = 0,
+    LL_ADVERTISING_DISABLE = 1,
+}ll_advertising_enable_e;
+
+controller_error_code_e ll_set_advertising_parameters(_u16 interval,\
+                                                     ll_advertising_type_e type,\
+                                                     ll_own_address_type_e ownAddressType,\
+                                                     ll_peer_address_type_e peerAddressType,\
+                                                     _u8* peerAddress,_u8 channelMap,\
+                                                     ll_advertising_filter_policy_e policy);                
+                                                    
+controller_error_code_e ll_set_advertising_data(_u8* data,_u8 length);
+
+controller_error_code_e ll_set_scan_response_data(_u8* data,_u8 length);
+
+controller_error_code_e ll_set_advertising_enable(_u8 enable);

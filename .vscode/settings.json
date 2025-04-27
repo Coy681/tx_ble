@@ -16,6 +16,7 @@
         "command.h": "c",
         "hci.h": "c",
         "txgeneral.h": "c",
-        "command_event.h": "c"
+        "command_event.h": "c",
+        "ll_internal.h": "c"
     }
 }
