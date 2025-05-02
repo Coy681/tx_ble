@@ -6,8 +6,6 @@
 sch_ctrl_t schCtrl;
 // sche_isr
 
-
-
 typedef enum
 {
     SCH_TASK_TIMESTAMP_UPDATE,
@@ -113,6 +111,47 @@ static int sch_insert_task_to_running_list(sch_node_t* pTask)
     }
 }
 
+static void sch_insert_task_to_canceled_list(sch_node_t* pTask)
+{
+    if (pTask == NULL)
+    {
+        return; 
+    }
+    pTask->next = NULL; 
+    if (schCtrl.pCanceledList == NULL)
+    {
+        schCtrl.pCanceledList = pTask;
+        return;
+    }
+
+    sch_node_t* pTraverse = schCtrl.pCanceledList;
+    sch_node_t* pPrev = NULL;
+
+    _u32 taskEndTime = pTask->timestamp + pTask->stopLatency;
+
+    while (pTraverse != NULL)
+    {
+        _u32 traverseEndTime = pTraverse->timestamp + pTraverse->stopLatency;
+
+        if (taskEndTime < traverseEndTime)
+        {
+            break;
+        }
+        pPrev = pTraverse;
+        pTraverse = pTraverse->next;
+    }
+    if (pPrev == NULL)
+    {
+        // 插入到列表头部
+        pTask->next = schCtrl.pCanceledList;
+        schCtrl.pCanceledList = pTask;
+    }
+    else
+    {
+        pTask->next = pTraverse;
+        pPrev->next = pTask;
+    }
+}
 static void sch_fixed_task_process(_u8 step,sch_node_t* pTask)
 {
     switch(step)
