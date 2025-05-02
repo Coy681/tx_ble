@@ -29,4 +29,5 @@ void hal_stimer_clear_irq(void);
 void hal_stimer_set_capture(int captureTick);
 
 int  hal_stimer_get_capture(void);
+
 #endif /* HAL_STIMER_H_ */

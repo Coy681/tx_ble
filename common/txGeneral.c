@@ -60,3 +60,15 @@ int txStringLength(_s8* string)
 	}
 	return length;
 }
+
+int tick1_exceed_tick2(_u32 tick1,_u32 tick2)
+{
+	if((tick1-tick2) < BIT(30))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+} 

@@ -6,6 +6,7 @@ typedef enum
     SCH_DYNAMIC_PERIODIC_TASK,//anchor point dynamic
     SCH_SPORADIC_TASK,        //sporadic
     SCH_INSERT_TASK,          //no anchor point,as more as possible.
+    SCH_TASK_MAX,
 }sch_task_type_e;
 
 typedef enum
@@ -28,21 +29,47 @@ typedef enum
     SCH_TASK_PRIORITY_F = 30,
 }sch_task_priority_e;
 
+typedef enum
+{
+    SCH_TASK_START,
+    SCH_TASK_STOP,
+    SCH_TASK_CANCELED,
+    SCH_TASK_PASSED,
+}sch_callback_e;
+
+typedef void(*sch_cb_f)(_u8);
 typedef struct 
 {
     _u8  llId;
-    _u8  type;
-    _u8  priority;
-    _u8  rsvd;
-    _u32 start;
-    _u32 duration;
-    sch_node_t* next;
+    _u8  type;//sch_task_type_e
+    _u8  priority;//sch_task_priority_e
+    _u8  update;
+    _u32 timestamp;//us
+    _u32 period;//us
+    _u32 duration;//us  
+    _u32 startLatency;//us
+    _u32 stopLatency;//us
+    struct sch_node_t* next;
+    sch_cb_f cb;
 }sch_node_t;
 
 typedef struct 
 {
-    
-}shc_ctrl_t;
+    sch_node_t* pTaskList;
+    sch_node_t* pRunningList;
+    sch_node_t* pCanceledList;
+}sch_ctrl_t;
 
+typedef enum
+{
+    sche_message_task_add,
+    sche_message_task_remove,
+    sche_message_task_update,
+}sch_background_event_e;
 
+typedef struct _PACKED
+{
+    _u8 eventType;
+    _u8 message[0];
+}sch_message_t;
 

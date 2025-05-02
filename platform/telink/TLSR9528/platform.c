@@ -9,6 +9,20 @@
 #include"../../platform.h"
 
 
+int irq_disable(void)
+{
+    unsigned int _irq_state = core_interrupt_disable();
+    return _irq_state;
+}
+void irq_restore(unsigned int _irq_state)
+{
+    core_restore_interrupt(_irq_state);
+}
+
+void irq_enable(void)
+{
+    core_interrupt_enable();
+}
 
 void platform_init(void)
 {
@@ -28,6 +42,5 @@ void platform_init(void)
     #endif
 }
 HAREWARE_INIT(platform_init);
-
 
 

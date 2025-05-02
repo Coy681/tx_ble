@@ -38,6 +38,7 @@ typedef enum
     TX_TASK_ID_LOG_RX,
     TX_TASK_ID_HCI_CONTROLLER_TX,
     TX_TASK_ID_HCI_CONTROLLER_RX,
+	TX_TASK_ID_SCH,
 }txTaskId_e;
 
 

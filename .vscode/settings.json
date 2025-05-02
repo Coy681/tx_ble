@@ -18,6 +18,9 @@
         "txgeneral.h": "c",
         "command_event.h": "c",
         "ll_internal.h": "c",
-        "tsched.h": "c"
+        "tsched.h": "c",
+        "system_error": "c",
+        "txmalloc.h": "c",
+        "txbit.h": "c"
     }
 }
