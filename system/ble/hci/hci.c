@@ -4,6 +4,7 @@
 #include"system/task//message/message.h"
 #include"platform/platform.h"
 #include"hci.h"
+#include"system/ble/ble_config.h"
 ble_hci_ctrl_t *hciCtrl;
 
 typedef void(*hci_flow_type_f)(_u8*);
@@ -150,4 +151,7 @@ static void ble_hci_init(void)
     }
 }
 
+
+#if(TX_BLE_HCI_ENBALE)
 TASK_INIT(ble_hci_init);
+#endif

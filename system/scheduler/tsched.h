@@ -38,7 +38,8 @@ typedef enum
 }sch_callback_e;
 
 typedef void(*sch_cb_f)(_u8);
-typedef struct 
+
+typedef struct sch_node_t
 {
     _u8  llId;
     _u8  type;//sch_task_type_e
@@ -46,25 +47,25 @@ typedef struct
     _u8  update;
     _u32 timestamp;//us
     _u32 period;//us
-    _u32 duration;//us  
+    _u32 duration;//us
     _u32 startLatency;//us
     _u32 stopLatency;//us
-    struct sch_node_t* next;
     sch_cb_f cb;
+    struct sch_node_t* next;
 }sch_node_t;
 
 typedef struct 
 {
-    sch_node_t* pTaskList;
-    sch_node_t* pRunningList;
-    sch_node_t* pCanceledList;
+	sch_node_t* pTaskList;
+	sch_node_t* pRunningList;
+	sch_node_t* pCanceledList;
 }sch_ctrl_t;
 
 typedef enum
 {
-    sche_message_task_add,
-    sche_message_task_remove,
-    sche_message_task_update,
+	SCHE_MESSAGE_TASK_ADD,
+	SCHE_MESSAGE_TASK_REMOVE,
+	SCHE_MESSAGE_TASK_UPDATE,
 }sch_background_event_e;
 
 typedef struct _PACKED
@@ -73,3 +74,6 @@ typedef struct _PACKED
     _u8 message[0];
 }sch_message_t;
 
+#ifndef TX_SCHE_LOG_ENABLE
+#define TX_SCHE_LOG_ENABLE  1
+#endif

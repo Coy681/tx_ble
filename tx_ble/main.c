@@ -14,6 +14,8 @@
 
 #include"system/ble/controller/state.h"
 
+#include"system/scheduler/tsched.h"
+
 volatile _u32 AAA_Mcause = 0;
 volatile _u32 AAA_Mtval = 0;
 volatile _u32 AAA_Mpec = 0;
@@ -36,32 +38,131 @@ void trap_entry(void)
     AAA_Mdcause = read_csr(NDS_MDCAUSE);
 }
 
+sch_node_t aTask1=
+{
+	.llId = 0x00,
+	.type = SCH_FIXED_PERIODIC_TASK,
+    .priority = SCH_TASK_PRIORITY_F,
+	.update = 0,
+	.timestamp = 0,
+    .period = 20000,
+	.duration = 200,
+	.startLatency = 50,
+	.stopLatency = 50,
+};
+
+sch_node_t aTask2=
+{
+	.llId = 0x01,
+	.type = SCH_FIXED_PERIODIC_TASK,
+    .priority = SCH_TASK_PRIORITY_F,
+	.update = 0,
+	.timestamp = 0,
+    .period = 20000,
+	.duration = 200,
+	.startLatency = 50,
+	.stopLatency = 50,
+};
+
+sch_node_t aTask3=
+{
+	.llId = 0x02,
+	.type = SCH_FIXED_PERIODIC_TASK,
+    .priority = SCH_TASK_PRIORITY_F,
+	.update = 0,
+	.timestamp = 0,
+    .period = 20000,
+	.duration = 200,
+	.startLatency = 50,
+	.stopLatency = 50,
+};
+
 void app_rx_cmd(_u8* data,_u32 len)
 {
 	LOG_TRACE(1,"rx data",data,len)
 	switch(data[0])
 	{
-		case 1:
-			ble_ll_process_event(&bleLLStateMachine,BLE_LL_EVENT_START_ADVERTISING);
-			break;
-		case 2:
-			ble_ll_process_event(&bleLLStateMachine,BLE_LL_EVENT_STOP_ADVERTISING);
-			break;
-		case 3:
-			ble_ll_process_event(&bleLLStateMachine,BLE_LL_EVENT_START_INITIATING);
-			break;
-		case 4:
-			ble_ll_process_event(&bleLLStateMachine,BLE_LL_EVENT_STOP_INITIATING);
-			break;
-		case 5:
-			ble_ll_process_event(&bleLLStateMachine,BLE_LL_EVENT_START_CONNECTION);
-			break;
-		case 6:
-			ble_ll_process_event(&bleLLStateMachine,BLE_LL_EVENT_STOP_CONNECTION);
-			break;
-		default:
-			break;
+		case 0x01:
+		{
+			_u8* message = tx_message_allocate(8);
+			message[0] = SCHE_MESSAGE_TASK_ADD;
+			message[1] = ((_u32)&aTask1);
+			message[2] = ((_u32)&aTask1)>>8;
+			message[3] = ((_u32)&aTask1)>>16;
+			message[4] = ((_u32)&aTask1)>>24;
+			tx_message_send(TX_TASK_ID_SCH,message);
+		}
+		break;
+		case 0x02:
+		{
+			_u8* message = tx_message_allocate(8);
+			message[0] = SCHE_MESSAGE_TASK_ADD;
+			message[1] = ((_u32)&aTask2);
+			message[2] = ((_u32)&aTask2)>>8;
+			message[3] = ((_u32)&aTask2)>>16;
+			message[4] = ((_u32)&aTask2)>>24;
+			tx_message_send(TX_TASK_ID_SCH,message);
+		}
+		break;
+		case 0x03:
+		{
+			_u8* message = tx_message_allocate(8);
+			message[0] = SCHE_MESSAGE_TASK_ADD;
+			message[1] = ((_u32)&aTask3);
+			message[2] = ((_u32)&aTask3)>>8;
+			message[3] = ((_u32)&aTask3)>>16;
+			message[4] = ((_u32)&aTask3)>>24;
+			tx_message_send(TX_TASK_ID_SCH,message);
+		}
+		break;
+		case 0x04:
+		{
+			_u8* message = tx_message_allocate(4);
+			message[0] = SCHE_MESSAGE_TASK_REMOVE;
+			message[1] = 0x00;
+			tx_message_send(TX_TASK_ID_SCH,message);
+		}
+		break;
+		case 0x05:
+		{
+			_u8* message = tx_message_allocate(4);
+			message[0] = SCHE_MESSAGE_TASK_REMOVE;
+			message[1] = 0x01;
+			tx_message_send(TX_TASK_ID_SCH,message);
+		}
+		break;
+		case 0x06:
+		{
+			_u8* message = tx_message_allocate(4);
+			message[0] = SCHE_MESSAGE_TASK_REMOVE;
+			message[1] = 0x02;
+			tx_message_send(TX_TASK_ID_SCH,message);
+		}
+		break;
 	}
+//	switch(data[0])
+//	{
+//		case 1:
+//			ble_ll_process_event(&bleLLStateMachine,BLE_LL_EVENT_START_ADVERTISING);
+//			break;
+//		case 2:
+//			ble_ll_process_event(&bleLLStateMachine,BLE_LL_EVENT_STOP_ADVERTISING);
+//			break;
+//		case 3:
+//			ble_ll_process_event(&bleLLStateMachine,BLE_LL_EVENT_START_INITIATING);
+//			break;
+//		case 4:
+//			ble_ll_process_event(&bleLLStateMachine,BLE_LL_EVENT_STOP_INITIATING);
+//			break;
+//		case 5:
+//			ble_ll_process_event(&bleLLStateMachine,BLE_LL_EVENT_START_CONNECTION);
+//			break;
+//		case 6:
+//			ble_ll_process_event(&bleLLStateMachine,BLE_LL_EVENT_STOP_CONNECTION);
+//			break;
+//		default:
+//			break;
+//	}
 }
 
 

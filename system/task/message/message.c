@@ -17,7 +17,7 @@ _u8* tx_message_allocate(_u16 len)
         pMessage->next = NULL;
         pMessage->dataLen = len;
         pMessage->taskId = 0;
-        LOG_TRACE(1,"allocate message",(_u8*)&pMessage,4)
+        LOG_TRACE(TX_MESSGAE_LOG_ENABLE,"allocate message",(_u8*)&pMessage,4)
         return ((_u8*)(pMessage+1));
     }
     else
@@ -37,6 +37,7 @@ txMessage_e tx_message_deallocate(_u8* message)
         return TX_MESSAGE_USED;
     }
     _u8* pfree = (_u8*)((txMessageHeader_t*)(message)-1);
+    LOG_TRACE(TX_MESSGAE_LOG_ENABLE,"deallocate message",(_u8*)&pfree,4)
     tx_free(pfree);
     return TX_MESSAGE_SUCCESS;
 }

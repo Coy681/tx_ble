@@ -3,6 +3,8 @@
 #include"system/task/event/event.h" 
 #include"system/task/message/message.h"
 #include"platform/hal/stimer.h"
+#include"config.h"
+#include"tx_common.h"
 sch_ctrl_t schCtrl;
 // sche_isr
 
@@ -27,7 +29,7 @@ static void sch_remove_task_from_task_list(sch_node_t* list,sch_node_t* pTask)
         {
             if(pPrev == NULL)
             {
-                list = pTravese->next;
+                list = (sch_node_t*)pTravese->next;
             }
             else
             {
@@ -142,7 +144,6 @@ static void sch_insert_task_to_canceled_list(sch_node_t* pTask)
     }
     if (pPrev == NULL)
     {
-        // 插入到列表头部
         pTask->next = schCtrl.pCanceledList;
         schCtrl.pCanceledList = pTask;
     }
@@ -322,25 +323,27 @@ static void sch_timer_task(void)
     }
 }
 
-
+volatile _u32 AAA_ADDRESS = 0;
 // sche_background_
 void sche_background_insert_task(sch_node_t *pTask)
 {
-    if(pTask = NULL)
+    if(pTask == NULL)
     {
         return;
     }
+    LOG_TRACE(TX_SCHE_LOG_ENABLE,"background task insert-address",&pTask,4);
     sch_node_t* pTraverse = NULL;
-    pTask->next = NULL;
     if(schCtrl.pTaskList == NULL)
     {
+        pTask->next = NULL;
         schCtrl.pTaskList = pTask;
         _u32 targetTick = (pTask->timestamp - pTask->startLatency)*SYSTEM_TIME_US;
-        if(targetTick<system_clock())
+        _u32 clockTick  = system_clock();
+        if(tick1_exceed_tick2(clockTick,targetTick))
         {
             if(pTask->period!=0)
             {
-                while(targetTick<system_clock())
+                while(tick1_exceed_tick2(clockTick,targetTick))
                 {
                     pTask->timestamp+= pTask->period;
                     targetTick += (pTask->period)*SYSTEM_TIME_US;
@@ -353,15 +356,26 @@ void sche_background_insert_task(sch_node_t *pTask)
                 pTask->timestamp = (targetTick/SYSTEM_TIME_US);
             }
         }
-        hal_stimer_set_capture(targetTick);   
+        hal_stimer_set_capture(targetTick);
     }
     else
     {
         pTraverse = schCtrl.pTaskList;
+        if(pTraverse->llId == pTask->llId)
+        {
+            LOG_TRACE(TX_SCHE_LOG_ENABLE,"task repeat,return",&pTask->llId,1);
+        	return;//task repeat
+        }
         while(pTraverse->next!=NULL)
         {
+            if(pTraverse->llId == pTask->llId)
+            {
+                LOG_TRACE(TX_SCHE_LOG_ENABLE,"task repeat,return",&pTask->llId,1);
+            	return;//task repeat
+            }
             pTraverse = pTraverse->next;
         }
+        pTask->next = NULL;
         pTraverse->next = pTask;
     }
 }
@@ -388,6 +402,7 @@ void sche_background_remove_task(_u8 llId)
             {
                 pPrev->next = pTraverse->next;
             }
+            LOG_TRACE(TX_SCHE_LOG_ENABLE,"remove task",&pTraverse,4);
             break;
         }
         pPrev = pTraverse;  
@@ -399,24 +414,30 @@ _u32 sche_background_event_process(_u16 taskId,_u32 event)
 {
     if(event & TX_TASK_EVENT_MESSAGE)
     {
-        sch_message_t* pMessage = tx_message_receive(taskId);
+        sch_message_t* pMessage = (sch_message_t*)tx_message_receive(taskId);
         while(pMessage)
         {
             switch(pMessage->eventType)
             {
-                case sche_message_task_add:
+                case SCHE_MESSAGE_TASK_ADD:
+                {
                     _u32 address = 0;
                     BYTE_TO_U32(address,pMessage->message);
+                	LOG_TRACE(TX_SCHE_LOG_ENABLE,"schedule add task",&address,4);
                     sche_background_insert_task((sch_node_t*)address);
+                }
                     break;
-                case sche_message_task_remove:
+                case SCHE_MESSAGE_TASK_REMOVE:
+                {
                     sche_background_remove_task(pMessage->message[0]);
+                	LOG_TRACE(TX_SCHE_LOG_ENABLE,"remove task",0,0);
+                }
                     break;
                 default:
                     break;
             }
-            tx_message_deallocate(pMessage);
-            pMessage = tx_message_receive(taskId);
+            tx_message_deallocate((_u8*)pMessage);
+            pMessage = (sch_message_t*)tx_message_receive(taskId);
         }
         return event^TX_TASK_EVENT_MESSAGE;
     }
@@ -424,13 +445,19 @@ _u32 sche_background_event_process(_u16 taskId,_u32 event)
 }
 //sche init
 
+static void sche_task_init(void)
+{
+
+}
+
 void sche_init(void)
 {
     schCtrl.pTaskList = NULL;
     schCtrl.pRunningList = NULL;
     schCtrl.pCanceledList = NULL;
-    tx_task_add(NULL,sche_background_event_process,TX_TASK_ID_SCH,TX_TASK_PRIORITY_15);
-    hal_stimer_register_task(sch_timer_task);
+    _u32 ret = tx_task_add(sche_task_init,sche_background_event_process,TX_TASK_ID_SCH,TX_TASK_PRIORITY_13);
+//    hal_stimer_register_task(sch_timer_task);
 }
-
+#if(TX_SCHEDULER_ENABLE)
 TASK_INIT(sche_init);
+#endif

@@ -1,7 +1,7 @@
 
 #include"common/txCommon.h"
 #include"config.h"
-
+#include"platform/platform.h"
 
 #if(TX_DEBUG_GPIO_ENABLE)
 #define DEBUG_GPIO_HIGH(n)    hal_gpio_debug_set_high(n);

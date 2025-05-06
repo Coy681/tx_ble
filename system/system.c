@@ -11,8 +11,8 @@
 
 hal_rf_t ble_rf;
 
-static void system_timer_task(void);
-static void system_rf_task(void)
+//static void system_timer_task(void);
+//static void system_rf_task(void)
 
 
 unsigned char  ble_tx_packet[48] __attribute__ ((aligned (4))) ={3,0,0,0,

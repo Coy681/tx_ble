@@ -16,6 +16,10 @@ typedef enum
     TX_MESSAGE_USED,
 }txMessage_e;
 
+#ifndef  TX_MESSGAE_LOG_ENABLE
+#define  TX_MESSGAE_LOG_ENABLE 1
+#endif
+
 #define TX_MESSAGE_NEXT(message)      ((txMessageHeader_t*)(message)-1)->next
 
 #define TX_MESSAGE_TASK_ID(message)   ((txMessageHeader_t*)(message)-1)->taskId

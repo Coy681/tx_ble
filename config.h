@@ -11,9 +11,13 @@
 
 #define TX_DEBUG_LED_ENABLE              1
 
-#define TX_DEBUG_LOG_ENABLE              0
+#define TX_DEBUG_LOG_ENABLE              1
 
 /***************** redio configure********************/
 
 #define TX_HARDWARE_RADIO_ENABLE         1 
+
+/***************** scheduler configure********************/
+
+#define TX_SCHEDULER_ENABLE              1
 

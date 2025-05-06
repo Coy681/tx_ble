@@ -38,9 +38,9 @@ txTask_e tx_task_add(pTaskInit_f init,pTaskProcess_f process,txTaskId_e taskId,t
 		{
 			txTask_t* pSearch = pHeader;
 			txTask_t* pPrev   = NULL;
-            while((pNew->taskPriority>=pSearch->taskPriority)&&pSearch)
+            while(pSearch&&(pNew->taskPriority<=pSearch->taskPriority))
             {
-				pPrev = pHeader;
+				pPrev = pSearch;
            	    pSearch = pSearch->next;
             }
 			pNew->next = pSearch;
@@ -75,6 +75,7 @@ txTask_t* tx_task_next_active(void)
 	return NULL;
 }
 
+
 _u32 AAA_TEST_MASK = 0;
 _u32 AAA_TEST_MASK1 = 0;
 void tx_task_start(void)
@@ -82,9 +83,13 @@ void tx_task_start(void)
    txTask_t* pTask = NULL;
 	while(1)
 	{
+		DEBUG_GPIO_HIGH(GPIO_2);
+		DEBUG_GPIO_LOW(GPIO_2);
 		pTask = tx_task_next_active();
 		if(pTask)
 		{
+			DEBUG_GPIO_HIGH(GPIO_3);
+			DEBUG_GPIO_LOW(GPIO_3);
 			_u32 event = pTask->eventMask;
 			AAA_TEST_MASK = event;
 			pTask->eventMask = 0;

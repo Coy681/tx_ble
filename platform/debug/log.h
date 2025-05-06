@@ -43,7 +43,7 @@ void log_output(_u8* pString,_u8* pData,_u32 dataLen);
 
 /******************define log trace***************************/
 #if(TX_DEBUG_LOG_ENABLE)
-#define LOG_TRACE(EN,STR,DATA,LEN)     if(EN){log_output(STR,DATA,LEN);};
+#define LOG_TRACE(EN,STR,DATA,LEN)     if(EN){log_output((_u8*)STR,(_u8*)DATA,(_u32)LEN);};
 #else
 #define LOG_TRACE(EN,STR,DATA,LEN)      
 #endif
