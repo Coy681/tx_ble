@@ -83,13 +83,9 @@ void tx_task_start(void)
    txTask_t* pTask = NULL;
 	while(1)
 	{
-		DEBUG_GPIO_HIGH(GPIO_2);
-		DEBUG_GPIO_LOW(GPIO_2);
 		pTask = tx_task_next_active();
 		if(pTask)
 		{
-			DEBUG_GPIO_HIGH(GPIO_3);
-			DEBUG_GPIO_LOW(GPIO_3);
 			_u32 event = pTask->eventMask;
 			AAA_TEST_MASK = event;
 			pTask->eventMask = 0;

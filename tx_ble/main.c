@@ -38,6 +38,27 @@ void trap_entry(void)
     AAA_Mdcause = read_csr(NDS_MDCAUSE);
 }
 
+
+void task1_callback(_u8 type)
+{
+	if(type == SCH_TASK_START)
+	{
+		LOG_TRACE(1,"task 1 start",0,0)
+	}
+	else if(type == SCH_TASK_STOP)
+	{
+		LOG_TRACE(1,"task 1 stop",0,0)
+	}
+	else if(type == SCH_TASK_CANCELED)
+	{
+		LOG_TRACE(1,"task 1 canceled",0,0)
+	}
+	else if(type == SCH_TASK_PASSED)
+	{
+		LOG_TRACE(1,"task 1 passed",0,0)
+	}
+}
+
 sch_node_t aTask1=
 {
 	.llId = 0x00,
@@ -49,8 +70,29 @@ sch_node_t aTask1=
 	.duration = 200,
 	.startLatency = 50,
 	.stopLatency = 50,
+	.cb = task1_callback,
 };
 
+void task2_callback(_u8 type)
+{
+	if(type == SCH_TASK_START)
+	{
+		LOG_TRACE(1,"task 2 start",0,0)
+	}
+	else if(type == SCH_TASK_STOP)
+	{
+		LOG_TRACE(1,"task 2 stop",0,0)
+	}
+	else if(type == SCH_TASK_CANCELED)
+	{
+		LOG_TRACE(1,"task 2 canceled",0,0)
+	}
+	else if(type == SCH_TASK_PASSED)
+	{
+		LOG_TRACE(1,"task 2 passed",0,0)
+	}
+
+}
 sch_node_t aTask2=
 {
 	.llId = 0x01,
@@ -62,8 +104,29 @@ sch_node_t aTask2=
 	.duration = 200,
 	.startLatency = 50,
 	.stopLatency = 50,
+	.cb = task2_callback,
 };
 
+void task3_callback(_u8 type)
+{
+	if(type == SCH_TASK_START)
+	{
+		LOG_TRACE(1,"task 3 start",0,0)
+	}
+	else if(type == SCH_TASK_STOP)
+	{
+		LOG_TRACE(1,"task 3 stop",0,0)
+	}
+	else if(type == SCH_TASK_CANCELED)
+	{
+		LOG_TRACE(1,"task 3 canceled",0,0)
+	}
+	else if(type == SCH_TASK_PASSED)
+	{
+		LOG_TRACE(1,"task 3 passed",0,0)
+	}
+
+}
 sch_node_t aTask3=
 {
 	.llId = 0x02,
@@ -75,6 +138,7 @@ sch_node_t aTask3=
 	.duration = 200,
 	.startLatency = 50,
 	.stopLatency = 50,
+	.cb = task3_callback,
 };
 
 void app_rx_cmd(_u8* data,_u32 len)
@@ -85,6 +149,7 @@ void app_rx_cmd(_u8* data,_u32 len)
 		case 0x01:
 		{
 			_u8* message = tx_message_allocate(8);
+
 			message[0] = SCHE_MESSAGE_TASK_ADD;
 			message[1] = ((_u32)&aTask1);
 			message[2] = ((_u32)&aTask1)>>8;

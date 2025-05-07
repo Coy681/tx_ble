@@ -41,12 +41,12 @@ static void sch_remove_task_from_task_list(sch_node_t* list,sch_node_t* pTask)
         else
         {
             pPrev = pTravese;
-            pTravese = pTravese->next;
+            pTravese = (sch_node_t*)pTravese->next;
         }
     }
 }
 
-static int sch_task1_conflict_with_task2(tick1S,tick1E,tick2S,tick2E)
+static int sch_task1_conflict_with_task2(_u32 tick1S,_u32 tick1E,_u32 tick2S,_u32 tick2E)
 {
     if (tick1_exceed_tick2(tick2S,tick1E) || tick1_exceed_tick2(tick1S,tick2E))
     {
@@ -65,13 +65,13 @@ static int sch_insert_task_to_running_list(sch_node_t* pTask)
     // left
     while (pL != NULL && tick1_exceed_tick2(taskS, pL->timestamp + pL->stopLatency))
     {
-        pL = pL->next;
+        pL = (sch_node_t*)pL->next;
     }
 
     // right
     while (pR != NULL && tick1_exceed_tick2(pR->timestamp - pR->startLatency, taskE))
     {
-        pR = pR->next;
+        pR = (sch_node_t*)pR->next;
     }
 
     sch_node_t* pTravese = pL;
@@ -83,7 +83,7 @@ static int sch_insert_task_to_running_list(sch_node_t* pTask)
             arbitrateFailFlag = 1;
             break;
         }
-        pTravese = pTravese->next;
+        pTravese = (sch_node_t*)pTravese->next;
     }
     if(arbitrateFailFlag)
     {
@@ -98,7 +98,7 @@ static int sch_insert_task_to_running_list(sch_node_t* pTask)
             {
                 pTravese->cb((_u8)SCH_TASK_CANCELED);
             }
-            pTravese = pTravese->next;
+            pTravese = (sch_node_t*)pTravese->next;
         }
         if(pL == NULL || pL == schCtrl.pRunningList)
         {
@@ -106,9 +106,9 @@ static int sch_insert_task_to_running_list(sch_node_t* pTask)
         }
         else
         {
-            pL->next = pTask;
+            pL->next = (struct sch_node_t*)pTask;
         }
-        pTask->next = pR;
+        pTask->next = (struct sch_node_t*)pR;
         return 0;
     }
 }
@@ -140,17 +140,17 @@ static void sch_insert_task_to_canceled_list(sch_node_t* pTask)
             break;
         }
         pPrev = pTraverse;
-        pTraverse = pTraverse->next;
+        pTraverse = (sch_node_t*)pTraverse->next;
     }
     if (pPrev == NULL)
     {
-        pTask->next = schCtrl.pCanceledList;
+        pTask->next = (struct sch_node_t*)schCtrl.pCanceledList;
         schCtrl.pCanceledList = pTask;
     }
     else
     {
-        pTask->next = pTraverse;
-        pPrev->next = pTask;
+        pTask->next = (struct sch_node_t*)pTraverse;
+        pPrev->next = (struct sch_node_t*)pTask;
     }
 }
 static void sch_fixed_task_process(_u8 step,sch_node_t* pTask)
@@ -297,30 +297,47 @@ sch_task_process_f sch_task_process[SCH_TASK_MAX] =
 
 static void sch_timer_task(void)
 {
+	DEBUG_GPIO_HIGH(GPIO_3);
     //process stop
     sch_node_t* pStopTask = schCtrl.pRunningList;
     if((pStopTask!=NULL)&&(pStopTask->cb!=NULL))
     {
+    	DEBUG_GPIO_HIGH(GPIO_4);
         pStopTask->cb((_u8)SCH_TASK_STOP);
+        pStopTask->timestamp+=pStopTask->period;
+        pStopTask->update = 1;
+    	DEBUG_GPIO_LOW(GPIO_4);
     }
     //process timestamp
     _u32 clockTick  = system_clock();
     sch_node_t* pTraverse  = schCtrl.pTaskList;
     while(pTraverse!=NULL)
     {
+    	DEBUG_GPIO_HIGH(GPIO_5);
         sch_task_process[pTraverse->type]((_u8)SCH_TASK_TIMESTAMP_UPDATE,pTraverse);
+        DEBUG_GPIO_LOW(GPIO_5);
         if(pTraverse->update)
         {
+        	DEBUG_GPIO_HIGH(GPIO_6);
             sch_task_process[pTraverse->type]((_u8)SCH_TASK_SCHEDULING,pTraverse);
+            DEBUG_GPIO_LOW(GPIO_6);
         }
-        pTraverse = pTraverse->next;
+        pTraverse = (sch_node_t*)pTraverse->next;
     }
     //process start
     sch_node_t* pStartTask = schCtrl.pRunningList;
     if((pStartTask!=NULL)&&(pStartTask->cb!=NULL))
     {
+    	DEBUG_GPIO_HIGH(GPIO_7);
         pStartTask->cb((_u8)SCH_TASK_START);
+        DEBUG_GPIO_LOW(GPIO_7);
     }
+    _u32 targetTick = (pStartTask->timestamp-pStartTask->startLatency)*SYSTEM_TIME_US;
+	_u32 clock = system_clock();
+	LOG_TRACE(1,"targetTick",&targetTick,4)
+	LOG_TRACE(1,"clock",&clock,4)
+	hal_stimer_set_capture(targetTick);
+	DEBUG_GPIO_LOW(GPIO_3);
 }
 
 volatile _u32 AAA_ADDRESS = 0;
@@ -337,7 +354,8 @@ void sche_background_insert_task(sch_node_t *pTask)
     {
         pTask->next = NULL;
         schCtrl.pTaskList = pTask;
-        _u32 targetTick = (pTask->timestamp - pTask->startLatency)*SYSTEM_TIME_US;
+//        _u32 targetTick = (pTask->timestamp - pTask->startLatency)*SYSTEM_TIME_US;
+		_u32 targetTick = (pTask->timestamp)*SYSTEM_TIME_US;
         _u32 clockTick  = system_clock();
         if(tick1_exceed_tick2(clockTick,targetTick))
         {
@@ -356,6 +374,9 @@ void sche_background_insert_task(sch_node_t *pTask)
                 pTask->timestamp = (targetTick/SYSTEM_TIME_US);
             }
         }
+		LOG_TRACE(1,"timestamp1",&pTask->timestamp,4)
+		LOG_TRACE(1,"clockTick",&clockTick,4)
+        LOG_TRACE(TX_SCHE_LOG_ENABLE,"first task,stime start",&targetTick,4);
         hal_stimer_set_capture(targetTick);
     }
     else
@@ -377,6 +398,7 @@ void sche_background_insert_task(sch_node_t *pTask)
         }
         pTask->next = NULL;
         pTraverse->next = pTask;
+        pTask->update = 1;
     }
 }
 
@@ -456,7 +478,7 @@ void sche_init(void)
     schCtrl.pRunningList = NULL;
     schCtrl.pCanceledList = NULL;
     _u32 ret = tx_task_add(sche_task_init,sche_background_event_process,TX_TASK_ID_SCH,TX_TASK_PRIORITY_13);
-//    hal_stimer_register_task(sch_timer_task);
+    hal_stimer_register_task(sch_timer_task);
 }
 #if(TX_SCHEDULER_ENABLE)
 TASK_INIT(sche_init);
