@@ -39,7 +39,7 @@ typedef enum
 
 typedef void(*sch_cb_f)(_u8);
 
-typedef struct sch_node_t
+typedef struct _PACKED
 {
     _u8  llId;
     _u8  type;//sch_task_type_e
@@ -54,7 +54,7 @@ typedef struct sch_node_t
     struct sch_node_t* next;
 }sch_node_t;
 
-typedef struct 
+typedef struct _PACKED
 {
 	sch_node_t* pTaskList;
 	sch_node_t* pRunningList;
