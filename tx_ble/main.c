@@ -43,19 +43,19 @@ void task1_callback(_u8 type)
 {
 	if(type == SCH_TASK_START)
 	{
-		LOG_TRACE(1,"task 1 start",0,0)
+//		LOG_TRACE(1,"task 1 start",0,0)
 	}
 	else if(type == SCH_TASK_STOP)
 	{
-		LOG_TRACE(1,"task 1 stop",0,0)
+//		LOG_TRACE(1,"task 1 stop",0,0)
 	}
 	else if(type == SCH_TASK_CANCELED)
 	{
-		LOG_TRACE(1,"task 1 canceled",0,0)
+//		LOG_TRACE(1,"task 1 canceled",0,0)
 	}
 	else if(type == SCH_TASK_PASSED)
 	{
-		LOG_TRACE(1,"task 1 passed",0,0)
+//		LOG_TRACE(1,"task 1 passed",0,0)
 	}
 }
 
@@ -77,19 +77,19 @@ void task2_callback(_u8 type)
 {
 	if(type == SCH_TASK_START)
 	{
-		LOG_TRACE(1,"task 2 start",0,0)
+//		LOG_TRACE(1,"task 2 start",0,0)
 	}
 	else if(type == SCH_TASK_STOP)
 	{
-		LOG_TRACE(1,"task 2 stop",0,0)
+//		LOG_TRACE(1,"task 2 stop",0,0)
 	}
 	else if(type == SCH_TASK_CANCELED)
 	{
-		LOG_TRACE(1,"task 2 canceled",0,0)
+//		LOG_TRACE(1,"task 2 canceled",0,0)
 	}
 	else if(type == SCH_TASK_PASSED)
 	{
-		LOG_TRACE(1,"task 2 passed",0,0)
+//		LOG_TRACE(1,"task 2 passed",0,0)
 	}
 
 }

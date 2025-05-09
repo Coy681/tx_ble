@@ -15,13 +15,13 @@ typedef enum
 }sch_task_step_e;
 typedef void(*sch_task_process_f)(_u8,sch_node_t*);
 
-static void sch_remove_task_from_task_list(sch_node_t* list,sch_node_t* pTask)
+static void sch_remove_task_from_task_list(sch_node_t** list,sch_node_t* pTask)
 {
-    if(pTask == NULL)
+    if(pTask == NULL || *list == NULL)
     {
         return;
     }
-    sch_node_t* pTravese = list;
+    sch_node_t* pTravese = *list;
     sch_node_t* pPrev = NULL;
     while(pTravese!=NULL)
     {
@@ -29,7 +29,7 @@ static void sch_remove_task_from_task_list(sch_node_t* list,sch_node_t* pTask)
         {
             if(pPrev == NULL)
             {
-                list = (sch_node_t*)pTravese->next;
+                *list = (sch_node_t*)pTravese->next;
             }
             else
             {
@@ -163,6 +163,7 @@ static void sch_fixed_task_process(_u8 step,sch_node_t* pTask)
             _u32 targetTick  = (pTask->timestamp-pTask->startLatency)*SYSTEM_TIME_US;
             while(tick1_exceed_tick2(clockTick,targetTick))
             {
+                DEBUG_GPIO_HIGH(GPIO_6);
                 pTask->timestamp+=pTask->period;
                 targetTick+=(pTask->period*SYSTEM_TIME_US);
                 if(pTask->cb)
@@ -170,10 +171,11 @@ static void sch_fixed_task_process(_u8 step,sch_node_t* pTask)
                     pTask->cb((_u8)SCH_TASK_PASSED);
                 }
                 pTask->update = 1;
+                DEBUG_GPIO_LOW(GPIO_6);
             }
             if(pTask->update)
             {
-                sch_remove_task_from_task_list(schCtrl.pRunningList,pTask);
+                sch_remove_task_from_task_list(&schCtrl.pRunningList,pTask);
             }
         }
         break;
@@ -215,7 +217,7 @@ static void sch_dynamic_task_process(_u8 step,sch_node_t* pTask)
             }
             if(pTask->update)
             {
-                sch_remove_task_from_task_list(schCtrl.pRunningList,pTask);
+                sch_remove_task_from_task_list(&schCtrl.pRunningList,pTask);
             }
         }
         break;
@@ -251,8 +253,8 @@ static void sch_sporadic_task_process(_u8 step,sch_node_t* pTask)
                 {
                     pTask->cb((_u8)SCH_TASK_PASSED);
                 }
-                sch_remove_task_from_task_list(schCtrl.pRunningList,pTask);
-                sch_remove_task_from_task_list(schCtrl.pTaskList,pTask);
+                sch_remove_task_from_task_list(&schCtrl.pRunningList,pTask);
+                sch_remove_task_from_task_list(&schCtrl.pTaskList,pTask);
             }
         }
         break;
@@ -297,7 +299,12 @@ sch_task_process_f sch_task_process[SCH_TASK_MAX] =
 
 static void sch_timer_task(void)
 {
+
 	DEBUG_GPIO_HIGH(GPIO_3);
+//    _u8 static index = 0;
+//	while(index==1);
+//	index = 1;
+
     //process stop
     sch_node_t* pStopTask = schCtrl.pRunningList;
     if((pStopTask!=NULL)&&(pStopTask->cb!=NULL))
@@ -305,9 +312,11 @@ static void sch_timer_task(void)
     	DEBUG_GPIO_HIGH(GPIO_4);
         pStopTask->cb((_u8)SCH_TASK_STOP);
         pStopTask->timestamp+=pStopTask->period;
+        sch_remove_task_from_task_list(&schCtrl.pRunningList,pStopTask);
         pStopTask->update = 1;
     	DEBUG_GPIO_LOW(GPIO_4);
     }
+
     //process timestamp
     _u32 clockTick  = system_clock();
     sch_node_t* pTraverse  = schCtrl.pTaskList;
@@ -318,9 +327,7 @@ static void sch_timer_task(void)
         DEBUG_GPIO_LOW(GPIO_5);
         if(pTraverse->update)
         {
-        	DEBUG_GPIO_HIGH(GPIO_6);
             sch_task_process[pTraverse->type]((_u8)SCH_TASK_SCHEDULING,pTraverse);
-            DEBUG_GPIO_LOW(GPIO_6);
         }
         pTraverse = (sch_node_t*)pTraverse->next;
     }
@@ -332,10 +339,11 @@ static void sch_timer_task(void)
         pStartTask->cb((_u8)SCH_TASK_START);
         DEBUG_GPIO_LOW(GPIO_7);
     }
+
     _u32 targetTick = (pStartTask->timestamp-pStartTask->startLatency)*SYSTEM_TIME_US;
 	_u32 clock = system_clock();
-	LOG_TRACE(1,"targetTick",&targetTick,4)
-	LOG_TRACE(1,"clock",&clock,4)
+//	LOG_TRACE(1,"targetTick",&targetTick,4)
+//	LOG_TRACE(1,"clock",&clock,4)
 	hal_stimer_set_capture(targetTick);
 	DEBUG_GPIO_LOW(GPIO_3);
 }
@@ -363,8 +371,10 @@ void sche_background_insert_task(sch_node_t *pTask)
             {
                 while(tick1_exceed_tick2(clockTick,targetTick))
                 {
+                    DEBUG_GPIO_HIGH(GPIO_6);
                     pTask->timestamp+= pTask->period;
                     targetTick += (pTask->period)*SYSTEM_TIME_US;
+                    DEBUG_GPIO_LOW(GPIO_6);
                 }
             }
             else
@@ -463,7 +473,7 @@ _u32 sche_background_event_process(_u16 taskId,_u32 event)
         }
         return event^TX_TASK_EVENT_MESSAGE;
     }
-    return NULL;
+    return 0;
 }
 //sche init
 
