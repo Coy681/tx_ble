@@ -39,22 +39,25 @@ typedef enum
 
 typedef void(*sch_cb_f)(_u8);
 
-typedef struct _PACKED
+typedef struct sch_node_t  sch_node_t;
+typedef struct sch_node_t
 {
     _u8  llId;
     _u8  type;//sch_task_type_e
     _u8  priority;//sch_task_priority_e
-    _u8  update;
+    _u8  update;//schdule task
     _u32 timestamp;//us
     _u32 period;//us
     _u32 duration;//us
     _u32 startLatency;//us
     _u32 stopLatency;//us
-    sch_cb_f cb;
-    struct sch_node_t* next;
+    sch_cb_f cb;//start or stop or passed or canceled callback.
+    sch_node_t* tNext;//task list
+    sch_node_t* rNext;//running list
+    sch_node_t* cNext;//canceled list
 }sch_node_t;
 
-typedef struct _PACKED
+typedef struct
 {
 	sch_node_t* pTaskList;
 	sch_node_t* pRunningList;
