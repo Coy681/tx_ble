@@ -392,7 +392,7 @@ static void sch_timer_task(void)
         {
             sch_task_process[pTraverse->type]((_u8)SCH_TASK_SCHEDULING,pTraverse);
         }
-        pTraverse = pTraverse->tNext
+        pTraverse = pTraverse->tNext;
     }
     //process start
     sch_node_t* pStartTask = schCtrl.pRunningList;
@@ -491,17 +491,17 @@ void sche_background_remove_task(_u8 llId)
         {
             if(pPrev == NULL)
             {
-                schCtrl.pTaskList = pTraverse->next;
+                schCtrl.pTaskList = pTraverse->tNext;
             }
             else
             {
-                pPrev->next = pTraverse->next;
+                pPrev->tNext = pTraverse->tNext;
             }
             LOG_TRACE(TX_SCHE_LOG_ENABLE,"remove task",&pTraverse,4);
             break;
         }
         pPrev = pTraverse;  
-        pTraverse = pTraverse->next;
+        pTraverse = pTraverse->tNext;
     }
 }
 
