@@ -21,6 +21,7 @@
         "tsched.h": "c",
         "system_error": "c",
         "txmalloc.h": "c",
-        "txbit.h": "c"
+        "txbit.h": "c",
+        "txutility.h": "c"
     }
 }

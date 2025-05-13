@@ -16,4 +16,5 @@
 #include "list/txList.h"
 #include "heap/txHeap.h"
 #include "txUtility.h"
+#include "txAssert.h"
 #endif

@@ -7,6 +7,9 @@
 
 
 /***************** module configure********************/
+
+#define TX_DEBUG_ENABLE                  1
+
 #define TX_DEBUG_GPIO_ENABLE             1
 
 #define TX_DEBUG_LED_ENABLE              1
