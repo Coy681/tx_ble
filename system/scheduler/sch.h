@@ -1,7 +1,5 @@
 #include"common/txCommon.h"
 
-
-
 typedef enum
 {
     SCH_TASK_PRIORITY_0 = 0,
@@ -22,9 +20,25 @@ typedef enum
     SCH_TASK_PRIORITY_F = 30,
 }sch_task_priority_e;
 
+typedef enum
+{
+    SCH_TASK_START,
+    SCH_TASK_STOP,
+    SCH_TASK_CANCELED,
+    SCH_TASK_PASSED,
+}sch_callback_e;
+
+typedef enum
+{
+    SCH_PERIODIC_TASK,  //anchor point fixed
+    SCH_SPORADIC_TASK,  //sporadic
+    SCH_ASAP_TASK,      //no anchor point,as soon as possible.
+    SCH_TASK_MAX,
+}sch_task_type_e;
+
 typedef void(*sch_cb_f)(_u8);
 typedef struct sch_node_t  sch_node_t;
-typedef struct sch_node_t
+typedef struct _PACKED sch_node_t 
 {
     _u8  llId;
     _u8  type;//sch_task_type_e
@@ -40,3 +54,26 @@ typedef struct sch_node_t
     sch_node_t* rNext;//running list
     sch_node_t* cNext;//canceled list
 }sch_node_t;
+
+typedef struct 
+{
+    sch_node_t* pWaitingList;
+    sch_node_t* pRunningTask;
+    sch_node_t* pCanceledList;
+}sch_ctrl_t;
+
+typedef enum
+{
+	SCHE_MESSAGE_TASK_ADD,
+	SCHE_MESSAGE_TASK_REMOVE,
+}sch_background_event_e;
+
+typedef struct _PACKED
+{
+    _u8 eventType;
+    _u8 message[0];
+}sch_message_t;
+
+#ifndef TX_SCHE_LOG_ENABLE
+#define TX_SCHE_LOG_ENABLE  1
+#endif

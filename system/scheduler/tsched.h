@@ -29,13 +29,13 @@ typedef enum
     SCH_TASK_PRIORITY_F = 30,
 }sch_task_priority_e;
 
-typedef enum
-{
-    SCH_TASK_START,
-    SCH_TASK_STOP,
-    SCH_TASK_CANCELED,
-    SCH_TASK_PASSED,
-}sch_callback_e;
+// typedef enum
+// {
+//     SCH_TASK_START,
+//     SCH_TASK_STOP,
+//     SCH_TASK_CANCELED,
+//     SCH_TASK_PASSED,
+// }sch_callback_e;
 
 typedef void(*sch_cb_f)(_u8);
 

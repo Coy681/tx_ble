@@ -505,53 +505,53 @@ void sche_background_remove_task(_u8 llId)
     }
 }
 
-_u32 sche_background_event_process(_u16 taskId,_u32 event)
-{
-    if(event & TX_TASK_EVENT_MESSAGE)
-    {
-        sch_message_t* pMessage = (sch_message_t*)tx_message_receive(taskId);
-        while(pMessage)
-        {
-            switch(pMessage->eventType)
-            {
-                case SCHE_MESSAGE_TASK_ADD:
-                {
-                    _u32 address = 0;
-                    BYTE_TO_U32(address,pMessage->message);
-                	LOG_TRACE(TX_SCHE_LOG_ENABLE,"schedule add task",&address,4);
-                    sche_background_insert_task((sch_node_t*)address);
-                }
-                    break;
-                case SCHE_MESSAGE_TASK_REMOVE:
-                {
-                    sche_background_remove_task(pMessage->message[0]);
-                	LOG_TRACE(TX_SCHE_LOG_ENABLE,"remove task",0,0);
-                }
-                    break;
-                default:
-                    break;
-            }
-            tx_message_deallocate((_u8*)pMessage);
-            pMessage = (sch_message_t*)tx_message_receive(taskId);
-        }
-        return event^TX_TASK_EVENT_MESSAGE;
-    }
-    return 0;
-}
+// _u32 sche_background_event_process(_u16 taskId,_u32 event)
+// {
+//     if(event & TX_TASK_EVENT_MESSAGE)
+//     {
+//         sch_message_t* pMessage = (sch_message_t*)tx_message_receive(taskId);
+//         while(pMessage)
+//         {
+//             switch(pMessage->eventType)
+//             {
+//                 case SCHE_MESSAGE_TASK_ADD:
+//                 {
+//                     _u32 address = 0;
+//                     BYTE_TO_U32(address,pMessage->message);
+//                 	LOG_TRACE(TX_SCHE_LOG_ENABLE,"schedule add task",&address,4);
+//                     sche_background_insert_task((sch_node_t*)address);
+//                 }
+//                     break;
+//                 case SCHE_MESSAGE_TASK_REMOVE:
+//                 {
+//                     sche_background_remove_task(pMessage->message[0]);
+//                 	LOG_TRACE(TX_SCHE_LOG_ENABLE,"remove task",0,0);
+//                 }
+//                     break;
+//                 default:
+//                     break;
+//             }
+//             tx_message_deallocate((_u8*)pMessage);
+//             pMessage = (sch_message_t*)tx_message_receive(taskId);
+//         }
+//         return event^TX_TASK_EVENT_MESSAGE;
+//     }
+//     return 0;
+// }
 //sche init
 
-static void sche_task_init(void)
-{
-    schCtrl.pTaskList = NULL;
-    schCtrl.pRunningList = NULL;
-    schCtrl.pCanceledList = NULL;
-}
+// static void sche_task_init(void)
+// {
+//     schCtrl.pTaskList = NULL;
+//     schCtrl.pRunningList = NULL;
+//     schCtrl.pCanceledList = NULL;
+// }
 
-void sche_init(void)
-{
-    _u32 ret = tx_task_add(sche_task_init,sche_background_event_process,TX_TASK_ID_SCH,TX_TASK_PRIORITY_13);
-    hal_stimer_register_task(sch_timer_task);
-}
-#if(TX_SCHEDULER_ENABLE)
-TASK_INIT(sche_init);
-#endif
+// void sche_init(void)
+// {
+//     _u32 ret = tx_task_add(sche_task_init,sche_background_event_process,TX_TASK_ID_SCH,TX_TASK_PRIORITY_13);
+//     hal_stimer_register_task(sch_timer_task);
+// }
+// #if(TX_SCHEDULER_ENABLE)
+// TASK_INIT(sche_init);
+// #endif
