@@ -126,41 +126,51 @@ sch_ctrl_t schCtrl;
 
 
 
-static void sch_schedule_task(sch_node_t* task)
+static void sch_insert_task(sch_node_t* task)
 {
 
 }
-static sch_node_t* sch_extract_task(void)
+static sch_node_t* sch_extract_first_task(void)
 {
-
+    if(IS_TASK_VALID(schCtrl.pWaitingList))
+    {
+    	sch_node_t* task = schCtrl.pWaitingList;
+    	schCtrl.pWaitingList = schCtrl.pWaitingList->next;
+    	return task;
+    }
+    return NULL;
 }
-
-static void sch_timer_task(void)
+static void sch_program_timer(void)
 {
-    if(schCtrl.pRunningTask!=NULL)
+	hal_stimer_clear_irq();
+    if(IS_TASK_VALID(schCtrl.pRunningTask))
+    {
+
+    }
+}
+volatile static unsigned int time = 0;
+static void sch_schedule_next_task(void)
+{
+	system_clock();
+    if(IS_TASK_VALID(schCtrl.pRunningTask))
     {
         schCtrl.pRunningTask->cb(SCH_TASK_STOP);
         if(schCtrl.pRunningTask->type == SCH_PERIODIC_TASK)
         {
-            sch_schedule_task(schCtrl.pRunningTask);
+            sch_insert_task(schCtrl.pRunningTask);
         }
     }
-    schCtrl.pRunningTask = sch_extract_task();
-    if(schCtrl.pRunningTask!=NULL)
+    schCtrl.pRunningTask = sch_extract_first_task();
+    if(IS_TASK_VALID(schCtrl.pRunningTask))
     {
         schCtrl.pRunningTask->cb(SCH_TASK_START);
     }
-}
-
-static void sch_insert_task(sch_node_t* task)
-{
-
+    sch_program_timer();
 }
 static void sch_remove_task(_u8 taskId)
 {
 
 }
-
 static void sche_task_init(void)
 {
     schCtrl.pWaitingList = NULL;
@@ -205,7 +215,7 @@ _u32 sche_event_process(_u16 taskId,_u32 event)
 void sche_init(void)
 {
     _u32 ret = tx_task_add(sche_task_init,sche_event_process,TX_TASK_ID_SCH,TX_TASK_PRIORITY_15);
-    hal_stimer_register_task(sch_timer_task);
+    hal_stimer_register_task(sch_schedule_next_task);
 }
 #if(TX_SCHEDULER_ENABLE)
 TASK_INIT(sche_init);

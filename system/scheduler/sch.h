@@ -30,10 +30,9 @@ typedef enum
 
 typedef enum
 {
-    SCH_PERIODIC_TASK,  //anchor point fixed
-    SCH_SPORADIC_TASK,  //sporadic
-    SCH_ASAP_TASK,      //no anchor point,as soon as possible.
-    SCH_TASK_MAX,
+    SCH_PERIODIC_TASK  = 0x01,  //anchor point fixed
+    SCH_SPORADIC_TASK  = 0x02,  //sporadic
+    SCH_ASAP_TASK      = 0x03,  //no anchor point,as soon as possible.
 }sch_task_type_e;
 
 typedef void(*sch_cb_f)(_u8);
@@ -46,13 +45,12 @@ typedef struct _PACKED sch_node_t
     _u8  update;//schdule task
     _u32 timestamp;//us
     _u32 period;//us
-    _u32 duration;//us
+    _u32 durationMin;//min duraiton,us
+    _u32 duration;//expected duration,us
     _u32 startLatency;//us
     _u32 stopLatency;//us
     sch_cb_f cb;//start or stop or passed or canceled callback.
-    sch_node_t* tNext;//task list
-    sch_node_t* rNext;//running list
-    sch_node_t* cNext;//canceled list
+    sch_node_t* next;
 }sch_node_t;
 
 typedef struct 

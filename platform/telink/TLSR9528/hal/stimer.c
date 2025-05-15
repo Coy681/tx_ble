@@ -9,7 +9,9 @@
 
 #include "../../../../common/txCommon.h"
 static hal_stimer_task hal_stimer_irq_cb = NULL;
-
+static unsigned int stimerTime = 0;
+static unsigned int lastClockTick = 0;
+static unsigned int stimeCapture = 0;
 /**
  * @brief		System timer interrupt handler.
  * @param[in]	none
@@ -40,19 +42,40 @@ void hal_stimer_register_task(hal_stimer_task cb)
     }
 }
 
-void hal_stimer_clear_irq(void)
+_RAM_CODE void hal_stimer_clear_irq(void)
 {
 	stimer_clr_irq_status(FLD_SYSTEM_IRQ);
 }
 
-void hal_stimer_set_capture(int captureTick)
+_RAM_CODE void hal_stimer_set_capture(int captureTime)
 {
-	stimer_set_irq_capture(captureTick);
+	stimeCapture = captureTime ;
+    unsigned int captureTick = stimeCapture*CLOCK_TICK_US;
+    reg_system_irq_level = captureTick;
 }
 
-int hal_stimer_get_capture(void)
+_RAM_CODE unsigned int hal_stimer_get_capture(void)
 {
-	return stimer_get_tick();
+	return stimeCapture;
 }
 
+_RAM_CODE unsigned int system_clock(void)
+{
+	if(lastClockTick == 0)
+	{
+		lastClockTick = stimer_get_tick();
+		stimerTime = lastClockTick/CLOCK_TICK_US;
+		return lastClockTick;
+	}
+	unsigned int clockTick = stimer_get_tick();
+	stimerTime += ((clockTick-lastClockTick+CLOCK_TICK_US/2)/CLOCK_TICK_US);
+	lastClockTick = clockTick;
+	return clockTick;
+}
+
+_RAM_CODE unsigned int system_time(void)
+{
+	system_clock();
+	return stimerTime;
+}
 

@@ -14,7 +14,7 @@
 
 #include"system/ble/controller/state.h"
 
-#include"system/scheduler/tsched.h"
+#include"system/scheduler/sch.h"
 
 volatile _u32 AAA_Mcause = 0;
 volatile _u32 AAA_Mtval = 0;
@@ -62,7 +62,7 @@ void task1_callback(_u8 type)
 sch_node_t aTask1=
 {
 	.llId = 0x00,
-	.type = SCH_FIXED_PERIODIC_TASK,
+	.type = SCH_PERIODIC_TASK,
     .priority = SCH_TASK_PRIORITY_F,
 	.update = 0,
 	.timestamp = 0,
@@ -96,7 +96,7 @@ void task2_callback(_u8 type)
 sch_node_t aTask2=
 {
 	.llId = 0x01,
-	.type = SCH_FIXED_PERIODIC_TASK,
+	.type = SCH_PERIODIC_TASK,
     .priority = SCH_TASK_PRIORITY_F,
 	.update = 0,
 	.timestamp = 0,
@@ -130,7 +130,7 @@ void task3_callback(_u8 type)
 sch_node_t aTask3=
 {
 	.llId = 0x02,
-	.type = SCH_FIXED_PERIODIC_TASK,
+	.type = SCH_PERIODIC_TASK,
     .priority = SCH_TASK_PRIORITY_F,
 	.update = 0,
 	.timestamp = 0,
