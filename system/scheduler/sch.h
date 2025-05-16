@@ -82,5 +82,5 @@ typedef struct _PACKED
 #define TX_SCHE_LOG_ENABLE  1
 #endif
 
-#define IS_TASK_VALID(task)     ((task)!=NULL)
+#define TASK_VALID(task)         ((task)!=NULL)
 #define TASK_NOT_VALID(task)     ((task)==NULL)

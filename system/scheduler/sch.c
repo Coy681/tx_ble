@@ -8,7 +8,9 @@
 #include"tx_common.h"
 
 sch_ctrl_t schCtrl;
-
+#define SCH_CANCELED_TASK      1
+#define SCH_WAITING_TASK       2
+#define SCH_RUNNING_TASK       3
 /** Case A:new task happens before current
  *                            --------------------------------
  *                            |            Current           |
@@ -126,7 +128,7 @@ sch_ctrl_t schCtrl;
 
 static void sch_insert_task_to_canceled_list(sch_node_t* task)
 {
-    ASSERT(IS_TASK_VALID(task));
+    ASSERT(TASK_VALID(task));
     task->next = NULL;
     sch_node_t* prev = NULL;
     sch_node_t* scan = schCtrl.pCanceledList;
@@ -161,13 +163,13 @@ static int sch_insert_task(sch_node_t* task)
     sch_node_t* scan = schCtrl.pWaitingList;
     sch_node_t* prev = NULL;
     task->next = NULL;
+    int status = SCH_STATUS_SUCCESS;
     if(TASK_NOT_VALID(scan))
     {
         schCtrl.pWaitingList = task;
     }
     else
     {
-        int status = SCH_STATUS_SUCCESS;
         sch_node_t* cancelFirst = NULL;
         sch_node_t* cancelLast  = NULL;
         while(scan!=NULL)
@@ -230,13 +232,81 @@ static int sch_insert_task(sch_node_t* task)
             sch_insert_task_to_canceled_list(task);
         }
     }
+    if(TASK_VALID(schCtrl.pRunningTask))
+    {
+    	int conflict = sch_task1_conflict_with_task2(schCtrl.pRunningTask,schCtrl.pWaitingList);
+        if(conflict!=SCH_START_BEFORE_END_BEFORE)
+        {
+        	if(conflict == SCH_START_AFTER_END_AFTER)
+        	{
+        		schCtrl.pRunningTask->next = schCtrl.pWaitingList->next;
+        		schCtrl.pRunningTask = schCtrl.pWaitingList;
+        	}
+        	else
+        	{
+        		if(schCtrl.pWaitingList->next->priority>schCtrl.pRunningTask->next->priority)
+        		{
+        			hal_stimer_set_capture(system_time()+20);
+        		}
+        	}
+        }
+    }
+    else
+    {
+    	hal_stimer_set_capture(system_time()+20);
+    }
+
     return SCH_STATUS_SUCCESS;
 }
+
+static void sch_process_timeout_task(sch_node_t* list,_u8 taskType)
+{
+	sch_node_t* scan = list;
+	while(scan!=NULL)
+	{
+		_u32 time = system_time();
+		_u32 startTime = scan->timestamp-scan->startLatency;
+		if(time_compare(time,startTime))
+		{
+			if(taskType == SCH_CANCELED_TASK)
+			{
+				scan->cb(SCH_TASK_CANCELED);
+			}
+			else
+			{
+				scan->cb(SCH_TASK_PASSED);
+			}
+			sch_node_t* task = scan;
+			scan = scan->next;
+			if(scan->type == SCH_PERIODIC_TASK)
+			{
+				sch_insert_task(task);
+			}
+		}
+		else
+		{
+			break;
+		}
+	}
+}
+
 static sch_node_t* sch_extract_first_task(void)
 {
-    if(IS_TASK_VALID(schCtrl.pWaitingList))
+	sch_process_timeout_task(schCtrl.pWaitingList,SCH_WAITING_TASK);
+    if(TASK_VALID(schCtrl.pWaitingList))
     {
-    	sch_node_t* task = schCtrl.pWaitingList;
+    	sch_node_t* task = NULL;
+    	if(schCtrl.pCanceledList)
+    	{
+        	if(sch_task1_conflict_with_task2(schCtrl.pCanceledList,schCtrl.pWaitingList) == SCH_START_BEFORE_END_BEFORE)
+        	{
+        		task = schCtrl.pCanceledList;
+        		schCtrl.pCanceledList = schCtrl.pCanceledList->next;
+        		return task;
+        	}
+        	sch_process_timeout_task(schCtrl.pCanceledList,SCH_CANCELED_TASK);
+    	}
+    	task = schCtrl.pWaitingList;
     	schCtrl.pWaitingList = schCtrl.pWaitingList->next;
     	return task;
     }
@@ -246,7 +316,7 @@ static void sch_program_timer(void)
 {
 	hal_stimer_clear_irq();
     _u32 time = system_time();
-    if(IS_TASK_VALID(schCtrl.pRunningTask))
+    if(TASK_VALID(schCtrl.pRunningTask))
     {
         _u32 capture = schCtrl.pRunningTask->timestamp + schCtrl.pRunningTask->duration;
         if(txCompareTime(capture,time))
@@ -263,21 +333,15 @@ static void sch_program_timer(void)
         hal_stimer_set_capture(time+10000);
     }
 }
-static int sch_task_start_time_enough(sch_node_t* task)
+
+static void sch_extract_next_task()
 {
 
-    _u32 time = system_time();
-    _u32 target = task->timestamp - task->startLatency;
-    if(txCompareTime(target,time))
-    {
-        return 1;
-    }
-    return 0;
 }
 
 static void sch_schedule_next_task(void)
 {
-    if(IS_TASK_VALID(schCtrl.pRunningTask))
+    if(TASK_VALID(schCtrl.pRunningTask))
     {
         schCtrl.pRunningTask->cb(SCH_TASK_STOP);
         if(schCtrl.pRunningTask->type == SCH_PERIODIC_TASK)
@@ -286,20 +350,9 @@ static void sch_schedule_next_task(void)
         }
     }
     schCtrl.pRunningTask = sch_extract_first_task();
-    if(IS_TASK_VALID(schCtrl.pRunningTask))
+    if(TASK_VALID(schCtrl.pRunningTask))
     {
-        if(sch_task_start_time_enough(schCtrl.pRunningTask))
-        {
-            schCtrl.pRunningTask->cb(SCH_TASK_START);
-        }
-        else
-        {
-            schCtrl.pRunningTask->cb(SCH_TASK_PASSED);
-            if(schCtrl.pRunningTask->type == SCH_PERIODIC_TASK)
-            {
-                sch_insert_task(schCtrl.pRunningTask);
-            }
-        }
+        schCtrl.pRunningTask->cb(SCH_TASK_START);
     }
     sch_program_timer();
 }
