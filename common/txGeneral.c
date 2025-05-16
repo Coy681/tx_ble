@@ -61,9 +61,9 @@ int txStringLength(_s8* string)
 	return length;
 }
 
-int tick1_exceed_tick2(_u32 tick1,_u32 tick2)
+int txCompareTime(_u32 val1,_u32 val2)
 {
-	if((tick1-tick2) < 1U<<30)
+	if((val1-val2) < (1U<<30))
 	{
 		return 1;
 	}

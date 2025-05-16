@@ -77,3 +77,4 @@ typedef struct _PACKED
 #endif
 
 #define IS_TASK_VALID(task)     ((task)!=NULL)
+#define TASK_NOT_VALID(task)     ((task)==NULL)
