@@ -2,6 +2,12 @@
 
 typedef enum
 {
+    SCH_STATUS_SUCCESS          = 0x00,
+    SCH_STATUS_REJECTED         = 0x01,
+    SCH_STATUS_TASK_NULL        = 0x02,
+};
+typedef enum
+{
     SCH_TASK_PRIORITY_0 = 0,
     SCH_TASK_PRIORITY_1 = 2,
     SCH_TASK_PRIORITY_2 = 4,

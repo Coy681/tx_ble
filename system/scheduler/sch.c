@@ -78,15 +78,9 @@ sch_ctrl_t schCtrl;
     SCH_START_AFTER_END_AFTER   = 0x06   //Case F
  };
 
-enum
-{
-    SCH_STATUS_SUCCESS          = 0x00,
-    SCH_STATUS_REJECTED         = 0x01,
-}
-
  static int sch_task1_conflict_with_task2(sch_node_t* task1,sch_node_t* task2)
  {
-    ASSERT(task1==NULL||task2==NULL);
+    ASSERT(task1!=NULL&&task2!=NULL);
     _u32 task1S = task1->timestamp - task1->startLatency;
     _u32 task1E = task1->timestamp + task1->duration + task1->stopLatency;
     _u32 task2S = task2->timestamp - task2->startLatency;
@@ -132,7 +126,7 @@ enum
 
 static void sch_insert_task_to_canceled_list(sch_node_t* task)
 {
-    ASSERT(TASK_NOT_VALID(task));
+    ASSERT(IS_TASK_VALID(task));
     task->next = NULL;
     sch_node_t* prev = NULL;
     sch_node_t* scan = schCtrl.pCanceledList;
@@ -158,14 +152,15 @@ static void sch_insert_task_to_canceled_list(sch_node_t* task)
     }
 }
 
-static void sch_insert_task(sch_node_t* task)
+static int sch_insert_task(sch_node_t* task)
 {
     if(TASK_NOT_VALID(task))
     {
-        return;
+        return SCH_STATUS_TASK_NULL;
     }
     sch_node_t* scan = schCtrl.pWaitingList;
     sch_node_t* prev = NULL;
+    task->next = NULL;
     if(TASK_NOT_VALID(scan))
     {
         schCtrl.pWaitingList = task;
@@ -217,11 +212,17 @@ static void sch_insert_task(sch_node_t* task)
                 schCtrl.pWaitingList = task;
                 task->next = scan;
             }
-            sch_insert_task_to_canceled_list(cancelFirst);
-            while(cancelFirst!=cancelLast)
+            if(cancelFirst)
             {
-                cancelFirst = cancelFirst->next;
                 sch_insert_task_to_canceled_list(cancelFirst);
+                while(cancelFirst!=cancelLast)
+                {
+                    cancelFirst = cancelFirst->next;
+                    if(cancelFirst)
+                    {
+                        sch_insert_task_to_canceled_list(cancelFirst);
+                    }
+                }
             }
         }
         else
@@ -229,6 +230,7 @@ static void sch_insert_task(sch_node_t* task)
             sch_insert_task_to_canceled_list(task);
         }
     }
+    return SCH_STATUS_SUCCESS;
 }
 static sch_node_t* sch_extract_first_task(void)
 {
@@ -303,7 +305,7 @@ static void sch_schedule_next_task(void)
 }
 static void sch_remove_task(_u8 taskId)
 {
-
+    //todo
 }
 static void sche_task_init(void)
 {
