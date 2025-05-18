@@ -22,6 +22,8 @@
         "system_error": "c",
         "txmalloc.h": "c",
         "txbit.h": "c",
-        "txutility.h": "c"
+        "txutility.h": "c",
+        "debug_gpio.h": "c",
+        "txtype.h": "c"
     }
 }

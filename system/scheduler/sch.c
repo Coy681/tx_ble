@@ -6,7 +6,7 @@
 #include"platform/hal/stimer.h"
 #include"config.h"
 #include"tx_common.h"
-
+#include"common/txCommon.h"
 sch_ctrl_t schCtrl;
 #define SCH_CANCELED_TASK      1
 #define SCH_WAITING_TASK       2
@@ -126,6 +126,31 @@ sch_ctrl_t schCtrl;
     }
  }
 
+static int  sch_delete_node_from_list(sch_node_t** list,sch_node_t* node)
+{
+    ASSERT(TASK_VALID(list)&&TASK_VALID(node));
+    sch_node_t* scan = *list;
+    sch_node_t* prev = NULL;
+    while(TASK_VALID(scan))
+    {
+        if(scan == node)
+        {
+            if(prev)
+            {
+                prev->next = scan->next;
+            }
+            else
+            {
+                *list = (*list)->next;
+            }
+            return 1;
+        }
+        prev = scan;
+        scan = scan->next;
+    }
+    return 0;
+}
+
 static void sch_insert_task_to_canceled_list(sch_node_t* task)
 {
     ASSERT(TASK_VALID(task));
@@ -168,7 +193,7 @@ static int sch_insert_task(sch_node_t* task)
     {
         schCtrl.pWaitingList = task;
     }
-    else
+    else 
     {
         sch_node_t* cancelFirst = NULL;
         sch_node_t* cancelLast  = NULL;
@@ -259,14 +284,13 @@ static int sch_insert_task(sch_node_t* task)
     return SCH_STATUS_SUCCESS;
 }
 
-static void sch_process_timeout_task(sch_node_t* list,_u8 taskType)
-{
-	sch_node_t* scan = list;
+static void sch_process_timeout_task(_u32 currentTime,sch_node_t** list,_u8 taskType)
+{//issues in here
+	sch_node_t* scan = *list;
 	while(scan!=NULL)
 	{
-		_u32 time = system_time();
-		_u32 startTime = scan->timestamp-scan->startLatency;
-		if(time_compare(time,startTime))
+		_u32 startTime = TASK_START_TIME(scan);
+		if(txCompareTime(currentTime,startTime))
 		{
 			if(taskType == SCH_CANCELED_TASK)
 			{
@@ -277,8 +301,9 @@ static void sch_process_timeout_task(sch_node_t* list,_u8 taskType)
 				scan->cb(SCH_TASK_PASSED);
 			}
 			sch_node_t* task = scan;
-			scan = scan->next;
-			if(scan->type == SCH_PERIODIC_TASK)
+            scan = scan->next;
+            sch_delete_node_from_list(list,task);
+			if(task->type == SCH_PERIODIC_TASK)
 			{
 				sch_insert_task(task);
 			}
@@ -289,10 +314,25 @@ static void sch_process_timeout_task(sch_node_t* list,_u8 taskType)
 		}
 	}
 }
+static void sch_update_timestamp(_u32 currenTime)
+{
+    if(TASK_VALID(schCtrl.pWaitingList))
+    {
+        sch_process_timeout_task(currenTime,&schCtrl.pWaitingList,SCH_WAITING_TASK);
+    }
+    if(TASK_VALID(schCtrl.pCanceledList))
+    {
+        sch_process_timeout_task(currenTime,&schCtrl.pCanceledList,SCH_CANCELED_TASK);
+    }
+    if(TASK_VALID(schCtrl.pRunningTask))
+    {
+        sch_process_timeout_task(currenTime,&schCtrl.pRunningTask,SCH_CANCELED_TASK);
+    }
+}
 
 static sch_node_t* sch_extract_first_task(void)
 {
-	sch_process_timeout_task(schCtrl.pWaitingList,SCH_WAITING_TASK);
+    sch_update_timestamp(system_time());
     if(TASK_VALID(schCtrl.pWaitingList))
     {
     	sch_node_t* task = NULL;
@@ -304,7 +344,6 @@ static sch_node_t* sch_extract_first_task(void)
         		schCtrl.pCanceledList = schCtrl.pCanceledList->next;
         		return task;
         	}
-        	sch_process_timeout_task(schCtrl.pCanceledList,SCH_CANCELED_TASK);
     	}
     	task = schCtrl.pWaitingList;
     	schCtrl.pWaitingList = schCtrl.pWaitingList->next;
