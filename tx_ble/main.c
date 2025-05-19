@@ -39,31 +39,13 @@ void trap_entry(void)
 }
 
 
-void task1_callback(_u8 type)
-{
-	if(type == SCH_TASK_START)
-	{
-//		LOG_TRACE(1,"task 1 start",0,0)
-	}
-	else if(type == SCH_TASK_STOP)
-	{
-//		LOG_TRACE(1,"task 1 stop",0,0)
-	}
-	else if(type == SCH_TASK_CANCELED)
-	{
-//		LOG_TRACE(1,"task 1 canceled",0,0)
-	}
-	else if(type == SCH_TASK_PASSED)
-	{
-//		LOG_TRACE(1,"task 1 passed",0,0)
-	}
-}
 
+void task1_callback(_u8 type);
 sch_node_t aTask1=
 {
 	.llId = 0x00,
 	.type = SCH_PERIODIC_TASK,
-    .priority = SCH_TASK_PRIORITY_F,
+    .priority = SCH_TASK_PRIORITY_A,
 	.update = 0,
 	.timestamp = 0,
     .period = 20000,
@@ -73,31 +55,38 @@ sch_node_t aTask1=
 	.cb = task1_callback,
 };
 
-void task2_callback(_u8 type)
+_RAM_CODE void task1_callback(_u8 type)
 {
 	if(type == SCH_TASK_START)
 	{
-//		LOG_TRACE(1,"task 2 start",0,0)
+		aTask1.priority = SCH_TASK_PRIORITY_A;
+    	DEBUG_GPIO_HIGH(GPIO_4);
+//		LOG_TRACE(1,"task 1 start",0,0)
+    	DEBUG_GPIO_LOW(GPIO_4);
 	}
 	else if(type == SCH_TASK_STOP)
 	{
-//		LOG_TRACE(1,"task 2 stop",0,0)
+//		LOG_TRACE(1,"task 1 stop",0,0)
 	}
 	else if(type == SCH_TASK_CANCELED)
 	{
-//		LOG_TRACE(1,"task 2 canceled",0,0)
+		aTask1.priority++;
+//		LOG_TRACE(1,"task 1 canceled",0,0)
 	}
 	else if(type == SCH_TASK_PASSED)
 	{
-//		LOG_TRACE(1,"task 2 passed",0,0)
+		aTask1.priority++;
+//		LOG_TRACE(1,"task 1 passed",0,0)
 	}
-
 }
+
+void task2_callback(_u8 type);
+
 sch_node_t aTask2=
 {
 	.llId = 0x01,
 	.type = SCH_PERIODIC_TASK,
-    .priority = SCH_TASK_PRIORITY_F,
+    .priority = SCH_TASK_PRIORITY_A,
 	.update = 0,
 	.timestamp = 0,
     .period = 20000,
@@ -107,31 +96,39 @@ sch_node_t aTask2=
 	.cb = task2_callback,
 };
 
-void task3_callback(_u8 type)
+_RAM_CODE void task2_callback(_u8 type)
 {
 	if(type == SCH_TASK_START)
 	{
-		LOG_TRACE(1,"task 3 start",0,0)
+		aTask2.priority = SCH_TASK_PRIORITY_A;
+    	DEBUG_GPIO_HIGH(GPIO_5);
+//		LOG_TRACE(1,"task 2 start",0,0)
+    	DEBUG_GPIO_LOW(GPIO_5);
 	}
 	else if(type == SCH_TASK_STOP)
 	{
-		LOG_TRACE(1,"task 3 stop",0,0)
+//		LOG_TRACE(1,"task 2 stop",0,0)
 	}
 	else if(type == SCH_TASK_CANCELED)
 	{
-		LOG_TRACE(1,"task 3 canceled",0,0)
+		aTask2.priority++;
+//		LOG_TRACE(1,"task 2 canceled",0,0)
 	}
 	else if(type == SCH_TASK_PASSED)
 	{
-		LOG_TRACE(1,"task 3 passed",0,0)
+		aTask2.priority++;
+//		LOG_TRACE(1,"task 2 passed",0,0)
 	}
 
 }
+
+
+_RAM_CODE void task3_callback(_u8 type);
 sch_node_t aTask3=
 {
 	.llId = 0x02,
 	.type = SCH_PERIODIC_TASK,
-    .priority = SCH_TASK_PRIORITY_F,
+    .priority = SCH_TASK_PRIORITY_A,
 	.update = 0,
 	.timestamp = 0,
     .period = 20000,
@@ -141,6 +138,32 @@ sch_node_t aTask3=
 	.cb = task3_callback,
 };
 
+_RAM_CODE void task3_callback(_u8 type)
+{
+	if(type == SCH_TASK_START)
+	{
+		aTask3.priority = SCH_TASK_PRIORITY_A;
+    	DEBUG_GPIO_HIGH(GPIO_6);
+//		LOG_TRACE(1,"task 3 start",0,0)
+    	DEBUG_GPIO_LOW(GPIO_6);
+	}
+	else if(type == SCH_TASK_STOP)
+	{
+//		LOG_TRACE(1,"task 3 stop",0,0)
+	}
+	else if(type == SCH_TASK_CANCELED)
+	{
+		aTask3.priority++;
+//		LOG_TRACE(1,"task 3 canceled",0,0)
+	}
+	else if(type == SCH_TASK_PASSED)
+	{
+		aTask3.priority++;
+//		LOG_TRACE(1,"task 3 passed",0,0)
+	}
+
+}
+
 void app_rx_cmd(_u8* data,_u32 len)
 {
 	LOG_TRACE(1,"rx data",data,len)
@@ -149,7 +172,6 @@ void app_rx_cmd(_u8* data,_u32 len)
 		case 0x01:
 		{
 			_u8* message = tx_message_allocate(8);
-
 			message[0] = SCHE_MESSAGE_TASK_ADD;
 			message[1] = ((_u32)&aTask1);
 			message[2] = ((_u32)&aTask1)>>8;

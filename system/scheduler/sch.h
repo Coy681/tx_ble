@@ -78,11 +78,13 @@ typedef struct _PACKED
     _u8 message[0];
 }sch_message_t;
 
+#define TASK_VALID(task)              ((task)!=NULL)
+#define TASK_NOT_VALID(task)          ((task)==NULL)
+#define TASK_START_TIME(task)         (task->timestamp - task->startLatency)
+#define TASK_STOP_TIME(task)          (task->timestamp + task->duration + task->stopLatency)
+#define TASK_PERIODIC_TS_UPDATE(task) (task->timestamp+=task->period)
+
+
 #ifndef TX_SCHE_LOG_ENABLE
 #define TX_SCHE_LOG_ENABLE  1
 #endif
-
-#define TASK_VALID(task)         ((task)!=NULL)
-#define TASK_NOT_VALID(task)     ((task)==NULL)
-#define TASK_START_TIME(task)    (task->timestamp - task->startLatency)
-#define TASK_STOP_TIME(task)     (task->timestamp + task->duration + task->stopLatency)

@@ -80,7 +80,7 @@ sch_ctrl_t schCtrl;
     SCH_START_AFTER_END_AFTER   = 0x06   //Case F
  };
 
- static int sch_task1_conflict_with_task2(sch_node_t* task1,sch_node_t* task2)
+ _RAM_CODE static int sch_task1_conflict_with_task2(sch_node_t* task1,sch_node_t* task2)
  {
     ASSERT(task1!=NULL&&task2!=NULL);
     _u32 task1S = task1->timestamp - task1->startLatency;
@@ -126,7 +126,7 @@ sch_ctrl_t schCtrl;
     }
  }
 
-static int  sch_delete_node_from_list(sch_node_t** list,sch_node_t* node)
+ _RAM_CODE static int  sch_delete_node_from_list(sch_node_t** list,sch_node_t* node)
 {
     ASSERT(TASK_VALID(list)&&TASK_VALID(node));
     sch_node_t* scan = *list;
@@ -150,7 +150,7 @@ static int  sch_delete_node_from_list(sch_node_t** list,sch_node_t* node)
     }
     return 0;
 }
-static sch_node_t* sch_serach_node_in_list(sch_node_t* list,_u8 id)
+ _RAM_CODE static sch_node_t* sch_serach_node_in_list(sch_node_t* list,_u8 id)
 {
     ASSERT(TASK_VALID(list));
     sch_node_t* scan = list;
@@ -165,7 +165,7 @@ static sch_node_t* sch_serach_node_in_list(sch_node_t* list,_u8 id)
     return NULL;
 }
 
-static void sch_insert_task_to_canceled_list(sch_node_t* task)
+ _RAM_CODE static void sch_insert_task_to_canceled_list(sch_node_t* task)
 {
     ASSERT(TASK_VALID(task));
     task->next = NULL;
@@ -189,11 +189,13 @@ static void sch_insert_task_to_canceled_list(sch_node_t* task)
     }
     else
     {
+    	task->next = schCtrl.pCanceledList;
         schCtrl.pCanceledList = task;
     }
 }
 
-static int sch_insert_task(sch_node_t* task)
+ _u8 insert = 0;
+ _RAM_CODE static int sch_insert_task(sch_node_t* task)
 {
     if(TASK_NOT_VALID(task))
     {
@@ -213,6 +215,7 @@ static int sch_insert_task(sch_node_t* task)
         sch_node_t* cancelLast  = NULL;
         while(scan!=NULL)
         {
+        	insert = 1;
             int conflict = sch_task1_conflict_with_task2(task,scan);
             if(conflict == SCH_START_BEFORE_END_BEFORE)
             {
@@ -243,14 +246,14 @@ static int sch_insert_task(sch_node_t* task)
         }
         if(status == SCH_STATUS_SUCCESS)
         {
-            if(prev)
+            if(prev == NULL || cancelFirst == schCtrl.pWaitingList)
             {
-                prev->next = task;
+                schCtrl.pWaitingList = task;
                 task->next = scan;
             }
             else
             {
-                schCtrl.pWaitingList = task;
+                prev->next = task;
                 task->next = scan;
             }
             if(cancelFirst)
@@ -298,53 +301,73 @@ static int sch_insert_task(sch_node_t* task)
     return SCH_STATUS_SUCCESS;
 }
 
-static void sch_process_timeout_task(_u32 currentTime,sch_node_t** list,_u8 taskType)
-{//issues in here
+ _RAM_CODE static unsigned int sch_process_timeout_task(_u32 currentTime,sch_node_t* task)
+ {
+	 ASSERT(TASK_VALID(task));
+	 _u32 taskStartTime = TASK_START_TIME(task);
+	 if(txCompareTime(currentTime,taskStartTime))
+	 {
+		 if(task->type == SCH_PERIODIC_TASK)
+		 {
+			 _u32 cnt = (currentTime - taskStartTime)/task->period + 1;
+		     task->timestamp += (cnt*task->period);
+			 return cnt;
+		 }
+		 else
+		 {
+			 return 1;
+		 }
+	 }
+	 else
+	 {
+		 return 0;
+	 }
+ }
+
+ _RAM_CODE static void sch_process_timeout_list(_u32 currentTime,sch_node_t** list,_u8 taskType)
+{
 	sch_node_t* scan = *list;
 	while(scan!=NULL)
 	{
 		_u32 startTime = TASK_START_TIME(scan);
-		if(txCompareTime(currentTime,startTime))
-		{
+
+        if(sch_process_timeout_task(currentTime,scan)!=0)
+        {
 			if(taskType == SCH_CANCELED_TASK)
 			{
-				scan->cb(SCH_TASK_CANCELED);
+				scan->cb(SCH_TASK_CANCELED);;
 			}
 			else
 			{
 				scan->cb(SCH_TASK_PASSED);
 			}
 			sch_node_t* task = scan;
-            scan = scan->next;
-            sch_delete_node_from_list(list,task);
+			scan = scan->next;
+			sch_delete_node_from_list(list,task);
 			if(task->type == SCH_PERIODIC_TASK)
 			{
 				sch_insert_task(task);
 			}
-		}
-		else
-		{
-			break;
-		}
+        }
+        else
+        {
+        	break;
+        }
 	}
 }
-static void sch_update_timestamp(_u32 currenTime)
+ _RAM_CODE static void sch_update_timestamp(_u32 currenTime)
 {
     if(TASK_VALID(schCtrl.pWaitingList))
     {
-        sch_process_timeout_task(currenTime,&schCtrl.pWaitingList,SCH_WAITING_TASK);
+    	sch_process_timeout_list(currenTime,&schCtrl.pWaitingList,SCH_WAITING_TASK);
     }
     if(TASK_VALID(schCtrl.pCanceledList))
     {
-        sch_process_timeout_task(currenTime,&schCtrl.pCanceledList,SCH_CANCELED_TASK);
-    }
-    if(TASK_VALID(schCtrl.pRunningTask))
-    {
-        sch_process_timeout_task(currenTime,&schCtrl.pRunningTask,SCH_RUNNING_TASK);
+    	sch_process_timeout_list(currenTime,&schCtrl.pCanceledList,SCH_CANCELED_TASK);
     }
 }
 
-static sch_node_t* sch_extract_first_task(void)
+ _RAM_CODE static sch_node_t* sch_extract_first_task(void)
 {
     sch_update_timestamp(system_time());
     if(TASK_VALID(schCtrl.pWaitingList))
@@ -365,7 +388,7 @@ static sch_node_t* sch_extract_first_task(void)
     }
     return NULL;
 }
-static void sch_program_timer(void)
+ _RAM_CODE static void sch_program_timer(void)
 {
 	hal_stimer_clear_irq();
     _u32 time = system_time();
@@ -387,24 +410,30 @@ static void sch_program_timer(void)
     }
 }
 
-static void sch_schedule_next_task(void)
+ _RAM_CODE static void sch_schedule_next_task(void)
 {
+	DEBUG_GPIO_HIGH(GPIO_2);
     if(TASK_VALID(schCtrl.pRunningTask))
     {
         schCtrl.pRunningTask->cb(SCH_TASK_STOP);
         if(schCtrl.pRunningTask->type == SCH_PERIODIC_TASK)
         {
-            sch_insert_task(schCtrl.pRunningTask);
+        	sch_node_t* pTask = schCtrl.pRunningTask;
+        	schCtrl.pRunningTask = NULL;
+        	TASK_PERIODIC_TS_UPDATE(pTask);
+            sch_insert_task(pTask);
         }
     }
     schCtrl.pRunningTask = sch_extract_first_task();
+
     if(TASK_VALID(schCtrl.pRunningTask))
     {
         schCtrl.pRunningTask->cb(SCH_TASK_START);
     }
     sch_program_timer();
+	DEBUG_GPIO_LOW(GPIO_2);
 }
-static int sch_remove_task(_u8 taskId)
+ _RAM_CODE static int sch_remove_task(_u8 taskId)
 {
     if(TASK_VALID(schCtrl.pWaitingList))
     {
@@ -412,6 +441,7 @@ static int sch_remove_task(_u8 taskId)
         if(TASK_VALID(task))
         {
             sch_delete_node_from_list(&schCtrl.pWaitingList,task);
+            return 1;
         }
     }
     if(TASK_VALID(schCtrl.pCanceledList))
@@ -420,16 +450,20 @@ static int sch_remove_task(_u8 taskId)
         if(TASK_VALID(task))
         {
             sch_delete_node_from_list(&schCtrl.pWaitingList,task);
+            return 1;
         }
+        return 1;
     }
     if(TASK_VALID(schCtrl.pRunningTask))
     {
         if(schCtrl.pRunningTask->llId == taskId)
         {
             schCtrl.pRunningTask->cb(SCH_TASK_STOP);
+            return 1;
         }
         schCtrl.pRunningTask = NULL;
     }
+    return 0;
 }
 static void sche_task_init(void)
 {
@@ -452,7 +486,14 @@ _u32 sche_event_process(_u16 taskId,_u32 event)
                     _u32 address = 0;
                     BYTE_TO_U32(address,pMessage->message);
                 	LOG_TRACE(TX_SCHE_LOG_ENABLE,"schedule add task",&address,4);
-                    sch_insert_task((sch_node_t*)address);
+                	sch_node_t* task = (sch_node_t*)address;
+                	_u32 cnt = sch_process_timeout_task(system_time(),task);
+                	if(cnt!=0)
+                	{
+                		LOG_TRACE(TX_SCHE_LOG_ENABLE,"sche task passed",&cnt,4);
+                		task->cb(SCH_TASK_PASSED);
+                	}
+                    sch_insert_task(task);
                 }
                     break;
                 case SCHE_MESSAGE_TASK_REMOVE:
