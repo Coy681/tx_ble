@@ -11,6 +11,7 @@
 static hal_stimer_task hal_stimer_irq_cb = NULL;
 static unsigned int stimerTime = 0;
 static unsigned int lastClockTick = 0;
+static unsigned int lastClockRemain = 0;
 static unsigned int stimeCapture = 0;
 /**
  * @brief		System timer interrupt handler.
@@ -63,12 +64,14 @@ _RAM_CODE unsigned int system_clock(void)
 {
 	if(lastClockTick == 0)
 	{
-		lastClockTick = stimer_get_tick();
+		lastClockTick = stimer_get_tick()|1;
 		stimerTime = lastClockTick/CLOCK_TICK_US;
+		lastClockRemain = lastClockTick%CLOCK_TICK_US;
 		return lastClockTick;
 	}
-	unsigned int clockTick = stimer_get_tick();
-	stimerTime += ((clockTick-lastClockTick+CLOCK_TICK_US/2)/CLOCK_TICK_US);
+	unsigned int clockTick = stimer_get_tick()|1;
+	stimerTime += ((clockTick-lastClockTick+lastClockRemain)/CLOCK_TICK_US);
+	lastClockRemain = (clockTick-lastClockTick)%CLOCK_TICK_US;
 	lastClockTick = clockTick;
 	return clockTick;
 }

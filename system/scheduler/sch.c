@@ -83,11 +83,11 @@ sch_ctrl_t schCtrl;
  _RAM_CODE static int sch_task1_conflict_with_task2(sch_node_t* task1,sch_node_t* task2)
  {
     ASSERT(task1!=NULL&&task2!=NULL);
-    _u32 task1S = task1->timestamp - task1->startLatency;
-    _u32 task1E = task1->timestamp + task1->duration + task1->stopLatency;
-    _u32 task2S = task2->timestamp - task2->startLatency;
-    _u32 task2E = task2->timestamp + task2->duration + task2->stopLatency;
- 
+    _u32 task1S = TASK_START_TIME(task1);
+    _u32 task1E = TASK_STOP_TIME(task1);
+    _u32 task2S = TASK_START_TIME(task2);
+    _u32 task2E = TASK_STOP_TIME(task2);
+
     if (txCompareTime(task2S,task1S))
     {
         if(txCompareTime(task2S,task1E))
@@ -293,11 +293,15 @@ sch_ctrl_t schCtrl;
         	}
         }
     }
-    else
+    else if(TASK_VALID(schCtrl.pWaitingList))
     {
-    	hal_stimer_set_capture(system_time()+20);
+    	_u32 startTime = TASK_START_TIME(schCtrl.pWaitingList);
+    	_u32 capTure = hal_stimer_get_capture();
+    	if(startTime!=capTure)
+    	{
+        	hal_stimer_set_capture(startTime);
+    	}
     }
-
     return SCH_STATUS_SUCCESS;
 }
 

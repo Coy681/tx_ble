@@ -70,12 +70,16 @@ _RAM_CODE void task1_callback(_u8 type)
 	}
 	else if(type == SCH_TASK_CANCELED)
 	{
+//    	DEBUG_GPIO_HIGH(GPIO_5);
 		aTask1.priority++;
+//		DEBUG_GPIO_LOW(GPIO_5);
 //		LOG_TRACE(1,"task 1 canceled",0,0)
 	}
 	else if(type == SCH_TASK_PASSED)
 	{
+//    	DEBUG_GPIO_HIGH(GPIO_6);
 		aTask1.priority++;
+//		DEBUG_GPIO_LOW(GPIO_6);
 //		LOG_TRACE(1,"task 1 passed",0,0)
 	}
 }
