@@ -1,6 +1,8 @@
 #include"ll.h"
 #include"ll_internal.h"
-
+#include"system/task/message/message.h"
+#include"system/task/task.h"
+#include"system/task/event/event.h" 
 /************************************ll implementation***************************************/
 ll_ctrl_t* llSm;
 static _u8 llSmConut;
@@ -133,14 +135,28 @@ controller_error_code_e ll_set_advertising_enable(_u8 enable)
 	{
 		return SUCCESS;
 	}
-	ll->adv->enable = enable;
-	if(ll->adv->enable == LL_ADVERTISING_ENABLE)
+	if(ll->adv->enable!=enable)
 	{
-		//schedule start
-	}
-	else//LL_ADVERTISING_DISABLE
-	{
-		//schedule stop
+		ll->adv->enable = enable;
+		if(ll->adv->enable == LL_ADVERTISING_ENABLE)
+		{
+			//schedule start
+			sch_message_t* message = (sch_message_t*)tx_message_allocate(8);
+			message->eventType = SCHE_MESSAGE_TASK_ADD;
+			message->message[0] = ((_u32)&ll->sch);
+			message->message[1] = ((_u32)&ll->sch)>>8;
+			message->message[2] = ((_u32)&ll->sch)>>16;
+			message->message[3] = ((_u32)&ll->sch)>>24;
+			tx_message_send(TX_TASK_ID_SCH,(_u8*)message);
+		}
+		else//LL_ADVERTISING_DISABLE
+		{
+			//schedule stop
+			sch_message_t* message = (sch_message_t*)tx_message_allocate(4);
+			message->eventType = SCHE_MESSAGE_TASK_ADD;
+			message->message[0] = ll->id;
+			tx_message_send(TX_TASK_ID_SCH,(_u8*)message);
+		}
 	}
 	return SUCCESS;
 }

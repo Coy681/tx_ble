@@ -150,6 +150,20 @@ static int  sch_delete_node_from_list(sch_node_t** list,sch_node_t* node)
     }
     return 0;
 }
+static sch_node_t* sch_serach_node_in_list(sch_node_t* list,_u8 id)
+{
+    ASSERT(TASK_VALID(list));
+    sch_node_t* scan = list;
+    while(TASK_VALID(scan))
+    {
+        if(scan->llId == id)
+        {
+            return scan;
+        }
+        scan = scan->next;
+    }
+    return NULL;
+}
 
 static void sch_insert_task_to_canceled_list(sch_node_t* task)
 {
@@ -326,7 +340,7 @@ static void sch_update_timestamp(_u32 currenTime)
     }
     if(TASK_VALID(schCtrl.pRunningTask))
     {
-        sch_process_timeout_task(currenTime,&schCtrl.pRunningTask,SCH_CANCELED_TASK);
+        sch_process_timeout_task(currenTime,&schCtrl.pRunningTask,SCH_RUNNING_TASK);
     }
 }
 
@@ -373,11 +387,6 @@ static void sch_program_timer(void)
     }
 }
 
-static void sch_extract_next_task()
-{
-
-}
-
 static void sch_schedule_next_task(void)
 {
     if(TASK_VALID(schCtrl.pRunningTask))
@@ -395,9 +404,32 @@ static void sch_schedule_next_task(void)
     }
     sch_program_timer();
 }
-static void sch_remove_task(_u8 taskId)
+static int sch_remove_task(_u8 taskId)
 {
-    //todo
+    if(TASK_VALID(schCtrl.pWaitingList))
+    {
+        sch_node_t* task = sch_serach_node_in_list(schCtrl.pWaitingList,taskId);
+        if(TASK_VALID(task))
+        {
+            sch_delete_node_from_list(&schCtrl.pWaitingList,task);
+        }
+    }
+    if(TASK_VALID(schCtrl.pCanceledList))
+    {
+        sch_node_t* task = sch_serach_node_in_list(schCtrl.pCanceledList,taskId);
+        if(TASK_VALID(task))
+        {
+            sch_delete_node_from_list(&schCtrl.pWaitingList,task);
+        }
+    }
+    if(TASK_VALID(schCtrl.pRunningTask))
+    {
+        if(schCtrl.pRunningTask->llId == taskId)
+        {
+            schCtrl.pRunningTask->cb(SCH_TASK_STOP);
+        }
+        schCtrl.pRunningTask = NULL;
+    }
 }
 static void sche_task_init(void)
 {

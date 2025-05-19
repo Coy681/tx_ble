@@ -1,5 +1,6 @@
 #include"state.h"
 #include"common/txCommon.h"
+#include"system/scheduler/sch.h"
 /***********************Bluetooth LE Advertising **************************/
 
 typedef struct _PACKED
@@ -58,6 +59,7 @@ typedef struct _PACKED
     _u8  state;
     _u8  id;
     _u16 rsvd;
+    sch_node_t sch;
     ll_internal_standby_ctrl_t*         standby;
     ll_internal_adv_ctrl_t*             adv;
     ll_internal_connection_ctrl_t*      conn;
