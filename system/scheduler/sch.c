@@ -194,13 +194,14 @@ sch_ctrl_t schCtrl;
     }
 }
 
- _u8 insert = 0;
+
  _RAM_CODE static int sch_insert_task(sch_node_t* task)
 {
     if(TASK_NOT_VALID(task))
     {
         return SCH_STATUS_TASK_NULL;
     }
+    IRQ_DISABLE;
     sch_node_t* scan = schCtrl.pWaitingList;
     sch_node_t* prev = NULL;
     task->next = NULL;
@@ -215,7 +216,6 @@ sch_ctrl_t schCtrl;
         sch_node_t* cancelLast  = NULL;
         while(scan!=NULL)
         {
-        	insert = 1;
             int conflict = sch_task1_conflict_with_task2(task,scan);
             if(conflict == SCH_START_BEFORE_END_BEFORE)
             {
@@ -302,6 +302,7 @@ sch_ctrl_t schCtrl;
         	hal_stimer_set_capture(startTime);
     	}
     }
+    IRQ_RESTORE;
     return SCH_STATUS_SUCCESS;
 }
 
@@ -410,7 +411,7 @@ sch_ctrl_t schCtrl;
     }
     else
     {
-        hal_stimer_set_capture(time+10000);
+        hal_stimer_set_capture(time+1000000);
     }
 }
 
@@ -439,12 +440,14 @@ sch_ctrl_t schCtrl;
 }
  _RAM_CODE static int sch_remove_task(_u8 taskId)
 {
+	IRQ_DISABLE;
     if(TASK_VALID(schCtrl.pWaitingList))
     {
         sch_node_t* task = sch_serach_node_in_list(schCtrl.pWaitingList,taskId);
         if(TASK_VALID(task))
         {
             sch_delete_node_from_list(&schCtrl.pWaitingList,task);
+        	IRQ_RESTORE;
             return 1;
         }
     }
@@ -454,19 +457,22 @@ sch_ctrl_t schCtrl;
         if(TASK_VALID(task))
         {
             sch_delete_node_from_list(&schCtrl.pWaitingList,task);
+        	IRQ_RESTORE;
             return 1;
         }
-        return 1;
     }
     if(TASK_VALID(schCtrl.pRunningTask))
     {
         if(schCtrl.pRunningTask->llId == taskId)
         {
             schCtrl.pRunningTask->cb(SCH_TASK_STOP);
+            schCtrl.pRunningTask = NULL;
+        	IRQ_RESTORE;
+        	hal_stimer_set_capture(system_time()+20);
             return 1;
         }
-        schCtrl.pRunningTask = NULL;
     }
+	IRQ_RESTORE;
     return 0;
 }
 static void sche_task_init(void)
@@ -525,3 +531,142 @@ void sche_init(void)
 #if(TX_SCHEDULER_ENABLE)
 TASK_INIT(sche_init);
 #endif
+
+
+
+
+//void task1_callback(_u8 type);
+//sch_node_t aTask1=
+//{
+//	.llId = 0x00,
+//	.type = SCH_PERIODIC_TASK,
+//    .priority = SCH_TASK_PRIORITY_A,
+//	.update = 0,
+//	.timestamp = 0,
+//    .period = 20000,
+//	.duration = 200,
+//	.startLatency = 50,
+//	.stopLatency = 50,
+//	.cb = task1_callback,
+//};
+//
+//_RAM_CODE void task1_callback(_u8 type)
+//{
+//	if(type == SCH_TASK_START)
+//	{
+//		aTask1.priority = SCH_TASK_PRIORITY_A;
+//    	DEBUG_GPIO_HIGH(GPIO_4);
+////		LOG_TRACE(1,"task 1 start",0,0)
+//    	DEBUG_GPIO_LOW(GPIO_4);
+//	}
+//	else if(type == SCH_TASK_STOP)
+//	{
+////		LOG_TRACE(1,"task 1 stop",0,0)
+//	}
+//	else if(type == SCH_TASK_CANCELED)
+//	{
+////    	DEBUG_GPIO_HIGH(GPIO_5);
+//		aTask1.priority++;
+////		DEBUG_GPIO_LOW(GPIO_5);
+////		LOG_TRACE(1,"task 1 canceled",0,0)
+//	}
+//	else if(type == SCH_TASK_PASSED)
+//	{
+////    	DEBUG_GPIO_HIGH(GPIO_6);
+//		aTask1.priority++;
+////		DEBUG_GPIO_LOW(GPIO_6);
+////		LOG_TRACE(1,"task 1 passed",0,0)
+//	}
+//}
+//
+//void task2_callback(_u8 type);
+//
+//sch_node_t aTask2=
+//{
+//	.llId = 0x01,
+//	.type = SCH_PERIODIC_TASK,
+//    .priority = SCH_TASK_PRIORITY_A,
+//	.update = 0,
+//	.timestamp = 0,
+//    .period = 20000,
+//	.duration = 200,
+//	.startLatency = 50,
+//	.stopLatency = 50,
+//	.cb = task2_callback,
+//};
+//
+//_RAM_CODE void task2_callback(_u8 type)
+//{
+//	if(type == SCH_TASK_START)
+//	{
+//		aTask2.priority = SCH_TASK_PRIORITY_A;
+//    	DEBUG_GPIO_HIGH(GPIO_5);
+////		LOG_TRACE(1,"task 2 start",0,0)
+//    	DEBUG_GPIO_LOW(GPIO_5);
+//	}
+//	else if(type == SCH_TASK_STOP)
+//	{
+////		LOG_TRACE(1,"task 2 stop",0,0)
+//	}
+//	else if(type == SCH_TASK_CANCELED)
+//	{
+//		aTask2.priority++;
+////		LOG_TRACE(1,"task 2 canceled",0,0)
+//	}
+//	else if(type == SCH_TASK_PASSED)
+//	{
+//		aTask2.priority++;
+////		LOG_TRACE(1,"task 2 passed",0,0)
+//	}
+//
+//}
+//
+//
+//_RAM_CODE void task3_callback(_u8 type);
+//sch_node_t aTask3=
+//{
+//	.llId = 0x02,
+//	.type = SCH_PERIODIC_TASK,
+//    .priority = SCH_TASK_PRIORITY_A,
+//	.update = 0,
+//	.timestamp = 0,
+//    .period = 20000,
+//	.duration = 200,
+//	.startLatency = 50,
+//	.stopLatency = 50,
+//	.cb = task3_callback,
+//};
+//
+//_RAM_CODE void task3_callback(_u8 type)
+//{
+//	if(type == SCH_TASK_START)
+//	{
+//		aTask3.priority = SCH_TASK_PRIORITY_A;
+//    	DEBUG_GPIO_HIGH(GPIO_6);
+////		LOG_TRACE(1,"task 3 start",0,0)
+//    	DEBUG_GPIO_LOW(GPIO_6);
+//	}
+//	else if(type == SCH_TASK_STOP)
+//	{
+////		LOG_TRACE(1,"task 3 stop",0,0)
+//	}
+//	else if(type == SCH_TASK_CANCELED)
+//	{
+//		aTask3.priority++;
+////		LOG_TRACE(1,"task 3 canceled",0,0)
+//	}
+//	else if(type == SCH_TASK_PASSED)
+//	{
+//		aTask3.priority++;
+////		LOG_TRACE(1,"task 3 passed",0,0)
+//	}
+//
+//}
+//
+//_u8* message = tx_message_allocate(8);
+//message[0] = SCHE_MESSAGE_TASK_ADD;
+//message[1] = ((_u32)&aTask1);
+//message[2] = ((_u32)&aTask1)>>8;
+//message[3] = ((_u32)&aTask1)>>16;
+//message[4] = ((_u32)&aTask1)>>24;
+//tx_message_send(TX_TASK_ID_SCH,message);

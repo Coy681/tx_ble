@@ -16,10 +16,10 @@
 void platform_init(void);
 
 // Disable interrupts and save the current interrupt state
-#define IRQ_DISABLE()           unsigned int _irq_state = irq_disable()
+#define IRQ_DISABLE           unsigned int _irq_state = irq_disable()
 
 // Restore the saved interrupt state
-#define IRQ_RESTORE()           irq_restore(_irq_state)
+#define IRQ_RESTORE           irq_restore(_irq_state)
 
 //#ifndef PLATFORM_FEATURE_DEBUG_GPIO
 //#define PLATFORM_FEATURE_DEBUG_GPIO 1
