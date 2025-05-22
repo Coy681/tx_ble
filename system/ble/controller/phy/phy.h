@@ -83,3 +83,47 @@
 /**TERM1 and TERM2
  * FEC used
  */
+
+ #include"common/txCommon.h"
+
+typedef enum
+{
+    HAL_RF_PHY_1M = 0,
+    HAL_RF_PHY_2M,
+    HAL_RF_PHY_CODED_S2,
+    HAL_RF_PHY_CODED_S8,
+}hal_rf_phy_e;
+
+
+
+
+
+// typedef struct 
+// {
+//     _u32           accessCode;
+//     _u32           crc;
+//     hal_rf_power_e power;
+//     hal_rf_phy_e   phy;
+//     _u16           channel;
+//     _u16           maxRxSize;        
+//     _u8*           txAddress;
+//     _u8*           rxAddress;
+//     _u16           updateMask;
+// }hal_rf_parameter_t;
+
+
+// typedef enum
+// {
+//     HAL_RF_PARAM_ACCESS_CODE,
+//     HAL_RF_PARAM_CRC,
+//     HAL_RF_PARAM_PHY,
+//     HAL_RF_PARAM_POWER,
+//     HAL_RF_PARAM_CHANNEL,
+//     HAL_RF_PARAM_MAX_RX_SIZE,
+//     HAL_RF_PARAM_MAX,
+// }hal_rf_parameter_e;
+
+ typedef struct
+ {
+    
+ }phy_ctrl_t;

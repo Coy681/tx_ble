@@ -6,58 +6,29 @@
  */
 
 #include"../../hal/rf.h"
+#include"../../hal/stimer.h"
 #include"driver.h"
 #include"config.h"
-typedef void(*hal_rf_f)(void);
 
-static hal_rf_t *rf;
-
-_RAM_CODE void hal_rf_object_cast(hal_rf_t* object)
+/******************hal rf access code setting*******/
+_RAM_CODE void hal_rf_set_access_code(_u32 accessCode)
 {
-    rf = object;
+    rf_access_code_comm(accessCode);
 }
 
-/******************hal rf access code setting************** */
-_RAM_CODE static void hal_rf_set_access_code(void)
+/******************hal rf crc setting***************/
+void hal_rf_set_crc_value(_u32 crc)
 {
-	LOG_TRACE(1,"access code value",(_u8*)&rf->param.accessCode,4);
-    rf_access_code_comm(rf->param.accessCode);
+    rf_set_ble_crc_value(crc);
 }
 
-/******************hal rf channel setting************** */
-_RAM_CODE static void hal_rf_set_channel(void)
+/******************hal rf channel setting***********/
+void hal_rf_set_channel_index(_u8 chn)
 {
-	LOG_TRACE(1,"channel value",(_u8*)&rf->param.channel,2);
-    rf_set_ble_chn((_s8)rf->param.channel);
+    rf_set_ble_chn((_s8)chn);
 }
 
-/******************hal rf crc setting************** */
-_RAM_CODE static void hal_rf_set_crc(void)
-{
-	LOG_TRACE(1,"crc value",(_u8*)&rf->param.crc,4);
-    rf_set_ble_crc_value(rf->param.crc);
-}
-
-/******************hal rf phy setting************** */
-_DATA static hal_rf_f hal_rf_phy[4]=
-{
-    rf_set_ble_1M_mode,
-    rf_set_ble_2M_mode,
-    rf_set_ble_500K_mode,
-    rf_set_ble_125K_mode,
-};
-_RAM_CODE static void hal_rf_set_phy(void)
-{
-    static _u8 phyMode = 0xff;
-    if(phyMode!=rf->param.phy)
-    {
-    	LOG_TRACE(1,"phy value",(_u8*)&rf->param.phy,4);
-        phyMode = rf->param.phy;
-        hal_rf_phy[rf->param.phy]();
-    }
-}
-
-/******************hal rf power setting************** */
+/******************hal rf power setting*************/
 _DATA static _u8 hal_rf_power[20]=
 {
     RF_POWER_P9p15dBm,
@@ -78,86 +49,56 @@ _DATA static _u8 hal_rf_power[20]=
     RF_POWER_N9p03dBm,
     RF_POWER_N30dBm,
 };
-_RAM_CODE static void hal_rf_set_power(void)
+_RAM_CODE void hal_rf_set_power(_u8 power)
 {
-    static _u8 power = RF_POWER_P0p01dBm;
-    if(power!=rf->param.power)
+    rf_set_power_level(hal_rf_power[power]);
+}
+
+/******************hal rf phy setting************** */
+void hal_rf_set_coded_phy(_u8 CI)
+{
+    if(CI == (_u8)HAL_RF_CODED_PHY_S2)
     {
-        power = rf->param.power;
-        rf_set_power_level(hal_rf_power[power]);
+        rf_set_ble_500K_mode();
+    }
+    else if(CI == (_u8)HAL_RF_CODED_PHY_S8)
+    {
+        rf_set_ble_125K_mode();
     }
 }
 
-/*******************define rf object function*********************/
-_RAM_CODE static void hal_rf_update_parameter(hal_rf_parameter_e param,_u32 value)
+void hal_rf_set_1M_phy(void)
 {
-    if(param>HAL_RF_PARAM_MAX)
-    {
-        return;
-    }
-    switch(param)
-    {
-        case HAL_RF_PARAM_ACCESS_CODE:
-            rf->param.accessCode = value;
-            break;
-        case HAL_RF_PARAM_CRC:
-            rf->param.crc = value;
-            break;
-        case HAL_RF_PARAM_PHY:
-            rf->param.power = value;
-            break;
-        case HAL_RF_PARAM_POWER:
-            rf->param.phy = value;
-            break;
-        case HAL_RF_PARAM_CHANNEL:
-            rf->param.channel = (_u16)value;
-            break;
-        case HAL_RF_PARAM_MAX_RX_SIZE:
-            rf->param.maxRxSize = (_u16)value;
-            break;
-        default:
-            break;
-    }
+    rf_set_ble_1M_mode();
 }
 
-_RAM_CODE static void hal_rf_prepare(void)
+void hal_rf_set_2M_phy(void)
 {
-    hal_rf_set_power();
-    hal_rf_set_channel();
-    hal_rf_set_access_code();
-    hal_rf_set_crc();
-    hal_rf_set_phy();
+    rf_set_ble_2M_mode();
 }
 
-_RAM_CODE static void hal_rf_tx(_u32 txClock,_u8* txAddress)
+/******************hal rf tx setting************** */
+void hal_rf_tx(_u8* address,_u32 time)
 {
-    rf_start_stx(txAddress,txClock);
+    rf_start_stx(address,time*CLOCK_TICK_US);
+}
+/******************hal rf rx setting************** */
+void hal_rf_set_rx_timeout(_u32 time)
+{
+    rf_set_rx_timeout(time);
+}
+void hal_rf_rx(_u8* address,_u32 maxOctets,_u32 time)
+{
+    rf_set_rx_dma(address,0,maxOctets);
+    rf_start_srx(time*CLOCK_TICK_US);
 }
 
-_RAM_CODE static void hal_rf_rx(_u32 rxClock,_u32 expireUs,_u8* rxAddress)
-{
-    rf_set_rx_timeout(expireUs);
-    rf_set_rx_dma(rxAddress,0,rf->param.maxRxSize);
-    rf_start_srx(rxClock);
-}
-
-_RAM_CODE void hal_rf_register_task(hal_rf_t* object,_u32 accessCode,_u32 crc)
-{
-	object->param.accessCode = accessCode;
-	object->param.crc        = crc;
-	object->rfrepare         = hal_rf_prepare;
-	object->rx               = hal_rf_rx;
-	object->tx               = hal_rf_tx;
-	object->updateParam      = hal_rf_update_parameter;
-}
-
-_RAM_CODE void hal_rf_hardware_init(void)
+/******************hal rf init setting************** */
+void hal_rf_init(void)
 {
     rf_mode_init();
     rf_set_ble_1M_mode();
     rf_set_tx_dma(0, 272);
-
 }
-
 
 
