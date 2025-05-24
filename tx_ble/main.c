@@ -12,8 +12,6 @@
 
 #include"system/task/message/message.h"
 
-#include"system/ble/controller/ll/state.h"
-
 #include"system/scheduler/sch.h"
 
 volatile _u32 AAA_Mcause = 0;

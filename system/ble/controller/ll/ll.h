@@ -560,12 +560,14 @@ typedef enum
     LL_SUPPORT_FRAME_SPACE_UPDATE | \
     0)
 
+
+
+/***********************Bluetooth LE LL config **************************/
+void ll_init_state_machine(_u8 number);
+
 controller_error_code_e ll_reset(void);
 
 _u64 ll_get_feature(void);
-
-/***********************Bluetooth LE LL config **************************/
-void ll_init(_u8 number);
 /***********************Bluetooth LE Advertising **************************/
 typedef enum
 {

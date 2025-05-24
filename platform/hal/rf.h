@@ -15,7 +15,7 @@ void hal_rf_set_crc_value(_u32 crc);
 
 void hal_rf_set_channel_index(_u8 chn);
 
-typedef enum 
+enum 
 {
     HAL_RF_POWER_P9dBm = 0,
     HAL_RF_POWER_P8dBm,
@@ -40,10 +40,14 @@ void hal_rf_set_power(_u8 power);
 
 enum
 {
-    HAL_RF_CODED_PHY_S2 = 0x00,
-    HAL_RF_CODED_PHY_S8 = 0x01,
+    HAL_RF_MODE_1M       = 0x00,
+    HAL_RF_MODE_2M       = 0x01,
+    HAL_RF_MODE_CODED_S2 = 0x02,
+    HAL_RF_MODE_CODED_S8 = 0x03,
 };
-void hal_rf_set_coded_phy(_u8 CI);
+void hal_rf_set_coded_phy_s2(void);
+
+void hal_rf_set_coded_phy_s8(void);
 
 void hal_rf_set_1M_phy(void);
 
@@ -53,10 +57,20 @@ void hal_rf_tx(_u8* address,_u32 time);
 
 void hal_rf_set_rx_timeout(_u32 time);
 
+_u32 hal_rf_get_rx_timestamp(_u8 phy);
+
+_u32 hal_rf_is_packet_valid(_u8* packet);
+
 void hal_rf_rx(_u8* address,_u32 maxOctets,_u32 time);
 
-void hal_rf_init(void);
+void hal_rf_stop(void);
 
-
+enum
+{
+    HAL_RF_IRQ_TX,
+    HAL_RF_IRQ_RX,
+    HAL_RF_IRQ_RX_TIMEOUT,
+};
+void hal_rf_init(void(*cb)(_u8));
 
 #endif /* HAL_RF_H_ */

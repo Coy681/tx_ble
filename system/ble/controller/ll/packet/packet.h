@@ -5,6 +5,9 @@
  */
 #include"common/txCommon.h"
 
+ #ifndef LL_PACKET_H_
+ #define LL_PACKET_H_
+
 /**************************Advertising physical channel PDU******************************/
 typedef union 
 {
@@ -124,3 +127,5 @@ enum
     LL_LLID_FRAMED_BIS_PDU                     = 0x10,
 };
 _u8* ll_get_iso_bis_packet(_u8* packet,_u8 length,_u8 llid,_u8 cssn,_u8 cstf);
+
+#endif//LL_PACKET_H_

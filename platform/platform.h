@@ -15,28 +15,17 @@
 
 void platform_init(void);
 
+int irq_disable(void);
+
+void irq_restore(unsigned int _irq_state);
+
+void irq_enable(void);
+
 // Disable interrupts and save the current interrupt state
 #define IRQ_DISABLE           unsigned int _irq_state = irq_disable()
 
 // Restore the saved interrupt state
 #define IRQ_RESTORE           irq_restore(_irq_state)
-
-//#ifndef PLATFORM_FEATURE_DEBUG_GPIO
-//#define PLATFORM_FEATURE_DEBUG_GPIO 1
-//#endif
-//
-//#ifndef PLATFORM_FEATURE_LED
-//#define PLATFORM_FEATURE_LED 1
-//#endif
-//
-//#ifndef PLATFORM_FEATURE_UART
-//#define PLATFORM_FEATURE_UART 1
-//#endif
-//
-//#ifndef PLATFORM_FEATURE_RF
-//#define PLATFORM_FEATURE_RF 1
-//#endif
-
 
 
 #endif /* PLATFORM_H_ */

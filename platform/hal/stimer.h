@@ -33,4 +33,6 @@ unsigned int system_clock(void);
 
 unsigned int system_time(void);
 
+unsigned int system_switch_tick_to_time(unsigned int tick);
+
 #endif /* HAL_STIMER_H_ */

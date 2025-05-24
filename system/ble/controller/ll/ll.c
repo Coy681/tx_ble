@@ -3,11 +3,27 @@
 #include"system/task/message/message.h"
 #include"system/task/task.h"
 #include"system/task/event/event.h" 
+#include"module/adv/adv.h"
+#include"module/scan/scan.h"
+#include"module/conn/conn.h"
+#include"module/init/init.h"
+#include"module/sync/sync.h"
+#include"module/brd/brd.h"
+#include"module/standby/standby.h"
 /************************************ll implementation***************************************/
 ll_ctrl_t* llSm;
 static _u8 llSmConut;
 static _u8 llCurrentSm;
-void ll_init(_u8 number)
+
+typedef struct _PACKED
+{
+	ble_ll_state_e       currentState;
+	ble_ll_state_e       nextState;
+	ble_ll_event_e       event;
+	ble_ll_event_cb      cb;
+}ble_ll_state_table_t;
+
+void ll_init_state_machine(_u8 number)
 {
 	llSmConut = number;
 	if(number==0)
@@ -48,6 +64,67 @@ ll_ctrl_t* ll_get_current_state_machine(void)
 {
 	return &llSm[llCurrentSm];
 }
+static const ble_ll_state_table_t ble_ll_state_table[]=
+{
+    //standby state transition
+	{BLE_LL_STATE_STANDBY,        BLE_LL_STATE_ADVERTISING,      BLE_LL_EVENT_START_ADVERTISING,    ble_ll_enter_advertising_state},
+	{BLE_LL_STATE_STANDBY,        BLE_LL_STATE_BROADCASTING,     BLE_LL_EVENT_START_BROADCASTING,   ble_ll_enter_broadcasting_state},
+	{BLE_LL_STATE_STANDBY,        BLE_LL_STATE_SCANNING,         BLE_LL_EVENT_START_SCANNING,       ble_ll_enter_scanning_state},
+	{BLE_LL_STATE_STANDBY,        BLE_LL_STATE_SYNCHRONIZATION,  BLE_LL_EVENT_START_SYNCHRONIZATION,ble_ll_enter_sychronization_state},
+	{BLE_LL_STATE_STANDBY,	      BLE_LL_STATE_INITIATING     ,  BLE_LL_EVENT_START_INITIATING,     ble_ll_enter_initiating_state},
+
+	//advertising state transition
+	{BLE_LL_STATE_ADVERTISING,    BLE_LL_STATE_STANDBY,          BLE_LL_EVENT_STOP_ADVERTISING,     ble_ll_enter_standby_state},
+	{BLE_LL_STATE_ADVERTISING,    BLE_LL_STATE_CONNECTION,       BLE_LL_EVENT_START_CONNECTION,     ble_ll_enter_connection_state},
+
+	//broadcasting state transition
+	{BLE_LL_STATE_BROADCASTING,   BLE_LL_STATE_STANDBY,          BLE_LL_EVENT_STOP_BROADCASTING,    ble_ll_enter_standby_state},
+
+	//scanning state transition
+	{BLE_LL_STATE_SCANNING,       BLE_LL_STATE_STANDBY,          BLE_LL_EVENT_STOP_SCANNING,        ble_ll_enter_standby_state},
+
+	//synchronization state transition
+	{BLE_LL_STATE_SYNCHRONIZATION,BLE_LL_STATE_STANDBY,          BLE_LL_EVENT_STOP_SYNCHRONIZATION, ble_ll_enter_standby_state},
+
+	//initiating state transition
+	{BLE_LL_STATE_INITIATING,     BLE_LL_STATE_STANDBY,          BLE_LL_EVENT_STOP_INITIATING,      ble_ll_enter_standby_state},
+	{BLE_LL_STATE_INITIATING,     BLE_LL_STATE_CONNECTION,       BLE_LL_EVENT_START_CONNECTION,     ble_ll_enter_connection_state},
+
+	//synchronization state transition
+	{BLE_LL_STATE_CONNECTION,     BLE_LL_STATE_STANDBY,          BLE_LL_EVENT_STOP_CONNECTION,      ble_ll_enter_standby_state},
+};
+
+void ble_ll_process_event(ll_ctrl_t* sm,ble_ll_event_e event)
+{
+	if(sm==NULL)
+	{
+		LOG_TRACE(LL_LOG_TRACE,"error:sm null",0,0)
+		return;
+	}
+	if(event>=BLE_LL_EVENT_MAX)
+	{
+		LOG_TRACE(LL_LOG_TRACE,"error:event invalid",(_u8*)&event,4)
+		return;
+	}
+
+	for(_u8 i=0;i<ARRAY_SIZE(ble_ll_state_table);i++)
+	{
+		if(ble_ll_state_table[i].currentState == sm->state&&\
+		   ble_ll_state_table[i].event        == event)
+		{
+			if(ble_ll_state_table[i].cb(event))
+			{
+				LOG_TRACE(LL_LOG_TRACE,"state transition success",(_u8*)&ble_ll_state_table[i].nextState,4)
+				sm->state = ble_ll_state_table[i].nextState;
+				return;
+			}
+		}
+	}
+	LOG_TRACE(LL_LOG_TRACE,"state transition fail",0,0)
+	LOG_TRACE(LL_LOG_TRACE,"current state",(_u8*)&sm->state,4)
+	LOG_TRACE(LL_LOG_TRACE,"event",(_u8*)&event,4)
+}
+
 /*********************************ll feature implementation**********************************/
 static _u64 ll_host_support_feature;
 
@@ -160,3 +237,6 @@ controller_error_code_e ll_set_advertising_enable(_u8 enable)
 	}
 	return SUCCESS;
 }
+
+
+

@@ -25,6 +25,11 @@
         "txutility.h": "c",
         "debug_gpio.h": "c",
         "txtype.h": "c",
-        "stimer.h": "c"
+        "stimer.h": "c",
+        "phy.h": "c",
+        "txbuffer.h": "c",
+        "txattribute.h": "c",
+        "locale": "c",
+        "adv.h": "c"
     }
 }

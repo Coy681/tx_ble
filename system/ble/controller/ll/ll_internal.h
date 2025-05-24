@@ -1,13 +1,74 @@
-#include"state.h"
+
+
 #include"common/txCommon.h"
 #include"system/scheduler/sch.h"
-/***********************Bluetooth LE Advertising **************************/
+#include"../phy/phy.h"
+#include"packet/packet.h"
 
+ #ifndef LL_INTERNAL_H_
+ #define LL_INTERNAL_H_
+
+#ifndef LL_LOG_TRACE
+#define LL_LOG_TRACE 1
+#endif
+
+/**
+ * BLE Link Layer States
+ * standby state
+ * advertising state                - advertiser
+ * scanning state                   - scanner         
+ * initiating state                 - initiator
+ * connection state                 - central/peripheral
+ * synchronization state            - synchronized receiver(isochronous)
+ * isochronous broadcasting state   - isochronous broadcaster
+ */
+
+/**
+ * link layer state machine maybe have multiple instances,and only one state to be active at a time.
+ */
+typedef enum
+{
+    BLE_LL_STATE_STANDBY,
+    BLE_LL_STATE_ADVERTISING,
+    BLE_LL_STATE_SCANNING,
+    BLE_LL_STATE_INITIATING,
+    BLE_LL_STATE_CONNECTION,
+    BLE_LL_STATE_SYNCHRONIZATION,
+    BLE_LL_STATE_BROADCASTING,
+}ble_ll_state_e;
+
+typedef enum
+{
+    BLE_LL_EVENT_START_ADVERTISING,
+    BLE_LL_EVENT_STOP_ADVERTISING,
+
+    BLE_LL_EVENT_START_SCANNING,
+    BLE_LL_EVENT_STOP_SCANNING,
+
+    BLE_LL_EVENT_START_INITIATING,
+    BLE_LL_EVENT_STOP_INITIATING,
+
+    BLE_LL_EVENT_START_SYNCHRONIZATION,
+    BLE_LL_EVENT_STOP_SYNCHRONIZATION,
+
+    BLE_LL_EVENT_START_BROADCASTING,
+    BLE_LL_EVENT_STOP_BROADCASTING,
+
+    BLE_LL_EVENT_START_CONNECTION,
+    BLE_LL_EVENT_STOP_CONNECTION,
+
+	BLE_LL_EVENT_MAX,
+}ble_ll_event_e;
+
+typedef int(*ble_ll_event_cb)(ble_ll_event_e);
+
+/***********************ll standby sate**********************/
 typedef struct _PACKED
 {
 
 }ll_internal_standby_ctrl_t;
 
+/***********************ll advertising sate**********************/
 typedef struct _PACKED
 {
     _u16 interval;//number of 1.25ms
@@ -29,30 +90,39 @@ typedef struct _PACKED
     _u8  scanRspDataLen;
 }ll_internal_adv_ctrl_t;
 
+
+/***********************ll connection sate**********************/
 typedef struct _PACKED
 {
     
 }ll_internal_connection_ctrl_t;
 
+
+/***********************ll scanning sate**********************/
 typedef struct _PACKED
 {
     
 }ll_internal_scan_ctrl_t;
 
+/***********************ll initiating sate**********************/
 typedef struct _PACKED
 {
     
 }ll_internal_initiating_ctrl_t;
 
+/***********************ll synchronization sate**********************/
 typedef struct _PACKED
 {
     
 }ll_internal_synchronous_ctrl_t;
 
+/***********************ll broadcasting sate**********************/
 typedef struct _PACKED
 {
     
 }ll_internal_broadcast_ctrl_t;
+
+
 
 typedef struct _PACKED
 {
@@ -60,6 +130,7 @@ typedef struct _PACKED
     _u8  id;
     _u16 rsvd;
     sch_node_t sch;
+    phy_obj_t  phy;
     ll_internal_standby_ctrl_t*         standby;
     ll_internal_adv_ctrl_t*             adv;
     ll_internal_connection_ctrl_t*      conn;
@@ -69,3 +140,8 @@ typedef struct _PACKED
     ll_internal_broadcast_ctrl_t*       broadcast;
 }ll_ctrl_t;
 
+void ble_ll_process_event(ll_ctrl_t* sm,ble_ll_event_e event);
+
+
+
+#endif//LL_INTERNAL_H_

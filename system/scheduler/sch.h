@@ -1,11 +1,14 @@
 #include"common/txCommon.h"
 
+ #ifndef TX_SCH_H_
+ #define TX_SCH_H_
+
 typedef enum
 {
     SCH_STATUS_SUCCESS          = 0x00,
     SCH_STATUS_REJECTED         = 0x01,
     SCH_STATUS_TASK_NULL        = 0x02,
-};
+}sch_status_e;
 typedef enum
 {
     SCH_TASK_PRIORITY_0 = 0,
@@ -88,3 +91,4 @@ typedef struct _PACKED
 #ifndef TX_SCHE_LOG_ENABLE
 #define TX_SCHE_LOG_ENABLE  1
 #endif
+#endif//TX_SCH_H_

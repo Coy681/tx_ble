@@ -9,5 +9,4 @@
 #define TXUTILITY_H_
 
 #define ARRAY_SIZE(A)               (sizeof(A)/sizeof(*A))
-
 #endif /* TXUTILITY_H_ */

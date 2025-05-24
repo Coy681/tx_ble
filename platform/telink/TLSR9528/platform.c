@@ -44,9 +44,6 @@ void platform_init(void)
     #if(TX_DEBUG_LED_ENABLE) 
     hal_gpio_led_init();
     #endif
-    #if(TX_HARDWARE_RADIO_ENABLE) 
-    hal_rf_init();
-    #endif
 }
 HAREWARE_INIT(platform_init);
 

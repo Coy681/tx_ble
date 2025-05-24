@@ -82,3 +82,14 @@ _RAM_CODE unsigned int system_time(void)
 	return stimerTime;
 }
 
+_RAM_CODE unsigned int system_switch_tick_to_time(unsigned int tick)
+{
+	if(tick>lastClockTick)
+	{
+		return (stimerTime + (tick - lastClockTick)/CLOCK_TICK_US);
+	}
+	else
+	{
+		return (stimerTime - (lastClockTick - tick)/CLOCK_TICK_US);
+	}
+}

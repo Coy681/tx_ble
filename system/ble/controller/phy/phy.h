@@ -84,46 +84,59 @@
  * FEC used
  */
 
- #include"common/txCommon.h"
+#include"common/txCommon.h"
+#include"platform/platform.h"
+
+ #ifndef LL_PHY_H_
+ #define LL_PHY_H_
 
 typedef enum
 {
-    HAL_RF_PHY_1M = 0,
-    HAL_RF_PHY_2M,
-    HAL_RF_PHY_CODED_S2,
-    HAL_RF_PHY_CODED_S8,
-}hal_rf_phy_e;
+    PHY_MODE_1M       = HAL_RF_MODE_1M,
+    PHY_MODE_2M       = HAL_RF_MODE_2M,
+    PHY_MODE_CODED_S2 = HAL_RF_MODE_CODED_S2,
+    PHY_MODE_CODED_S8 = HAL_RF_MODE_CODED_S8,
+}phy_mode_e;
 
+typedef enum
+{
+    PHY_DIR_TX        = 0x01,
+    PHY_DIR_RX        = 0x02,
+}phy_dir_e;
 
+typedef enum
+{
+    PHY_IRQ_TX         = HAL_RF_IRQ_TX,
+    PHY_IRQ_RX         = HAL_RF_IRQ_RX,
+    PHY_IRQ_RX_TIMEOUT = HAL_RF_IRQ_RX_TIMEOUT,
+}phy_irq_e;
 
+typedef struct _PACKED
+{
+    _u8  phy:3;
+    _u8  powerIndex:5;
+    _u8  chnIdx:6;
+    _u8  dir:2;
+    _u8  rxMaxOctets;
+    _u8  rsvd1;
 
+    _u8* txAddress;
+    _u8* rxAddress;
+    _u32 crcInit;
+    _u32 accessCode;
+    _u32 timestamp;//first bit of header
+    _u32 rxTimeout;
+    void (*start)(void);
+    void (*stop)(void);
+    _u32 (*get_rx_timestamp)(void);
+    _u32 (*rx_packet_valid)(void);
+    void (*irq_cb)(_u8);
+}phy_obj_t;
 
-// typedef struct 
-// {
-//     _u32           accessCode;
-//     _u32           crc;
-//     hal_rf_power_e power;
-//     hal_rf_phy_e   phy;
-//     _u16           channel;
-//     _u16           maxRxSize;        
-//     _u8*           txAddress;
-//     _u8*           rxAddress;
-//     _u16           updateMask;
-// }hal_rf_parameter_t;
+typedef void(*phy_irq_cb_f)(_u8 type);
 
+void phy_obj_init(phy_obj_t* phy);
 
-// typedef enum
-// {
-//     HAL_RF_PARAM_ACCESS_CODE,
-//     HAL_RF_PARAM_CRC,
-//     HAL_RF_PARAM_PHY,
-//     HAL_RF_PARAM_POWER,
-//     HAL_RF_PARAM_CHANNEL,
-//     HAL_RF_PARAM_MAX_RX_SIZE,
-//     HAL_RF_PARAM_MAX,
-// }hal_rf_parameter_e;
+void phy_obj_cast(phy_obj_t* phy);
 
- typedef struct
- {
-    
- }phy_ctrl_t;
+#endif//LL_PHY_H_
