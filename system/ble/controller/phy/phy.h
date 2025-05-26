@@ -130,7 +130,7 @@ typedef struct _PACKED
     void (*stop)(void);
     _u32 (*hw_get_rx_header_ts)(void);
     _u32 (*hw_packet_from_trigger_to_end_time)(_u8,_u8);//packet length,if encrypt
-    _u32 (*hw_get_trigger_from_header_ts)(_u32);
+    _u32 (*hw_get_trigger_time_from_header_ts)(_u32);
     _u32 (*hw_if_rx_packet_valid)(void);
     void (*hw_irq_cb)(_u8);//phy_irq_e
 }phy_obj_t;
