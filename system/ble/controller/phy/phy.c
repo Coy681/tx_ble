@@ -75,6 +75,18 @@ _u32  phy_hw_get_packet_time_from_trigger_to_end(_u8 len,_u8 enc)
     }
 }
 
+_u32 phy_hw_get_trigger_from_header_timestamp(_u32 ts)
+{
+    if(phyCtrl->dir == PHY_DIR_TX)
+    {
+        return (ts - hal_rf_get_tx_trigger_to_header_time(phyCtrl->phy));
+    }
+    else
+    {
+        return (ts - hal_rf_get_rx_trigger_to_header_time(phyCtrl->phy));
+    }
+}
+
 _u32  phy_hw_if_rx_packet_valid(void)
 {
     if(phyCtrl->rxAddress)
@@ -100,8 +112,9 @@ void phy_obj_init(phy_obj_t* phy)
 {
     phy->start = phy_start;
     phy->stop  = phy_stop;
-    phy->hw_get_rx_header_timestamp         = phy_hw_get_rx_header_timestamp;
+    phy->hw_get_rx_header_ts                = phy_hw_get_rx_header_timestamp;
     phy->hw_packet_from_trigger_to_end_time = phy_hw_get_packet_time_from_trigger_to_end;
+    phy->hw_get_trigger_from_header_ts      = phy_hw_get_trigger_from_header_timestamp;
     phy->hw_if_rx_packet_valid              = phy_hw_if_rx_packet_valid;
     phy->hw_irq_cb                          = phy_hw_irq_callback;
 }

@@ -60,16 +60,12 @@ void(*hal_rf_cb)(_u8);
 #define HARDWARE_RX_TRIGGER_TO_HEADER_TIME_2M      (HARDWARE_RX_PREPARE_TIME_2M    + HARDWARE_AIR_TO_HEADER_TIME_2M)
 #define HARDWARE_RX_TRIGGER_TO_HEADER_TIME_CODED   (HARDWARE_RX_PREPARE_TIME_CODED + HARDWARE_AIR_TO_HEADER_TIME_CODED)
 
-#define HARDWARE_RX_TRIGGER_TO_TS_TIME_1M          (HARDWARE_RX_TRIGGER_TO_HEADER_TIME_1M    + HARDWARE_1M_TS_FROM_AC_DELAY)
-#define HARDWARE_RX_TRIGGER_TO_TS_TIME_2M          (HARDWARE_TX_TRIGGER_TO_HEADER_TIME_2M    + HARDWARE_2M_TS_FROM_AC_DELAY)
-#define HARDWARE_RX_TRIGGER_TO_TS_TIME_CODED       (HARDWARE_TX_TRIGGER_TO_HEADER_TIME_CODED + HARDWARE_CODED_TS_FROM_AC_DELAY)
-
-static _u16 rxACToTs[4] = 
+static _u16 rxAcToTs[4] = 
 {
-    HARDWARE_RX_TRIGGER_TO_TS_TIME_1M,
-    HARDWARE_RX_TRIGGER_TO_TS_TIME_2M,
-    HARDWARE_RX_TRIGGER_TO_TS_TIME_CODED,//s2
-    HARDWARE_RX_TRIGGER_TO_TS_TIME_CODED,//s8
+    HARDWARE_1M_TS_FROM_AC_DELAY,
+    HARDWARE_2M_TS_FROM_AC_DELAY,
+    HARDWARE_CODED_TS_FROM_AC_DELAY,//s2
+    HARDWARE_CODED_TS_FROM_AC_DELAY,//s8
 };
 static _u16 rxTriggerToHeader[4] = 
 {
@@ -177,7 +173,7 @@ void hal_rf_rx(_u8* address,_u32 maxOctets,_u32 time)
 
 _u32 hal_rf_get_rx_header_timestamp(_u8 phy)
 {
-    return (_u32)(system_switch_tick_to_time(reg_rf_timestamp) - rxTriggerToTs[phy]);
+    return (_u32)(system_switch_tick_to_time(reg_rf_timestamp) - rxAcToTs[phy]);
 }
 
 _u32 hal_rf_get_rx_trigger_to_header_time(_u8 phy)
