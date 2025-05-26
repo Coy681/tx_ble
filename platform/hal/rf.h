@@ -9,6 +9,23 @@
 #define HAL_RF_H_
 #include"tx_common.h"
 
+//preamble delay
+#define HARDWARE_1M_PREAMBLE_DELAY           8
+#define HARDWARE_2M_PREAMBLE_DELAY           8
+#define HARDWARE_CODED_PREAMBLE_DELAY        80
+
+//access delay offset
+#define HARDWARE_1M_AC_DELAY                 32
+#define HARDWARE_2M_AC_DELAY                 16
+#define HARDWARE_CODED_AC_DELAY              256
+
+//packet time for different phy
+#define HARDWARE_OCTET_TIME_1M               8
+#define HARDWARE_OCTET_TIME_2M               4
+#define HARDWARE_OCTET_TIME_CODED_S2         16
+#define HARDWARE_OCTET_TIME_CODED_S8         64
+
+
 void hal_rf_set_access_code(_u32 accessCode);
 
 void hal_rf_set_crc_value(_u32 crc);
@@ -57,7 +74,11 @@ void hal_rf_tx(_u8* address,_u32 time);
 
 void hal_rf_set_rx_timeout(_u32 time);
 
-_u32 hal_rf_get_rx_timestamp(_u8 phy);
+_u32 hal_rf_get_rx_header_timestamp(_u8 phy);
+
+_u32 hal_rf_get_rx_trigger_to_header_time(_u8 phy);
+
+_u32 hal_rf_get_tx_trigger_to_header_time(_u8 phy);
 
 _u32 hal_rf_is_packet_valid(_u8* packet);
 

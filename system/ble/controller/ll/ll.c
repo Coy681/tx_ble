@@ -23,6 +23,7 @@ typedef struct _PACKED
 	ble_ll_event_cb      cb;
 }ble_ll_state_table_t;
 
+
 void ll_init_state_machine(_u8 number)
 {
 	llSmConut = number;
@@ -94,17 +95,17 @@ static const ble_ll_state_table_t ble_ll_state_table[]=
 	{BLE_LL_STATE_CONNECTION,     BLE_LL_STATE_STANDBY,          BLE_LL_EVENT_STOP_CONNECTION,      ble_ll_enter_standby_state},
 };
 
-void ble_ll_process_event(ll_ctrl_t* sm,ble_ll_event_e event)
+ble_ll_state_status_e ble_ll_process_event(ll_ctrl_t* sm,ble_ll_event_e event)
 {
 	if(sm==NULL)
 	{
 		LOG_TRACE(LL_LOG_TRACE,"error:sm null",0,0)
-		return;
+		return BLE_LL_STATE_INVALID_PARAMETER;
 	}
 	if(event>=BLE_LL_EVENT_MAX)
 	{
 		LOG_TRACE(LL_LOG_TRACE,"error:event invalid",(_u8*)&event,4)
-		return;
+		return BLE_LL_STATE_INVALID_PARAMETER;
 	}
 
 	for(_u8 i=0;i<ARRAY_SIZE(ble_ll_state_table);i++)
@@ -116,13 +117,14 @@ void ble_ll_process_event(ll_ctrl_t* sm,ble_ll_event_e event)
 			{
 				LOG_TRACE(LL_LOG_TRACE,"state transition success",(_u8*)&ble_ll_state_table[i].nextState,4)
 				sm->state = ble_ll_state_table[i].nextState;
-				return;
+				return BLE_LL_STATE_SUCCESS;
 			}
 		}
 	}
 	LOG_TRACE(LL_LOG_TRACE,"state transition fail",0,0)
 	LOG_TRACE(LL_LOG_TRACE,"current state",(_u8*)&sm->state,4)
 	LOG_TRACE(LL_LOG_TRACE,"event",(_u8*)&event,4)
+	return BLE_LL_STATE_TRANSITION_NOT_ALLOWED;
 }
 
 /*********************************ll feature implementation**********************************/
@@ -217,22 +219,30 @@ controller_error_code_e ll_set_advertising_enable(_u8 enable)
 		ll->adv->enable = enable;
 		if(ll->adv->enable == LL_ADVERTISING_ENABLE)
 		{
-			//schedule start
-			sch_message_t* message = (sch_message_t*)tx_message_allocate(8);
-			message->eventType = SCHE_MESSAGE_TASK_ADD;
-			message->message[0] = ((_u32)&ll->sch);
-			message->message[1] = ((_u32)&ll->sch)>>8;
-			message->message[2] = ((_u32)&ll->sch)>>16;
-			message->message[3] = ((_u32)&ll->sch)>>24;
-			tx_message_send(TX_TASK_ID_SCH,(_u8*)message);
+			if(BLE_LL_STATE_SUCCESS!=ble_ll_process_event(ll,BLE_LL_EVENT_START_ADVERTISING))
+			{
+				return IVALID_HCI_COMMAND_PARAMETERS;
+			}
+			// //schedule start
+			// sch_message_t* message = (sch_message_t*)tx_message_allocate(8);
+			// message->eventType = SCHE_MESSAGE_TASK_ADD;
+			// message->message[0] = ((_u32)&ll->sch);
+			// message->message[1] = ((_u32)&ll->sch)>>8;
+			// message->message[2] = ((_u32)&ll->sch)>>16;
+			// message->message[3] = ((_u32)&ll->sch)>>24;
+			// tx_message_send(TX_TASK_ID_SCH,(_u8*)message);
 		}
 		else//LL_ADVERTISING_DISABLE
 		{
-			//schedule stop
-			sch_message_t* message = (sch_message_t*)tx_message_allocate(4);
-			message->eventType = SCHE_MESSAGE_TASK_ADD;
-			message->message[0] = ll->id;
-			tx_message_send(TX_TASK_ID_SCH,(_u8*)message);
+			if(BLE_LL_STATE_SUCCESS!=ble_ll_process_event(ll,BLE_LL_EVENT_STOP_ADVERTISING))
+			{
+				return IVALID_HCI_COMMAND_PARAMETERS;
+			}
+			// //schedule stop
+			// sch_message_t* message = (sch_message_t*)tx_message_allocate(4);
+			// message->eventType = SCHE_MESSAGE_TASK_ADD;
+			// message->message[0] = ll->id;
+			// tx_message_send(TX_TASK_ID_SCH,(_u8*)message);
 		}
 	}
 	return SUCCESS;

@@ -4,7 +4,7 @@
  * each octets within multiple octets fields,with the exception of CRC,shall be transmit in LSB first order.
  */
 #include"common/txCommon.h"
-
+#include"../../phy/phy.h"
  #ifndef LL_PACKET_H_
  #define LL_PACKET_H_
 
@@ -127,5 +127,7 @@ enum
     LL_LLID_FRAMED_BIS_PDU                     = 0x10,
 };
 _u8* ll_get_iso_bis_packet(_u8* packet,_u8 length,_u8 llid,_u8 cssn,_u8 cstf);
+
+_u32 ll_get_packet_time(phy_mode_e phy,_u16 len);
 
 #endif//LL_PACKET_H_

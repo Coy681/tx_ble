@@ -23,6 +23,8 @@
  * isochronous broadcasting state   - isochronous broadcaster
  */
 
+
+
 /**
  * link layer state machine maybe have multiple instances,and only one state to be active at a time.
  */
@@ -36,6 +38,13 @@ typedef enum
     BLE_LL_STATE_SYNCHRONIZATION,
     BLE_LL_STATE_BROADCASTING,
 }ble_ll_state_e;
+
+typedef enum
+{
+    BLE_LL_STATE_SUCCESS,
+    BLE_LL_STATE_INVALID_PARAMETER,
+    BLE_LL_STATE_TRANSITION_NOT_ALLOWED,
+}ble_ll_state_status_e;
 
 typedef enum
 {
@@ -61,6 +70,16 @@ typedef enum
 }ble_ll_event_e;
 
 typedef int(*ble_ll_event_cb)(ble_ll_event_e);
+
+typedef enum
+{
+    LL_ADV_PRIORITY         = SCH_TASK_PRIORITY_2,
+    LL_SCAN_PRIORITY        = SCH_TASK_PRIORITY_2,
+    LL_CONN_PRIORITY        = SCH_TASK_PRIORITY_2,
+    LL_INIT_PRIORITY        = SCH_TASK_PRIORITY_2,
+    LL_BROADCAST_PRIORITY   = SCH_TASK_PRIORITY_2,
+    LL_SYNCHRONOUS_PRIORITY = SCH_TASK_PRIORITY_2,
+}ll_task_priority_e;
 
 /***********************ll standby sate**********************/
 typedef struct _PACKED
@@ -140,7 +159,12 @@ typedef struct _PACKED
     ll_internal_broadcast_ctrl_t*       broadcast;
 }ll_ctrl_t;
 
-void ble_ll_process_event(ll_ctrl_t* sm,ble_ll_event_e event);
+/************************get state machine****************************/
+ll_ctrl_t* ll_get_idle_state_machine(void);
+ll_ctrl_t* ll_get_state_machine_by_id(_u8 id);
+ll_ctrl_t* ll_get_current_state_machine(void);
+
+ble_ll_state_status_e ble_ll_process_event(ll_ctrl_t* sm,ble_ll_event_e event);
 
 
 

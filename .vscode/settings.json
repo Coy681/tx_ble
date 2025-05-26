@@ -30,6 +30,7 @@
         "txbuffer.h": "c",
         "txattribute.h": "c",
         "locale": "c",
-        "adv.h": "c"
+        "adv.h": "c",
+        "sch.h": "c"
     }
 }

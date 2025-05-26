@@ -12,10 +12,80 @@
 #include"common/txCommon.h"
 void(*hal_rf_cb)(_u8);
 
-#define HARDWARE_DELAY_1M  (19+16+32)
-#define HARDWARE_DELAY_2M  (13+24+16)
-#define HARDWARE_DELAY_S2  (14+80+256)
-#define HARDWARE_DELAY_S8  (14+80+256)
+
+/*******************rf extra time define********************************/
+
+//rf TX prepare delay
+#define HARDWARE_1M_TX_PREPARE_DELAY         99
+#define HARDWARE_2M_TX_PREPARE_DELAY         103
+#define HARDWARE_CODED_TX_PREPARE_DELAY      107
+
+//rf RX prepare delay
+#define HARDWARE_1M_RX_PREPARE_DELAY         85
+#define HARDWARE_2M_RX_PREPARE_DELAY         85
+#define HARDWARE_CODED_RX_PREPARE_DELAY      85
+
+//extra preamble delay
+#define HARDWARE_1M_EXTRA_PREAMBLE_DELAY     8
+#define HARDWARE_2M_EXTRA_PREAMBLE_DELAY     4
+#define HARDWARE_CODED_EXTRA_PREAMBLE_DELAY  0
+
+//timestamp offset from ac
+#define HARDWARE_1M_TS_FROM_AC_DELAY         19
+#define HARDWARE_2M_TS_FROM_AC_DELAY         13
+#define HARDWARE_CODED_TS_FROM_AC_DELAY      14
+
+/***********************Hardware used***************************/
+
+//rf prepare
+#define HARDWARE_TX_PREPARE_TIME_1M                (HARDWARE_1M_TX_PREPARE_DELAY+HARDWARE_1M_EXTRA_PREAMBLE_DELAY)
+#define HARDWARE_TX_PREPARE_TIME_2M                (HARDWARE_2M_TX_PREPARE_DELAY+HARDWARE_2M_PREAMBLE_DELAY)
+#define HARDWARE_TX_PREPARE_TIME_CODED             (HARDWARE_CODED_TX_PREPARE_DELAY+HARDWARE_CODED_EXTRA_PREAMBLE_DELAY)
+
+#define HARDWARE_RX_PREPARE_TIME_1M                (HARDWARE_1M_RX_PREPARE_DELAY)
+#define HARDWARE_RX_PREPARE_TIME_2M                (HARDWARE_2M_RX_PREPARE_DELAY)
+#define HARDWARE_RX_PREPARE_TIME_CODED             (HARDWARE_CODED_RX_PREPARE_DELAY)
+
+//preamble and access code
+#define HARDWARE_AIR_TO_HEADER_TIME_1M             (HARDWARE_1M_PREAMBLE_DELAY     + HARDWARE_1M_AC_DELAY)
+#define HARDWARE_AIR_TO_HEADER_TIME_2M             (HARDWARE_2M_PREAMBLE_DELAY     + HARDWARE_2M_AC_DELAY)
+#define HARDWARE_AIR_TO_HEADER_TIME_CODED          (HARDWARE_CODED_PREAMBLE_DELAY  + HARDWARE_CODED_AC_DELAY)
+
+//hareware from trigger to packet header time
+#define HARDWARE_TX_TRIGGER_TO_HEADER_TIME_1M      (HARDWARE_TX_PREPARE_TIME_1M    + HARDWARE_AIR_TO_HEADER_TIME_1M)
+#define HARDWARE_TX_TRIGGER_TO_HEADER_TIME_2M      (HARDWARE_TX_PREPARE_TIME_2M    + HARDWARE_AIR_TO_HEADER_TIME_2M)
+#define HARDWARE_TX_TRIGGER_TO_HEADER_TIME_CODED   (HARDWARE_TX_PREPARE_TIME_CODED + HARDWARE_AIR_TO_HEADER_TIME_CODED)
+
+#define HARDWARE_RX_TRIGGER_TO_HEADER_TIME_1M      (HARDWARE_RX_PREPARE_TIME_1M    + HARDWARE_AIR_TO_HEADER_TIME_1M)
+#define HARDWARE_RX_TRIGGER_TO_HEADER_TIME_2M      (HARDWARE_RX_PREPARE_TIME_2M    + HARDWARE_AIR_TO_HEADER_TIME_2M)
+#define HARDWARE_RX_TRIGGER_TO_HEADER_TIME_CODED   (HARDWARE_RX_PREPARE_TIME_CODED + HARDWARE_AIR_TO_HEADER_TIME_CODED)
+
+#define HARDWARE_RX_TRIGGER_TO_TS_TIME_1M          (HARDWARE_RX_TRIGGER_TO_HEADER_TIME_1M    + HARDWARE_1M_TS_FROM_AC_DELAY)
+#define HARDWARE_RX_TRIGGER_TO_TS_TIME_2M          (HARDWARE_TX_TRIGGER_TO_HEADER_TIME_2M    + HARDWARE_2M_TS_FROM_AC_DELAY)
+#define HARDWARE_RX_TRIGGER_TO_TS_TIME_CODED       (HARDWARE_TX_TRIGGER_TO_HEADER_TIME_CODED + HARDWARE_CODED_TS_FROM_AC_DELAY)
+
+static _u16 rxACToTs[4] = 
+{
+    HARDWARE_RX_TRIGGER_TO_TS_TIME_1M,
+    HARDWARE_RX_TRIGGER_TO_TS_TIME_2M,
+    HARDWARE_RX_TRIGGER_TO_TS_TIME_CODED,//s2
+    HARDWARE_RX_TRIGGER_TO_TS_TIME_CODED,//s8
+};
+static _u16 rxTriggerToHeader[4] = 
+{
+    HARDWARE_RX_TRIGGER_TO_HEADER_TIME_1M,
+    HARDWARE_RX_TRIGGER_TO_HEADER_TIME_2M,
+    HARDWARE_RX_TRIGGER_TO_HEADER_TIME_CODED,//s2
+    HARDWARE_RX_TRIGGER_TO_HEADER_TIME_CODED,//s8
+};
+
+static _u16 txTriggerToHeader[4] = 
+{
+    HARDWARE_TX_TRIGGER_TO_HEADER_TIME_1M,
+    HARDWARE_TX_TRIGGER_TO_HEADER_TIME_2M,
+    HARDWARE_TX_TRIGGER_TO_HEADER_TIME_CODED,//s2
+    HARDWARE_TX_TRIGGER_TO_HEADER_TIME_CODED,//s8
+};
 
 /******************hal rf access code setting*******/
 void hal_rf_set_access_code(_u32 accessCode)
@@ -105,14 +175,19 @@ void hal_rf_rx(_u8* address,_u32 maxOctets,_u32 time)
     rf_start_srx(time*CLOCK_TICK_US);
 }
 
-_u32 hal_rf_delay[4] = {HARDWARE_DELAY_1M,
-                        HARDWARE_DELAY_2M,
-                        HARDWARE_DELAY_S2,
-                        HARDWARE_DELAY_S8};
-
-_u32 hal_rf_get_rx_timestamp(_u8 phy)
+_u32 hal_rf_get_rx_header_timestamp(_u8 phy)
 {
-    return (_u32)(system_switch_tick_to_time(reg_rf_timestamp) - hal_rf_delay[phy]);
+    return (_u32)(system_switch_tick_to_time(reg_rf_timestamp) - rxTriggerToTs[phy]);
+}
+
+_u32 hal_rf_get_rx_trigger_to_header_time(_u8 phy)
+{
+    return ((_u32)rxTriggerToHeader[phy]);
+}
+
+_u32 hal_rf_get_tx_trigger_to_header_time(_u8 phy)
+{
+    return (_u32)txTriggerToHeader[phy];
 }
 
 _u32 hal_rf_is_packet_valid(_u8* packet)

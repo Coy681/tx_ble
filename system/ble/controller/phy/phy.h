@@ -128,9 +128,10 @@ typedef struct _PACKED
     _u32 rxTimeout;
     void (*start)(void);
     void (*stop)(void);
-    _u32 (*get_rx_timestamp)(void);
-    _u32 (*rx_packet_valid)(void);
-    void (*irq_cb)(_u8);
+    _u32 (*hw_get_rx_header_timestamp)(void);
+    _u32 (*hw_packet_from_trigger_to_end_time)(_u8,_u8);//packet length,if encrypt
+    _u32 (*hw_if_rx_packet_valid)(void);
+    void (*hw_irq_cb)(_u8);//phy_irq_e
 }phy_obj_t;
 
 typedef void(*phy_irq_cb_f)(_u8 type);

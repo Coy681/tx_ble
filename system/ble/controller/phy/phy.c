@@ -2,6 +2,19 @@
 
 phy_obj_t* phyCtrl;
 
+static _u32 phyOctetTime[4] = {
+    HARDWARE_OCTET_TIME_1M,
+    HARDWARE_OCTET_TIME_2M,
+    HARDWARE_OCTET_TIME_CODED_S2,
+    HARDWARE_OCTET_TIME_CODED_S8,
+};
+static _u32 phyPacketTimeExcludePdu[4] = {
+    40, //HEADER(16)+CRC(24)
+    20, //HEADER(8) +CRC(12)
+    126,//CI(16)+TERM1(24)+HEADER(32)+CRC(48)+TERM2(6)
+    384,//CI(16)+TERM1(24)+HEADER(128)+CRC(192)+TERM2(24)
+};
+
 void phy_obj_cast(phy_obj_t* phy)
 {
     ASSERT(phy!=NULL);
@@ -43,11 +56,26 @@ static void phy_stop(void)
     hal_rf_stop();
 }
 
-_u32  phy_get_rx_timestamp(void)
+_u32  phy_hw_get_rx_header_timestamp(void)
 {
-    return hal_rf_get_rx_timestamp(phyCtrl->phy);
+    return hal_rf_get_rx_header_timestamp(phyCtrl->phy);
 }
-_u32  phy_rx_packet_valid(void)
+
+_u32  phy_hw_get_packet_time_from_trigger_to_end(_u8 len,_u8 enc)
+{
+    _u8  pduLen = (enc?len+4:4);
+    _u32 packetTime = phyPacketTimeExcludePdu[phyCtrl->phy] + pduLen*phyOctetTime[phyCtrl->phy];
+    if(phyCtrl->dir == PHY_DIR_TX)
+    {
+        return (packetTime+=hal_rf_get_tx_trigger_to_header_time(phyCtrl->phy));
+    }
+    else
+    {
+        return (packetTime+=hal_rf_get_rx_trigger_to_header_time(phyCtrl->phy));
+    }
+}
+
+_u32  phy_hw_if_rx_packet_valid(void)
 {
     if(phyCtrl->rxAddress)
     {
@@ -56,23 +84,25 @@ _u32  phy_rx_packet_valid(void)
     return 0;
 }
 
-static void phy_irq_callback(_u8 type)
+static void phy_hw_irq_callback(_u8 type)
 {
     if(phyCtrl)
     {
-        phyCtrl->irq_cb(type);
+        phyCtrl->hw_irq_cb(type);
     }
 }
 static void phy_init(void)
 {
-    hal_rf_init(phy_irq_callback);
+    hal_rf_init(phy_hw_irq_callback);
 }
 
 void phy_obj_init(phy_obj_t* phy)
 {
     phy->start = phy_start;
     phy->stop  = phy_stop;
-    phy->get_rx_timestamp = phy_get_rx_timestamp;
-    phy->rx_packet_valid  = phy_rx_packet_valid;
+    phy->hw_get_rx_header_timestamp         = phy_hw_get_rx_header_timestamp;
+    phy->hw_packet_from_trigger_to_end_time = phy_hw_get_packet_time_from_trigger_to_end;
+    phy->hw_if_rx_packet_valid              = phy_hw_if_rx_packet_valid;
+    phy->hw_irq_cb                          = phy_hw_irq_callback;
 }
 
