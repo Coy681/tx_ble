@@ -11,6 +11,8 @@
 
 #define NULL 0
 
+#define bool   unsigned char
+
 typedef unsigned long long   _u64;
 typedef unsigned int         _u32;
 typedef unsigned short       _u16;

@@ -1,6 +1,9 @@
 
 #include"common/txCommon.h"
 
+#ifndef TASK_MESSAGE_EVENT_H_
+#define TASK_MESSAGE_EVENT_H_
+
 typedef struct txMessageHeader_t
 {
     _u8*   next;
@@ -36,5 +39,5 @@ txMessage_e tx_message_enqueue(_u8* message);
 
 _u8*        tx_message_receive(_u16 taskId);
 
-
+#endif
 

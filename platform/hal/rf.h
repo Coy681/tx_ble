@@ -9,21 +9,47 @@
 #define HAL_RF_H_
 #include"tx_common.h"
 
-//preamble delay
-#define HARDWARE_1M_PREAMBLE_DELAY           8
-#define HARDWARE_2M_PREAMBLE_DELAY           8
-#define HARDWARE_CODED_PREAMBLE_DELAY        80
+//octet time for different phy
+#define RF_PACKET_OCTET_TIME_1M                8
+#define RF_PACKET_OCTET_TIME_2M                4
+#define RF_PACKET_OCTET_TIME_CODED_S2          16
+#define RF_PACKET_OCTET_TIME_CODED_S8          64
 
-//access delay offset
-#define HARDWARE_1M_AC_DELAY                 32
-#define HARDWARE_2M_AC_DELAY                 16
-#define HARDWARE_CODED_AC_DELAY              256
+//preamble len and time define 
+#define RF_PACKET_PREAMBLE_LEN_1M              1
+#define RF_PACKET_PREAMBLE_LEN_2M              2
+#define RF_PACKET_PREAMBLE_LEN_CODED_S2        10
+#define RF_PACKET_PREAMBLE_LEN_CODED_S8        10
+#define RF_PACKET_PREAMBLE_TIME_1M             8
+#define RF_PACKET_PREAMBLE_TIME_2M             8
+#define RF_PACKET_PREAMBLE_TIME_CODED_S2       80
+#define RF_PACKET_PREAMBLE_TIME_CODED_S8       80
 
-//packet time for different phy
-#define HARDWARE_OCTET_TIME_1M               8
-#define HARDWARE_OCTET_TIME_2M               4
-#define HARDWARE_OCTET_TIME_CODED_S2         16
-#define HARDWARE_OCTET_TIME_CODED_S8         64
+//access code len and time define 
+#define RF_PACKET_ACCESS_CODE_LEN              4
+#define RF_PACKET_ACCESS_CODE_TIME_1M          32
+#define RF_PACKET_ACCESS_CODE_TIME_2M          16
+#define RF_PACKET_ACCESS_CODE_TIME_CODED_S2    256
+#define RF_PACKET_ACCESS_CODE_TIME_CODED_S8    256
+
+//crc time len and time define 
+#define RF_PACKET_CRC_LEN                      3
+#define RF_PACKET_CRC_TIME_1M                  24
+#define RF_PACKET_CRC_TIME_2M                  12
+#define RF_PACKET_CRC_TIME_CODED_S2            48
+#define RF_PACKET_CRC_TIME_CODED_S8            192
+
+//coded ci time define
+#define RF_PACKET_CI_TIME_CODED_S2             16
+#define RF_PACKET_CI_TIME_CODED_S8             16
+
+//term1 time define 
+#define RF_PACKET_TERM1_TIME_CODED_S2          24
+#define RF_PACKET_TERM1_TIME_CODED_S8          24
+
+//term2 time define
+#define RF_PACKET_TERM2_TIME_CODED_S2          6
+#define RF_PACKET_TERM2_TIME_CODED_S8          24
 
 
 void hal_rf_set_access_code(_u32 accessCode);
@@ -74,11 +100,11 @@ void hal_rf_tx(_u8* address,_u32 time);
 
 void hal_rf_set_rx_timeout(_u32 time);
 
-_u32 hal_rf_get_rx_header_timestamp(_u8 phy);
+_u32 hal_rf_get_rx_air_timestamp(_u8 phy);
 
-_u32 hal_rf_get_rx_trigger_to_header_time(_u8 phy);
+_u32 hal_rf_get_rx_hw_prepare_time(_u8 phy);
 
-_u32 hal_rf_get_tx_trigger_to_header_time(_u8 phy);
+_u32 hal_rf_get_tx_hw_prepare_time(_u8 phy);
 
 _u32 hal_rf_is_packet_valid(_u8* packet);
 

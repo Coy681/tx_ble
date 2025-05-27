@@ -128,6 +128,8 @@ enum
 };
 _u8* ll_get_iso_bis_packet(_u8* packet,_u8 length,_u8 llid,_u8 cssn,_u8 cstf);
 
-_u32 ll_get_packet_time(phy_mode_e phy,_u16 len);
+_u32 ll_get_air_packet_time(phy_mode_e phy,_u16 len,bool enc);
+
+
 
 #endif//LL_PACKET_H_

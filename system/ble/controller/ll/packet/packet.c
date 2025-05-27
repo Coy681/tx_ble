@@ -54,3 +54,24 @@ _u8* ll_get_iso_bis_packet(_u8* packet,_u8 length,_u8 llid,_u8 cssn,_u8 cstf)
     pkt->hdr.bi_hdr.cstf   = cstf;
     return pkt->data;
 }
+
+static _u16 packetExcludePduTime[4] = {
+    RF_PACKET_PREAMBLE_TIME_1M+RF_PACKET_ACCESS_CODE_TIME_1M+RF_PACKET_CRC_TIME_1M,
+    RF_PACKET_PREAMBLE_TIME_2M+RF_PACKET_ACCESS_CODE_TIME_2M+RF_PACKET_CRC_TIME_2M,
+    RF_PACKET_PREAMBLE_TIME_CODED_S2+RF_PACKET_ACCESS_CODE_TIME_CODED_S2+RF_PACKET_CRC_TIME_CODED_S2+RF_PACKET_CI_TIME_CODED_S2+\
+    RF_PACKET_TERM1_TIME_CODED_S2+RF_PACKET_TERM2_TIME_CODED_S2,
+    RF_PACKET_PREAMBLE_TIME_CODED_S8+RF_PACKET_ACCESS_CODE_TIME_CODED_S8+RF_PACKET_CRC_TIME_CODED_S8+RF_PACKET_CI_TIME_CODED_S8+\
+    RF_PACKET_TERM1_TIME_CODED_S8+RF_PACKET_TERM2_TIME_CODED_S8,
+};
+static _u16 packetOctetTime[4] = {
+    RF_PACKET_OCTET_TIME_1M,
+    RF_PACKET_OCTET_TIME_2M,
+    RF_PACKET_OCTET_TIME_CODED_S2,
+    RF_PACKET_OCTET_TIME_CODED_S8,
+};
+
+_u32 ll_get_air_packet_time(phy_mode_e phy,_u16 len,bool enc)
+{
+    _u16 pduLen = (enc?len+4:len);
+    return (packetExcludePduTime[phy]+pduLen*packetOctetTime[phy]);
+}

@@ -39,7 +39,7 @@ void(*hal_rf_cb)(_u8);
 
 //rf prepare
 #define HARDWARE_TX_PREPARE_TIME_1M                (HARDWARE_1M_TX_PREPARE_DELAY+HARDWARE_1M_EXTRA_PREAMBLE_DELAY)
-#define HARDWARE_TX_PREPARE_TIME_2M                (HARDWARE_2M_TX_PREPARE_DELAY+HARDWARE_2M_PREAMBLE_DELAY)
+#define HARDWARE_TX_PREPARE_TIME_2M                (HARDWARE_2M_TX_PREPARE_DELAY+HARDWARE_2M_EXTRA_PREAMBLE_DELAY)
 #define HARDWARE_TX_PREPARE_TIME_CODED             (HARDWARE_CODED_TX_PREPARE_DELAY+HARDWARE_CODED_EXTRA_PREAMBLE_DELAY)
 
 #define HARDWARE_RX_PREPARE_TIME_1M                (HARDWARE_1M_RX_PREPARE_DELAY)
@@ -47,19 +47,9 @@ void(*hal_rf_cb)(_u8);
 #define HARDWARE_RX_PREPARE_TIME_CODED             (HARDWARE_CODED_RX_PREPARE_DELAY)
 
 //preamble and access code
-#define HARDWARE_AIR_TO_HEADER_TIME_1M             (HARDWARE_1M_PREAMBLE_DELAY     + HARDWARE_1M_AC_DELAY)
-#define HARDWARE_AIR_TO_HEADER_TIME_2M             (HARDWARE_2M_PREAMBLE_DELAY     + HARDWARE_2M_AC_DELAY)
-#define HARDWARE_AIR_TO_HEADER_TIME_CODED          (HARDWARE_CODED_PREAMBLE_DELAY  + HARDWARE_CODED_AC_DELAY)
-
-//hareware from trigger to packet header time
-#define HARDWARE_TX_TRIGGER_TO_HEADER_TIME_1M      (HARDWARE_TX_PREPARE_TIME_1M    + HARDWARE_AIR_TO_HEADER_TIME_1M)
-#define HARDWARE_TX_TRIGGER_TO_HEADER_TIME_2M      (HARDWARE_TX_PREPARE_TIME_2M    + HARDWARE_AIR_TO_HEADER_TIME_2M)
-#define HARDWARE_TX_TRIGGER_TO_HEADER_TIME_CODED   (HARDWARE_TX_PREPARE_TIME_CODED + HARDWARE_AIR_TO_HEADER_TIME_CODED)
-
-#define HARDWARE_RX_TRIGGER_TO_HEADER_TIME_1M      (HARDWARE_RX_PREPARE_TIME_1M    + HARDWARE_AIR_TO_HEADER_TIME_1M)
-#define HARDWARE_RX_TRIGGER_TO_HEADER_TIME_2M      (HARDWARE_RX_PREPARE_TIME_2M    + HARDWARE_AIR_TO_HEADER_TIME_2M)
-#define HARDWARE_RX_TRIGGER_TO_HEADER_TIME_CODED   (HARDWARE_RX_PREPARE_TIME_CODED + HARDWARE_AIR_TO_HEADER_TIME_CODED)
-
+#define HARDWARE_AIR_TO_AC_TIME_1M                 (RF_PACKET_PREAMBLE_TIME_1M     + RF_PACKET_ACCESS_CODE_TIME_1M)
+#define HARDWARE_AIR_TO_AC_TIME_2M                 (RF_PACKET_PREAMBLE_TIME_2M     + RF_PACKET_ACCESS_CODE_TIME_2M)
+#define HARDWARE_AIR_TO_AC_TIME_CODED              (RF_PACKET_PREAMBLE_TIME_CODED_S2  + RF_PACKET_ACCESS_CODE_TIME_CODED_S2)
 static _u16 rxAcToTs[4] = 
 {
     HARDWARE_1M_TS_FROM_AC_DELAY,
@@ -67,20 +57,28 @@ static _u16 rxAcToTs[4] =
     HARDWARE_CODED_TS_FROM_AC_DELAY,//s2
     HARDWARE_CODED_TS_FROM_AC_DELAY,//s8
 };
-static _u16 rxTriggerToHeader[4] = 
+static _u16 rxAirToAC[4] = 
 {
-    HARDWARE_RX_TRIGGER_TO_HEADER_TIME_1M,
-    HARDWARE_RX_TRIGGER_TO_HEADER_TIME_2M,
-    HARDWARE_RX_TRIGGER_TO_HEADER_TIME_CODED,//s2
-    HARDWARE_RX_TRIGGER_TO_HEADER_TIME_CODED,//s8
+    HARDWARE_AIR_TO_AC_TIME_1M,
+    HARDWARE_AIR_TO_AC_TIME_2M,
+    HARDWARE_AIR_TO_AC_TIME_CODED,//s2
+    HARDWARE_AIR_TO_AC_TIME_CODED,//s8
 };
 
-static _u16 txTriggerToHeader[4] = 
+static _u16 txHWPrepeaeTime[4] = 
 {
-    HARDWARE_TX_TRIGGER_TO_HEADER_TIME_1M,
-    HARDWARE_TX_TRIGGER_TO_HEADER_TIME_2M,
-    HARDWARE_TX_TRIGGER_TO_HEADER_TIME_CODED,//s2
-    HARDWARE_TX_TRIGGER_TO_HEADER_TIME_CODED,//s8
+    HARDWARE_TX_PREPARE_TIME_1M,
+    HARDWARE_TX_PREPARE_TIME_2M,
+    HARDWARE_TX_PREPARE_TIME_CODED,//s2
+    HARDWARE_TX_PREPARE_TIME_CODED,//s8
+};
+
+static _u16 rxHWPrepeaeTime[4] = 
+{
+    HARDWARE_RX_PREPARE_TIME_1M,
+    HARDWARE_RX_PREPARE_TIME_2M,
+    HARDWARE_RX_PREPARE_TIME_CODED,//s2
+    HARDWARE_RX_PREPARE_TIME_CODED,//s8
 };
 
 /******************hal rf access code setting*******/
@@ -171,19 +169,19 @@ void hal_rf_rx(_u8* address,_u32 maxOctets,_u32 time)
     rf_start_srx(time*CLOCK_TICK_US);
 }
 
-_u32 hal_rf_get_rx_header_timestamp(_u8 phy)
+_u32 hal_rf_get_rx_air_timestamp(_u8 phy)
 {
-    return (_u32)(system_switch_tick_to_time(reg_rf_timestamp) - rxAcToTs[phy]);
+    return (_u32)(system_switch_tick_to_time(reg_rf_timestamp) - rxAcToTs[phy] - rxAirToAC[phy]);
 }
 
-_u32 hal_rf_get_rx_trigger_to_header_time(_u8 phy)
+_u32 hal_rf_get_rx_hw_prepare_time(_u8 phy)
 {
-    return ((_u32)rxTriggerToHeader[phy]);
+    return ((_u32)rxHWPrepeaeTime[phy]);
 }
 
-_u32 hal_rf_get_tx_trigger_to_header_time(_u8 phy)
+_u32 hal_rf_get_tx_hw_prepare_time(_u8 phy)
 {
-    return (_u32)txTriggerToHeader[phy];
+    return (_u32)txHWPrepeaeTime[phy];
 }
 
 _u32 hal_rf_is_packet_valid(_u8* packet)

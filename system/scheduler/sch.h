@@ -1,5 +1,6 @@
 #include"common/txCommon.h"
-
+#include"system/task/event/event.h"
+#include"system/task/message/message.h"
  #ifndef TX_SCH_H_
  #define TX_SCH_H_
 
@@ -51,7 +52,7 @@ typedef struct _PACKED sch_node_t
     _u8  llId;
     _u8  type;//sch_task_type_e
     _u8  priority;//sch_task_priority_e
-    _u8  update;//schdule task
+    _u8  rsvd0;
     _u32 timestamp;//us
     _u32 period;//us
     _u32 durationMin;//min duraiton,us

@@ -1,20 +1,29 @@
 #include"adv.h"
 
 
-static void adv_phy_irq_callback(_u8 type)
+static void adv_phy_irq_tx(void)
 {
-    if(type == PHY_IRQ_TX)
-    {
 
-    }
-    else if(type == PHY_IRQ_RX)
-    {
+}
+static void adv_phy_irq_rx(void)
+{
+    
+}
+static void adv_phy_irq_rx_timeout(void)
+{
+    
+}
 
-    }
-    else if(type == PHY_IRQ_RX_TIMEOUT)
-    {
+static void(*adv_phy_irq_cb[3])(void)=
+{
+    adv_phy_irq_tx,
+    adv_phy_irq_rx,
+    adv_phy_irq_rx_timeout,   
+};
 
-    }
+static void adv_phy_irq_callback(_u8 type)
+{   
+    adv_phy_irq_cb[type]();
 }
 
 static void adv_sch_start(void)
@@ -43,10 +52,7 @@ static void(*adv_sch_process[4])(void)={
 
 static void adv_sch_callback(_u8 type)
 {
-    if(type <= SCH_TASK_PASSED)
-    {
-        adv_sch_process[type]();
-    }
+    adv_sch_process[type]();
 }
 
 
@@ -55,7 +61,6 @@ sch_node_t aTask2=
 	.llId = 0x01,
 	.type = SCH_PERIODIC_TASK,
    .priority = SCH_TASK_PRIORITY_A,
-	.update = 0,
 	.timestamp = 0,
    .period = 20000,
 	.duration = 200,
@@ -73,13 +78,31 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         {   
             return 0;
         }
-        ll->sch.cb = adv_sch_callback;
-        ll->sch.timestamp = system_time() + 50;//maybe need planner
         ll->sch.llId = ll->id;
         ll->sch.type = SCH_PERIODIC_TASK;
         ll->sch.priority = LL_ADV_PRIORITY;
+        ll->sch.timestamp = system_time() + 50;//maybe need planner
+        ll->sch.period    = 0;
         ll->sch.duration = 500;
+        ll->sch.startLatency = 50;
+        ll->sch.stopLatency  = 50;
+        ll->sch.cb = adv_sch_callback;
+        sch_message_t* message = (sch_message_t*)tx_message_allocate(8);
+        message->eventType = SCHE_MESSAGE_TASK_ADD;
+        message->message[0] = ((_u32)&ll->sch);
+        message->message[1] = ((_u32)&ll->sch)>>8;
+        message->message[2] = ((_u32)&ll->sch)>>16;
+        message->message[3] = ((_u32)&ll->sch)>>24;
+        tx_message_send(TX_TASK_ID_SCH,(_u8*)message);
 
+        ll->phy.accessCode = BLE_ADV_ACCESS_CODE;
+        ll->phy.crcInit    = BLE_ADV_CRC_INIT;
+        ll->phy.dir        = PHY_DIR_TX;
+        ll->phy.phy        = PHY_MODE_1M;
+        ll->phy.txAddress  = ll->adv->advData;
+        phy_obj_cast(&ll->phy);
+        phy_obj_init(&ll->phy);
+        // ll->sch.duration = ll->phy.hw_packet_from_trigger_to_end_time(ll->adv->advDataLen,0);
         LOG_TRACE(LL_LOG_TRACE,"enter advertising state",0,0);
         return 1;
     }
