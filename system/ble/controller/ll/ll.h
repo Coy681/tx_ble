@@ -602,8 +602,8 @@ typedef enum
 
 typedef enum
 {
-    LL_ADVERTISING_ENABLE  = 0,
-    LL_ADVERTISING_DISABLE = 1,
+    LL_ADVERTISING_ENABLE  = 1,
+    LL_ADVERTISING_DISABLE = 0,
 }ll_advertising_enable_e;
 
 controller_error_code_e ll_set_advertising_parameters(_u16 interval,\

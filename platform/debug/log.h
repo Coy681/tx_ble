@@ -10,7 +10,7 @@
 #include "common/txCommon.h"
 #include "config.h"
 /******************define log input and output buffer*********/
-#define LOG_OUTPUT_BUFFER_NUMBER       16
+#define LOG_OUTPUT_BUFFER_NUMBER       32
 #define LOG_OUTPUT_BUFFER_SIZE         240
 
 #define LOG_INPUT_BUFFER_NUMBER        4

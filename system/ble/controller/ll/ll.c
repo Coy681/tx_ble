@@ -38,6 +38,7 @@ void ll_init_state_machine(_u8 number)
 		llSm[i].state =  (_u8)BLE_LL_STATE_STANDBY;
 	}
 	llCurrentSm = llSm[0].id;
+
 }
 ll_ctrl_t* ll_get_idle_state_machine(void)
 {
@@ -113,6 +114,7 @@ ble_ll_state_status_e ble_ll_process_event(ll_ctrl_t* sm,ble_ll_event_e event)
 		if(ble_ll_state_table[i].currentState == sm->state&&\
 		   ble_ll_state_table[i].event        == event)
 		{
+
 			if(ble_ll_state_table[i].cb(event))
 			{
 				LOG_TRACE(LL_LOG_TRACE,"state transition success",(_u8*)&ble_ll_state_table[i].nextState,4)
@@ -171,6 +173,7 @@ controller_error_code_e ll_set_advertising_parameters(_u16 interval,\
 	ll->adv->peerAddressType = peerAddressType;
 	txMemcpy(ll->adv->peerAddress,peerAddress,6);
 	ll->adv->filterPolicy = policy;
+	LOG_TRACE(1,"set adv param",0,0)
 	return SUCCESS;
 }
 
@@ -187,6 +190,8 @@ controller_error_code_e ll_set_advertising_data(_u8* data,_u8 length)
 	}
 	ll->adv->advDataLen = length;
 	ll->adv->advData = tx_malloc(length);
+	txMemcpy(ll->adv->advData,data,length);
+	LOG_TRACE(1,"set adv data",0,0)
 	return SUCCESS;
 }
 	
@@ -203,6 +208,8 @@ controller_error_code_e ll_set_scan_response_data(_u8* data,_u8 length)
 	}
 	ll->adv->scanRspDataLen = length;
 	ll->adv->scanRspData    = tx_malloc(length);
+	txMemcpy(ll->adv->scanRspData,data,length);
+	LOG_TRACE(1,"set scan rsp data",0,0)
 	return SUCCESS;
 }
 
@@ -214,6 +221,7 @@ controller_error_code_e ll_set_advertising_enable(_u8 enable)
 	{
 		return SUCCESS;
 	}
+	LOG_TRACE(1,"set scan enable",&enable,1)
 	if(ll->adv->enable!=enable)
 	{
 		ll->adv->enable = enable;

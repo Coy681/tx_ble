@@ -5,5 +5,6 @@
 #define BLE_ADV_CRC_INIT      0x555555
 
 #define BLE_ADV_MAX_LENGTH    37
+#define BLE_ADV_INTERVAL_UNIT 1250
 
 int ble_ll_enter_advertising_state(ble_ll_event_e event);

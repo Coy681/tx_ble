@@ -14,6 +14,8 @@
 
 #include"system/scheduler/sch.h"
 
+#include"system/ble/controller/ll/ll.h"
+
 volatile _u32 AAA_Mcause = 0;
 volatile _u32 AAA_Mtval = 0;
 volatile _u32 AAA_Mpec = 0;
@@ -39,33 +41,27 @@ void trap_entry(void)
 void app_rx_cmd(_u8* data,_u32 len)
 {
 	LOG_TRACE(1,"rx data",data,len)
+	_u8 data1[10] = {'a','a','a','a','a','a','a','a','a','a'};
 	switch(data[0])
 	{
-
+		case 1:
+			ll_set_advertising_parameters(8,LL_ADV_NONCONN_IND,LL_PUBLIC_DEVICE_ADDRESS,LL_PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,0,7,LL_FILTER_LIST_NOT_USE);
+			break;
+		case 2:
+			ll_set_advertising_data(data1,10);
+			break;
+		case 3:
+		    ll_set_scan_response_data(data1,10);
+			break;
+		case 4:
+			ll_set_advertising_enable(1);
+			break;
+		case 5:
+			ll_set_advertising_enable(0);
+			break;
+		default:
+			break;
 	}
-//	switch(data[0])
-//	{
-//		case 1:
-//			ble_ll_process_event(&bleLLStateMachine,BLE_LL_EVENT_START_ADVERTISING);
-//			break;
-//		case 2:
-//			ble_ll_process_event(&bleLLStateMachine,BLE_LL_EVENT_STOP_ADVERTISING);
-//			break;
-//		case 3:
-//			ble_ll_process_event(&bleLLStateMachine,BLE_LL_EVENT_START_INITIATING);
-//			break;
-//		case 4:
-//			ble_ll_process_event(&bleLLStateMachine,BLE_LL_EVENT_STOP_INITIATING);
-//			break;
-//		case 5:
-//			ble_ll_process_event(&bleLLStateMachine,BLE_LL_EVENT_START_CONNECTION);
-//			break;
-//		case 6:
-//			ble_ll_process_event(&bleLLStateMachine,BLE_LL_EVENT_STOP_CONNECTION);
-//			break;
-//		default:
-//			break;
-//	}
 }
 
 

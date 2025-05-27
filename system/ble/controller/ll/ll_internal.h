@@ -98,15 +98,14 @@ typedef struct _PACKED
 
     _u8  ownAddressType:2;//'ll_own_address_type_e'
     _u8  peerAddressType:2;//'ll_peer_address_type_e'
-    _u8  enable;
+    _u8  enable:2;
 
     _u8  peerAddress[6];
+    _u8  advDataLen;
+    _u8  scanRspDataLen;
 
     _u8* advData;
-    _u8  advDataLen;
-
     _u8* scanRspData;
-    _u8  scanRspDataLen;
 }ll_internal_adv_ctrl_t;
 
 
@@ -150,6 +149,7 @@ typedef struct _PACKED
     _u16 rsvd;
     sch_node_t sch;
     phy_obj_t  phy;
+    _u8  rxSharedData[64];
     ll_internal_standby_ctrl_t*         standby;
     ll_internal_adv_ctrl_t*             adv;
     ll_internal_connection_ctrl_t*      conn;
