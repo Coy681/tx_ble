@@ -78,12 +78,22 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         {   
             return 0;
         }
+        //phy init
+        ll->phy.accessCode = BLE_ADV_ACCESS_CODE;
+        ll->phy.crcInit    = BLE_ADV_CRC_INIT;
+        ll->phy.dir        = PHY_DIR_TX;
+        ll->phy.mode       = PHY_MODE_1M;
+        ll->phy.txAddress  = ll->adv->advData;
+        ll->phy.hw_irq_cb  = adv_phy_irq_callback;
+        phy_obj_cast(&ll->phy);
+        phy_obj_init(&ll->phy);
+        //sch init
         ll->sch.llId = ll->id;
         ll->sch.type = SCH_PERIODIC_TASK;
         ll->sch.priority = LL_ADV_PRIORITY;
         ll->sch.timestamp = system_time() + 50;//maybe need planner
         ll->sch.period    = 0;
-        ll->sch.duration = 500;
+        ll->sch.duration = ll->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(ll->phy.mode,BLE_ADV_MAX_LENGTH,0)+2*PACKET_DEFAULT_TIFS_TIME;
         ll->sch.startLatency = 50;
         ll->sch.stopLatency  = 50;
         ll->sch.cb = adv_sch_callback;
@@ -94,15 +104,6 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         message->message[2] = ((_u32)&ll->sch)>>16;
         message->message[3] = ((_u32)&ll->sch)>>24;
         tx_message_send(TX_TASK_ID_SCH,(_u8*)message);
-
-        ll->phy.accessCode = BLE_ADV_ACCESS_CODE;
-        ll->phy.crcInit    = BLE_ADV_CRC_INIT;
-        ll->phy.dir        = PHY_DIR_TX;
-        ll->phy.phy        = PHY_MODE_1M;
-        ll->phy.txAddress  = ll->adv->advData;
-        phy_obj_cast(&ll->phy);
-        phy_obj_init(&ll->phy);
-        // ll->sch.duration = ll->phy.hw_packet_from_trigger_to_end_time(ll->adv->advDataLen,0);
         LOG_TRACE(LL_LOG_TRACE,"enter advertising state",0,0);
         return 1;
     }

@@ -24,10 +24,10 @@ static void phy_start(void)
     hal_rf_set_access_code(phyCtrl->accessCode);
     hal_rf_set_crc_value(phyCtrl->crcInit);
     hal_rf_set_channel_index(phyCtrl->chnIdx);
-    if(lastPhy!= phyCtrl->phy)
+    if(lastPhy!= phyCtrl->mode)
     {
-        phy_mode[phyCtrl->phy];
-        lastPhy = phyCtrl->phy;
+        phy_mode[phyCtrl->mode];
+        lastPhy = phyCtrl->mode;
     }
     if(phyCtrl->dir == PHY_DIR_TX)
     {
@@ -44,20 +44,20 @@ static void phy_stop(void)
     hal_rf_stop();
 }
 
-static _u32  phy_hw_get_rx_preamble_timestamp(void)
+static _u32  phy_hw_get_rx_air_timestamp(void)
 {
-    return hal_rf_get_rx_header_timestamp(phyCtrl->phy);
+    return hal_rf_get_rx_air_timestamp(phyCtrl->mode);
 }
 
-static _u32 phy_hw_get_trigger_time_from_ts(_u32 ts)
+static _u32 phy_hw_get_hw_prepare_time(void)
 {
     if(phyCtrl->dir == PHY_DIR_TX)
     {
-        return (ts - hal_rf_get_tx_trigger_to_header_time(phyCtrl->phy));
+        return (hal_rf_get_tx_hw_prepare_time(phyCtrl->mode));
     }
     else
     {
-        return (ts - hal_rf_get_rx_trigger_to_header_time(phyCtrl->phy));
+        return (hal_rf_get_rx_hw_prepare_time(phyCtrl->mode));
     }
 }
 
@@ -86,9 +86,8 @@ void phy_obj_init(phy_obj_t* phy)
 {
     phy->start = phy_start;
     phy->stop  = phy_stop;
-    phy->hw_get_rx_air_ts                   = phy_hw_get_rx_preamble_timestamp;
-    phy->hw_get_trigger_from_ts             = phy_hw_get_trigger_time_from_ts;
-    phy->hw_if_rx_packet_valid              = phy_hw_if_rx_packet_valid;
-    phy->hw_irq_cb                          = phy_hw_irq_callback;
+    phy->hw_get_rx_air_ts                   = phy_hw_get_rx_air_timestamp;
+    phy->hw_get_prepare_time                = phy_hw_get_hw_prepare_time;
+    phy->hw_is_rx_packet_valid              = phy_hw_if_rx_packet_valid;
 }
 

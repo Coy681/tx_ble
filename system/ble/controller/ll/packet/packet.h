@@ -8,6 +8,8 @@
  #ifndef LL_PACKET_H_
  #define LL_PACKET_H_
 
+
+ #define PACKET_DEFAULT_TIFS_TIME     150
 /**************************Advertising physical channel PDU******************************/
 typedef union 
 {

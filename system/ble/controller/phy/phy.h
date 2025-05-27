@@ -90,9 +90,6 @@
  #ifndef LL_PHY_H_
  #define LL_PHY_H_
 
-#define PHY_DEFAULT_TIFS_TIME     150
-
-
 typedef enum
 {
     PHY_MODE_1M       = HAL_RF_MODE_1M,
@@ -116,7 +113,7 @@ typedef enum
 
 typedef struct _PACKED
 {
-    _u8  phy:3;//phy_mode_e
+    _u8  mode:3;//phy_mode_e
     _u8  powerIndex:5;//
     _u8  chnIdx:6;
     _u8  dir:2;//phy_dir_e
@@ -132,8 +129,8 @@ typedef struct _PACKED
     void (*start)(void);
     void (*stop)(void);
     _u32 (*hw_get_rx_air_ts)(void);//timestamp means first bit time of preamble                     
-    _u32 (*hw_get_trigger_from_ts)(_u32);//get tx or rx trigger time form timsetamp
-    _u32 (*hw_if_rx_packet_valid)(void);
+    _u32 (*hw_get_prepare_time)(void);//get hardware prepare time
+    _u32 (*hw_is_rx_packet_valid)(void);//
     void (*hw_irq_cb)(_u8);//phy_irq_e
 }phy_obj_t;
 
