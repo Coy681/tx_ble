@@ -24,7 +24,7 @@ typedef struct txMallocNode_t
     _u16 usedFlag;
 }txMallocNode_t;
 
-static _u8 txMallocBuffer[TX_MALLOC_BUFFER_SIZE];
+static _u8 __attribute__ ((aligned (4))) txMallocBuffer[TX_MALLOC_BUFFER_SIZE];
 
 static txMalloc_t txMalloc;
 

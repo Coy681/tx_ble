@@ -36,5 +36,10 @@
 #define U32_TO_STREAM(p,n)              {*p++ = (_u8)n; *p++ = (_u8)n>>8; *p++ = (_u8)n>>16; *p++ = (_u8)n>>24;}
 
 
+#define BIT_SET(var, bit)               ((var) |=  (1U << (bit)))
+
+#define BIT_EXIST(var, bit)             ((var) & (1U << (bit)))
+
+#define BIT_CLR(var, bit)               ((var) &= ~(1U << (bit)))
 
 #endif /* TXBIT_H_ */

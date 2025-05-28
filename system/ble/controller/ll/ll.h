@@ -1,5 +1,8 @@
 #include"common/txCommon.h"
 
+ #ifndef LL_H_
+ #define LL_H_
+
 /***********************Bluetooth LE Controller code**************************/
 typedef enum
 {
@@ -618,3 +621,5 @@ controller_error_code_e ll_set_advertising_data(_u8* data,_u8 length);
 controller_error_code_e ll_set_scan_response_data(_u8* data,_u8 length);
 
 controller_error_code_e ll_set_advertising_enable(_u8 enable);
+
+#endif

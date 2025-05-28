@@ -51,7 +51,7 @@
 #define RF_PACKET_TERM2_TIME_CODED_S2          6
 #define RF_PACKET_TERM2_TIME_CODED_S8          24
 
-
+/*******************************config rf *********************************/
 void hal_rf_set_access_code(_u32 accessCode);
 
 void hal_rf_set_crc_value(_u32 crc);
@@ -100,14 +100,28 @@ void hal_rf_tx(_u8* address,_u32 time);
 
 void hal_rf_set_rx_timeout(_u32 time);
 
-_u32 hal_rf_get_rx_air_timestamp(_u8 phy);
-
+/*******************************get rf info *********************************/
 _u32 hal_rf_get_rx_hw_prepare_time(_u8 phy);
 
 _u32 hal_rf_get_tx_hw_prepare_time(_u8 phy);
 
+_u32 hal_rf_get_rx_air_timestamp(_u8 phy);
+
 _u32 hal_rf_is_packet_valid(_u8* packet);
 
+_u32 hal_rf_get_hw_packet_tx_extra_len(void);
+
+_u32 hal_rf_get_hw_tx_header_offset(void);
+
+_u32 hal_rf_set_hw_tx_len(_u8* packet,_u16 len);
+
+_u32 hal_rf_set_hw_rx_len(_u8* packet,_u16 len);
+
+_u32 hal_rf_get_hw_packet_rx_extra_len(void);
+
+_u32 hal_rf_get_hw_rx_header_offset(void);
+
+/*******************************operate rf *********************************/
 void hal_rf_rx(_u8* address,_u32 maxOctets,_u32 time);
 
 void hal_rf_stop(void);

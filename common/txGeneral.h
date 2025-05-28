@@ -4,6 +4,8 @@
 
 void txMemcpy(void *pO, void *pI, _u32 length);
 
+void txMemcpy4(void *pO, void *pI, _u32 length);
+
 int  txMemcmp(void * str1, void * str2, _u32 length);
 
 void txMemsetByte(_u8 * pO, _u8 pValue, _u32 length);

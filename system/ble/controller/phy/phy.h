@@ -136,6 +136,8 @@ typedef struct _PACKED
 
 typedef void(*phy_irq_cb_f)(_u8 type);
 
+void phy_init(void);
+
 void phy_obj_init(phy_obj_t* phy);
 
 void phy_obj_cast(phy_obj_t* phy);

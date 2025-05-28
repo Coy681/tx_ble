@@ -153,9 +153,11 @@ void hal_rf_stop(void)
         reg_rf_ll_cmd = 0x80;
     }
 }
+
 /******************hal rf tx setting***************/
 void hal_rf_tx(_u8* address,_u32 time)
 {
+	*(_u32*)address = rf_tx_packet_dma_len((_u16)address[5]+2);
     rf_start_stx(address,time*CLOCK_TICK_US);
 }
 /******************hal rf rx setting***************/
@@ -194,6 +196,36 @@ _u32 hal_rf_is_packet_valid(_u8* packet)
         }
     }
     return 0;
+}
+/******************hal rf packet setting***************/
+_u32 hal_rf_get_hw_packet_tx_extra_len(void)
+{
+	return 4;// 4 dma length offset
+}
+
+_u32 hal_rf_get_hw_tx_header_offset(void)
+{
+	return 4;// 4 dma length offset
+}
+
+_u32 hal_rf_get_hw_packet_rx_extra_len(void)
+{
+	return 15;// 4 dma length offset,3 crc offset,4 timestamp offset,4 extra info
+}
+
+_u32 hal_rf_get_hw_rx_header_offset(void)
+{
+	return 4;// 4 dma length offset
+}
+
+_u32 hal_rf_set_hw_tx_len(_u8* packet,_u16 len)
+{
+	*(_u32*)packet  = (_u32)len;//first 4 byte is dma length
+}
+
+_u32 hal_rf_set_hw_rx_len(_u8* packet,_u16 len)
+{
+	*(_u32*)packet  = (_u32)len;//first 4 byte is dma length
 }
 /******************hal rf irq process**************/
 _RAM_CODE void rf_irq_handler(void)
@@ -234,6 +266,10 @@ void hal_rf_init(void(*cb)(_u8))
 {
     rf_mode_init();
     rf_set_ble_1M_mode();
+    hal_rf_set_power(RF_POWER_P3p00dBm);
+    plic_set_priority(IRQ_ZB_RT, 2);
+    rf_set_irq_mask(FLD_RF_IRQ_RX|FLD_RF_IRQ_TX|FLD_RF_IRQ_RX_TIMEOUT);
+    rf_clr_irq_status(FLD_RF_IRQ_ALL);
     rf_set_tx_dma(0, 272);
     if(cb)
     {

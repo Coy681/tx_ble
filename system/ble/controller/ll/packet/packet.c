@@ -9,9 +9,34 @@
  */
 #include"packet.h"
 
+_u32 ll_get_packet_len(_u8 dir,_u16 dataLen,_u8 enc)
+{
+	_u16 len = (enc?(dataLen+2+4):(dataLen+2));
+	if(dir == PHY_DIR_TX)
+	{
+		return (len + hal_rf_get_hw_packet_tx_extra_len());
+	}
+	else
+	{
+		return (len + hal_rf_get_hw_packet_rx_extra_len());
+	}
+}
+
+_u32 ll_get_packet_header_offset(_u8 dir)
+{
+	if(dir == PHY_DIR_TX)
+	{
+		return hal_rf_get_hw_tx_header_offset();
+	}
+	else
+	{
+		return hal_rf_get_hw_rx_header_offset();
+	}
+}
+
 _u8* ll_get_adv_packet(_u8* packet,_u8 length,_u8 advType,_u8 chnSel,_u8 txAdd,_u8 rxAdd)
 {
-    ll_adv_packet_t* pkt = (ll_adv_packet_t*)packet;
+    ll_adv_packet_t* pkt = (ll_adv_packet_t*)(packet+ll_get_packet_header_offset(PHY_DIR_TX));
     pkt->hdr.pduType = advType;
     pkt->hdr.chSel   = chnSel;
     pkt->hdr.txAdd   = txAdd;
@@ -73,5 +98,8 @@ static _u16 packetOctetTime[4] = {
 _u32 ll_get_air_packet_time(phy_mode_e phy,_u16 len,bool enc)
 {
     _u16 pduLen = (enc?len+4:len);
+    pduLen+=2;//header
     return (packetExcludePduTime[phy]+pduLen*packetOctetTime[phy]);
 }
+
+

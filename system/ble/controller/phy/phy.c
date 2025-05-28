@@ -77,7 +77,7 @@ static void phy_hw_irq_callback(_u8 type)
         phyCtrl->hw_irq_cb(type);
     }
 }
-static void phy_init(void)
+void phy_init(void)
 {
     hal_rf_init(phy_hw_irq_callback);
 }

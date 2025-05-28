@@ -41,17 +41,20 @@ void trap_entry(void)
 void app_rx_cmd(_u8* data,_u32 len)
 {
 	LOG_TRACE(1,"rx data",data,len)
-	_u8 data1[10] = {'a','a','a','a','a','a','a','a','a','a'};
+	_u8 data1[] = {0x10, 0x09, 'a', 'a', 'a', 'a', 'a', 0x5f, 0x63, 0x6f, 0x6e, 0x6e, 0x5f, 0x73, 0x6e,0x69,0x66,
+			       0x02,0x01,0x05,
+                   0x03,0x19,0x80,0x01,
+                   0x05,0x02,0x12,0x18,0x0f,0x18};
 	switch(data[0])
 	{
 		case 1:
 			ll_set_advertising_parameters(8,LL_ADV_NONCONN_IND,LL_PUBLIC_DEVICE_ADDRESS,LL_PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,0,7,LL_FILTER_LIST_NOT_USE);
 			break;
 		case 2:
-			ll_set_advertising_data(data1,10);
+			ll_set_advertising_data(data1,sizeof(data1));
 			break;
 		case 3:
-		    ll_set_scan_response_data(data1,10);
+		    ll_set_scan_response_data(data1,sizeof(data1));
 			break;
 		case 4:
 			ll_set_advertising_enable(1);

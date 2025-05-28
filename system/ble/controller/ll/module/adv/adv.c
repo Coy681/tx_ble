@@ -3,15 +3,18 @@
 
 static void adv_phy_irq_tx(void)
 {
-
+	DEBUG_GPIO_HIGH(GPIO_7);
+	DEBUG_GPIO_LOW(GPIO_7);
 }
 static void adv_phy_irq_rx(void)
 {
-    
+	DEBUG_GPIO_HIGH(GPIO_7);
+	DEBUG_GPIO_LOW(GPIO_7);
 }
 static void adv_phy_irq_rx_timeout(void)
 {
-    
+	DEBUG_GPIO_HIGH(GPIO_7);
+	DEBUG_GPIO_LOW(GPIO_7);
 }
 
 static void(*adv_phy_irq_cb[3])(void)=
@@ -25,21 +28,75 @@ static void adv_phy_irq_callback(_u8 type)
 {   
     adv_phy_irq_cb[type]();
 }
+static _u8 advPriChannel[3]={
+	BLE_ADV_CHANNEL_IDX_BIT0,
+	BLE_ADV_CHANNEL_IDX_BIT1,
+	BLE_ADV_CHANNEL_IDX_BIT2
+};
+
+static void adv_prepare_packet(ll_ctrl_t* ll)
+{
+	_u8* packet = NULL;
+	switch(ll->adv->advType)
+	{
+		case LL_ADV_IND:
+		     packet = ll_get_adv_packet(ll->txSharedPacket,6+ll->adv->advDataLen,LL_ADV_TYPE_ADV_IND,0,ll->adv->ownAddressType?1:0,0);
+		     txMemcpy(((adv_type_ind_t*)packet)->advA,ll->ownAddr,6);
+		     txMemcpy(((adv_type_ind_t*)packet)->advData,ll->adv->advData,ll->adv->advDataLen);
+		     break;
+		case LL_ADV_DIRECT_IND_HIGH_DUTY:
+			 packet = ll_get_adv_packet(ll->txSharedPacket,12,LL_ADV_TYPE_ADV_DIRECT_IND,0,ll->adv->ownAddressType?1:0,ll->adv->peerAddressType?1:0);
+		     txMemcpy(((adv_type_direct_ind_t*)packet)->advA,ll->ownAddr,6);
+		     txMemcpy(((adv_type_direct_ind_t*)packet)->targetA,ll->adv->peerAddress,6);
+			 break;
+		case LL_ADV_SCAN_IND:
+		     packet = ll_get_adv_packet(ll->txSharedPacket,6+ll->adv->advDataLen,LL_ADV_TYPE_ADV_SCAN_IND,0,ll->adv->ownAddressType?1:0,0);
+		     txMemcpy(((adv_type_scan_ind_t*)packet)->advA,ll->ownAddr,6);
+		     txMemcpy(((adv_type_scan_ind_t*)packet)->advData,ll->adv->advData,ll->adv->advDataLen);
+		     break;
+		case LL_ADV_NONCONN_IND:
+		     packet = ll_get_adv_packet(ll->txSharedPacket,6+ll->adv->advDataLen,LL_ADV_TYPE_ADV_NONCONN_IND,0,ll->adv->ownAddressType?1:0,0);
+		     txMemcpy(((adv_type_nonConn_ind_t*)packet)->advA,ll->ownAddr,6);
+		     txMemcpy(((adv_type_nonConn_ind_t*)packet)->advData,ll->adv->advData,ll->adv->advDataLen);
+		     break;
+		case LL_ADV_DIRECT_IND_LOW_DUTY:
+			 packet = ll_get_adv_packet(ll->txSharedPacket,12,LL_ADV_TYPE_ADV_DIRECT_IND,0,ll->adv->ownAddressType?1:0,ll->adv->peerAddressType?1:0);
+		     txMemcpy(((adv_type_direct_ind_t*)packet)->advA,ll->ownAddr,6);
+		     txMemcpy(((adv_type_direct_ind_t*)packet)->targetA,ll->adv->peerAddress,6);
+		     break;
+	}
+}
+
+volatile AAA_RF_LEN = 0;
 
 static void adv_sch_start(void)
 {
-//    ll_ctrl_t* ll = ll_get_current_state_machine();
-//    ll->phy.accessCode = BLE_ADV_ACCESS_CODE;
-//    ll->phy.crcInit    = BLE_ADV_CRC_INIT;
-//    ll->phy.dir        = PHY_DIR_TX;
-//    ll->phy.start();
+    ll_ctrl_t* ll = ll_get_current_state_machine();
 	DEBUG_GPIO_HIGH(GPIO_6);
+    phy_obj_cast(&ll->phy);
+	ll->phy.accessCode = BLE_ADV_ACCESS_CODE;
+    ll->phy.chnIdx     = BLE_ADV_CHANNEL_IDX_BIT0;//ll->adv->channelMap;
+    ll->phy.crcInit    = BLE_ADV_CRC_INIT;
+    ll->phy.dir        = PHY_DIR_TX;
+    ll->phy.chnIdx     = 37;
+    ll->phy.mode       = PHY_MODE_1M;
+    ll->phy.rxAddress  = ll->rxSharedPacket;
+    ll->phy.txAddress  = ll->txSharedPacket;
+    ll->phy.timestamp  = ll->sch.timestamp;
+    if(BIT_EXIST(ll->adv->status,BLE_ADV_STATUS_CHANGE_ADV_DATA))
+    {
+        adv_prepare_packet(ll);
+        BIT_CLR(ll->adv->status,BLE_ADV_STATUS_CHANGE_ADV_DATA);
+    }
+    AAA_RF_LEN = ll->adv->advDataLen;
+
+	ll->phy.start();
 	DEBUG_GPIO_LOW(GPIO_6);
 }
 static void adv_sch_stop(void)
 {
-	DEBUG_GPIO_HIGH(GPIO_7);
-	DEBUG_GPIO_LOW(GPIO_7);
+//	DEBUG_GPIO_HIGH(GPIO_7);
+//	DEBUG_GPIO_LOW(GPIO_7);
 }
 static void adv_sch_calceled(void)
 {
@@ -74,6 +131,7 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         //phy init
         ll->phy.mode       = PHY_MODE_1M;
         ll->phy.hw_irq_cb  = adv_phy_irq_callback;
+        ll->ownAddr[0] = ll->ownAddr[1] = ll->ownAddr[2] = ll->ownAddr[3]= ll->ownAddr[4] =ll->ownAddr[5]= 0x12;
         phy_obj_cast(&ll->phy);
         phy_obj_init(&ll->phy);
         //sch init

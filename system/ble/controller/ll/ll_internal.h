@@ -88,14 +88,26 @@ typedef struct _PACKED
 }ll_internal_standby_ctrl_t;
 
 /***********************ll advertising sate**********************/
+
+#define BLE_ADV_STATUS_CHANGE_ADV_DATA         0
+#define BLE_ADV_STATUS_CHANGE_SCAN_RSP_DATA    1
+#define BLE_ADV_STATUS_CHANGE_RSVD1            2
+#define BLE_ADV_STATUS_CHANGE_RSVD2            3
+#define BLE_ADV_STATUS_CHANGE_RSVD3            4
+#define BLE_ADV_STATUS_CHANGE_RSVD4            5
+#define BLE_ADV_STATUS_CHANGE_RSVD5            6
+#define BLE_ADV_STATUS_CHANGE_RSVD6            7
+
 typedef struct _PACKED
 {
-    _u16 interval;//number of 1.25ms
+    _u8  status;
+    _u8  rsvd0;
+    _u16 rsvd1;
 
+    _u16 interval;//number of 1.25ms
     _u8  advType:3;//search for enum 'll_advertising_type_e'
     _u8  channelMap:3;  
     _u8  filterPolicy:2;//'ll_advertising_filter_policy_e'
-
     _u8  ownAddressType:2;//'ll_own_address_type_e'
     _u8  peerAddressType:2;//'ll_peer_address_type_e'
     _u8  enable:2;
@@ -146,10 +158,11 @@ typedef struct _PACKED
 {
     _u8  state;
     _u8  id;
-    _u16 rsvd;
+    _u8  ownAddr[6];
     sch_node_t sch;
     phy_obj_t  phy;
-    _u8  rxSharedData[64];
+    _u8  rxSharedPacket[128];
+    _u8  txSharedPacket[128];
     ll_internal_standby_ctrl_t*         standby;
     ll_internal_adv_ctrl_t*             adv;
     ll_internal_connection_ctrl_t*      conn;
