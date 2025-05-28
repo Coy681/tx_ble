@@ -80,7 +80,7 @@ _u32 AAA_TEST_MASK = 0;
 _u32 AAA_TEST_MASK1 = 0;
 void tx_task_start(void)
 {
-   txTask_t* pTask = NULL;
+    txTask_t* pTask = NULL;
 	while(1)
 	{
 		pTask = tx_task_next_active();

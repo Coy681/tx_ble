@@ -67,8 +67,6 @@ static void adv_prepare_packet(ll_ctrl_t* ll)
 	}
 }
 
-volatile AAA_RF_LEN = 0;
-
 static void adv_sch_start(void)
 {
     ll_ctrl_t* ll = ll_get_current_state_machine();
@@ -88,8 +86,6 @@ static void adv_sch_start(void)
         adv_prepare_packet(ll);
         BIT_CLR(ll->adv->status,BLE_ADV_STATUS_CHANGE_ADV_DATA);
     }
-    AAA_RF_LEN = ll->adv->advDataLen;
-
 	ll->phy.start();
 	DEBUG_GPIO_LOW(GPIO_6);
 }

@@ -269,6 +269,7 @@ void hal_rf_init(void(*cb)(_u8))
     hal_rf_set_power(RF_POWER_P3p00dBm);
     plic_set_priority(IRQ_ZB_RT, 2);
     rf_set_irq_mask(FLD_RF_IRQ_RX|FLD_RF_IRQ_TX|FLD_RF_IRQ_RX_TIMEOUT);
+    plic_interrupt_enable(IRQ_ZB_RT);
     rf_clr_irq_status(FLD_RF_IRQ_ALL);
     rf_set_tx_dma(0, 272);
     if(cb)
