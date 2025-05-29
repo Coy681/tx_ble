@@ -107,7 +107,7 @@ SECTIONS
 	 */
 	PROVIDE (_BSS_VMA_END = ((. + 3) / 4)*4);
 	
-    . = ALIGN(4);
+    . = ALIGN(8);
     /* end is the starting address of the heap, the heap grows upward */
     
     /*_edata= .;*/
@@ -125,7 +125,7 @@ SECTIONS
 	/* end is the starting address of the heap, the heap grows upward */
 	_end = .;
 	PROVIDE (end = .);		
-    PROVIDE (_STACK_TOP = 0x80000);
+    PROVIDE (_STACK_TOP = 0xC0000 );
 	PROVIDE (FLASH_SIZE = 0x0100000);
 }
 

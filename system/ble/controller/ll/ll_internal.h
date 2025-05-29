@@ -159,8 +159,8 @@ typedef struct _PACKED
     _u8  state;
     _u8  id;
     _u8  ownAddr[6];
-    sch_node_t sch;
     phy_obj_t  phy;
+    sch_node_t sch;
     _u8  rxSharedPacket[128];
     _u8  txSharedPacket[128];
     ll_internal_standby_ctrl_t*         standby;

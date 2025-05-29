@@ -12,7 +12,7 @@
 #include"system/task/message/message.h"
 #include"platform/debug/debug_gpio.h"
 
-volatile static _u8  strToHex[] = "0123456789abcdef";
+volatile static _u8  strToHex[24] = "0123456789abcdef";
 /**************************log input process*******************************/
 txBuffer_t       logInputBuffer;
 log_receive_cb_f logRxCb;

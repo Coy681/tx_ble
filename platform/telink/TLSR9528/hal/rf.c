@@ -100,7 +100,7 @@ void hal_rf_set_channel_index(_u8 chn)
 }
 
 /******************hal rf power setting*************/
-_DATA static _u8 hal_rf_power[20]=
+_DATA static _u8 hal_rf_power[24]=
 {
     RF_POWER_P9p15dBm,
     RF_POWER_P8p25dBm,
@@ -120,6 +120,7 @@ _DATA static _u8 hal_rf_power[20]=
     RF_POWER_N9p03dBm,
     RF_POWER_N30dBm,
 };
+
 _RAM_CODE void hal_rf_set_power(_u8 power)
 {
     rf_set_power_level(hal_rf_power[power]);
@@ -158,6 +159,7 @@ void hal_rf_stop(void)
 void hal_rf_tx(_u8* address,_u32 time)
 {
 	*(_u32*)address = rf_tx_packet_dma_len((_u16)address[5]+2);
+	rf_tx_settle_us(HARDWARE_TX_PREPARE_TIME_1M);
     rf_start_stx(address,time*CLOCK_TICK_US);
 }
 /******************hal rf rx setting***************/
@@ -266,7 +268,7 @@ void hal_rf_init(void(*cb)(_u8))
 {
     rf_mode_init();
     rf_set_ble_1M_mode();
-    hal_rf_set_power(RF_POWER_P3p00dBm);
+	hal_rf_set_power(HAL_RF_POWER_P4dBm);
     plic_set_priority(IRQ_ZB_RT, 2);
     rf_set_irq_mask(FLD_RF_IRQ_RX|FLD_RF_IRQ_TX|FLD_RF_IRQ_RX_TIMEOUT);
     plic_interrupt_enable(IRQ_ZB_RT);

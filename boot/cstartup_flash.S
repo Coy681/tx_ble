@@ -68,7 +68,7 @@
 #define SRAM_256K      2	//256KSRAM, 256KB-IRAM(96KB-Retention)/0KB-DRAM
 #define SRAM_384K      3	//384KSRAM, 256KB-IRAM(96KB-Retention)/128KB-DRAM
 #define SRAM_512K      4	//512KSRAM, 256KB-IRAM(96KB-Retention)/256KB-DRAM
-#define SRAM_SIZE      SRAM_128K
+#define SRAM_SIZE      SRAM_512K
 
 #if (SRAM_SIZE == SRAM_256K)
 	.equ __IRAM_2_EN, 	1

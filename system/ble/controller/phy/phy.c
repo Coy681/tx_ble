@@ -20,7 +20,7 @@ void phy_obj_cast(phy_obj_t* phy)
 }
 static void phy_start(void)
 {
-    static _u8 lastPhy = 0xff;
+    static _u32 lastPhy = 0xff;
     hal_rf_set_access_code(phyCtrl->accessCode);
     hal_rf_set_crc_value(phyCtrl->crcInit);
     hal_rf_set_channel_index(phyCtrl->chnIdx);
