@@ -100,6 +100,8 @@ void hal_rf_tx(_u8* address,_u32 time);
 
 void hal_rf_set_rx_timeout(_u32 time);
 
+void hal_rf_set_rx_max_len(_u8 len);
+
 /*******************************get rf info *********************************/
 _u32 hal_rf_get_rx_hw_prepare_time(_u8 phy);
 

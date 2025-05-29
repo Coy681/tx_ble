@@ -167,6 +167,12 @@ void hal_rf_set_rx_timeout(_u32 time)
 {
     rf_set_rx_timeout(time);
 }
+
+void hal_rf_set_rx_max_len(_u8 len)
+{
+    rf_set_rx_maxlen(len);
+}
+
 void hal_rf_rx(_u8* address,_u32 maxOctets,_u32 time)
 {
     rf_set_rx_dma(address,0,maxOctets);

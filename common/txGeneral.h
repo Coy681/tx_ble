@@ -15,3 +15,4 @@ void txMemsetWord(_u32 * pO, _u32 pValue, _u32 length);
 int  txStringLength(_s8* string);
 
 int  txCompareTime(_u32 val1,_u32 val2);
+

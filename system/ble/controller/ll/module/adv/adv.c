@@ -5,20 +5,46 @@ static void adv_phy_irq_tx(void)
 {
 	DEBUG_GPIO_HIGH(GPIO_5);
     ll_ctrl_t* ll = ll_get_current_state_machine();
-    if((ll->adv->instant%3)!=0)
+    if(ll->adv->advType != LL_ADV_NONCONN_IND)
     {
-    	ll->sch.timestamp+=1000;
-    	sch_schedule_next_task();
+        //rx prepare
+        ll->phy.rxTimeout = PACKET_DEFAULT_TIFS_TIME+50;
+        ll->phy.rxMaxOctets = BLE_ADV_MAX_LENGTH;
+        ll->phy.dir = PHY_DIR_RX;
+        ll->phy.start();
+    }
+    else 
+    {
+        //adv train continue
+        if((ll->adv->instant%ll->adv->channelCnt)!=0)
+        {
+            ll->sch.timestamp+=1000;
+            sch_schedule_next_task();
+        }
     }
 	DEBUG_GPIO_LOW(GPIO_5);
 }
 static void adv_phy_irq_rx(void)
 {
-
+	DEBUG_GPIO_HIGH(GPIO_6);
+    ll_ctrl_t* ll = ll_get_current_state_machine();
+    if((ll->adv->instant%ll->adv->channelCnt)!=0)
+    {
+        ll->sch.timestamp+=1000;
+        sch_schedule_next_task();
+    }
+	DEBUG_GPIO_LOW(GPIO_6);
 }
 static void adv_phy_irq_rx_timeout(void)
 {
-
+	DEBUG_GPIO_HIGH(GPIO_7);
+    ll_ctrl_t* ll = ll_get_current_state_machine();
+    if((ll->adv->instant%ll->adv->channelCnt)!=0)
+    {
+        ll->sch.timestamp+=1000;
+        sch_schedule_next_task();
+    }
+	DEBUG_GPIO_LOW(GPIO_7);
 }
 
 static void(*adv_phy_irq_cb[3])(void)=
@@ -37,6 +63,7 @@ static _u8 advPriChannel[3]={
 	BLE_ADV_CHANNEL_IDX_BIT1,
 	BLE_ADV_CHANNEL_IDX_BIT2
 };
+
 
 static void adv_prepare_packet(ll_ctrl_t* ll)
 {
@@ -98,7 +125,7 @@ static void adv_sch_stop(void)
 {
 	DEBUG_GPIO_HIGH(GPIO_4);
     ll_ctrl_t* ll = ll_get_current_state_machine();
-    if((ll->adv->instant%3) == 0)
+    if((ll->adv->instant%ll->adv->channelCnt)==0)//adv train stop
     {
         ll->sch.timestamp+=ll->sch.period;
     }
@@ -139,6 +166,15 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         ll->phy.hw_irq_cb  = adv_phy_irq_callback;
         ll->ownAddr[0] = ll->ownAddr[1] = ll->ownAddr[2] = ll->ownAddr[3]= ll->ownAddr[4] =ll->ownAddr[5]= 0x12;
         ll->adv->instant = 0;
+        ll->adv->channelCnt = 0;
+        _u8 chnCount = 0;
+        for(_u8 i=0;i<3;i++)
+        {
+            if(ll->adv->channelMap&BIT(i))
+            {
+                advPriChannel[ll->adv->channelCnt++] = advPriChannel[i];
+            }
+        }
         phy_obj_cast(&ll->phy);
         phy_obj_init(&ll->phy);
         //sch init

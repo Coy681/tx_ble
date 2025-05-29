@@ -107,6 +107,7 @@ typedef struct _PACKED
     _u16 interval;//number of 1.25ms
     _u8  advType:3;//search for enum 'll_advertising_type_e'
     _u8  channelMap:3;  
+    _u8  channelCnt:2;
     _u8  filterPolicy:2;//'ll_advertising_filter_policy_e'
     _u8  ownAddressType:2;//'ll_own_address_type_e'
     _u8  peerAddressType:2;//'ll_peer_address_type_e'

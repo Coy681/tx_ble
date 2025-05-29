@@ -35,6 +35,7 @@ static void phy_start(void)
     }
     else if(phyCtrl->dir == PHY_DIR_RX)
     {
+        hal_rf_set_rx_max_len(phyCtrl->rxMaxOctets);
         hal_rf_set_rx_timeout(phyCtrl->rxTimeout);
         hal_rf_rx(phyCtrl->rxAddress,phyCtrl->rxMaxOctets,phyCtrl->timestamp);
     }
