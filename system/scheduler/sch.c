@@ -415,7 +415,7 @@ sch_ctrl_t schCtrl;
     }
 }
 
- _RAM_CODE static void sch_schedule_next_task(void)
+ _RAM_CODE void sch_schedule_next_task(void)
 {
 	DEBUG_GPIO_HIGH(GPIO_2);
     if(TASK_VALID(schCtrl.pRunningTask))
@@ -425,7 +425,6 @@ sch_ctrl_t schCtrl;
         {
         	sch_node_t* pTask = schCtrl.pRunningTask;
         	schCtrl.pRunningTask = NULL;
-        	TASK_PERIODIC_TS_UPDATE(pTask);
             sch_insert_task(pTask);
         }
     }

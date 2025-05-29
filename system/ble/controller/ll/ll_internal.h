@@ -116,6 +116,8 @@ typedef struct _PACKED
     _u8  advDataLen;
     _u8  scanRspDataLen;
 
+    _u32 instant;
+
     _u8* advData;
     _u8* scanRspData;
 }ll_internal_adv_ctrl_t;
