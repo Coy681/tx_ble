@@ -36,4 +36,6 @@ typedef struct _PACKED{
 	_u8 scanRsp[2];//0-31 byte
 }adv_type_scan_rsp_t;
 
+
+
 int ble_ll_enter_advertising_state(ble_ll_event_e event);

@@ -1,6 +1,6 @@
 #include"adv.h"
-
-
+#include"../scan/scan.h"
+#include"../init/init.h"
 static void adv_phy_irq_tx(void)
 {
 	DEBUG_GPIO_HIGH(GPIO_5);
@@ -11,6 +11,7 @@ static void adv_phy_irq_tx(void)
         ll->phy.rxTimeout = PACKET_DEFAULT_TIFS_TIME+50;
         ll->phy.rxMaxOctets = BLE_ADV_MAX_LENGTH;
         ll->phy.dir = PHY_DIR_RX;
+        ll->phy.timestamp = system_time()+10;
         ll->phy.start();
     }
     else 
@@ -24,14 +25,35 @@ static void adv_phy_irq_tx(void)
     }
 	DEBUG_GPIO_LOW(GPIO_5);
 }
+
+static void adv_rx_packet_analyze(ll_adv_packet_t* packet)
+{
+    if(packet->hdr.pduType == LL_ADV_TYPE_SCAN_REQ && packet->hdr.length == sizeof(scan_type_scan_req_t))
+    {
+        //scan req process
+        scan_type_scan_req_t* scanReq = (scan_type_scan_req_t*)(packet->data);
+    }
+    else if(packet->hdr.pduType == LL_ADV_TYPE_CONNECT_IND && packet->hdr.length == sizeof(init_type_connectInd_t))
+    {
+        //connect ind process
+        init_type_connectInd_t* connInd = (init_type_connectInd_t*)(packet->data);
+    }
+}
 static void adv_phy_irq_rx(void)
 {
 	DEBUG_GPIO_HIGH(GPIO_6);
     ll_ctrl_t* ll = ll_get_current_state_machine();
-    if((ll->adv->instant%ll->adv->channelCnt)!=0)
+    if(ll->phy.hw_is_rx_packet_valid())
     {
-        ll->sch.timestamp+=1000;
-        sch_schedule_next_task();
+        adv_rx_packet_analyze((ll_adv_packet_t*)(ll->phy.rxAddress + ll_get_packet_header_offset(PHY_DIR_RX)));
+    }
+    else
+    {
+        if((ll->adv->instant%ll->adv->channelCnt)!=0)
+        {
+            ll->sch.timestamp+=1000;
+            sch_schedule_next_task();
+        }
     }
 	DEBUG_GPIO_LOW(GPIO_6);
 }

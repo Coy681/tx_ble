@@ -32,6 +32,8 @@
         "locale": "c",
         "adv.h": "c",
         "sch.h": "c",
-        "packet.h": "c"
+        "packet.h": "c",
+        "scan.h": "c",
+        "init.h": "c"
     }
 }
