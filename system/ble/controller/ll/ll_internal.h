@@ -89,19 +89,10 @@ typedef struct _PACKED
 
 /***********************ll advertising sate**********************/
 
-#define BLE_ADV_STATUS_CHANGE_ADV_DATA         0
-#define BLE_ADV_STATUS_CHANGE_SCAN_RSP_DATA    1
-#define BLE_ADV_STATUS_CHANGE_RSVD1            2
-#define BLE_ADV_STATUS_CHANGE_RSVD2            3
-#define BLE_ADV_STATUS_CHANGE_RSVD3            4
-#define BLE_ADV_STATUS_CHANGE_RSVD4            5
-#define BLE_ADV_STATUS_CHANGE_RSVD5            6
-#define BLE_ADV_STATUS_CHANGE_RSVD6            7
-
 typedef struct _PACKED
 {
-    _u8  status;
     _u8  process;
+    _u8  rsvd0;
     _u16 rsvd1;
 
     _u16 interval;//number of 1.25ms

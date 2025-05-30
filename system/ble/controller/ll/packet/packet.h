@@ -16,6 +16,7 @@ typedef union
     _u16 header;
     struct{
         _u8 pduType:4;
+        _u8 rfu:1;
         _u8 chSel:1;
         _u8 txAdd:1;
         _u8 rxAdd:1;

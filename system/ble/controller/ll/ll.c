@@ -197,7 +197,6 @@ controller_error_code_e ll_set_advertising_data(_u8* data,_u8 length)
 	ll->adv->advDataLen = length;
 	ll->adv->advData    = tx_malloc(length);
 	txMemcpy(ll->adv->advData,data,length);
-	BIT_SET(ll->adv->status,BLE_ADV_STATUS_CHANGE_ADV_DATA);
 	LOG_TRACE(1,"set adv data",0,0)
 	return SUCCESS;
 }
@@ -216,7 +215,6 @@ controller_error_code_e ll_set_scan_response_data(_u8* data,_u8 length)
 	ll->adv->scanRspDataLen = length;
 	ll->adv->scanRspData    = tx_malloc(length);
 	txMemcpy(ll->adv->scanRspData,data,length);
-	BIT_SET(ll->adv->status,BLE_ADV_STATUS_CHANGE_SCAN_RSP_DATA);
 	LOG_TRACE(1,"set scan rsp data",0,0)
 	return SUCCESS;
 }
