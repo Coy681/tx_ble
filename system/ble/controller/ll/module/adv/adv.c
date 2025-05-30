@@ -24,12 +24,15 @@ static void adv_phy_irq_tx(void)
             ll->phy.start();
         }
     }
-	//adv train continue
-	if((ll->adv->instant%ll->adv->channelCnt)!=0)
-	{
-		ll->sch.timestamp+=1000;
-		sch_schedule_next_task();
-	}
+    else
+    {
+    	//adv train continue
+    	if((ll->adv->instant%ll->adv->channelCnt)!=0)
+    	{
+    		ll->sch.timestamp+=1000;
+    		sch_schedule_next_task();
+    	}
+    }
 	DEBUG_GPIO_LOW(GPIO_5);
 }
 volatile _u8 AAA_ADV_BUFFER[100];
@@ -49,7 +52,7 @@ static void adv_rx_packet_analyze(ll_ctrl_t* ll,ll_adv_packet_t* packet)
         init_type_connectInd_t* connInd = (init_type_connectInd_t*)(packet->data);
         ll->adv->process = ADV_PROCESS_CONNECT;
     }
-    while(1);
+
 }
 _RAM_CODE
 static void adv_phy_irq_rx(void)
