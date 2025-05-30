@@ -101,7 +101,7 @@ typedef struct _PACKED
 typedef struct _PACKED
 {
     _u8  status;
-    _u8  rsvd0;
+    _u8  process;
     _u16 rsvd1;
 
     _u16 interval;//number of 1.25ms

@@ -10,6 +10,7 @@ void(*phy_mode[4])(void)=
     hal_rf_set_coded_phy_s8,
 };
 
+_RAM_CODE
 void phy_obj_cast(phy_obj_t* phy)
 {
     ASSERT(phy!=NULL);
@@ -18,6 +19,8 @@ void phy_obj_cast(phy_obj_t* phy)
         phyCtrl = phy;
     }
 }
+
+_RAM_CODE
 static void phy_start(void)
 {
     static _u32 lastPhy = 0xff;
@@ -36,20 +39,24 @@ static void phy_start(void)
     else if(phyCtrl->dir == PHY_DIR_RX)
     {
         hal_rf_set_rx_max_len(phyCtrl->rxMaxOctets);
-        hal_rf_set_rx_timeout(phyCtrl->rxTimeout);
         hal_rf_rx(phyCtrl->rxAddress,phyCtrl->rxMaxOctets,phyCtrl->timestamp);
+        hal_rf_set_rx_timeout(phyCtrl->rxTimeout);
     }
 }
+
+_RAM_CODE
 static void phy_stop(void)
 {
     hal_rf_stop();
 }
 
+_RAM_CODE
 static _u32  phy_hw_get_rx_air_timestamp(void)
 {
     return hal_rf_get_rx_air_timestamp(phyCtrl->mode);
 }
 
+_RAM_CODE
 static _u32 phy_hw_get_hw_prepare_time(void)
 {
     if(phyCtrl->dir == PHY_DIR_TX)
@@ -62,6 +69,7 @@ static _u32 phy_hw_get_hw_prepare_time(void)
     }
 }
 
+_RAM_CODE
 static _u32  phy_hw_if_rx_packet_valid(void)
 {
     if(phyCtrl->rxAddress)
@@ -71,6 +79,7 @@ static _u32  phy_hw_if_rx_packet_valid(void)
     return 0;
 }
 
+_RAM_CODE
 static void phy_hw_irq_callback(_u8 type)
 {
     if(phyCtrl)
@@ -83,6 +92,7 @@ void phy_init(void)
     hal_rf_init(phy_hw_irq_callback);
 }
 
+_RAM_CODE
 void phy_obj_init(phy_obj_t* phy)
 {
     phy->start = phy_start;

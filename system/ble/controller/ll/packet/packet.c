@@ -9,6 +9,7 @@
  */
 #include"packet.h"
 
+_RAM_CODE
 _u32 ll_get_packet_len(_u8 dir,_u16 dataLen,_u8 enc)
 {
 	_u16 len = (enc?(dataLen+2+4):(dataLen+2));
@@ -22,6 +23,7 @@ _u32 ll_get_packet_len(_u8 dir,_u16 dataLen,_u8 enc)
 	}
 }
 
+_RAM_CODE
 _u32 ll_get_packet_header_offset(_u8 dir)
 {
 	if(dir == PHY_DIR_TX)
@@ -34,6 +36,7 @@ _u32 ll_get_packet_header_offset(_u8 dir)
 	}
 }
 
+_RAM_CODE
 _u8* ll_get_adv_packet(_u8* packet,_u8 length,_u8 advType,_u8 chnSel,_u8 txAdd,_u8 rxAdd)
 {
     ll_adv_packet_t* pkt = (ll_adv_packet_t*)(packet+ll_get_packet_header_offset(PHY_DIR_TX));
@@ -45,6 +48,7 @@ _u8* ll_get_adv_packet(_u8* packet,_u8 length,_u8 advType,_u8 chnSel,_u8 txAdd,_
     return pkt->data;
 }
 
+_RAM_CODE
 _u8* ll_get_data_packet(_u8* packet,_u8 length,_u8 llid,_u8 nesn,_u8 sn,_u8 md)
 {
     ll_data_packet_t* pkt = (ll_data_packet_t*)packet;
@@ -58,6 +62,7 @@ _u8* ll_get_data_packet(_u8* packet,_u8 length,_u8 llid,_u8 nesn,_u8 sn,_u8 md)
     return pkt->data;
 }
 
+_RAM_CODE
 _u8* ll_get_iso_cis_packet(_u8* packet,_u8 length,_u8 llid,_u8 nesn,_u8 sn,_u8 cie,_u8 npi)
 {
     ll_iso_packet_hdr_t* pkt = (ll_iso_packet_hdr_t*)packet;
@@ -70,6 +75,7 @@ _u8* ll_get_iso_cis_packet(_u8* packet,_u8 length,_u8 llid,_u8 nesn,_u8 sn,_u8 c
     return pkt->data;
 }
 
+_RAM_CODE
 _u8* ll_get_iso_bis_packet(_u8* packet,_u8 length,_u8 llid,_u8 cssn,_u8 cstf)
 {
     ll_iso_packet_hdr_t* pkt = (ll_iso_packet_hdr_t*)packet;
@@ -95,6 +101,7 @@ static _u16 packetOctetTime[4] = {
     RF_PACKET_OCTET_TIME_CODED_S8,
 };
 
+_RAM_CODE
 _u32 ll_get_air_packet_time(phy_mode_e phy,_u16 len,bool enc)
 {
     _u16 pduLen = (enc?len+4:len);

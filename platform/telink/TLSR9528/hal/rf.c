@@ -82,18 +82,21 @@ static _u16 rxHWPrepeaeTime[4] =
 };
 
 /******************hal rf access code setting*******/
+_RAM_CODE
 void hal_rf_set_access_code(_u32 accessCode)
 {
     rf_access_code_comm(accessCode);
 }
 
 /******************hal rf crc setting***************/
+_RAM_CODE
 void hal_rf_set_crc_value(_u32 crc)
 {
     rf_set_ble_crc_value(crc);
 }
 
 /******************hal rf channel setting***********/
+_RAM_CODE
 void hal_rf_set_channel_index(_u8 chn)
 {
     rf_set_ble_chn((_s8)chn);
@@ -121,32 +124,38 @@ _DATA static _u8 hal_rf_power[24]=
     RF_POWER_N30dBm,
 };
 
-_RAM_CODE void hal_rf_set_power(_u8 power)
+_RAM_CODE
+void hal_rf_set_power(_u8 power)
 {
     rf_set_power_level(hal_rf_power[power]);
 }
 
 /******************hal rf phy setting***************/
+_RAM_CODE
 void hal_rf_set_coded_phy_s2(void)
 {
     rf_set_ble_500K_mode();
 }
 
+_RAM_CODE
 void hal_rf_set_coded_phy_s8(void)
 {
     rf_set_ble_125K_mode();
 }
 
+_RAM_CODE
 void hal_rf_set_1M_phy(void)
 {
     rf_set_ble_1M_mode();
 }
 
+_RAM_CODE
 void hal_rf_set_2M_phy(void)
 {
     rf_set_ble_2M_mode();
 }
 /******************hal rf process***************/
+_RAM_CODE
 void hal_rf_stop(void)
 {
     if(read_reg8(0x170224)!=FLD_RF_STATE_MACHINE_IDLE)
@@ -156,44 +165,53 @@ void hal_rf_stop(void)
 }
 
 /******************hal rf tx setting***************/
+_RAM_CODE
 void hal_rf_tx(_u8* address,_u32 time)
 {
 	*(_u32*)address = rf_tx_packet_dma_len((_u16)address[5]+2);
-	rf_tx_settle_us(HARDWARE_TX_PREPARE_TIME_1M);
+	rf_set_tx_settle_time(HARDWARE_TX_PREPARE_TIME_1M);
     rf_start_stx(address,time*CLOCK_TICK_US);
 }
 /******************hal rf rx setting***************/
+_RAM_CODE
 void hal_rf_set_rx_timeout(_u32 time)
 {
-    rf_set_rx_timeout(time);
+	reg_rf_ll_rx_fst_timeout = time;
 }
 
+_RAM_CODE
 void hal_rf_set_rx_max_len(_u8 len)
 {
     rf_set_rx_maxlen(len);
 }
 
+_RAM_CODE
 void hal_rf_rx(_u8* address,_u32 maxOctets,_u32 time)
 {
     rf_set_rx_dma(address,0,maxOctets);
+    rf_set_rx_settle_time(HARDWARE_RX_PREPARE_TIME_1M);
     rf_start_srx(time*CLOCK_TICK_US);
 }
 
+_RAM_CODE
 _u32 hal_rf_get_rx_air_timestamp(_u8 phy)
 {
     return (_u32)(system_switch_tick_to_time(reg_rf_timestamp) - rxAcToTs[phy] - rxAirToAC[phy]);
 }
 
+_RAM_CODE
 _u32 hal_rf_get_rx_hw_prepare_time(_u8 phy)
 {
     return ((_u32)rxHWPrepeaeTime[phy]);
 }
 
+_RAM_CODE
 _u32 hal_rf_get_tx_hw_prepare_time(_u8 phy)
 {
     return (_u32)txHWPrepeaeTime[phy];
 }
 
+_RAM_CODE
 _u32 hal_rf_is_packet_valid(_u8* packet)
 {
     if(packet)
@@ -206,37 +224,33 @@ _u32 hal_rf_is_packet_valid(_u8* packet)
     return 0;
 }
 /******************hal rf packet setting***************/
+_RAM_CODE
 _u32 hal_rf_get_hw_packet_tx_extra_len(void)
 {
 	return 4;// 4 dma length offset
 }
 
+_RAM_CODE
 _u32 hal_rf_get_hw_tx_header_offset(void)
 {
 	return 4;// 4 dma length offset
 }
 
+_RAM_CODE
 _u32 hal_rf_get_hw_packet_rx_extra_len(void)
 {
 	return 15;// 4 dma length offset,3 crc offset,4 timestamp offset,4 extra info
 }
 
+_RAM_CODE
 _u32 hal_rf_get_hw_rx_header_offset(void)
 {
 	return 4;// 4 dma length offset
 }
 
-_u32 hal_rf_set_hw_tx_len(_u8* packet,_u16 len)
-{
-	*(_u32*)packet  = (_u32)len;//first 4 byte is dma length
-}
-
-_u32 hal_rf_set_hw_rx_len(_u8* packet,_u16 len)
-{
-	*(_u32*)packet  = (_u32)len;//first 4 byte is dma length
-}
 /******************hal rf irq process**************/
-_RAM_CODE void rf_irq_handler(void)
+_RAM_CODE
+void rf_irq_handler(void)
 {
     if(rf_get_irq_status(FLD_RF_IRQ_TX))
     {
@@ -262,6 +276,14 @@ _RAM_CODE void rf_irq_handler(void)
         }
         rf_clr_irq_status(FLD_RF_IRQ_RX_TIMEOUT);
     }
+    else if(rf_get_irq_status(FLD_RF_IRQ_FIRST_TIMEOUT))
+    {
+        if(hal_rf_cb)
+        {
+            hal_rf_cb(HAL_RF_IRQ_RX_TIMEOUT);
+        }
+        rf_clr_irq_status(FLD_RF_IRQ_FIRST_TIMEOUT);
+    }
     else
     {
         rf_clr_irq_status(FLD_RF_IRQ_ALL);
@@ -270,6 +292,7 @@ _RAM_CODE void rf_irq_handler(void)
 PLIC_ISR_REGISTER(rf_irq_handler, IRQ_ZB_RT)
 
 /******************hal rf init setting*************/
+_RAM_CODE
 void hal_rf_init(void(*cb)(_u8))
 {
     rf_mode_init();

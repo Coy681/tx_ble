@@ -41,6 +41,8 @@ void ll_init_state_machine(_u8 number)
 	phy_init();
 
 }
+
+_RAM_CODE
 ll_ctrl_t* ll_get_idle_state_machine(void)
 {
 	for(_u8 i=0;i<llSmConut;i++)
@@ -52,6 +54,8 @@ ll_ctrl_t* ll_get_idle_state_machine(void)
 	}
 	return NULL;
 }
+
+_RAM_CODE
 ll_ctrl_t* ll_get_state_machine_by_id(_u8 id)
 {
 	for(_u8 i=0;i<llSmConut;i++)
@@ -63,6 +67,8 @@ ll_ctrl_t* ll_get_state_machine_by_id(_u8 id)
 	}
 	return NULL;
 }
+
+_RAM_CODE
 ll_ctrl_t* ll_get_current_state_machine(void)
 {
 	return &llSm[llCurrentSm];

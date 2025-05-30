@@ -115,10 +115,6 @@ _u32 hal_rf_get_hw_packet_tx_extra_len(void);
 
 _u32 hal_rf_get_hw_tx_header_offset(void);
 
-_u32 hal_rf_set_hw_tx_len(_u8* packet,_u16 len);
-
-_u32 hal_rf_set_hw_rx_len(_u8* packet,_u16 len);
-
 _u32 hal_rf_get_hw_packet_rx_extra_len(void);
 
 _u32 hal_rf_get_hw_rx_header_offset(void);

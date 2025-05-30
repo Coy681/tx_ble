@@ -1,51 +1,64 @@
 #include"adv.h"
 #include"../scan/scan.h"
 #include"../init/init.h"
+
+
+#define ADV_PROCESS_ADV          1
+#define ADV_PROCESS_SCAN         2
+#define ADV_PROCESS_CONNECT      3
+
+_RAM_CODE
 static void adv_phy_irq_tx(void)
 {
 	DEBUG_GPIO_HIGH(GPIO_5);
     ll_ctrl_t* ll = ll_get_current_state_machine();
-    if(ll->adv->advType != LL_ADV_NONCONN_IND)
+    if(ll->adv->process == ADV_PROCESS_ADV)
     {
-        //rx prepare
-        ll->phy.rxTimeout = PACKET_DEFAULT_TIFS_TIME+50;
-        ll->phy.rxMaxOctets = BLE_ADV_MAX_LENGTH;
-        ll->phy.dir = PHY_DIR_RX;
-        ll->phy.timestamp = system_time()+10;
-        ll->phy.start();
-    }
-    else 
-    {
-        //adv train continue
-        if((ll->adv->instant%ll->adv->channelCnt)!=0)
+        if(ll->adv->advType != LL_ADV_NONCONN_IND)
         {
-            ll->sch.timestamp+=1000;
-            sch_schedule_next_task();
+            //rx prepare
+            ll->phy.rxTimeout = PACKET_DEFAULT_TIFS_TIME+50;
+            ll->phy.rxMaxOctets = BLE_ADV_MAX_LENGTH;
+            ll->phy.dir = PHY_DIR_RX;
+            ll->phy.timestamp = system_time();
+            ll->phy.start();
         }
     }
+	//adv train continue
+	if((ll->adv->instant%ll->adv->channelCnt)!=0)
+	{
+		ll->sch.timestamp+=1000;
+		sch_schedule_next_task();
+	}
 	DEBUG_GPIO_LOW(GPIO_5);
 }
-
-static void adv_rx_packet_analyze(ll_adv_packet_t* packet)
+volatile _u8 AAA_ADV_BUFFER[100];
+_RAM_CODE
+static void adv_rx_packet_analyze(ll_ctrl_t* ll,ll_adv_packet_t* packet)
 {
+	txMemcpy(AAA_ADV_BUFFER,ll->rxSharedPacket,100);
     if(packet->hdr.pduType == LL_ADV_TYPE_SCAN_REQ && packet->hdr.length == sizeof(scan_type_scan_req_t))
     {
         //scan req process
         scan_type_scan_req_t* scanReq = (scan_type_scan_req_t*)(packet->data);
+        ll->adv->process = ADV_PROCESS_SCAN;
     }
     else if(packet->hdr.pduType == LL_ADV_TYPE_CONNECT_IND && packet->hdr.length == sizeof(init_type_connectInd_t))
     {
         //connect ind process
         init_type_connectInd_t* connInd = (init_type_connectInd_t*)(packet->data);
+        ll->adv->process = ADV_PROCESS_CONNECT;
     }
+    while(1);
 }
+_RAM_CODE
 static void adv_phy_irq_rx(void)
 {
 	DEBUG_GPIO_HIGH(GPIO_6);
     ll_ctrl_t* ll = ll_get_current_state_machine();
     if(ll->phy.hw_is_rx_packet_valid())
     {
-        adv_rx_packet_analyze((ll_adv_packet_t*)(ll->phy.rxAddress + ll_get_packet_header_offset(PHY_DIR_RX)));
+        adv_rx_packet_analyze(ll,(ll_adv_packet_t*)(ll->phy.rxAddress + ll_get_packet_header_offset(PHY_DIR_RX)));
     }
     else
     {
@@ -57,6 +70,7 @@ static void adv_phy_irq_rx(void)
     }
 	DEBUG_GPIO_LOW(GPIO_6);
 }
+_RAM_CODE
 static void adv_phy_irq_rx_timeout(void)
 {
 	DEBUG_GPIO_HIGH(GPIO_7);
@@ -86,7 +100,7 @@ static _u8 advPriChannel[3]={
 	BLE_ADV_CHANNEL_IDX_BIT2
 };
 
-
+_RAM_CODE
 static void adv_prepare_packet(ll_ctrl_t* ll)
 {
 	_u8* packet = NULL;
@@ -120,6 +134,7 @@ static void adv_prepare_packet(ll_ctrl_t* ll)
 	}
 }
 
+_RAM_CODE
 static void adv_sch_start(void)
 {
     ll_ctrl_t* ll = ll_get_current_state_machine();
@@ -141,8 +156,11 @@ static void adv_sch_start(void)
         BIT_CLR(ll->adv->status,BLE_ADV_STATUS_CHANGE_ADV_DATA);
     }
 	ll->phy.start();
+	ll->adv->process = ADV_PROCESS_ADV;
 	DEBUG_GPIO_LOW(GPIO_3);
 }
+
+_RAM_CODE
 static void adv_sch_stop(void)
 {
 	DEBUG_GPIO_HIGH(GPIO_4);
@@ -153,10 +171,14 @@ static void adv_sch_stop(void)
     }
 	DEBUG_GPIO_LOW(GPIO_4);
 }
+
+_RAM_CODE
 static void adv_sch_calceled(void)
 {
     
 }
+
+_RAM_CODE
 static void adv_sch_passed(void)
 {
     
