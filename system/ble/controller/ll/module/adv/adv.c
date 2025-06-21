@@ -7,6 +7,24 @@
 #define ADV_PROCESS_SCAN         2
 #define ADV_PROCESS_CONNECT      3
 
+//adv train list
+
+//logic train,and atomic operation
+
+//only tx,no time requirements
+
+//only rx,no time requirements
+
+//tx,time need from rx
+
+//rx time need from tx
+
+//adv events,
+
+//many adv events form a adv train,a train means a list,
+
+
+
 _RAM_CODE
 static void adv_phy_irq_tx(void)
 {
@@ -35,11 +53,10 @@ static void adv_phy_irq_tx(void)
     }
 	DEBUG_GPIO_LOW(GPIO_5);
 }
-volatile _u8 AAA_ADV_BUFFER[100];
+
 _RAM_CODE
 static void adv_rx_packet_analyze(ll_ctrl_t* ll,ll_adv_packet_t* packet)
 {
-	txMemcpy(AAA_ADV_BUFFER,ll->rxSharedPacket,100);
     if(packet->hdr.pduType == LL_ADV_TYPE_SCAN_REQ && packet->hdr.length == sizeof(scan_type_scan_req_t))
     {
         //scan req process
@@ -153,11 +170,7 @@ static void adv_sch_start(void)
     ll->phy.rxAddress  = ll->rxSharedPacket;
     ll->phy.txAddress  = ll->txSharedPacket;
     ll->phy.timestamp  = ll->sch.timestamp;
-    if(BIT_EXIST(ll->adv->status,BLE_ADV_STATUS_CHANGE_ADV_DATA))
-    {
-        adv_prepare_packet(ll);
-        BIT_CLR(ll->adv->status,BLE_ADV_STATUS_CHANGE_ADV_DATA);
-    }
+    adv_prepare_packet(ll);
 	ll->phy.start();
 	ll->adv->process = ADV_PROCESS_ADV;
 	DEBUG_GPIO_LOW(GPIO_3);

@@ -1,0 +1,304 @@
+#include"planner.h"
+static tlk_planner_node_t* pPlannerlist;
+tlk_planner_ctrl_t gPlannerCtrl;
+#define NODE_VALID(node)            (node!=NULL)
+
+void tlk_planner_set_base_interval(tlk_planner_time_e baseInterval)
+{
+    gPlannerCtrl.baseInterval = baseInterval;
+    gPlannerCtrl.offsetMax = baseInterval/TLK_PLANNER_UNIT_US;
+    gPlannerCtrl.plannerStartTick = clock_time();
+    tlk_planner_node_t* node = pPlannerlist;
+    while(NODE_VALID(node))
+    {
+        node->cb(baseInterval);
+        node = node->next;
+    }
+}
+
+tlk_planner_ret_e tlk_planner_insert_node(tlk_planner_node_t* pNode)
+{
+	assert(pNode!=NULL);
+	pNode->next = NULL;
+	if(NODE_VALID(pPlannerlist))
+	{
+		tlk_planner_node_t* scan = pPlannerlist;
+		while(NODE_VALID(scan->next))
+		{
+			scan = scan->next;
+		}
+		scan->next = pNode;
+	}
+	else
+	{
+		pPlannerlist = pNode;
+	}
+	return TLK_PLANNER_SUCCESS;
+}
+
+tlk_planner_ret_e tlk_planner_delete_node(tlk_planner_node_t* pNode)
+{
+	assert(pNode!=NULL);
+	tlk_planner_node_t* scan = pPlannerlist;
+	tlk_planner_node_t* prev = NULL;
+	while(NODE_VALID(scan))
+	{
+		if(pNode == scan)
+		{
+			if(prev)
+			{
+				prev->next = scan->next;
+			}
+			else
+			{
+				pPlannerlist = pPlannerlist->next;
+			}
+			return TLK_PLANNER_SUCCESS;
+		}
+		else
+		{
+			prev = scan;
+			scan = scan->next;
+		}
+	}
+	return TLK_PLANNER_NOT_FOUND;
+}
+
+
+volatile _u8 AAA_MAP[100];
+volatile _u8 AAA_MAP_SHIFT[100];
+volatile _u8 AAA_MAP_STATI[100];
+volatile _u8 AAA_MAP1[100];
+volatile _u8 AAA_MAP_SHIFT1[100];
+volatile _u8 AAA_MAP_STATI1[100];
+//
+//volatile _u8 AAA_MARK1;
+//volatile _u8 AAA_MARK2;
+//volatile _u8 AAA_MARK3;
+static void tlk_planner_generate_map_table(_u8 id,_u8* table,_u8* shiftIndex,_u8* tableStatistics,_u32 interval)
+{
+    _u8 shiftMax = interval/gPlannerCtrl.baseInterval;
+    tlk_planner_node_t* scan = pPlannerlist;
+    memcpy((_u8*)AAA_MAP,table,100);
+    memcpy((_u8*)AAA_MAP_SHIFT,shiftIndex,100);
+    memcpy((_u8*)AAA_MAP_STATI,tableStatistics,100);
+    while(NODE_VALID(scan))
+    {
+        if(((scan->interval % gPlannerCtrl.baseInterval) == 0) && (scan->id!=id))
+        {
+            if((scan->interval>=interval)&&(scan->interval % interval == 0))
+            {
+                _u8 mapShift = scan->shift % shiftMax;
+                for(_u32 i=scan->offset;i<(scan->offset+scan->duration);i++)
+                {
+                	if(table[mapShift * gPlannerCtrl.offsetMax + i] == 0)
+                	{
+                        table[mapShift * gPlannerCtrl.offsetMax + i] = 1;
+                        tableStatistics[mapShift]--;
+                	}
+                }
+            }
+            else if((scan->interval<interval)&&(interval%scan->interval == 0))
+            {
+                _u8 mapShiftCnt = (interval/scan->interval);
+                _u8 mapShiftNum = (scan->interval/gPlannerCtrl.baseInterval);
+                for(_u32 i=0;i<mapShiftCnt;i++)
+                {
+                    for(_u32 j=scan->offset;j<(scan->offset+scan->duration);j++)
+                    {
+                    	if(table[(i*mapShiftNum+scan->shift)*gPlannerCtrl.offsetMax+j] == 0)
+                    	{
+                            table[(i*mapShiftNum+scan->shift)*gPlannerCtrl.offsetMax+j] = 1;
+                            tableStatistics[i*mapShiftNum+scan->shift]--;
+                    	}
+                    }
+                }
+            }
+            else
+            {
+                for(_u32 i=0;i<shiftMax;i++)
+                {
+                    for(_u32 j=scan->offset;j<(scan->offset+scan->duration);j++)
+                    {
+                    	if(table[i*gPlannerCtrl.offsetMax+j] == 0)
+                    	{
+                            table[i*gPlannerCtrl.offsetMax+j] = 1;
+                            tableStatistics[i]--;
+                    	}
+                    }
+                }
+            }
+        }
+        scan = scan->next;
+    }
+
+    for(_u8 i=0;i<shiftMax;i++)
+	{
+		for(_u8 j=0;j<shiftMax-i-1;j++)
+		{
+            if(tableStatistics[j]>tableStatistics[j+1])
+            {
+                _u8 temp = tableStatistics[j];
+                tableStatistics[j] = tableStatistics[j+1];
+                tableStatistics[j+1] = temp;
+
+                temp = shiftIndex[j];
+                shiftIndex[j] = shiftIndex[j+1];  
+                shiftIndex[j+1] = temp;
+            }
+		}
+	}
+    memcpy((_u8*)AAA_MAP1,table,100);
+    memcpy((_u8*)AAA_MAP_SHIFT1,shiftIndex,100);
+    memcpy((_u8*)AAA_MAP_STATI1,tableStatistics,100);
+//    while(1);
+}
+
+tlk_planner_ret_e tlk_planner_parameter_check(tlk_planner_node_t* pNode)
+{
+	assert(pNode!=NULL);
+	if((pNode->interval%gPlannerCtrl.baseInterval)!=0)
+	{
+		return TLK_PLANNER_BW_CONFLICT;
+	}
+    _u8 shiftMax = pNode->interval/gPlannerCtrl.baseInterval;
+    _u8 plannerTable[shiftMax*gPlannerCtrl.offsetMax];
+    _u8 plannerShiftIndex[shiftMax];
+    _u8 plannerShiftStatistics[shiftMax];
+    for(_u32 i=0;i<shiftMax;i++)
+    {
+        plannerShiftStatistics[i] = gPlannerCtrl.offsetMax;
+        plannerShiftIndex[i] = i;
+        for(_u32 j=0;j<gPlannerCtrl.offsetMax;j++)
+        {
+            plannerTable[i*gPlannerCtrl.offsetMax+j] = 0;
+        }
+    }
+    tlk_planner_generate_map_table(pNode->id,plannerTable, plannerShiftIndex, plannerShiftStatistics, pNode->interval);
+    for(_u32 i=pNode->offset;i<(pNode->offset+pNode->duration);i++)
+    {
+    	if(i>=gPlannerCtrl.offsetMax)
+    	{
+    		return TLK_PLANNER_BW_CONFLICT;
+    	}
+        if(plannerTable[pNode->shift * gPlannerCtrl.offsetMax + i] == 1)
+        {
+            return TLK_PLANNER_BW_CONFLICT;
+        }
+    }
+    return TLK_PLANNER_SUCCESS;
+}
+
+
+tlk_planner_ret_e tlk_planner_parameter_request(_u8 mode,_u32 interval,_u16 durationMin,_u16 durationMax,tlk_planner_node_t* pNode)
+{
+	assert(pNode!=NULL);
+    if((interval%gPlannerCtrl.baseInterval)!=0)
+	{
+		return TLK_PLANNER_BW_CONFLICT;
+	}
+    _u8 shiftMax = interval/gPlannerCtrl.baseInterval;
+    _u8 plannerTable[shiftMax*gPlannerCtrl.offsetMax];
+    _u8 plannerShiftIndex[shiftMax];
+    _u8 plannerShiftStatistics[shiftMax];
+    for(_u32 i=0;i<shiftMax;i++)
+    {
+        plannerShiftStatistics[i] = gPlannerCtrl.offsetMax;
+        plannerShiftIndex[i] = i;
+        for(_u32 j=0;j<gPlannerCtrl.offsetMax;j++)
+        {
+            plannerTable[i*gPlannerCtrl.offsetMax+j] = 0;
+        }
+    }
+    tlk_planner_generate_map_table(pNode->id,plannerTable, plannerShiftIndex, plannerShiftStatistics, interval);
+    _u8 duration = durationMax;
+
+    if(mode == TLK_PLANNER_MODE_CONCENTRATED || mode == TLK_PLANNER_MODE_SCATTERED)
+    {
+        for(int k=0;k<2;k++)//first try durationMax,then try durationMin.
+        {
+            for(_s32 i = (mode == TLK_PLANNER_MODE_CONCENTRATED ? 0 : shiftMax - 1);
+                (mode == TLK_PLANNER_MODE_CONCENTRATED ? i < shiftMax : i >= 0);
+                i += (mode == TLK_PLANNER_MODE_CONCENTRATED ? 1 : -1))
+            {
+                if(plannerShiftStatistics[i] >= duration)
+                {
+                    _u8 offsetSpace = 0;
+                    for(_u8 j = 0; j < gPlannerCtrl.offsetMax; j++)
+                    {
+                        if(plannerTable[plannerShiftIndex[i] * gPlannerCtrl.offsetMax + j] == 0)
+                        {
+                            offsetSpace++;
+                        }
+                        else
+                        {
+                            offsetSpace = 0;
+                        }
+                        if(offsetSpace >= duration)
+                        {
+                            pNode->shift = plannerShiftIndex[i];
+                            pNode->offset = j + 1 - duration ;
+                            pNode->interval = interval;
+                            pNode->duration = duration;
+                            return TLK_PLANNER_SUCCESS;
+                        }
+                    }
+                }
+            }
+            if(durationMax>durationMin)
+            {
+            	duration = durationMin;
+            }
+        }
+    }
+    return TLK_PLANNER_BW_FULL;
+}
+
+
+_u32 tlk_planner_get_ahchor_tick(tlk_planner_node_t* pNode,_u32 refTick)
+{
+	_u32 anchorPoint = 0;
+	_u32 intervalTick = pNode->interval*SYSTEM_TIMER_TICK_1US;
+	_u32 mapAnchorTick = gPlannerCtrl.plannerStartTick + (pNode->shift*gPlannerCtrl.offsetMax + pNode->offset)*SYSTEM_TIMER_TICK_625US;
+
+	if(tick1_exceed_tick2(refTick,mapAnchorTick))
+	{
+		_u32 mod = (refTick-mapAnchorTick)%intervalTick;
+		if(mod)
+		{
+			anchorPoint = refTick+(intervalTick-mod);
+		}
+		else
+		{
+			anchorPoint = refTick;
+		}
+	}
+	else
+	{
+		anchorPoint = mapAnchorTick;
+	}
+	return anchorPoint;
+}
+
+void              tlk_planner_update_map_point_tick(void)
+{
+	_u32 baseIntervalTick = gPlannerCtrl.baseInterval * SYSTEM_TIMER_TICK_625US;
+    /* calculating planner start tick procedure should be protected, because IRQ will use planner start tick */
+    _u32 r = irq_disable();
+
+    _u32 clockTick = clock_time();
+    _u32 div  = (clockTick - gPlannerCtrl.plannerStartTick)/baseIntervalTick;
+    _u32 mod  = (clockTick - gPlannerCtrl.plannerStartTick)%baseIntervalTick;
+
+    gPlannerCtrl.plannerStartTick = clockTick-mod;
+	tlk_planner_node_t* scan = pPlannerlist;
+    while(NODE_VALID(scan))
+    {
+    	_u32 scanMaxShift  = scan->interval/gPlannerCtrl.baseInterval;
+    	_u32 extraShift    = scanMaxShift - (div%scanMaxShift);
+    	scan->shift = (scan->shift+extraShift)%scanMaxShift;
+    	scan = scan->next;
+    }
+    irq_restore(r);
+}
+
