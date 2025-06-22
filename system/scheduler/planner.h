@@ -1,5 +1,5 @@
 #include"tx_common.h"
-
+#include"platform/platform.h"
 #define TLK_PLANNER_UNIT_US            625
 
 #define TLK_PLANNER_MODE_CONCENTRATED  0
@@ -54,9 +54,9 @@ typedef struct __attribute__((packed)) tlk_planner_node_t
 
 typedef struct __attribute__((packed))
 {
-    _u16 baseInterval;
-    _u16 offsetMax;
-    _u32 plannerStartTick; 
+    _u16 baseInterval;//us
+    _u16 offsetMax;//unit is TLK_PLANNER_UNIT_US
+    _u32 plannerStartTime; //us
 }tlk_planner_ctrl_t;
 extern tlk_planner_ctrl_t gPlannerCtrl;
 
@@ -65,6 +65,6 @@ tlk_planner_ret_e tlk_planner_insert_node(tlk_planner_node_t* pNode);
 tlk_planner_ret_e tlk_planner_delete_node(tlk_planner_node_t* pNode);
 tlk_planner_ret_e tlk_planner_parameter_check(tlk_planner_node_t* pNode);
 tlk_planner_ret_e tlk_planner_parameter_request(_u8 mode,_u32 interval,_u16 durationMin,_u16 durationMax,tlk_planner_node_t* pNode);
-void              tlk_planner_update_map_point_tick(void);
-_u32               tlk_planner_get_ahchor_tick(tlk_planner_node_t* pNode,_u32 refTick);
+void              tlk_planner_update_map_point_point(void);
+_u32              tlk_planner_get_ahchor_point(tlk_planner_node_t* pNode,_u32 refTime);
 

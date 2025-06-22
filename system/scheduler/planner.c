@@ -7,7 +7,7 @@ void tlk_planner_set_base_interval(tlk_planner_time_e baseInterval)
 {
     gPlannerCtrl.baseInterval = baseInterval;
     gPlannerCtrl.offsetMax = baseInterval/TLK_PLANNER_UNIT_US;
-    gPlannerCtrl.plannerStartTick = clock_time();
+    gPlannerCtrl.plannerStartTime = system_time();
     tlk_planner_node_t* node = pPlannerlist;
     while(NODE_VALID(node))
     {
@@ -18,7 +18,7 @@ void tlk_planner_set_base_interval(tlk_planner_time_e baseInterval)
 
 tlk_planner_ret_e tlk_planner_insert_node(tlk_planner_node_t* pNode)
 {
-	assert(pNode!=NULL);
+	ASSERT(pNode!=NULL);
 	pNode->next = NULL;
 	if(NODE_VALID(pPlannerlist))
 	{
@@ -38,7 +38,7 @@ tlk_planner_ret_e tlk_planner_insert_node(tlk_planner_node_t* pNode)
 
 tlk_planner_ret_e tlk_planner_delete_node(tlk_planner_node_t* pNode)
 {
-	assert(pNode!=NULL);
+	ASSERT(pNode!=NULL);
 	tlk_planner_node_t* scan = pPlannerlist;
 	tlk_planner_node_t* prev = NULL;
 	while(NODE_VALID(scan))
@@ -156,7 +156,7 @@ static void tlk_planner_generate_map_table(_u8 id,_u8* table,_u8* shiftIndex,_u8
 
 tlk_planner_ret_e tlk_planner_parameter_check(tlk_planner_node_t* pNode)
 {
-	assert(pNode!=NULL);
+	ASSERT(pNode!=NULL);
 	if((pNode->interval%gPlannerCtrl.baseInterval)!=0)
 	{
 		return TLK_PLANNER_BW_CONFLICT;
@@ -192,7 +192,7 @@ tlk_planner_ret_e tlk_planner_parameter_check(tlk_planner_node_t* pNode)
 
 tlk_planner_ret_e tlk_planner_parameter_request(_u8 mode,_u32 interval,_u16 durationMin,_u16 durationMax,tlk_planner_node_t* pNode)
 {
-	assert(pNode!=NULL);
+	ASSERT(pNode!=NULL);
     if((interval%gPlannerCtrl.baseInterval)!=0)
 	{
 		return TLK_PLANNER_BW_CONFLICT;
@@ -255,42 +255,41 @@ tlk_planner_ret_e tlk_planner_parameter_request(_u8 mode,_u32 interval,_u16 dura
 }
 
 
-_u32 tlk_planner_get_ahchor_tick(tlk_planner_node_t* pNode,_u32 refTick)
+_u32 tlk_planner_get_ahchor_point(tlk_planner_node_t* pNode,_u32 refTime)
 {
 	_u32 anchorPoint = 0;
-	_u32 intervalTick = pNode->interval*SYSTEM_TIMER_TICK_1US;
-	_u32 mapAnchorTick = gPlannerCtrl.plannerStartTick + (pNode->shift*gPlannerCtrl.offsetMax + pNode->offset)*SYSTEM_TIMER_TICK_625US;
+	_u32 mapAnchorPoint = gPlannerCtrl.plannerStartTime + (pNode->shift*gPlannerCtrl.offsetMax + pNode->offset)*TLK_PLANNER_UNIT_US;
 
-	if(tick1_exceed_tick2(refTick,mapAnchorTick))
+	if(txCompareTime(refTime,mapAnchorPoint))
 	{
-		_u32 mod = (refTick-mapAnchorTick)%intervalTick;
+		_u32 mod = (refTime-mapAnchorPoint)%pNode->interval;
 		if(mod)
 		{
-			anchorPoint = refTick+(intervalTick-mod);
+			anchorPoint = refTime+(pNode->interval-mod);
 		}
 		else
 		{
-			anchorPoint = refTick;
+			anchorPoint = refTime;
 		}
 	}
 	else
 	{
-		anchorPoint = mapAnchorTick;
+		anchorPoint = mapAnchorPoint;
 	}
 	return anchorPoint;
 }
 
-void              tlk_planner_update_map_point_tick(void)
+void              tlk_planner_update_map_point_point(void)
 {
-	_u32 baseIntervalTick = gPlannerCtrl.baseInterval * SYSTEM_TIMER_TICK_625US;
+	_u32 baseIntervalTime = gPlannerCtrl.baseInterval * TLK_PLANNER_UNIT_US;
     /* calculating planner start tick procedure should be protected, because IRQ will use planner start tick */
     _u32 r = irq_disable();
 
-    _u32 clockTick = clock_time();
-    _u32 div  = (clockTick - gPlannerCtrl.plannerStartTick)/baseIntervalTick;
-    _u32 mod  = (clockTick - gPlannerCtrl.plannerStartTick)%baseIntervalTick;
+    _u32 clockTime = system_time();
+    _u32 div  = (clockTime - gPlannerCtrl.plannerStartTime)/baseIntervalTime;
+    _u32 mod  = (clockTime - gPlannerCtrl.plannerStartTime)%baseIntervalTime;
 
-    gPlannerCtrl.plannerStartTick = clockTick-mod;
+    gPlannerCtrl.plannerStartTime = clockTime-mod;
 	tlk_planner_node_t* scan = pPlannerlist;
     while(NODE_VALID(scan))
     {
