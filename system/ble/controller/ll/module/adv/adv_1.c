@@ -15,7 +15,7 @@
     ADV_EVENT_SEQUENCE_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED,
 }
 
-//adv schcdule sequence
+//adv schedule sequence
 {
     ADV_SCHEDULE_SEQUENCE_LEGACY,
     ADV_SCHEDULE_SEQUENCE_EXTENDED_WITHOUT_AUXILIARY,
@@ -26,20 +26,22 @@
 
 
 
+
+
 _RAM_CODE
-static void adv_phy_irq_tx(void)
+static void adv_phy_send_finished(void)
 {
 
 }
 
 _RAM_CODE
-static void adv_phy_irq_rx(void)
+static void adv_phy_receive_finished(void)
 {
 
 }
 
 _RAM_CODE
-static void adv_phy_irq_rx_timeout(void)
+static void adv_phy_receive_timeout(void)
 {
 
 }
@@ -70,9 +72,9 @@ static void adv_sch_passed(void)
 
 static void(*adv_phy_irq_cb[3])(void)=
 {
-    adv_phy_irq_tx,
-    adv_phy_irq_rx,
-    adv_phy_irq_rx_timeout,   
+    adv_phy_send_finished,
+    adv_phy_receive_finished,
+    adv_phy_receive_timeout,   
 };
 
 static void(*adv_sch_cb[4])(void)={
