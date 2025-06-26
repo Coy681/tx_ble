@@ -61,7 +61,7 @@ typedef struct
 #define HCI_COMMAND_LIST_LENGTH(hci_command_list)      (sizeof(hci_command_list)/sizeof(hci_command_list[0]))
 #define HCI_COMMAND_LENGTH(hci_command_array)          (sizeof(hci_command_array)/sizeof(hci_command_array[0]))
 
-static const hci_command_t hci_command_link_control_list[] =
+static const hci_command_t  hci_command_link_control_list[] =
 {
     {HCI_INQUIRY_COMMAND, NULL},
     {HCI_INQUIRY_CANCEL_COMMAND, NULL},
@@ -455,6 +455,8 @@ static const hci_command_t hci_command_vendor_specific_list[] =
 {
     {0, NULL},
 };
+
+
 
 typedef struct
 {

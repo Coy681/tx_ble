@@ -25,6 +25,8 @@ typedef enum
     ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED,
     ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED
     ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED,
+    ADV_EVENT_EXTENDED_PERIODIC_WITHOUT_RESPONSE,
+    ADV_EVENT_EXTENDED_PERIODIC_WITH_RESPONSE,
     #endif
 }adv_event_type_e;
 
@@ -45,18 +47,75 @@ typedef enum
     #endif
 }adv_pdu_type_e;
 
-typedef enum
+typedef struct
 {
-    ADV_PHY_S                        = BIT(0),//only
-    ADV_PHY_StoR                     = BIT(1),//Send with receive
-    ADV_PHY_StoRtoS                  = BIT(2),//Send with receive with send
+    adv_pdu_type_e pdu;
+
+}adv_procedure_list_t
+
+static const adv_procedure_list_t adv_con_scan_undirected[] =
+{
+    
+}
+
+static const adv_procedure_list_t adv_con_directed[]=
+{
+    
+}
+
+static const adv_procedure_list_t adv_scan_undirected[]=
+{
+    
+}
+
+static const adv_procedure_list_t adv_non_con_non_scan_undirected[]=
+{
+    
+}
+
+static const adv_procedure_list_t adv_extended_con_undirected[]=
+{
+    
+}
+
+static const adv_procedure_list_t adv_extended_con_directed[]=
+{
+    
+}
+
+static const adv_procedure_list_t adv_extended_scan_undirected[]=
+{
+    
+}
+
+static const adv_procedure_list_t adv_extended_scan_directed[]=
+{
+    
+}
+
+static const adv_procedure_list_t adv_extended_non_con_non_scan_undirected[]=
+{
+    
+}
+
+static const adv_procedure_list_t adv_extended_non_con_non_scan_directed[]=
+{
+    
+}
+
+static const adv_procedure_list_t adv_extended_periodic_with_rsp[]=
+{
+    
+}
+static const adv_procedure_list_t adv_extended_periodic_without_rsp[]=
+{
+    
 }
 
 typedef struct
 {
     adv_event_e eventType;//adv mode
-    _u32        permittedPdu;//
-    _u32        permittedPhyDir;//
+    
 }adv_sequence_t;
 
 static adv_sequence_t advTrain[] = 
@@ -72,6 +131,9 @@ static adv_sequence_t advTrain[] =
     {ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED,                     ADV_PDU_EXT_IND|ADV_PDU_AUX_IND|ADV_PDU_DECISION_IND,},
     {ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED    ADV_PDU_EXT_IND|ADV_PDU_AUX_IND},
     {ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED, ADV_PDU_EXT_IND|ADV_PDU_AUX_IND|ADV_PDU_DECISION_IND},
+    {ADV_EVENT_EXTENDED_PERIODIC_WITHOUT_RESPONSE,                ADV_PDU_AUX_IND|ADV_PDU_AUX_CHAIN_IND},
+    {ADV_EVENT_EXTENDED_PERIODIC_WITH_RESPONSE,                   },
+
     #endif
 }
 
@@ -96,7 +158,7 @@ static void adv_phy_receive_timeout(void)
 _RAM_CODE
 static void adv_sch_start(void)
 {
-
+    
 }
 
 _RAM_CODE
