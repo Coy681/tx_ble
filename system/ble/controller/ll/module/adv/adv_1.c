@@ -71,6 +71,11 @@ typedef struct
     _u32                  listLen;
 }adv_sequence_t;
 
+typedef struct
+{
+
+};
+
 #define ADV_PROCEDURE_LIST_LENGTH(adv_procedure_list)      (sizeof(adv_procedure_list)/sizeof(adv_procedure_list[0]))
 #define ADV_SEQUENCE_LIST_LENGTH(adv_sequence_list)        (sizeof(adv_sequence_list)/sizeof(adv_sequence_list[0]))
 
@@ -163,6 +168,9 @@ static adv_sequence_t advTrain[] =
     {ADV_EVENT_EXTENDED_PERIODIC_WITH_RESPONSE,                   adv_extended_periodic_without_rsp_procedure,       ADV_PROCEDURE_LIST_LENGTH(adv_extended_periodic_without_rsp_procedure)},
     #endif
 }
+
+
+
 
 _RAM_CODE
 static void adv_phy_irq_callback(_u8 type)
