@@ -7,10 +7,6 @@
 #define ADV_SCHE_PRIMARY_37         BIT(0)
 #define ADV_SCHE_PRIMARY_38         BIT(1)
 #define ADV_SCHE_PRIMARY_39         BIT(2)
-#ifdef(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
-#define ADV_SCHE_SECONDARY_AUX      BIT(3)
-#define ADV_SCHE_SECONDARY_SYNC     BIT(4)
-#endif
 
 typedef enum
 {
@@ -32,6 +28,14 @@ typedef enum
 
 typedef enum
 {
+    ADV_EVENT,
+    ADV_EXTENDED_EVENT,
+    ADV_PERIODIC_WITHOUT_RSP_EVENT,
+    ADV_PERIODIC_WITH_RSP_EVENT,
+}adv_event_class_e;
+
+typedef enum
+{
     ADV_PDU_IND                      = BIT(0),
     ADV_PDU_DIRECT_IND               = BIT(1),
     ADV_PDU_SCAN_IND                 = BIT(2),
@@ -47,92 +51,116 @@ typedef enum
     #endif
 }adv_pdu_type_e;
 
-typedef struct
+typedef enum
 {
-    adv_pdu_type_e pdu;
-
-}adv_procedure_list_t
-
-static const adv_procedure_list_t adv_con_scan_undirected[] =
-{
-    
-}
-
-static const adv_procedure_list_t adv_con_directed[]=
-{
-    
-}
-
-static const adv_procedure_list_t adv_scan_undirected[]=
-{
-    
-}
-
-static const adv_procedure_list_t adv_non_con_non_scan_undirected[]=
-{
-    
-}
-
-static const adv_procedure_list_t adv_extended_con_undirected[]=
-{
-    
-}
-
-static const adv_procedure_list_t adv_extended_con_directed[]=
-{
-    
-}
-
-static const adv_procedure_list_t adv_extended_scan_undirected[]=
-{
-    
-}
-
-static const adv_procedure_list_t adv_extended_scan_directed[]=
-{
-    
-}
-
-static const adv_procedure_list_t adv_extended_non_con_non_scan_undirected[]=
-{
-    
-}
-
-static const adv_procedure_list_t adv_extended_non_con_non_scan_directed[]=
-{
-    
-}
-
-static const adv_procedure_list_t adv_extended_periodic_with_rsp[]=
-{
-    
-}
-static const adv_procedure_list_t adv_extended_periodic_without_rsp[]=
-{
-    
-}
+    ADV_PHY_TX  = BIT(0),
+    ADV_PHY_RX  = BIT(1),
+}adv_phy_property_e;
 
 typedef struct
 {
-    adv_event_e eventType;//adv mode
-    
+    adv_event_class_e eventClass;
+    adv_pdu_type_e    pduType;
+    _u32              phyProperty;
+}adv_procedure_list_t;
+
+typedef struct
+{
+    adv_event_type_e      eventType;//adv mode
+    adv_procedure_list_t *procedureList;
+    _u32                  listLen;
 }adv_sequence_t;
+
+#define ADV_PROCEDURE_LIST_LENGTH(adv_procedure_list)      (sizeof(adv_procedure_list)/sizeof(adv_procedure_list[0]))
+#define ADV_SEQUENCE_LIST_LENGTH(adv_sequence_list)        (sizeof(adv_sequence_list)/sizeof(adv_sequence_list[0]))
+
+static const adv_procedure_list_t adv_con_scan_undirected_procedure[] =
+{
+    {ADV_EVENT,ADV_PDU_IND,ADV_PHY_TX|ADV_PHY_RX},
+};
+
+static const adv_procedure_list_t adv_con_directed_procedure[]=
+{
+    {ADV_EVENT,ADV_PDU_DIRECT_IND,ADV_PHY_TX|ADV_PHY_RX},
+};
+
+static const adv_procedure_list_t adv_scan_undirected_procedure[]=
+{
+    {ADV_EVENT,ADV_PDU_SCAN_IND,ADV_PHY_TX|ADV_PHY_RX},
+};
+
+static const adv_procedure_list_t adv_non_con_non_scan_undirected_procedure[]=
+{
+    {ADV_EVENT,ADV_PDU_NONCONN_IND,ADV_PHY_TX},
+};
+
+#ifdef(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
+static const adv_procedure_list_t adv_extended_con_undirected_procedure[]=
+{
+    {ADV_EVENT,         ADV_PDU_EXT_IND,     ADV_PHY_TX},
+    {ADV_EXTENDED_EVENT,ADV_PDU_AUX_IND,     ADV_PHY_TX|ADV_PHY_RX},
+};
+
+static const adv_procedure_list_t adv_extended_con_directed_procedure[]=
+{
+    {ADV_EVENT,         ADV_PDU_EXT_IND,ADV_PHY_TX},
+    {ADV_EXTENDED_EVENT,ADV_PDU_AUX_IND,ADV_PHY_TX|ADV_PHY_RX},
+};
+
+static const adv_procedure_list_t adv_extended_scan_undirected_procedure[]=
+{
+    {ADV_EVENT,         ADV_PDU_EXT_IND,ADV_PHY_TX},
+    {ADV_EXTENDED_EVENT,ADV_PDU_AUX_IND,ADV_PHY_TX|ADV_PHY_RX},
+};
+
+static const adv_procedure_list_t adv_extended_scan_directed_procedure[]=
+{
+    {ADV_EVENT,         ADV_PDU_EXT_IND,ADV_PHY_TX},
+    {ADV_EXTENDED_EVENT,ADV_PDU_AUX_IND,ADV_PHY_TX|ADV_PHY_RX},
+};
+
+static const adv_procedure_list_t adv_extended_non_con_non_scan_undirected_procedure[]=
+{
+    {ADV_EVENT,         ADV_PDU_EXT_IND,ADV_PHY_TX},
+    {ADV_EXTENDED_EVENT,ADV_PDU_AUX_IND,ADV_PHY_TX},
+};
+
+static const adv_procedure_list_t adv_extended_non_con_non_scan_directed_procedure[]=
+{
+    {ADV_EVENT,         ADV_PDU_EXT_IND,ADV_PHY_TX},
+    {ADV_EXTENDED_EVENT,ADV_PDU_AUX_IND,ADV_PHY_TX},
+};
+
+static const adv_procedure_list_t adv_extended_periodic_with_rsp_procedure[]=
+{
+    {ADV_EVENT,                  ADV_PDU_EXT_IND,              ADV_PHY_TX},
+    {ADV_EXTENDED_EVENT,         ADV_PDU_AUX_IND,              ADV_PHY_TX},
+    {ADV_PERIODIC_WITH_RSP_EVENT,ADV_PDU_AUX_SYNC_SUBEVENT_IND,ADV_PHY_TX|ADV_PHY_RX},
+};
+
+static const adv_procedure_list_t adv_extended_periodic_without_rsp_procedure[]=
+{
+    {ADV_EVENT,                     ADV_PDU_EXT_IND,     ADV_PHY_TX},
+    {ADV_EXTENDED_EVENT,            ADV_PDU_AUX_IND,     ADV_PHY_TX},
+    {ADV_PERIODIC_WITHOUT_RSP_EVENT,ADV_PDU_AUX_SYNC_IND,ADV_PHY_TX|ADV_PHY_RX},
+};
+#endif
 
 static adv_sequence_t advTrain[] = 
 {
-    {ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED,                  ADV_PDU_IND,                                       },
-    {ADV_EVENT_CONNECTABLE_DIRECTED,                              ADV_PDU_DIRECT_IND,                                },
-    {ADV_EVENT_SCANNABLE_UNDIRECTED,                              ADV_PDU_SCAN_IND,                                  },
-    {ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED,          ADV_PDU_NONCONN_IND,                               },
+    {ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED,                  adv_con_scan_undirected_procedure,                 ADV_PROCEDURE_LIST_LENGTH(adv_con_scan_undirected_procedure)},
+    {ADV_EVENT_CONNECTABLE_DIRECTED,                              adv_con_directed_procedure,                        ADV_PROCEDURE_LIST_LENGTH(adv_con_directed_procedure)},
+    {ADV_EVENT_SCANNABLE_UNDIRECTED,                              adv_scan_undirected_procedure,                     ADV_PROCEDURE_LIST_LENGTH(adv_scan_undirected_procedure)},
+    {ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED,          adv_non_con_non_scan_undirected_procedure,         ADV_PROCEDURE_LIST_LENGTH(adv_non_con_non_scan_undirected_procedure)},
     #ifdef(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
-    {ADV_EVENT_EXTENDED_CONNECTABLE_DIRECTED,                     ADV_PDU_EXT_IND|ADV_PDU_AUX_IND,},
-    {ADV_EVENT_EXTENDED_CONNECTABLE_UNDIRECTED,                   ADV_PDU_EXT_IND|ADV_PDU_AUX_IND|ADV_PDU_DECISION_IND},
-    {ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED,                       ADV_PDU_EXT_IND|ADV_PDU_AUX_IND,},
-    {ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED,                     ADV_PDU_EXT_IND|ADV_PDU_AUX_IND|ADV_PDU_DECISION_IND,},
-    {ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED    ADV_PDU_EXT_IND|ADV_PDU_AUX_IND},
-    {ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED, ADV_PDU_EXT_IND|ADV_PDU_AUX_IND|ADV_PDU_DECISION_IND},
-    {ADV_EVENT_EXTENDED_PERIODIC_WITHOUT_RESPONSE,                ADV_PDU_AUX_IND|ADV_PDU_AUX_CHAIN_IND},
-    {ADV_EVENT_EXTENDED_PERIODIC_WITH_RESPONSE,                   },
+    {ADV_EVENT_EXTENDED_CONNECTABLE_DIRECTED,                     adv_extended_con_undirected_procedure,             ADV_PROCEDURE_LIST_LENGTH(adv_extended_con_undirected_procedure)},
+    {ADV_EVENT_EXTENDED_CONNECTABLE_UNDIRECTED,                   adv_extended_con_directed_procedure,               ADV_PROCEDURE_LIST_LENGTH(adv_extended_con_directed_procedure)},
+    {ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED,                       adv_extended_scan_undirected_procedure,            ADV_PROCEDURE_LIST_LENGTH(adv_extended_scan_undirected_procedure)},
+    {ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED,                     adv_extended_scan_directed_procedure,              ADV_PROCEDURE_LIST_LENGTH(adv_extended_scan_directed_procedure)},
+    {ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED    adv_extended_non_con_non_scan_undirected_procedure,ADV_PROCEDURE_LIST_LENGTH(adv_extended_non_con_non_scan_undirected_procedure)},
+    {ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED, adv_extended_non_con_non_scan_directed_procedure,  ADV_PROCEDURE_LIST_LENGTH(adv_extended_non_con_non_scan_directed_procedure)},
+    {ADV_EVENT_EXTENDED_PERIODIC_WITHOUT_RESPONSE,                adv_extended_periodic_with_rsp_procedure,          ADV_PROCEDURE_LIST_LENGTH(adv_extended_periodic_with_rsp_procedure)},
+    {ADV_EVENT_EXTENDED_PERIODIC_WITH_RESPONSE,                   adv_extended_periodic_without_rsp_procedure,       ADV_PROCEDURE_LIST_LENGTH(adv_extended_periodic_without_rsp_procedure)},
 
     #endif
 }
