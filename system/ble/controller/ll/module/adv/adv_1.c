@@ -161,75 +161,19 @@ static adv_sequence_t advTrain[] =
     {ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED, adv_extended_non_con_non_scan_directed_procedure,  ADV_PROCEDURE_LIST_LENGTH(adv_extended_non_con_non_scan_directed_procedure)},
     {ADV_EVENT_EXTENDED_PERIODIC_WITHOUT_RESPONSE,                adv_extended_periodic_with_rsp_procedure,          ADV_PROCEDURE_LIST_LENGTH(adv_extended_periodic_with_rsp_procedure)},
     {ADV_EVENT_EXTENDED_PERIODIC_WITH_RESPONSE,                   adv_extended_periodic_without_rsp_procedure,       ADV_PROCEDURE_LIST_LENGTH(adv_extended_periodic_without_rsp_procedure)},
-
     #endif
 }
 
 _RAM_CODE
-static void adv_phy_send_finished(void)
-{
-
-}
-
-_RAM_CODE
-static void adv_phy_receive_finished(void)
-{
-
-}
-
-_RAM_CODE
-static void adv_phy_receive_timeout(void)
-{
-
-}
-
-_RAM_CODE
-static void adv_sch_start(void)
-{
-    
-}
-
-_RAM_CODE
-static void adv_sch_stop(void)
-{
-
-}
-
-_RAM_CODE
-static void adv_sch_calceled(void)
-{
-    
-}
-
-_RAM_CODE
-static void adv_sch_passed(void)
-{
-    
-}
-
-static void(*adv_phy_irq_cb[3])(void)=
-{
-    adv_phy_send_finished,
-    adv_phy_receive_finished,
-    adv_phy_receive_timeout,   
-};
-
-static void(*adv_sch_cb[4])(void)={
-    adv_sch_start,
-    adv_sch_stop,
-    adv_sch_calceled,
-    adv_sch_passed,
-};
-
-_RAM_CODE
 static void adv_phy_irq_callback(_u8 type)
 {   
-    adv_phy_irq_cb[type]();
+
 }
+
 _RAM_CODE
 static void adv_sch_callback(_u8 type)
 {
-    adv_sch_cb[type]();
+
 }
 
 int ble_ll_enter_advertising_state(ble_ll_event_e event)
