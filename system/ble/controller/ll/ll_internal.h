@@ -104,6 +104,11 @@ typedef struct _PACKED
     _u8  peerAddressType:2;//'ll_peer_address_type_e'
     _u8  enable:2;
 
+    _u8  availableChnCnt:2;
+    _u8  rsvd0:6;
+    _u8  rsvd1;
+    _u16 rsvd2;
+
     _u8  peerAddress[6];
     _u8  advDataLen;
     _u8  scanRspDataLen;

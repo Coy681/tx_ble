@@ -106,9 +106,9 @@ typedef enum
 
 typedef enum
 {
-    PHY_IRQ_TX         = HAL_RF_IRQ_TX,
-    PHY_IRQ_RX         = HAL_RF_IRQ_RX,
-    PHY_IRQ_RX_TIMEOUT = HAL_RF_IRQ_RX_TIMEOUT,
+    PHY_IRQ_TX_FINISHED = HAL_RF_IRQ_TX,
+    PHY_IRQ_RX_FINISHED = HAL_RF_IRQ_RX,
+    PHY_IRQ_RX_TIMEOUT  = HAL_RF_IRQ_RX_TIMEOUT,
 }phy_irq_e;
 
 typedef struct _PACKED

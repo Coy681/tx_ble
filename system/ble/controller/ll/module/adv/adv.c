@@ -1,215 +1,314 @@
+
 #include"adv.h"
 #include"../scan/scan.h"
 #include"../init/init.h"
 
 
-#define ADV_PROCESS_ADV          1
-#define ADV_PROCESS_SCAN         2
-#define ADV_PROCESS_CONNECT      3
+#define ADV_SCHE_PRIMARY_37         BIT(0)
+#define ADV_SCHE_PRIMARY_38         BIT(1)
+#define ADV_SCHE_PRIMARY_39         BIT(2)
 
-//adv train list
-
-//logic train,and atomic operation
-
-//only tx,no time requirements
-
-//only rx,no time requirements
-
-//tx,time need from rx
-
-//rx time need from tx
-
-//adv events,
-
-//many adv events form a adv train,a train means a list,
-
-
-
-_RAM_CODE
-static void adv_phy_irq_tx(void)
+typedef enum
 {
-	DEBUG_GPIO_HIGH(GPIO_5);
-    ll_ctrl_t* ll = ll_get_current_state_machine();
-    if(ll->adv->process == ADV_PROCESS_ADV)
+    ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED,
+    ADV_EVENT_CONNECTABLE_DIRECTED,
+    ADV_EVENT_SCANNABLE_UNDIRECTED,
+    ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED,
+    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+    ADV_EVENT_EXTENDED_CONNECTABLE_DIRECTED,
+    ADV_EVENT_EXTENDED_CONNECTABLE_UNDIRECTED,
+    ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED,
+    ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED,
+    ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED,
+    ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED,
+    #endif
+    #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
+    ADV_EVENT_EXTENDED_PERIODIC,
+    #endif
+    #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
+    ADV_EVENT_EXTENDED_PERIODIC_WITH_RESPONSE,
+    #endif
+}adv_event_type_e;
+
+typedef enum
+{
+    ADV_EVENT,
+    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+    ADV_EXTENDED_EVENT,
+    #endif
+    #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
+    ADV_PERIODIC_EVENT,
+    #endif
+    #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
+    ADV_PERIODIC_WITH_RSP_EVENT,
+    #endif
+}adv_event_class_e;
+
+typedef enum
+{
+    ADV_PDU_IND                      = BIT(0),
+    ADV_PDU_DIRECT_IND               = BIT(1),
+    ADV_PDU_SCAN_IND                 = BIT(2),
+    ADV_PDU_NONCONN_IND              = BIT(3),
+    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+    ADV_PDU_EXT_IND                  = BIT(4),
+    ADV_PDU_DECISION_IND             = BIT(5),
+    ADV_PDU_AUX_IND                  = BIT(6),
+    ADV_PDU_AUX_CHAIN_IND            = BIT(7),
+    #endif
+    #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
+    ADV_PDU_AUX_SYNC_IND             = BIT(8),
+    #endif
+    #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
+    ADV_PDU_AUX_SYNC_SUBEVENT_IND    = BIT(9),
+    ADV_PDU_AUX_SYNC_SUBEVENT_RSP    = BIT(10),
+    #endif
+}adv_pdu_type_e;
+
+typedef enum
+{
+    ADV_PHY_TX  = BIT(0),
+    ADV_PHY_RX  = BIT(1),
+}adv_phy_property_e;
+
+typedef struct
+{
+    adv_event_class_e eventClass;
+    adv_pdu_type_e    pduType;
+    _u32              phyProperty;
+}adv_procedure_list_t;
+
+typedef struct
+{
+    adv_event_type_e            eventType;//adv mode
+    adv_procedure_list_t const  *procedureList;
+    _u32                        listLen;
+}adv_sequence_t;
+
+typedef void(*adv_event_sch_process_f)(_u8);
+typedef void(*adv_event_phy_process_f)(_u8);
+typedef struct
+{
+    adv_event_class_e       eventClass;
+    adv_event_sch_process_f schCb;
+    adv_event_sch_process_f phyCb;
+}adv_event_process_t;
+
+static void adv_event_sch_process(_u8 schType)
+{
+    switch(schType)
     {
-        if(ll->adv->advType != LL_ADV_NONCONN_IND)
+        case SCH_TASK_START:
         {
-            //rx prepare
-            ll->phy.rxTimeout = PACKET_DEFAULT_TIFS_TIME+50;
-            ll->phy.rxMaxOctets = BLE_ADV_MAX_LENGTH;
-            ll->phy.dir = PHY_DIR_RX;
-            ll->phy.timestamp = system_time();
-            ll->phy.start();
+            if(0)
+            {
+                ll_ctrl_t* ll = ll_get_current_state_machine();
+                if(ll->adv->availableChnCnt)
+                {
+                    
+                }
+            }
         }
-    }
-    else
-    {
-    	//adv train continue
-    	if((ll->adv->instant%ll->adv->channelCnt)!=0)
-    	{
-    		ll->sch.timestamp+=1000;
-    		sch_schedule_next_task();
-    	}
-    }
-	DEBUG_GPIO_LOW(GPIO_5);
-}
-
-_RAM_CODE
-static void adv_rx_packet_analyze(ll_ctrl_t* ll,ll_adv_packet_t* packet)
-{
-    if(packet->hdr.pduType == LL_ADV_TYPE_SCAN_REQ && packet->hdr.length == sizeof(scan_type_scan_req_t))
-    {
-        //scan req process
-        scan_type_scan_req_t* scanReq = (scan_type_scan_req_t*)(packet->data);
-        ll->adv->process = ADV_PROCESS_SCAN;
-    }
-    else if(packet->hdr.pduType == LL_ADV_TYPE_CONNECT_IND && packet->hdr.length == sizeof(init_type_connectInd_t))
-    {
-        //connect ind process
-        init_type_connectInd_t* connInd = (init_type_connectInd_t*)(packet->data);
-        ll->adv->process = ADV_PROCESS_CONNECT;
-    }
-
-}
-_RAM_CODE
-static void adv_phy_irq_rx(void)
-{
-	DEBUG_GPIO_HIGH(GPIO_6);
-    ll_ctrl_t* ll = ll_get_current_state_machine();
-    if(ll->phy.hw_is_rx_packet_valid())
-    {
-        adv_rx_packet_analyze(ll,(ll_adv_packet_t*)(ll->phy.rxAddress + ll_get_packet_header_offset(PHY_DIR_RX)));
-    }
-    else
-    {
-        if((ll->adv->instant%ll->adv->channelCnt)!=0)
+            break;
+        case SCH_TASK_STOP:
         {
-            ll->sch.timestamp+=1000;
-            sch_schedule_next_task();
+
         }
+            break;
+        case SCH_TASK_CANCELED:
+        {
+
+        }
+            break;
+        case SCH_TASK_PASSED:
+        {
+
+        }
+            break;
     }
-	DEBUG_GPIO_LOW(GPIO_6);
-}
-_RAM_CODE
-static void adv_phy_irq_rx_timeout(void)
-{
-	DEBUG_GPIO_HIGH(GPIO_7);
-    ll_ctrl_t* ll = ll_get_current_state_machine();
-    if((ll->adv->instant%ll->adv->channelCnt)!=0)
-    {
-        ll->sch.timestamp+=1000;
-        sch_schedule_next_task();
-    }
-	DEBUG_GPIO_LOW(GPIO_7);
 }
 
-static void(*adv_phy_irq_cb[3])(void)=
+static void adv_event_phy_process(_u8 phyType)
 {
-    adv_phy_irq_tx,
-    adv_phy_irq_rx,
-    adv_phy_irq_rx_timeout,   
+    switch(phyType)
+    {
+        case PHY_IRQ_TX_FINISHED:
+        {
+
+        }
+            break;
+        case PHY_IRQ_RX_FINISHED:
+        {
+
+        }
+            break;
+        case PHY_IRQ_RX_TIMEOUT:
+        {
+
+        }
+            break;
+    }
+}
+
+#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+static void adv_extended_event_sch_process(_u8 schType)
+{
+    
+}
+static void adv_extended_event_phy_process(_u8 schType)
+{
+    
+}
+#endif
+
+#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
+static void adv_periodic_event_sch_process(_u8 schType)
+{
+    
+}
+static void adv_periodic_event_phy_process(_u8 schType)
+{
+    
+}
+#endif
+
+#if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
+static void adv_periodic_with_rsp_event_sch_process(_u8 schType)
+{
+    
+}
+static void adv_periodic_with_rsp_event_phy_process(_u8 schType)
+{
+    
+}
+#endif
+
+
+#define ADV_PROCEDURE_LIST_LENGTH(adv_procedure_list)      (sizeof(adv_procedure_list)/sizeof(adv_procedure_list[0]))
+#define ADV_SEQUENCE_LIST_LENGTH(adv_sequence_list)        (sizeof(adv_sequence_list)/sizeof(adv_sequence_list[0]))
+
+static const adv_procedure_list_t adv_con_scan_undirected_procedure[] =
+{
+    {ADV_EVENT,ADV_PDU_IND,ADV_PHY_TX|ADV_PHY_RX},
 };
 
+static const adv_procedure_list_t adv_con_directed_procedure[]=
+{
+    {ADV_EVENT,ADV_PDU_DIRECT_IND,ADV_PHY_TX|ADV_PHY_RX},
+};
+
+static const adv_procedure_list_t adv_scan_undirected_procedure[]=
+{
+    {ADV_EVENT,ADV_PDU_SCAN_IND,ADV_PHY_TX|ADV_PHY_RX},
+};
+
+static const adv_procedure_list_t adv_non_con_non_scan_undirected_procedure[]=
+{
+    {ADV_EVENT,ADV_PDU_NONCONN_IND,ADV_PHY_TX},
+};
+
+#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+static const adv_procedure_list_t adv_extended_con_undirected_procedure[]=
+{
+    {ADV_EVENT,         ADV_PDU_EXT_IND,     ADV_PHY_TX},
+    {ADV_EXTENDED_EVENT,ADV_PDU_AUX_IND,     ADV_PHY_TX|ADV_PHY_RX},
+};
+
+static const adv_procedure_list_t adv_extended_con_directed_procedure[]=
+{
+    {ADV_EVENT,         ADV_PDU_EXT_IND,ADV_PHY_TX},
+    {ADV_EXTENDED_EVENT,ADV_PDU_AUX_IND,ADV_PHY_TX|ADV_PHY_RX},
+};
+
+static const adv_procedure_list_t adv_extended_scan_undirected_procedure[]=
+{
+    {ADV_EVENT,         ADV_PDU_EXT_IND,ADV_PHY_TX},
+    {ADV_EXTENDED_EVENT,ADV_PDU_AUX_IND,ADV_PHY_TX|ADV_PHY_RX},
+};
+
+static const adv_procedure_list_t adv_extended_scan_directed_procedure[]=
+{
+    {ADV_EVENT,         ADV_PDU_EXT_IND,ADV_PHY_TX},
+    {ADV_EXTENDED_EVENT,ADV_PDU_AUX_IND,ADV_PHY_TX|ADV_PHY_RX},
+};
+
+static const adv_procedure_list_t adv_extended_non_con_non_scan_undirected_procedure[]=
+{
+    {ADV_EVENT,         ADV_PDU_EXT_IND,ADV_PHY_TX},
+    {ADV_EXTENDED_EVENT,ADV_PDU_AUX_IND,ADV_PHY_TX},
+};
+
+static const adv_procedure_list_t adv_extended_non_con_non_scan_directed_procedure[]=
+{
+    {ADV_EVENT,         ADV_PDU_EXT_IND,ADV_PHY_TX},
+    {ADV_EXTENDED_EVENT,ADV_PDU_AUX_IND,ADV_PHY_TX},
+};
+#endif
+
+#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
+static const adv_procedure_list_t adv_extended_periodic_procedure[]=
+{
+    {ADV_EVENT,                     ADV_PDU_EXT_IND,     ADV_PHY_TX},
+    {ADV_EXTENDED_EVENT,            ADV_PDU_AUX_IND,     ADV_PHY_TX},
+    {ADV_PERIODIC_EVENT,            ADV_PDU_AUX_SYNC_IND,ADV_PHY_TX|ADV_PHY_RX},
+};
+#endif
+
+#if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
+static const adv_procedure_list_t adv_extended_periodic_with_rsp_procedure[]=
+{
+    {ADV_EVENT,                  ADV_PDU_EXT_IND,              ADV_PHY_TX},
+    {ADV_EXTENDED_EVENT,         ADV_PDU_AUX_IND,              ADV_PHY_TX},
+    {ADV_PERIODIC_WITH_RSP_EVENT,ADV_PDU_AUX_SYNC_SUBEVENT_IND,ADV_PHY_TX|ADV_PHY_RX},
+};
+#endif
+
+static adv_event_process_t advProcess[] = 
+{
+    {ADV_EVENT,                      adv_event_sch_process,                      adv_event_phy_process},
+    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+    {ADV_EXTENDED_EVENT,             adv_extended_event_sch_process,             adv_extended_event_phy_process},
+    #endif
+    #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
+    {ADV_PERIODIC_EVENT,             adv_periodic_event_sch_process,             adv_periodic_event_phy_process},
+    #endif
+    #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
+    {ADV_PERIODIC_WITH_RSP_EVENT,    adv_periodic_with_rsp_event_sch_process,    adv_periodic_with_rsp_event_phy_process},
+    #endif
+};
+
+static adv_sequence_t advTrain[] = 
+{
+    {ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED,                  adv_con_scan_undirected_procedure,                 ADV_PROCEDURE_LIST_LENGTH(adv_con_scan_undirected_procedure)},
+    {ADV_EVENT_CONNECTABLE_DIRECTED,                              adv_con_directed_procedure,                        ADV_PROCEDURE_LIST_LENGTH(adv_con_directed_procedure)},
+    {ADV_EVENT_SCANNABLE_UNDIRECTED,                              adv_scan_undirected_procedure,                     ADV_PROCEDURE_LIST_LENGTH(adv_scan_undirected_procedure)},
+    {ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED,          adv_non_con_non_scan_undirected_procedure,         ADV_PROCEDURE_LIST_LENGTH(adv_non_con_non_scan_undirected_procedure)},
+    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+    {ADV_EVENT_EXTENDED_CONNECTABLE_DIRECTED,                     adv_extended_con_undirected_procedure,             ADV_PROCEDURE_LIST_LENGTH(adv_extended_con_undirected_procedure)},
+    {ADV_EVENT_EXTENDED_CONNECTABLE_UNDIRECTED,                   adv_extended_con_directed_procedure,               ADV_PROCEDURE_LIST_LENGTH(adv_extended_con_directed_procedure)},
+    {ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED,                       adv_extended_scan_undirected_procedure,            ADV_PROCEDURE_LIST_LENGTH(adv_extended_scan_undirected_procedure)},
+    {ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED,                     adv_extended_scan_directed_procedure,              ADV_PROCEDURE_LIST_LENGTH(adv_extended_scan_directed_procedure)},
+    {ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED,   adv_extended_non_con_non_scan_undirected_procedure,ADV_PROCEDURE_LIST_LENGTH(adv_extended_non_con_non_scan_undirected_procedure)},
+    {ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED, adv_extended_non_con_non_scan_directed_procedure,  ADV_PROCEDURE_LIST_LENGTH(adv_extended_non_con_non_scan_directed_procedure)},
+    #endif
+    #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
+    {ADV_EVENT_EXTENDED_PERIODIC,                                 adv_extended_periodic_procedure,                   ADV_PROCEDURE_LIST_LENGTH(adv_extended_periodic_procedure)},
+    #endif
+    #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
+    {ADV_EVENT_EXTENDED_PERIODIC_WITH_RESPONSE,                   adv_extended_periodic_with_rsp_procedure,          ADV_PROCEDURE_LIST_LENGTH(adv_extended_periodic_with_rsp_procedure)},
+    #endif
+};
+
+_RAM_CODE
 static void adv_phy_irq_callback(_u8 type)
 {   
-    adv_phy_irq_cb[type]();
-}
-static _u8 advPriChannel[3]={
-	BLE_ADV_CHANNEL_IDX_BIT0,
-	BLE_ADV_CHANNEL_IDX_BIT1,
-	BLE_ADV_CHANNEL_IDX_BIT2
-};
-
-_RAM_CODE
-static void adv_prepare_packet(ll_ctrl_t* ll)
-{
-	_u8* packet = NULL;
-	switch(ll->adv->advType)
-	{
-		case LL_ADV_IND:
-		     packet = ll_get_adv_packet(ll->txSharedPacket,6+ll->adv->advDataLen,LL_ADV_TYPE_ADV_IND,0,ll->adv->ownAddressType?1:0,0);
-		     txMemcpy(((adv_type_ind_t*)packet)->advA,ll->ownAddr,6);
-		     txMemcpy(((adv_type_ind_t*)packet)->advData,ll->adv->advData,ll->adv->advDataLen);
-		     break;
-		case LL_ADV_DIRECT_IND_HIGH_DUTY:
-			 packet = ll_get_adv_packet(ll->txSharedPacket,12,LL_ADV_TYPE_ADV_DIRECT_IND,0,ll->adv->ownAddressType?1:0,ll->adv->peerAddressType?1:0);
-		     txMemcpy(((adv_type_direct_ind_t*)packet)->advA,ll->ownAddr,6);
-		     txMemcpy(((adv_type_direct_ind_t*)packet)->targetA,ll->adv->peerAddress,6);
-			 break;
-		case LL_ADV_SCAN_IND:
-		     packet = ll_get_adv_packet(ll->txSharedPacket,6+ll->adv->advDataLen,LL_ADV_TYPE_ADV_SCAN_IND,0,ll->adv->ownAddressType?1:0,0);
-		     txMemcpy(((adv_type_scan_ind_t*)packet)->advA,ll->ownAddr,6);
-		     txMemcpy(((adv_type_scan_ind_t*)packet)->advData,ll->adv->advData,ll->adv->advDataLen);
-		     break;
-		case LL_ADV_NONCONN_IND:
-		     packet = ll_get_adv_packet(ll->txSharedPacket,6+ll->adv->advDataLen,LL_ADV_TYPE_ADV_NONCONN_IND,0,ll->adv->ownAddressType?1:0,0);
-		     txMemcpy(((adv_type_nonConn_ind_t*)packet)->advA,ll->ownAddr,6);
-		     txMemcpy(((adv_type_nonConn_ind_t*)packet)->advData,ll->adv->advData,ll->adv->advDataLen);
-		     break;
-		case LL_ADV_DIRECT_IND_LOW_DUTY:
-			 packet = ll_get_adv_packet(ll->txSharedPacket,12,LL_ADV_TYPE_ADV_DIRECT_IND,0,ll->adv->ownAddressType?1:0,ll->adv->peerAddressType?1:0);
-		     txMemcpy(((adv_type_direct_ind_t*)packet)->advA,ll->ownAddr,6);
-		     txMemcpy(((adv_type_direct_ind_t*)packet)->targetA,ll->adv->peerAddress,6);
-		     break;
-	}
-}
-
-_RAM_CODE
-static void adv_sch_start(void)
-{
-    ll_ctrl_t* ll = ll_get_current_state_machine();
-	DEBUG_GPIO_HIGH(GPIO_3);
-    ll->adv->instant++;
-    phy_obj_cast(&ll->phy);
-	ll->phy.accessCode = BLE_ADV_ACCESS_CODE;
-    ll->phy.chnIdx     = BLE_ADV_CHANNEL_IDX_BIT0;//ll->adv->channelMap;
-    ll->phy.crcInit    = BLE_ADV_CRC_INIT;
-    ll->phy.dir        = PHY_DIR_TX;
-    ll->phy.chnIdx     = advPriChannel[ll->adv->instant%3];
-    ll->phy.mode       = PHY_MODE_1M;
-    ll->phy.rxAddress  = ll->rxSharedPacket;
-    ll->phy.txAddress  = ll->txSharedPacket;
-    ll->phy.timestamp  = ll->sch.timestamp;
-    adv_prepare_packet(ll);
-	ll->phy.start();
-	ll->adv->process = ADV_PROCESS_ADV;
-	DEBUG_GPIO_LOW(GPIO_3);
-}
-
-_RAM_CODE
-static void adv_sch_stop(void)
-{
-	DEBUG_GPIO_HIGH(GPIO_4);
-    ll_ctrl_t* ll = ll_get_current_state_machine();
-    if((ll->adv->instant%ll->adv->channelCnt)==0)//adv train stop
-    {
-        ll->sch.timestamp+=ll->sch.period;
-    }
-	DEBUG_GPIO_LOW(GPIO_4);
-}
-
-_RAM_CODE
-static void adv_sch_calceled(void)
-{
     
 }
 
 _RAM_CODE
-static void adv_sch_passed(void)
-{
-    
-}
-
-static void(*adv_sch_process[4])(void)={
-    adv_sch_start,
-    adv_sch_stop,
-    adv_sch_calceled,
-    adv_sch_passed,
-};
-
 static void adv_sch_callback(_u8 type)
 {
-    adv_sch_process[type]();
+
 }
 
 int ble_ll_enter_advertising_state(ble_ll_event_e event)
@@ -226,15 +325,8 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         ll->phy.hw_irq_cb  = adv_phy_irq_callback;
         ll->ownAddr[0] = ll->ownAddr[1] = ll->ownAddr[2] = ll->ownAddr[3]= ll->ownAddr[4] =ll->ownAddr[5]= 0x12;
         ll->adv->instant = 0;
-        ll->adv->channelCnt = 0;
-        _u8 chnCount = 0;
-        for(_u8 i=0;i<3;i++)
-        {
-            if(ll->adv->channelMap&BIT(i))
-            {
-                advPriChannel[ll->adv->channelCnt++] = advPriChannel[i];
-            }
-        }
+        ll->adv->channelCnt = COUNT_BITS_ONE(ll->adv->channelMap);
+        ll->adv->availableChnCnt = ll->adv->channelCnt;
         phy_obj_cast(&ll->phy);
         phy_obj_init(&ll->phy);
         //sch init
