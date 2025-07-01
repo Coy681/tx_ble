@@ -10,42 +10,6 @@
 
 typedef enum
 {
-    ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED,
-    ADV_EVENT_CONNECTABLE_DIRECTED,
-    ADV_EVENT_SCANNABLE_UNDIRECTED,
-    ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED,
-    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
-    ADV_EVENT_EXTENDED_CONNECTABLE_DIRECTED,
-    ADV_EVENT_EXTENDED_CONNECTABLE_UNDIRECTED,
-    ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED,
-    ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED,
-    ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED,
-    ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED,
-    #endif
-    #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
-    ADV_EVENT_EXTENDED_PERIODIC,
-    #endif
-    #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
-    ADV_EVENT_EXTENDED_PERIODIC_WITH_RESPONSE,
-    #endif
-}adv_event_type_e;
-
-typedef enum
-{
-    ADV_EVENT,
-    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
-    ADV_EXTENDED_EVENT,
-    #endif
-    #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
-    ADV_PERIODIC_EVENT,
-    #endif
-    #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
-    ADV_PERIODIC_WITH_RSP_EVENT,
-    #endif
-}adv_event_class_e;
-
-typedef enum
-{
     ADV_PDU_IND                      = BIT(0),
     ADV_PDU_DIRECT_IND               = BIT(1),
     ADV_PDU_SCAN_IND                 = BIT(2),
@@ -94,25 +58,70 @@ typedef struct
     adv_event_sch_process_f phyCb;
 }adv_event_process_t;
 
+_RAM_CODE
+static void adv_event_prepare_packet(ll_ctrl_t* ll)
+{
+	_u8* packet = NULL;
+	switch(ll->adv->advType)
+	{
+		case LL_ADV_IND:
+		     packet = ll_get_adv_packet(ll->txSharedPacket,6+ll->adv->advDataLen,LL_ADV_TYPE_ADV_IND,0,ll->adv->ownAddressType?1:0,0);
+		     txMemcpy(((adv_type_ind_t*)packet)->advA,ll->ownAddr,6);
+		     txMemcpy(((adv_type_ind_t*)packet)->advData,ll->adv->advData,ll->adv->advDataLen);
+		     break;
+        case LL_ADV_DIRECT_IND_LOW_DUTY:
+		case LL_ADV_DIRECT_IND_HIGH_DUTY:
+			 packet = ll_get_adv_packet(ll->txSharedPacket,12,LL_ADV_TYPE_ADV_DIRECT_IND,0,ll->adv->ownAddressType?1:0,ll->adv->peerAddressType?1:0);
+		     txMemcpy(((adv_type_direct_ind_t*)packet)->advA,ll->ownAddr,6);
+		     txMemcpy(((adv_type_direct_ind_t*)packet)->targetA,ll->adv->peerAddress,6);
+			 break;
+		case LL_ADV_SCAN_IND:
+		     packet = ll_get_adv_packet(ll->txSharedPacket,6+ll->adv->advDataLen,LL_ADV_TYPE_ADV_SCAN_IND,0,ll->adv->ownAddressType?1:0,0);
+		     txMemcpy(((adv_type_scan_ind_t*)packet)->advA,ll->ownAddr,6);
+		     txMemcpy(((adv_type_scan_ind_t*)packet)->advData,ll->adv->advData,ll->adv->advDataLen);
+		     break;
+		case LL_ADV_NONCONN_IND:
+		     packet = ll_get_adv_packet(ll->txSharedPacket,6+ll->adv->advDataLen,LL_ADV_TYPE_ADV_NONCONN_IND,0,ll->adv->ownAddressType?1:0,0);
+		     txMemcpy(((adv_type_nonConn_ind_t*)packet)->advA,ll->ownAddr,6);
+		     txMemcpy(((adv_type_nonConn_ind_t*)packet)->advData,ll->adv->advData,ll->adv->advDataLen);
+		     break;
+	}
+}
+
+_RAM_CODE
+static void adv_event_prepare_phy(ll_ctrl_t* ll,phy_dir_e phydir,phy_mode_e mode)
+{
+    phy_obj_cast(&ll->phy);
+    ll->phy.accessCode = BLE_ADV_ACCESS_CODE;
+    // ll->phy.chnIdx     = BLE_ADV_CHANNEL_IDX_BIT0;//ll->adv->channelMap;
+    ll->phy.crcInit    = BLE_ADV_CRC_INIT;
+    ll->phy.dir        = phydir;
+    ll->phy.mode       = mode;
+    ll->phy.rxAddress  = ll->rxSharedPacket;
+    ll->phy.txAddress  = ll->txSharedPacket;
+    ll->phy.timestamp  = ll->sch.timestamp;
+}
+
 static void adv_event_sch_process(_u8 schType)
 {
+    ll_ctrl_t* ll = ll_get_current_state_machine();
     switch(schType)
     {
         case SCH_TASK_START:
         {
-            if(0)
-            {
-                ll_ctrl_t* ll = ll_get_current_state_machine();
-                if(ll->adv->availableChnCnt)
-                {
-                    
-                }
-            }
+            ll->adv->instant++;
+            adv_event_prepare_packet(ll);
+            adv_event_prepare_phy(ll,PHY_DIR_TX,ll->adv->advEventPhyMode);
+            ll->phy.start();
+            ll->adv->availableChnCnt--;
         }
             break;
         case SCH_TASK_STOP:
         {
-
+            if(ll->adv->availableChnCnt == 0)
+            {
+                ll->sch.timestamp+=ll->sch.period;//need to add a random value,from 0ms to 10ms.
+            }
         }
             break;
         case SCH_TASK_CANCELED:
@@ -277,7 +286,7 @@ static adv_event_process_t advProcess[] =
     #endif
 };
 
-static adv_sequence_t advTrain[] = 
+static adv_sequence_t advSequence[] = 
 {
     {ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED,                  adv_con_scan_undirected_procedure,                 ADV_PROCEDURE_LIST_LENGTH(adv_con_scan_undirected_procedure)},
     {ADV_EVENT_CONNECTABLE_DIRECTED,                              adv_con_directed_procedure,                        ADV_PROCEDURE_LIST_LENGTH(adv_con_directed_procedure)},
@@ -302,11 +311,31 @@ static adv_sequence_t advTrain[] =
 _RAM_CODE
 static void adv_phy_irq_callback(_u8 type)
 {   
-    
+    ll_ctrl_t* ll = ll_get_current_state_machine();
+    for(_u32 i=0;i<advSequence[ll->adv->advEventType].listLen;i++)
+    {
+        if(ll->adv->advProcessingEventClass == advSequence[ll->adv->advEventType].procedureList[i].eventClass)
+        {
+            advProcess[i].phyCb(type);
+        }
+    }
+}
+
+_RAM_CODE 
+static adv_event_class_e adv_get_current_event_class(ll_ctrl_t* ll)
+{
+    return ADV_EVENT;
 }
 
 _RAM_CODE
 static void adv_sch_callback(_u8 type)
+{
+    ll_ctrl_t* ll = ll_get_current_state_machine();
+    _u8 eventClass = adv_get_current_event_class(ll);
+    advProcess[eventClass].schCb(type);
+}
+
+static int adv_get_eventtype(adv_event_class_e class,_u32 type)
 {
 
 }
@@ -321,12 +350,12 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
             return 0;
         }
         //phy init
-        ll->phy.mode       = PHY_MODE_1M;
         ll->phy.hw_irq_cb  = adv_phy_irq_callback;
         ll->ownAddr[0] = ll->ownAddr[1] = ll->ownAddr[2] = ll->ownAddr[3]= ll->ownAddr[4] =ll->ownAddr[5]= 0x12;
         ll->adv->instant = 0;
-        ll->adv->channelCnt = COUNT_BITS_ONE(ll->adv->channelMap);
+        ll->adv->channelCnt = count_bits_one((_u32)ll->adv->channelMap);
         ll->adv->availableChnCnt = ll->adv->channelCnt;
+        ll->adv->advEventPhyMode = PHY_MODE_1M;
         phy_obj_cast(&ll->phy);
         phy_obj_init(&ll->phy);
         //sch init

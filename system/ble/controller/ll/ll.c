@@ -179,6 +179,26 @@ controller_error_code_e ll_set_advertising_parameters(_u16 interval,\
 	ll->adv->peerAddressType = peerAddressType;
 	txMemcpy(ll->adv->peerAddress,peerAddress,6);
 	ll->adv->filterPolicy = policy;
+	switch(type)
+	{
+		case LL_ADV_IND:
+		{
+			ll->adv->advEventType = ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED;
+		}break;
+		case LL_ADV_DIRECT_IND_HIGH_DUTY:
+		case LL_ADV_DIRECT_IND_LOW_DUTY:
+		{
+			ll->adv->advEventType = ADV_EVENT_CONNECTABLE_DIRECTED;
+		}break;
+		case LL_ADV_SCAN_IND:
+		{
+			ll->adv->advEventType = ADV_EVENT_SCANNABLE_UNDIRECTED;
+		}break;
+		case LL_ADV_NONCONN_IND:
+		{
+			ll->adv->advEventType = ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED;
+		}break;
+	}
 	LOG_TRACE(1,"set adv param",0,0)
 	return SUCCESS;
 }

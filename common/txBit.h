@@ -42,17 +42,16 @@
 
 #define BIT_CLR(var, bit)               ((var) &= ~(1U << (bit)))
 
-#define COUNT_BITS_ONE(x)            \
-({                                   \
-    typeof(x) n = (x);               \
-    int count = 0;                   \
-    while (n)                        \
-    {                                \
-        n &= n - 1;                  \
-        count++;                     \
-    }                                \
-    count;                           \
-})
+static inline int count_bits_one(unsigned int n)
+{
+    int count = 0;
+    while (n)
+    {
+        n &= n - 1;
+        count++;
+    }
+    return count;
+}
 
 
 #endif /* TXBIT_H_ */
