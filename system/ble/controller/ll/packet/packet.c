@@ -24,7 +24,7 @@ _u32 ll_get_packet_len(_u8 dir,_u16 dataLen,_u8 enc)
 }
 
 _RAM_CODE
-_u32 ll_get_packet_header_offset(_u8 dir)
+_u32 ll_get_packet_header_offset_from_address(_u8 dir)
 {
 	if(dir == PHY_DIR_TX)
 	{
@@ -39,7 +39,7 @@ _u32 ll_get_packet_header_offset(_u8 dir)
 _RAM_CODE
 _u8* ll_get_adv_packet(_u8* packet,_u8 length,_u8 advType,_u8 chnSel,_u8 txAdd,_u8 rxAdd)
 {
-    ll_adv_packet_t* pkt = (ll_adv_packet_t*)(packet+ll_get_packet_header_offset(PHY_DIR_TX));
+    ll_adv_packet_t* pkt = (ll_adv_packet_t*)(packet+ll_get_packet_header_offset_from_address(PHY_DIR_TX));
     pkt->hdr.pduType = advType;
     pkt->hdr.chSel   = chnSel;
     pkt->hdr.txAdd   = txAdd;

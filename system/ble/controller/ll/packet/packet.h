@@ -135,6 +135,6 @@ _u32 ll_get_air_packet_time(phy_mode_e phy,_u16 len,bool enc);
 
 _u32 ll_get_packet_len(_u8 dir,_u16 dataLen,_u8 enc);//phy_dir_e
 
-_u32 ll_get_packet_header_offset(_u8 dir);//phy_dir_e
+_u32 ll_get_packet_header_offset_from_address(_u8 dir);//phy_dir_e
 
 #endif//LL_PACKET_H_
