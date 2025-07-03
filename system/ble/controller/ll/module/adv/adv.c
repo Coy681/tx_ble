@@ -195,8 +195,8 @@ static adv_event_sm_t adv_event_state_machine[]=
     {ADV_SM_STATE_SENDING_ADV,{ADV_SM_STATE_RECEIVING,   ADV_SM_STATE_IDLE}, ADV_SM_PHY_EVENT_SEND_FINISHED,   adv_event_start_listen},
     {ADV_SM_STATE_RECEIVING,  {ADV_SM_STATE_SENDING_RSP, ADV_SM_STATE_IDLE}, ADV_SM_PHY_EVENT_RECEIVE_FINISHED,adv_event_received_packet_analyze},
     {ADV_SM_STATE_SENDING_RSP,{ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE}, ADV_SM_PHY_EVENT_SEND_FINISHED,   adv_event_default_procedure},
-    {},
-    {},
+    {ADV_SM_STATE_IDLE,       {ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE}, ADV_SM_SCH_EVENT_CANCELED,        adv_event_default_procedure},
+    {ADV_SM_STATE_IDLE,       {ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE}, ADV_SM_SCH_EVENT_PASSED,          adv_event_default_procedure},
 };
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
 typedef enum
