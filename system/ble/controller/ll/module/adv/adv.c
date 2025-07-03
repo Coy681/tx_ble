@@ -3,43 +3,39 @@
 #include"../scan/scan.h"
 #include"../init/init.h"
 
-
-#define ADV_SCHE_PRIMARY_37         BIT(0)
-#define ADV_SCHE_PRIMARY_38         BIT(1)
-#define ADV_SCHE_PRIMARY_39         BIT(2)
+typedef enum
+{
+    ADV_SM_PHY_EVENT_BASE              = 0x10,
+    ADV_SM_PHY_EVENT_SEND_FINISHED     = ADV_SM_PHY_EVENT_BASE+PHY_IRQ_TX_FINISHED,
+    ADV_SM_PHY_EVENT_RECEIVE_FINISHED  = ADV_SM_PHY_EVENT_BASE+PHY_IRQ_RX_FINISHED,
+    ADV_SM_PHY_EVENT_RECEIVE_TIMEOUT   = ADV_SM_PHY_EVENT_BASE+PHY_IRQ_RX_TIMEOUT,
+    ADV_SM_SCH_EVENT_BASE              = 0x20,
+    ADV_SM_SCH_EVENT_START             = ADV_SM_SCH_EVENT_BASE+SCH_TASK_START,
+    ADV_SM_SCH_EVENT_STOP              = ADV_SM_SCH_EVENT_BASE+SCH_TASK_STOP,             
+    ADV_SM_SCH_EVENT_CANCELED          = ADV_SM_SCH_EVENT_BASE+SCH_TASK_CANCELED,
+    ADV_SM_SCH_EVENT_PASSED            = ADV_SM_SCH_EVENT_BASE+SCH_TASK_PASSED,
+}adv_sm_event_e;
 
 typedef enum
 {
-    ADV_PDU_IND                      = BIT(0),
-    ADV_PDU_DIRECT_IND               = BIT(1),
-    ADV_PDU_SCAN_IND                 = BIT(2),
-    ADV_PDU_NONCONN_IND              = BIT(3),
-    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
-    ADV_PDU_EXT_IND                  = BIT(4),
-    ADV_PDU_DECISION_IND             = BIT(5),
-    ADV_PDU_AUX_IND                  = BIT(6),
-    ADV_PDU_AUX_CHAIN_IND            = BIT(7),
-    #endif
-    #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
-    ADV_PDU_AUX_SYNC_IND             = BIT(8),
-    #endif
-    #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
-    ADV_PDU_AUX_SYNC_SUBEVENT_IND    = BIT(9),
-    ADV_PDU_AUX_SYNC_SUBEVENT_RSP    = BIT(10),
-    #endif
-}adv_pdu_type_e;
+    ADV_SM_STATE_IDLE,
+    ADV_SM_STATE_SENDING,
+    ADV_SM_STATE_RECEIVING,
+}adv_sm_state_e;
 
-typedef enum
+typedef int(*adv_event_sm_cb)(void);
+typedef struct _PACKED
 {
-    ADV_PHY_TX  = BIT(0),
-    ADV_PHY_RX  = BIT(1),
-}adv_phy_property_e;
+    adv_sm_state_e  currentState;
+    adv_sm_state_e  nextState[2];//process success or fail
+    adv_sm_event_e  event;
+    adv_event_sm_cb cb;
+}adv_event_sm_t; 
 
 typedef struct
 {
     adv_event_class_e eventClass;
-    adv_pdu_type_e    pduType;
-    _u32              phyProperty;
+    adv_event_sm_t*   sm;
 }adv_procedure_list_t;
 
 typedef struct
@@ -49,21 +45,15 @@ typedef struct
     _u32                        listLen;
 }adv_sequence_t;
 
-typedef void(*adv_event_sch_process_f)(_u8);
-typedef void(*adv_event_phy_process_f)(_u8);
-typedef struct
-{
-    adv_event_class_e       eventClass;
-    adv_event_sch_process_f schCb;
-    adv_event_sch_process_f phyCb;
-}adv_event_process_t;
-
 _RAM_CODE 
 static adv_event_class_e adv_get_current_event_class(ll_ctrl_t* ll)
 {
     return ADV_EVENT;
 }
 
+/*********
+ * adv event process
+ */
 _RAM_CODE
 static void adv_event_prepare_packet(ll_ctrl_t* ll,_u8 rsp)
 {
@@ -122,210 +112,224 @@ static void adv_event_prepare_phy(ll_ctrl_t* ll,phy_dir_e phydir,phy_mode_e mode
     }
 }
 
-_RAM_CODE 
-static int adv_event_received_packet_analyze(ll_ctrl_t* ll,ll_adv_packet_t* packet)
+
+static int adv_event_send_advertising(void)
 {
 
 }
 
-static void adv_event_sch_process(_u8 schType)
+static int adv_event_start_listen(void)
 {
-    ll_ctrl_t* ll = ll_get_current_state_machine();
-    switch(schType)
-    {
-        case SCH_TASK_START:
-        {
-            ll->adv->instant++;
-            adv_event_prepare_packet(ll,0);
-            adv_event_prepare_phy(ll,PHY_DIR_TX,ll->adv->advEventPhyMode);
-            ll->phy.start();
-            ll->adv->availableChnCnt--;
-        }
-            break;
-        case SCH_TASK_STOP:
-        case SCH_TASK_CANCELED:
-        case SCH_TASK_PASSED:
-        {
-            ll->adv->availableChnCnt--;
-            if(ll->adv->availableChnCnt == 0)
-            {
-                ll->sch.timestamp+=ll->sch.period;//need to add a random value,from 0ms to 10ms.
-                ll->adv->availableChnCnt = ll->adv->channelCnt;
-            }
-            else
-            {
-                ll->sch.timestamp+=(ll->sch.duration+ll->sch.startLatency+ll->sch.stopLatency);
-            }
-        }
-            break;
-    }
+    
 }
 
-static void adv_event_phy_process(_u8 phyType)
+static int adv_event_send_scan_rsp(void)
 {
-    ll_ctrl_t* ll = ll_get_current_state_machine();
-    switch(phyType)
-    {
-        case PHY_IRQ_TX_FINISHED:
-        {
-            _u8 eventClass = adv_get_current_event_class(ll);
-            if(advSequence[ll->adv->advEventType].procedureList[eventClass].phyProperty & ADV_PHY_RX)
-            {
-                adv_event_prepare_phy(ll,PHY_DIR_RX,ll->adv->advEventPhyMode);
-            }
-            else
-            {
-                sch_schedule_next_task();
-            }
-        }
-            break;
-        case PHY_IRQ_RX_FINISHED:
-        {
-            if(ll->phy.hw_is_rx_packet_valid())
-            {
-                if(adv_event_received_packet_analyze(ll,(ll_adv_packet_t*)(ll->phy.rxAddress + ll_get_packet_header_offset_from_address(PHY_DIR_RX)))!=0)
-                {
-                    adv_event_prepare_packet(ll,1);
-                    adv_event_prepare_phy(ll,PHY_DIR_TX,ll->adv->advEventPhyMode);
-                    ll->phy.start();
-                }
-            }
-        }
-            break;
-        case PHY_IRQ_RX_TIMEOUT:
-        {
-            sch_schedule_next_task();
-        }
-            break;
-    }
+
 }
+
+static int adv_event_stop_procedure(void)
+{
+
+}
+
+static int adv_event_received_packet_analyze(void)
+{
+
+}
+
+// static void adv_event_sch_process(_u8 schType)
+// {
+//     ll_ctrl_t* ll = ll_get_current_state_machine();
+//     switch(schType)
+//     {
+//         case SCH_TASK_START:
+//         {
+//             ll->adv->instant++;
+//             adv_event_prepare_packet(ll,0);
+//             adv_event_prepare_phy(ll,PHY_DIR_TX,ll->adv->advEventPhyMode);
+//             ll->phy.start();
+//             ll->adv->availableChnCnt--;
+//         }
+//             break;
+//         case SCH_TASK_STOP:
+//         case SCH_TASK_CANCELED:
+//         case SCH_TASK_PASSED:
+//         {
+//             ll->adv->availableChnCnt--;
+//             if(ll->adv->availableChnCnt == 0)
+//             {
+//                 ll->sch.timestamp+=ll->sch.period;//need to add a random value,from 0ms to 10ms.
+//                 ll->adv->availableChnCnt = ll->adv->channelCnt;
+//             }
+//             else
+//             {
+//                 ll->sch.timestamp+=(ll->sch.duration+ll->sch.startLatency+ll->sch.stopLatency);
+//             }
+//         }
+//             break;
+//     }
+// }
+
+// static void adv_event_phy_process(_u8 phyType)
+// {
+//     ll_ctrl_t* ll = ll_get_current_state_machine();
+//     switch(phyType)
+//     {
+//         case PHY_IRQ_TX_FINISHED:
+//         {
+//             _u8 eventClass = adv_get_current_event_class(ll);
+//             if(advSequence[ll->adv->advEventType].procedureList[eventClass].phyProperty & ADV_PHY_RX)
+//             {
+//                 adv_event_prepare_phy(ll,PHY_DIR_RX,ll->adv->advEventPhyMode);
+//             }
+//             else
+//             {
+//                 sch_schedule_next_task();
+//             }
+//         }
+//             break;
+//         case PHY_IRQ_RX_FINISHED:
+//         {
+//             if(ll->phy.hw_is_rx_packet_valid())
+//             {
+//                 if(adv_event_received_packet_analyze(ll,(ll_adv_packet_t*)(ll->phy.rxAddress + ll_get_packet_header_offset_from_address(PHY_DIR_RX)))!=0)
+//                 {
+//                     adv_event_prepare_packet(ll,1);
+//                     adv_event_prepare_phy(ll,PHY_DIR_TX,ll->adv->advEventPhyMode);
+//                     ll->phy.start();
+//                 }
+//             }
+//         }
+//             break;
+//         case PHY_IRQ_RX_TIMEOUT:
+//         {
+//             sch_schedule_next_task();
+//         }
+//             break;
+//     }
+// }
+
+static adv_event_sm_t adv_event_state_machine[]=
+{
+    {ADV_SM_STATE_IDLE,     {ADV_SM_STATE_SENDING,  ADV_SM_STATE_IDLE}, ADV_SM_SCH_EVENT_START,           adv_event_send_advertising},
+    {ADV_SM_STATE_SENDING,  {ADV_SM_STATE_IDLE,     ADV_SM_STATE_IDLE}, ADV_SM_PHY_EVENT_SEND_FINISHED,   adv_event_stop_procedure},
+};
+
+static adv_event_sm_t adv_event_state_machine_1[]=
+{
+    {ADV_SM_STATE_IDLE,     {ADV_SM_STATE_SENDING,  ADV_SM_STATE_IDLE}, ADV_SM_SCH_EVENT_START,           adv_event_send_advertising},
+    {ADV_SM_STATE_SENDING,  {ADV_SM_STATE_RECEIVING,ADV_SM_STATE_IDLE}, ADV_SM_PHY_EVENT_SEND_FINISHED,   adv_event_start_listen},
+    {ADV_SM_STATE_RECEIVING,{ADV_SM_STATE_SENDING,  ADV_SM_STATE_IDLE}, ADV_SM_PHY_EVENT_RECEIVE_FINISHED,adv_event_received_packet_analyze},
+};
+
+
 
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
-static void adv_extended_event_sch_process(_u8 schType)
+
+static adv_event_sm_t adv_extended_event_state_machine[]= 
 {
-    
-}
-static void adv_extended_event_phy_process(_u8 schType)
+
+};
+static adv_event_sm_t adv_extended_event_state_machine1[]= 
 {
-    
-}
+
+};
+
 #endif
 
 #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
-static void adv_periodic_event_sch_process(_u8 schType)
+static adv_event_sm_t adv_periodic_event_state_machine[]= 
 {
-    
-}
-static void adv_periodic_event_phy_process(_u8 schType)
-{
-    
-}
+
+};
 #endif
 
 #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
-static void adv_periodic_with_rsp_event_sch_process(_u8 schType)
+static adv_event_sm_t adv_periodic_with_rsp_event_state_machine[]= 
 {
-    
-}
-static void adv_periodic_with_rsp_event_phy_process(_u8 schType)
-{
-    
-}
-#endif
 
+};
+#endif
 
 #define ADV_PROCEDURE_LIST_LENGTH(adv_procedure_list)      (sizeof(adv_procedure_list)/sizeof(adv_procedure_list[0]))
 #define ADV_SEQUENCE_LIST_LENGTH(adv_sequence_list)        (sizeof(adv_sequence_list)/sizeof(adv_sequence_list[0]))
 
 static const adv_procedure_list_t adv_con_scan_undirected_procedure[] =
 {
-    {ADV_EVENT,ADV_PDU_IND,ADV_PHY_TX|ADV_PHY_RX},
+    {ADV_EVENT,adv_event_state_machine_1},
 };
 
 static const adv_procedure_list_t adv_con_directed_procedure[]=
 {
-    {ADV_EVENT,ADV_PDU_DIRECT_IND,ADV_PHY_TX|ADV_PHY_RX},
+    {ADV_EVENT,adv_event_state_machine_1},
 };
 
 static const adv_procedure_list_t adv_scan_undirected_procedure[]=
 {
-    {ADV_EVENT,ADV_PDU_SCAN_IND,ADV_PHY_TX|ADV_PHY_RX},
+    {ADV_EVENT,adv_event_state_machine_1},
 };
 
 static const adv_procedure_list_t adv_non_con_non_scan_undirected_procedure[]=
 {
-    {ADV_EVENT,ADV_PDU_NONCONN_IND,ADV_PHY_TX},
+    {ADV_EVENT,adv_event_state_machine},
 };
 
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
 static const adv_procedure_list_t adv_extended_con_undirected_procedure[]=
 {
-    {ADV_EVENT,         ADV_PDU_EXT_IND,     ADV_PHY_TX},
-    {ADV_EXTENDED_EVENT,ADV_PDU_AUX_IND,     ADV_PHY_TX|ADV_PHY_RX},
+    {ADV_EVENT,         adv_event_state_machine},
+    {ADV_EXTENDED_EVENT,adv_extended_event_state_machine1},
 };
 
 static const adv_procedure_list_t adv_extended_con_directed_procedure[]=
 {
-    {ADV_EVENT,         ADV_PDU_EXT_IND,ADV_PHY_TX},
-    {ADV_EXTENDED_EVENT,ADV_PDU_AUX_IND,ADV_PHY_TX|ADV_PHY_RX},
+    {ADV_EVENT,         adv_event_state_machine},
+    {ADV_EXTENDED_EVENT,adv_extended_event_state_machine1},
 };
 
 static const adv_procedure_list_t adv_extended_scan_undirected_procedure[]=
 {
-    {ADV_EVENT,         ADV_PDU_EXT_IND,ADV_PHY_TX},
-    {ADV_EXTENDED_EVENT,ADV_PDU_AUX_IND,ADV_PHY_TX|ADV_PHY_RX},
+    {ADV_EVENT,         adv_event_state_machine},
+    {ADV_EXTENDED_EVENT,adv_extended_event_state_machine1},
 };
 
 static const adv_procedure_list_t adv_extended_scan_directed_procedure[]=
 {
-    {ADV_EVENT,         ADV_PDU_EXT_IND,ADV_PHY_TX},
-    {ADV_EXTENDED_EVENT,ADV_PDU_AUX_IND,ADV_PHY_TX|ADV_PHY_RX},
+    {ADV_EVENT,         adv_event_state_machine},
+    {ADV_EXTENDED_EVENT,adv_extended_event_state_machine1},
 };
 
 static const adv_procedure_list_t adv_extended_non_con_non_scan_undirected_procedure[]=
 {
-    {ADV_EVENT,         ADV_PDU_EXT_IND,ADV_PHY_TX},
-    {ADV_EXTENDED_EVENT,ADV_PDU_AUX_IND,ADV_PHY_TX},
+    {ADV_EVENT,         adv_event_state_machine},
+    {ADV_EXTENDED_EVENT,adv_extended_event_state_machine},
 };
 
 static const adv_procedure_list_t adv_extended_non_con_non_scan_directed_procedure[]=
 {
-    {ADV_EVENT,         ADV_PDU_EXT_IND,ADV_PHY_TX},
-    {ADV_EXTENDED_EVENT,ADV_PDU_AUX_IND,ADV_PHY_TX},
+    {ADV_EVENT,         adv_event_state_machine},
+    {ADV_EXTENDED_EVENT,adv_extended_event_state_machine},
 };
 #endif
 
 #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
 static const adv_procedure_list_t adv_extended_periodic_procedure[]=
 {
-    {ADV_EVENT,                     ADV_PDU_EXT_IND,     ADV_PHY_TX},
-    {ADV_EXTENDED_EVENT,            ADV_PDU_AUX_IND,     ADV_PHY_TX},
-    {ADV_PERIODIC_EVENT,            ADV_PDU_AUX_SYNC_IND,ADV_PHY_TX|ADV_PHY_RX},
+    {ADV_EVENT,         adv_event_state_machine},
+    {ADV_EXTENDED_EVENT,adv_extended_event_state_machine},
+    {ADV_PERIODIC_EVENT,adv_periodic_event_state_machine},
 };
 #endif
 
 #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
 static const adv_procedure_list_t adv_extended_periodic_with_rsp_procedure[]=
 {
-    {ADV_EVENT,                  ADV_PDU_EXT_IND,              ADV_PHY_TX},
-    {ADV_EXTENDED_EVENT,         ADV_PDU_AUX_IND,              ADV_PHY_TX},
-    {ADV_PERIODIC_WITH_RSP_EVENT,ADV_PDU_AUX_SYNC_SUBEVENT_IND,ADV_PHY_TX|ADV_PHY_RX},
+    {ADV_EVENT,                  adv_event_state_machine},
+    {ADV_EXTENDED_EVENT,         adv_extended_event_state_machine},
+    {ADV_PERIODIC_WITH_RSP_EVENT,adv_periodic_with_rsp_event_state_machine},
 };
 #endif
-
-static adv_event_process_t advProcess[] = 
-{
-    {ADV_EVENT,                      adv_event_sch_process,                      adv_event_phy_process},
-    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
-    {ADV_EXTENDED_EVENT,             adv_extended_event_sch_process,             adv_extended_event_phy_process},
-    #endif
-    #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
-    {ADV_PERIODIC_EVENT,             adv_periodic_event_sch_process,             adv_periodic_event_phy_process},
-    #endif
-    #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
-    {ADV_PERIODIC_WITH_RSP_EVENT,    adv_periodic_with_rsp_event_sch_process,    adv_periodic_with_rsp_event_phy_process},
-    #endif
-};
 
 static adv_sequence_t advSequence[] = 
 {
