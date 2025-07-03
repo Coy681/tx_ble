@@ -109,7 +109,8 @@ typedef struct _PACKED
     _u8  advEventType:4;
 
     _u8  advProcessingEventClass:2;
-    _u8  rsvd2:6;
+    _u8  advState:2;
+    _u8  rsvd2:4;
     _u8  rsvd3;
     _u16 rsvd4;
 
@@ -156,6 +157,7 @@ typedef struct _PACKED
 }ll_internal_broadcast_ctrl_t;
 
 
+/***********************ll sate**********************/
 
 typedef struct _PACKED
 {
