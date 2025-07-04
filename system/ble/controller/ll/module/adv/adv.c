@@ -3,6 +3,7 @@
 #include"../scan/scan.h"
 #include"../init/init.h"
 
+/*****************************************ADV State Machine***********************************************/
 typedef enum
 {
     ADV_SM_PHY_EVENT_BASE              = 0x10,
@@ -34,11 +35,13 @@ typedef int(*adv_event_sm_cb)(ll_ctrl_t* ll,_u32 property);
 typedef struct _PACKED
 {
     adv_sm_state_e  currentState;
-    adv_sm_state_e  nextState[2];//process success or fail
+    adv_sm_state_e  transSuccessState;
+    adv_sm_state_e  transFailState;
     adv_sm_event_e  event;
     adv_event_sm_cb cb;
 }adv_event_sm_t; 
 
+/*****************************************ADV Procedure ***********************************************/
 typedef struct
 {
     adv_event_class_e eventClass;
@@ -47,6 +50,7 @@ typedef struct
     _u32              property;
 }adv_procedure_list_t;
 
+/*****************************************ADV Sequence ***********************************************/
 typedef struct
 {
     adv_event_type_e            eventType;//adv mode
@@ -64,10 +68,7 @@ static adv_event_class_e adv_get_current_event_class(ll_ctrl_t* ll)
     return ADV_EVENT;
 }
 
-/*********
- * adv event process
- */
-
+/*****************************************ADV Event Process ***********************************************/
 typedef enum
 {
     ADV_EVENT_NONE,
@@ -133,7 +134,7 @@ static void adv_event_prepare_phy(ll_ctrl_t* ll,phy_dir_e phydir,phy_mode_e mode
 }
 
 
-static int adv_event_send_advertising(ll_ctrl_t* ll,_u32 property)
+static int adv_event_step_send_advertising(ll_ctrl_t* ll,_u32 property)
 {
     if(ll->adv->availableChnCnt==0)
     {
@@ -147,7 +148,7 @@ static int adv_event_send_advertising(ll_ctrl_t* ll,_u32 property)
     return 1;
 }
 
-static int adv_event_start_listen(ll_ctrl_t* ll,_u32 property)
+static int adv_event_step_start_listen(ll_ctrl_t* ll,_u32 property)
 {
     if(property&ADV_EVENT_PROPERTY_RX)
     {
@@ -158,7 +159,7 @@ static int adv_event_start_listen(ll_ctrl_t* ll,_u32 property)
     return 0;
 }
 
-static int adv_event_send_scan_rsp(ll_ctrl_t* ll,_u32 property)
+static int adv_event_step_send_scan_rsp(ll_ctrl_t* ll,_u32 property)
 {
     adv_event_prepare_packet(ll,1);
     adv_event_prepare_phy(ll,PHY_DIR_TX,ll->adv->advEventPhyMode);
@@ -166,17 +167,12 @@ static int adv_event_send_scan_rsp(ll_ctrl_t* ll,_u32 property)
     return 1;
 }
 
-static int adv_event_stop_procedure(ll_ctrl_t* ll,_u32 property)
+static int adv_event_step_received_packet_analyze(ll_ctrl_t* ll,_u32 property)
 {
 
 }
 
-static int adv_event_received_packet_analyze(ll_ctrl_t* ll,_u32 property)
-{
-
-}
-
-static int adv_event_default_procedure(ll_ctrl_t* ll,_u32 property)
+static int adv_event_default_step(ll_ctrl_t* ll,_u32 property)
 {
     if(ll->adv->availableChnCnt)
     {
@@ -191,48 +187,16 @@ static int adv_event_default_procedure(ll_ctrl_t* ll,_u32 property)
 
 static adv_event_sm_t adv_event_state_machine[]=
 {
-    {ADV_SM_STATE_IDLE,       {ADV_SM_STATE_SENDING_ADV, ADV_SM_STATE_IDLE}, ADV_SM_SCH_EVENT_START,           adv_event_send_advertising},
-    {ADV_SM_STATE_SENDING_ADV,{ADV_SM_STATE_RECEIVING,   ADV_SM_STATE_IDLE}, ADV_SM_PHY_EVENT_SEND_FINISHED,   adv_event_start_listen},
-    {ADV_SM_STATE_RECEIVING,  {ADV_SM_STATE_SENDING_RSP, ADV_SM_STATE_IDLE}, ADV_SM_PHY_EVENT_RECEIVE_FINISHED,adv_event_received_packet_analyze},
-    {ADV_SM_STATE_SENDING_RSP,{ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE}, ADV_SM_PHY_EVENT_SEND_FINISHED,   adv_event_default_procedure},
-    {ADV_SM_STATE_IDLE,       {ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE}, ADV_SM_SCH_EVENT_CANCELED,        adv_event_default_procedure},
-    {ADV_SM_STATE_IDLE,       {ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE}, ADV_SM_SCH_EVENT_PASSED,          adv_event_default_procedure},
-};
-#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
-typedef enum
-{
-    ADV_EXTENDED_EVENT_NONE,
-    ADV_EXTENDED_EVENT_PROPERTY_RX = BIT(0),
-}adv_extended_event_property_e;
+    {ADV_SM_STATE_IDLE,       ADV_SM_STATE_SENDING_ADV, ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_START,           adv_event_step_send_advertising},
+    {ADV_SM_STATE_IDLE,       ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_STOP,            adv_event_default_step},
+    {ADV_SM_STATE_IDLE,       ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_CANCELED,        adv_event_default_step},
+    {ADV_SM_STATE_IDLE,       ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_PASSED,          adv_event_default_step},
 
-static adv_event_sm_t adv_extended_event_state_machine[]= 
-{
+    {ADV_SM_STATE_SENDING_ADV,ADV_SM_STATE_RECEIVING,   ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_SEND_FINISHED,   adv_event_step_start_listen},
+    {ADV_SM_STATE_RECEIVING,  ADV_SM_STATE_SENDING_RSP, ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_RECEIVE_FINISHED,adv_event_step_received_packet_analyze},
+    {ADV_SM_STATE_SENDING_RSP,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_SEND_FINISHED,   adv_event_default_step},
 
 };
-#endif
-
-#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
-typedef enum
-{
-    ADV_PERIODIC_EVENT_NONE,
-}adv_periodic_event_property_e;
-static adv_event_sm_t adv_periodic_event_state_machine[]= 
-{
-
-};
-#endif
-
-#if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
-typedef enum
-{
-    ADV_PERIODIC_WITH_RSP_EVENT_NONE,
-}adv_periodic_with_rsp_event_property_e;
-static adv_event_sm_t adv_periodic_with_rsp_event_state_machine[]= 
-{
-
-};
-#endif
-
 static const adv_procedure_list_t adv_con_scan_undirected_procedure[] =
 {
     {ADV_EVENT,adv_event_state_machine,ADV_SM_LIST_LENGTH(adv_event_state_machine),ADV_EVENT_PROPERTY_RX},
@@ -253,7 +217,18 @@ static const adv_procedure_list_t adv_non_con_non_scan_undirected_procedure[]=
     {ADV_EVENT,adv_event_state_machine,ADV_SM_LIST_LENGTH(adv_event_state_machine),ADV_EVENT_NONE},
 };
 
+/*****************************************ADV Extended Event Process ***********************************************/
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+typedef enum
+{
+    ADV_EXTENDED_EVENT_NONE,
+    ADV_EXTENDED_EVENT_PROPERTY_RX = BIT(0),
+}adv_extended_event_property_e;
+
+static adv_event_sm_t adv_extended_event_state_machine[]= 
+{
+
+};
 static const adv_procedure_list_t adv_extended_con_undirected_procedure[]=
 {
     {ADV_EVENT,         adv_event_state_machine,         ADV_SM_LIST_LENGTH(adv_event_state_machine),         ADV_EVENT_NONE},
@@ -290,8 +265,16 @@ static const adv_procedure_list_t adv_extended_non_con_non_scan_directed_procedu
     {ADV_EXTENDED_EVENT,adv_extended_event_state_machine,ADV_SM_LIST_LENGTH(adv_extended_event_state_machine),ADV_EXTENDED_EVENT_NONE},
 };
 #endif
-
+/*****************************************ADV Periodic Event Process ***********************************************/
 #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
+typedef enum
+{
+    ADV_PERIODIC_EVENT_NONE,
+}adv_periodic_event_property_e;
+static adv_event_sm_t adv_periodic_event_state_machine[]= 
+{
+
+};
 static const adv_procedure_list_t adv_extended_periodic_procedure[]=
 {
     {ADV_EVENT,         adv_event_state_machine,         ADV_SM_LIST_LENGTH(adv_event_state_machine),         ADV_EVENT_NONE},
@@ -299,8 +282,16 @@ static const adv_procedure_list_t adv_extended_periodic_procedure[]=
     {ADV_PERIODIC_EVENT,adv_periodic_event_state_machine,ADV_SM_LIST_LENGTH(adv_periodic_event_state_machine),ADV_PERIODIC_EVENT_NONE},
 };
 #endif
-
+/*****************************************ADV Periodic With Rsp Process ***********************************************/
 #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
+typedef enum
+{
+    ADV_PERIODIC_WITH_RSP_EVENT_NONE,
+}adv_periodic_with_rsp_event_property_e;
+static adv_event_sm_t adv_periodic_with_rsp_event_state_machine[]= 
+{
+
+};
 static const adv_procedure_list_t adv_extended_periodic_with_rsp_procedure[]=
 {
     {ADV_EVENT,                  adv_event_state_machine,                  ADV_SM_LIST_LENGTH(adv_event_state_machine),                  ADV_EVENT_NONE},
@@ -331,41 +322,39 @@ static adv_sequence_t advSequence[] =
     #endif
 };
 
-
-
-static void adv_sequence_process(adv_event_type_e type,_u8 event)
+static void adv_sequence_process(sm_event_type_e type,_u8 event)
 {
-    _u8 eventBase = 0;
+    _u8 smEventType = 0; 
     if(type == SM_SCH_EVENT)
     {
-        eventBase = ADV_SM_SCH_EVENT_BASE;
+        smEventType = ADV_SM_SCH_EVENT_BASE+event;
     }
     else
     {
-        eventBase = ADV_SM_PHY_EVENT_BASE;
+    	smEventType = ADV_SM_PHY_EVENT_BASE+event;
     }
-    ll_ctrl_t* ll = ll_get_current_state_machine();
-    _u8 eventClass = adv_get_current_event_class(ll);
-
-    for(_u8 i=0;i<advSequence[ll->adv->advEventType].listLen;i++)
+    ll_ctrl_t* ll     = ll_get_current_state_machine();
+    _u8 eventClass    = adv_get_current_event_class(ll);
+    _u8 advEventType  = ll->adv->advEventType;
+    for(_u8 i=0;i<advSequence[advEventType].listLen;i++)
     {
-        if(eventClass == advSequence[ll->adv->advEventType].procedureList[i].eventClass)
+        if(eventClass == advSequence[advEventType].procedureList[i].eventClass)
         {
-            for(_u8 j=0;j<advSequence[ll->adv->advEventType].procedureList[i].listLen;j++)
+            for(_u8 j=0;j<advSequence[advEventType].procedureList[i].listLen;j++)
             {
-                if(ll->adv->advState == advSequence[ll->adv->advEventType].procedureList[i].sm[j].currentState\
-                && (ADV_SM_SCH_EVENT_BASE+type) == advSequence[ll->adv->advEventType].procedureList[i].sm[j].event)
+                if(ll->adv->advState == advSequence[advEventType].procedureList[i].sm[j].currentState\
+                      && smEventType == advSequence[advEventType].procedureList[i].sm[j].event)
                 {
-                    if(advSequence[ll->adv->advEventType].procedureList[i].sm[j].cb!=NULL)
+                    if(advSequence[advEventType].procedureList[i].sm[j].cb!=NULL)
                     {
-                        int ret = advSequence[ll->adv->advEventType].procedureList[i].sm[j].cb(ll);
+                        int ret = advSequence[advEventType].procedureList[i].sm[j].cb(ll,advSequence[advEventType].procedureList[i].property);
                         if(ret)
                         {
-                            ll->adv->advState = advSequence[ll->adv->advEventType].procedureList[i].sm[j].nextState[0];
+                            ll->adv->advState = advSequence[advEventType].procedureList[i].sm[j].transSuccessState;
                         }
                         else
                         {
-                            ll->adv->advState = advSequence[ll->adv->advEventType].procedureList[i].sm[j].nextState[1];
+                            ll->adv->advState = advSequence[advEventType].procedureList[i].sm[j].transFailState;
                         }
                     }
                 }
