@@ -108,11 +108,9 @@ typedef struct _PACKED
     _u8  advEventPhyMode:2;
     _u8  advEventType:4;
 
-    _u8  advProcessingEventClass:2;
     _u8  advState:2;
-    _u8  rsvd2:4;
-    _u8  rsvd3;
-    _u16 rsvd4;
+    _u8  currentChn:6;
+    _u8  chnTable[3];
 
     _u8  peerAddress[6];
     _u8  advDataLen;

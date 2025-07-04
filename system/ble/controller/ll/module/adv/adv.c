@@ -120,6 +120,7 @@ static void adv_event_prepare_phy(ll_ctrl_t* ll,phy_dir_e phydir,phy_mode_e mode
     ll->phy.crcInit    = BLE_ADV_CRC_INIT;
     ll->phy.mode       = mode;
     ll->phy.dir        = phydir;
+    ll->phy.chnIdx     = ll->adv->currentChn;
     if(phydir == PHY_DIR_TX)
     {
         ll->phy.txAddress  = ll->txSharedPacket;
@@ -141,6 +142,7 @@ static int adv_event_step_send_advertising(ll_ctrl_t* ll,_u32 property)
         return 0;
     }
     ll->adv->instant++;
+    ll->adv->currentChn = ll->adv->chnTable[(ll->adv->instant%ll->adv->channelCnt)];
     adv_event_prepare_packet(ll,0);
     adv_event_prepare_phy(ll,PHY_DIR_TX,ll->adv->advEventPhyMode);
     ll->phy.start();
@@ -159,17 +161,22 @@ static int adv_event_step_start_listen(ll_ctrl_t* ll,_u32 property)
     return 0;
 }
 
-static int adv_event_step_send_scan_rsp(ll_ctrl_t* ll,_u32 property)
+static int adv_event_step_received_packet_analyze(ll_ctrl_t* ll)
 {
-    adv_event_prepare_packet(ll,1);
-    adv_event_prepare_phy(ll,PHY_DIR_TX,ll->adv->advEventPhyMode);
-    ll->phy.start();
-    return 1;
+
+	return 0;
 }
 
-static int adv_event_step_received_packet_analyze(ll_ctrl_t* ll,_u32 property)
+static int adv_event_step_send_scan_rsp(ll_ctrl_t* ll,_u32 property)
 {
-
+	if(adv_event_step_received_packet_analyze(ll)!=0)
+	{
+	    adv_event_prepare_packet(ll,1);
+	    adv_event_prepare_phy(ll,PHY_DIR_TX,ll->adv->advEventPhyMode);
+	    ll->phy.start();
+	    return 1;
+	}
+	return 0;
 }
 
 static int adv_event_default_step(ll_ctrl_t* ll,_u32 property)
@@ -193,9 +200,13 @@ static adv_event_sm_t adv_event_state_machine[]=
     {ADV_SM_STATE_IDLE,       ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_PASSED,          adv_event_default_step},
 
     {ADV_SM_STATE_SENDING_ADV,ADV_SM_STATE_RECEIVING,   ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_SEND_FINISHED,   adv_event_step_start_listen},
-    {ADV_SM_STATE_RECEIVING,  ADV_SM_STATE_SENDING_RSP, ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_RECEIVE_FINISHED,adv_event_step_received_packet_analyze},
-    {ADV_SM_STATE_SENDING_RSP,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_SEND_FINISHED,   adv_event_default_step},
+    {ADV_SM_STATE_SENDING_ADV,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_STOP,            adv_event_default_step},
 
+    {ADV_SM_STATE_RECEIVING,  ADV_SM_STATE_SENDING_RSP, ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_RECEIVE_FINISHED,adv_event_step_send_scan_rsp},
+    {ADV_SM_STATE_RECEIVING,  ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_STOP,            adv_event_default_step},
+
+    {ADV_SM_STATE_SENDING_RSP,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_SEND_FINISHED,   adv_event_default_step},
+    {ADV_SM_STATE_SENDING_RSP,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_STOP,            adv_event_default_step},
 };
 static const adv_procedure_list_t adv_con_scan_undirected_procedure[] =
 {
@@ -393,7 +404,6 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         ll->phy.hw_irq_cb  = adv_phy_irq_callback;
         ll->ownAddr[0] = ll->ownAddr[1] = ll->ownAddr[2] = ll->ownAddr[3]= ll->ownAddr[4] =ll->ownAddr[5]= 0x12;
         ll->adv->instant = 0;
-        ll->adv->channelCnt = count_bits_one((_u32)ll->adv->channelMap);
         ll->adv->availableChnCnt = ll->adv->channelCnt;
         ll->adv->advEventPhyMode = PHY_MODE_1M;
         phy_obj_cast(&ll->phy);

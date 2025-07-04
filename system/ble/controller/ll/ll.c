@@ -177,6 +177,15 @@ controller_error_code_e ll_set_advertising_parameters(_u16 interval,\
 	ll->adv->advType = type;
 	ll->adv->ownAddressType = ownAddressType;
 	ll->adv->peerAddressType = peerAddressType;
+	ll->adv->channelCnt = 0;
+    for(int i=0;i<3;i++)
+    {
+    	if(ll->adv->channelMap&BIT(i))
+    	{
+    		ll->adv->chnTable[ll->adv->channelCnt] = 37+i;
+    		ll->adv->channelCnt++;
+    	}
+    }
 	txMemcpy(ll->adv->peerAddress,peerAddress,6);
 	ll->adv->filterPolicy = policy;
 	switch(type)
