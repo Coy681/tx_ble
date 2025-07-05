@@ -437,6 +437,31 @@ sch_ctrl_t schCtrl;
     sch_program_timer();
 	DEBUG_GPIO_LOW(GPIO_2);
 }
+
+_RAM_CODE void sch_process_next_task(_u8 id)
+{
+    if(TASK_VALID(schCtrl.pRunningTask))
+    {
+        if(id!=schCtrl.pRunningTask->llId)
+        {
+            schCtrl.pRunningTask->cb(SCH_TASK_STOP);
+        }
+        if(schCtrl.pRunningTask->type == SCH_PERIODIC_TASK)
+        {
+        	sch_node_t* pTask = schCtrl.pRunningTask;
+        	schCtrl.pRunningTask = NULL;
+            sch_insert_task(pTask);
+        }
+    }
+    schCtrl.pRunningTask = sch_extract_first_task();
+
+    if(TASK_VALID(schCtrl.pRunningTask))
+    {
+        schCtrl.pRunningTask->cb(SCH_TASK_START);
+    }
+    sch_program_timer();
+}
+
  _RAM_CODE static int sch_remove_task(_u8 taskId)
 {
 	IRQ_DISABLE;

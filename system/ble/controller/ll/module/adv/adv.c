@@ -124,7 +124,7 @@ static void adv_event_prepare_phy(ll_ctrl_t* ll,phy_dir_e phydir,phy_mode_e mode
     if(phydir == PHY_DIR_TX)
     {
         ll->phy.txAddress  = ll->txSharedPacket;
-        ll->phy.timestamp  = ll->sch.timestamp;
+        ll->phy.timestamp  = system_time();
     }
     else if(phydir == PHY_DIR_RX)
     {
@@ -147,7 +147,6 @@ static int adv_event_step_send_advertising(ll_ctrl_t* ll,_u32 property)
     adv_event_prepare_packet(ll);
     adv_event_prepare_phy(ll,PHY_DIR_TX,ll->adv->advEventPhyMode);
     ll->phy.start();
-    ll->adv->availableChnCnt--;
     DEBUG_GPIO_LOW(GPIO_3);
     return 1;
 }
@@ -181,7 +180,7 @@ static int adv_event_step_received_packet_analyze(ll_ctrl_t* ll)
 		 init_type_connectInd_t* connInd = (init_type_connectInd_t*)(packet->data);
 		 //ll state machine transform
 	 }
-	 return 0;
+	return 0;
 }
 
 static int adv_event_step_send_scan_rsp(ll_ctrl_t* ll,_u32 property)
@@ -201,7 +200,16 @@ static int adv_event_step_send_scan_rsp(ll_ctrl_t* ll,_u32 property)
 
 static int adv_event_step_sch_stop(ll_ctrl_t* ll,_u32 property)
 {
-    //sch stop process
+    if(ll->adv->availableChnCnt)
+    {
+        ll->sch.timestamp += 1000;
+        ll->adv->availableChnCnt--;
+    }
+    else
+    {
+        ll->sch.timestamp += ll->sch.period;
+        ll->adv->availableChnCnt = ll->adv->channelCnt;
+    }
 }
 
 static int adv_event_step_sch_passed(ll_ctrl_t* ll,_u32 property)
@@ -222,6 +230,16 @@ static int adv_event_step_sch_canceled(ll_ctrl_t* ll,_u32 property)
 
 static int adv_event_default_step(ll_ctrl_t* ll,_u32 property)
 {
+    if(ll->adv->availableChnCnt)
+    {
+        ll->sch.timestamp += 1000;
+        ll->adv->availableChnCnt--;
+    }
+    else
+    {
+        ll->sch.timestamp += ll->sch.period;
+        ll->adv->availableChnCnt = ll->adv->channelCnt;
+    }
     return 1;
 }
 
@@ -403,14 +421,15 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
                         {
                             ll->adv->advState = advSequence[advEventType].procedureList[i].sm[j].transFailState;
                         }
+                        if(ll->adv->advState == ADV_SM_STATE_IDLE)
+                        {
+                            sch_process_next_task(ll->sch.llId);
+                        }
                     }
+                    break;
                 }
             }
         }
-    }
-    if()
-    {
-
     }
     DEBUG_GPIO_LOW(GPIO_6);
 }
