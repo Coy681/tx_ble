@@ -181,7 +181,7 @@ static int adv_event_step_received_packet_analyze(ll_ctrl_t* ll)
 		 init_type_connectInd_t* connInd = (init_type_connectInd_t*)(packet->data);
 		 //ll state machine transform
 	 }
-	return 0;
+	 return 0;
 }
 
 static int adv_event_step_send_scan_rsp(ll_ctrl_t* ll,_u32 property)
@@ -199,26 +199,38 @@ static int adv_event_step_send_scan_rsp(ll_ctrl_t* ll,_u32 property)
 	return 0;
 }
 
+static int adv_event_step_sch_stop(ll_ctrl_t* ll,_u32 property)
+{
+    //sch stop process
+}
+
+static int adv_event_step_sch_passed(ll_ctrl_t* ll,_u32 property)
+{
+	_u32 systemTime = system_time();
+	_u32 periodicDiff = (systemTime - ll->sch.timestamp)/ll->sch.period;
+	ll->sch.timestamp+=((periodicDiff+1)*ll->sch.period);
+    ll->adv->availableChnCnt = ll->adv->channelCnt;
+}
+
+static int adv_event_step_sch_canceled(ll_ctrl_t* ll,_u32 property)
+{
+	_u32 systemTime = system_time();
+	_u32 periodicDiff = (systemTime - ll->sch.timestamp)/ll->sch.period;
+	ll->sch.timestamp+=((periodicDiff+1)*ll->sch.period);
+    ll->adv->availableChnCnt = ll->adv->channelCnt;
+}
+
 static int adv_event_default_step(ll_ctrl_t* ll,_u32 property)
 {
-    if(ll->adv->availableChnCnt)
-    {
-        ll->sch.timestamp += 1000;
-    }
-    else
-    {
-        ll->sch.timestamp += ll->sch.period;
-    }
-
     return 1;
 }
 
 static adv_event_sm_t adv_event_state_machine[]=
 {
     {ADV_SM_STATE_IDLE,       ADV_SM_STATE_SENDING_ADV, ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_START,           adv_event_step_send_advertising},
-    {ADV_SM_STATE_IDLE,       ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_STOP,            adv_event_default_step},
-    {ADV_SM_STATE_IDLE,       ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_CANCELED,        adv_event_default_step},
-    {ADV_SM_STATE_IDLE,       ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_PASSED,          adv_event_default_step},
+    {ADV_SM_STATE_IDLE,       ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_STOP,            adv_event_step_sch_stop},
+    {ADV_SM_STATE_IDLE,       ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_CANCELED,        adv_event_step_sch_canceled},
+    {ADV_SM_STATE_IDLE,       ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_PASSED,          adv_event_step_sch_passed},
 
     {ADV_SM_STATE_SENDING_ADV,ADV_SM_STATE_RECEIVING,   ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_SEND_FINISHED,   adv_event_step_start_listen},
     {ADV_SM_STATE_SENDING_ADV,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_STOP,            adv_event_default_step},
@@ -370,11 +382,6 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
     _u8 eventClass    = adv_get_current_event_class(ll);
     _u8 advEventType  = ll->adv->advEventType;
     DEBUG_GPIO_HIGH(GPIO_6);
-    if(smEventType == ADV_SM_SCH_EVENT_STOP)
-    {
-        DEBUG_GPIO_HIGH(GPIO_7);
-        DEBUG_GPIO_LOW(GPIO_7);
-    }
 
     for(_u8 i=0;i<advSequence[advEventType].listLen;i++)
     {
@@ -401,17 +408,32 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
             }
         }
     }
-    DEBUG_GPIO_LOW(GPIO_6);
-    if(ll->adv->advState == ADV_SM_STATE_IDLE)
+    if()
     {
-        sch_schedule_next_task();
+
     }
+    DEBUG_GPIO_LOW(GPIO_6);
 }
 
 _RAM_CODE
 static void adv_phy_irq_callback(_u8 type)
 {   
     DEBUG_GPIO_HIGH(GPIO_4);
+    if(type == PHY_IRQ_TX_FINISHED)
+    {
+        DEBUG_GPIO_HIGH(GPIO_8);
+        DEBUG_GPIO_LOW(GPIO_8);
+    }
+    else if(type == PHY_IRQ_RX_FINISHED)
+    {
+        DEBUG_GPIO_HIGH(GPIO_9);
+        DEBUG_GPIO_LOW(GPIO_9);
+    }
+    else if(type == PHY_IRQ_RX_TIMEOUT)
+    {
+        DEBUG_GPIO_HIGH(GPIO_10);
+        DEBUG_GPIO_LOW(GPIO_10);
+    }
     adv_sequence_process(SM_PHY_EVENT,type);
     DEBUG_GPIO_LOW(GPIO_4);
 }
@@ -420,6 +442,26 @@ _RAM_CODE
 static void adv_sch_callback(_u8 type)
 {
     DEBUG_GPIO_HIGH(GPIO_5);
+    if(type == SCH_TASK_START)
+    {
+        DEBUG_GPIO_HIGH(GPIO_11);
+        DEBUG_GPIO_LOW(GPIO_11);
+    }
+    else if(type == SCH_TASK_STOP)
+    {
+        DEBUG_GPIO_HIGH(GPIO_12);
+        DEBUG_GPIO_LOW(GPIO_12);
+    }
+    else if(type == SCH_TASK_CANCELED)
+    {
+        DEBUG_GPIO_HIGH(GPIO_13);
+        DEBUG_GPIO_LOW(GPIO_13);
+    }
+    else if(type == SCH_TASK_PASSED)
+    {
+        DEBUG_GPIO_HIGH(GPIO_14);
+        DEBUG_GPIO_LOW(GPIO_14);
+    }
     adv_sequence_process(SM_SCH_EVENT,type);
     DEBUG_GPIO_LOW(GPIO_5);
 }

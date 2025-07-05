@@ -9,6 +9,14 @@ typedef enum
 	GPIO_5,
     GPIO_6,
 	GPIO_7,
+    GPIO_8,
+	GPIO_9,
+    GPIO_10,
+	GPIO_11,
+    GPIO_12,
+	GPIO_13,
+    GPIO_14,
+	GPIO_15,
 }hal_gpio_debug_e;
 
 void hal_gpio_debug_init(void);

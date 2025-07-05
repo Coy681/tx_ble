@@ -3,11 +3,12 @@
 #include"../../../hal/gpio.h"
 #include "../../../../common/txCommon.h"
 static int hal_gpio_led[4] = {GPIO_PD0,GPIO_PD1,GPIO_PE6,GPIO_PE7};
-static int hal_gpio_debug[8]={GPIO_PB0,GPIO_PB1,GPIO_PB2,GPIO_PB3,GPIO_PB4,GPIO_PB5,GPIO_PB6,GPIO_PB7};
+static int hal_gpio_debug[16]={GPIO_PB0,GPIO_PB1,GPIO_PB2,GPIO_PB3,GPIO_PB4,GPIO_PB5,GPIO_PB6,GPIO_PB7,
+		                       GPIO_PC0,GPIO_PC3,GPIO_PE0,GPIO_PE1,GPIO_PE2,GPIO_PE3,GPIO_PE4,GPIO_PE5};
 
 void hal_gpio_debug_init(void)
 {
-	for(unsigned char i=0;i<8;i++)
+	for(unsigned char i=0;i<16;i++)
 	{
 		gpio_function_en(hal_gpio_debug[i]);
 		gpio_output_en(hal_gpio_debug[i]);
