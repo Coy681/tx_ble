@@ -1,8 +1,5 @@
 
 #include"adv.h"
-#include"../scan/scan.h"
-#include"../init/init.h"
-
 /*****************************************ADV State Machine***********************************************/
 typedef enum
 {
@@ -72,20 +69,14 @@ static adv_event_class_e adv_get_current_event_class(ll_ctrl_t* ll)
 typedef enum
 {
     ADV_EVENT_NONE,
-    ADV_EVENT_PROPERTY_RX = BIT(0),
+    ADV_EVENT_PROPERTY_RX       = BIT(0),
+    ADV_EVENT_PROPERTY_SEND_RSP = BIT(1),
 }adv_event_property_e;
 
 _RAM_CODE
-static void adv_event_prepare_packet(ll_ctrl_t* ll,_u8 rsp)
+static void adv_event_prepare_packet(ll_ctrl_t* ll)
 {
 	_u8* packet = NULL;
-    if(rsp)
-    {
-        packet = ll_get_adv_packet(ll->txSharedPacket,6+ll->adv->scanRspDataLen,LL_ADV_TYPE_SCAN_RSP,0,ll->adv->ownAddressType?1:0,0);
-        txMemcpy(((adv_type_scan_rsp_t*)packet)->advA,ll->ownAddr,6);
-        txMemcpy(((adv_type_scan_rsp_t*)packet)->scanRsp,ll->adv->scanRspData,ll->adv->scanRspDataLen);
-        return;
-    }
 	switch(ll->adv->advType)
 	{
 		case LL_ADV_IND:
@@ -110,6 +101,15 @@ static void adv_event_prepare_packet(ll_ctrl_t* ll,_u8 rsp)
 		     txMemcpy(((adv_type_nonConn_ind_t*)packet)->advData,ll->adv->advData,ll->adv->advDataLen);
 		     break;
 	}
+}
+
+_RAM_CODE
+static void scan_rsp_prepare_packet(ll_ctrl_t* ll)
+{
+	_u8* packet = NULL;
+	packet = ll_get_adv_packet(ll->txSharedPacket,6+ll->adv->scanRspDataLen,LL_ADV_TYPE_SCAN_RSP,0,ll->adv->ownAddressType?1:0,0);
+	txMemcpy(((adv_type_scan_rsp_t*)packet)->advA,ll->ownAddr,6);
+	txMemcpy(((adv_type_scan_rsp_t*)packet)->scanRsp,ll->adv->scanRspData,ll->adv->scanRspDataLen);
 }
 
 _RAM_CODE
@@ -141,12 +141,14 @@ static int adv_event_step_send_advertising(ll_ctrl_t* ll,_u32 property)
     {
         return 0;
     }
+    DEBUG_GPIO_HIGH(GPIO_3);
     ll->adv->instant++;
     ll->adv->currentChn = ll->adv->chnTable[(ll->adv->instant%ll->adv->channelCnt)];
-    adv_event_prepare_packet(ll,0);
+    adv_event_prepare_packet(ll);
     adv_event_prepare_phy(ll,PHY_DIR_TX,ll->adv->advEventPhyMode);
     ll->phy.start();
     ll->adv->availableChnCnt--;
+    DEBUG_GPIO_LOW(GPIO_3);
     return 1;
 }
 
@@ -163,18 +165,36 @@ static int adv_event_step_start_listen(ll_ctrl_t* ll,_u32 property)
 
 static int adv_event_step_received_packet_analyze(ll_ctrl_t* ll)
 {
-
+	 ll_adv_packet_t* packet = (ll_adv_packet_t*)(ll->phy.rxAddress + ll_get_packet_header_offset_from_address(PHY_DIR_RX));
+	 if(packet->hdr.pduType == LL_ADV_TYPE_SCAN_REQ && packet->hdr.length == sizeof(scan_type_scan_req_t))
+	 {
+		 //scan req process
+		 scan_type_scan_req_t* scanReq = (scan_type_scan_req_t*)(packet->data);
+		 if(txMemcmp(ll->ownAddr,scanReq->advA,6) == 0)
+		 {
+			 return 1;
+		 }
+	 }
+	 else if(packet->hdr.pduType == LL_ADV_TYPE_CONNECT_IND && packet->hdr.length == sizeof(init_type_connectInd_t))
+	 {
+		 //connect ind process
+		 init_type_connectInd_t* connInd = (init_type_connectInd_t*)(packet->data);
+		 //ll state machine transform
+	 }
 	return 0;
 }
 
 static int adv_event_step_send_scan_rsp(ll_ctrl_t* ll,_u32 property)
 {
-	if(adv_event_step_received_packet_analyze(ll)!=0)
+	if(property&ADV_EVENT_PROPERTY_SEND_RSP)
 	{
-	    adv_event_prepare_packet(ll,1);
-	    adv_event_prepare_phy(ll,PHY_DIR_TX,ll->adv->advEventPhyMode);
-	    ll->phy.start();
-	    return 1;
+		if(adv_event_step_received_packet_analyze(ll)!=0)
+		{
+			scan_rsp_prepare_packet(ll);
+		    adv_event_prepare_phy(ll,PHY_DIR_TX,ll->adv->advEventPhyMode);
+		    ll->phy.start();
+		    return 1;
+		}
 	}
 	return 0;
 }
@@ -189,6 +209,7 @@ static int adv_event_default_step(ll_ctrl_t* ll,_u32 property)
     {
         ll->sch.timestamp += ll->sch.period;
     }
+
     return 1;
 }
 
@@ -333,6 +354,7 @@ static adv_sequence_t advSequence[] =
     #endif
 };
 
+_RAM_CODE
 static void adv_sequence_process(sm_event_type_e type,_u8 event)
 {
     _u8 smEventType = 0; 
@@ -347,6 +369,13 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
     ll_ctrl_t* ll     = ll_get_current_state_machine();
     _u8 eventClass    = adv_get_current_event_class(ll);
     _u8 advEventType  = ll->adv->advEventType;
+    DEBUG_GPIO_HIGH(GPIO_6);
+    if(smEventType == ADV_SM_SCH_EVENT_STOP)
+    {
+        DEBUG_GPIO_HIGH(GPIO_7);
+        DEBUG_GPIO_LOW(GPIO_7);
+    }
+
     for(_u8 i=0;i<advSequence[advEventType].listLen;i++)
     {
         if(eventClass == advSequence[advEventType].procedureList[i].eventClass)
@@ -372,6 +401,7 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
             }
         }
     }
+    DEBUG_GPIO_LOW(GPIO_6);
     if(ll->adv->advState == ADV_SM_STATE_IDLE)
     {
         sch_schedule_next_task();
@@ -381,13 +411,17 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
 _RAM_CODE
 static void adv_phy_irq_callback(_u8 type)
 {   
-    adv_sequence_process(SM_SCH_EVENT,type);
+    DEBUG_GPIO_HIGH(GPIO_4);
+    adv_sequence_process(SM_PHY_EVENT,type);
+    DEBUG_GPIO_LOW(GPIO_4);
 }
 
 _RAM_CODE
 static void adv_sch_callback(_u8 type)
 {
+    DEBUG_GPIO_HIGH(GPIO_5);
     adv_sequence_process(SM_SCH_EVENT,type);
+    DEBUG_GPIO_LOW(GPIO_5);
 }
 
 
@@ -406,6 +440,7 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         ll->adv->instant = 0;
         ll->adv->availableChnCnt = ll->adv->channelCnt;
         ll->adv->advEventPhyMode = PHY_MODE_1M;
+        ll->adv->advState = ADV_SM_STATE_IDLE;
         phy_obj_cast(&ll->phy);
         phy_obj_init(&ll->phy);
         //sch init
