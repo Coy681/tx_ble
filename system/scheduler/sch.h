@@ -87,6 +87,7 @@ void sch_process_next_task(_u8 id);
 #define TASK_VALID(task)              ((task)!=NULL)
 #define TASK_NOT_VALID(task)          ((task)==NULL)
 #define TASK_START_TIME(task)         (task->timestamp - task->startLatency)
+#define TASK_SCH_PROCESS_TIME         20
 #define TASK_STOP_TIME(task)          (task->timestamp + task->duration + task->stopLatency)
 
 

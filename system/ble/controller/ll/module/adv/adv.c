@@ -124,7 +124,7 @@ static void adv_event_prepare_phy(ll_ctrl_t* ll,phy_dir_e phydir,phy_mode_e mode
     if(phydir == PHY_DIR_TX)
     {
         ll->phy.txAddress  = ll->txSharedPacket;
-        ll->phy.timestamp  = system_time();
+        ll->phy.timestamp  = ll->sch.timestamp;
     }
     else if(phydir == PHY_DIR_RX)
     {
@@ -158,6 +158,19 @@ static int adv_event_step_start_listen(ll_ctrl_t* ll,_u32 property)
         adv_event_prepare_phy(ll,PHY_DIR_TX,ll->adv->advEventPhyMode);
         ll->phy.start();
         return 1;
+    }
+    else
+    {
+        if(ll->adv->availableChnCnt)
+        {
+            ll->sch.timestamp += 1000;
+            ll->adv->availableChnCnt--;
+        }
+        else
+        {
+            ll->sch.timestamp += ll->sch.period;
+            ll->adv->availableChnCnt = ll->adv->channelCnt;
+        }
     }
     return 0;
 }
@@ -410,8 +423,14 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
                 if(ll->adv->advState == advSequence[advEventType].procedureList[i].sm[j].currentState\
                       && smEventType == advSequence[advEventType].procedureList[i].sm[j].event)
                 {
+                    static int currentProcessEvent = 0;
+                    if(currentProcessEvent == smEventType)
+                    {
+                        return;//reload same event,return
+                    }
                     if(advSequence[advEventType].procedureList[i].sm[j].cb!=NULL)
                     {
+                        currentProcessEvent = smEventType;
                         int ret = advSequence[advEventType].procedureList[i].sm[j].cb(ll,advSequence[advEventType].procedureList[i].property);
                         if(ret)
                         {
@@ -425,6 +444,7 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
                         {
                             sch_process_next_task(ll->sch.llId);
                         }
+                        currentProcessEvent = 0;
                     }
                     break;
                 }
@@ -508,7 +528,7 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         ll->sch.llId = ll->id;
         ll->sch.type = SCH_PERIODIC_TASK;
         ll->sch.priority = LL_ADV_PRIORITY;
-        ll->sch.timestamp = system_time() + 50;//maybe need planner
+        ll->sch.timestamp = system_time() + 500;//maybe need planner
         ll->sch.period    = ll->adv->interval*BLE_ADV_INTERVAL_UNIT;
         ll->sch.duration = ll->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(ll->phy.mode,BLE_ADV_MAX_LENGTH,0)+2*PACKET_DEFAULT_TIFS_TIME;
         ll->sch.startLatency = 50;

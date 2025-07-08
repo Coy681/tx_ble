@@ -295,7 +295,7 @@ sch_ctrl_t schCtrl;
     }
     else if(TASK_VALID(schCtrl.pWaitingList))
     {
-    	_u32 startTime = TASK_START_TIME(schCtrl.pWaitingList);
+    	_u32 startTime = TASK_START_TIME(schCtrl.pWaitingList) - TASK_SCH_PROCESS_TIME;
     	_u32 capTure = hal_stimer_get_capture();
     	if(startTime!=capTure)
     	{
