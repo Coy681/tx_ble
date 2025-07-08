@@ -134,7 +134,22 @@ static void adv_event_prepare_phy(ll_ctrl_t* ll,phy_dir_e phydir,phy_mode_e mode
     }
 }
 
+_RAM_CODE
+static int adv_event_process_next_task(ll_ctrl_t* ll)
+{
+    if(ll->adv->availableChnCnt)
+    {
+        ll->sch.timestamp += 1000;
+        ll->adv->availableChnCnt--;
+    }
+    else
+    {
+        ll->sch.timestamp += ll->sch.period;
+        ll->adv->availableChnCnt = ll->adv->channelCnt;
+    }
+}
 
+_RAM_CODE
 static int adv_event_step_send_advertising(ll_ctrl_t* ll,_u32 property)
 {
     if(ll->adv->availableChnCnt==0)
@@ -161,16 +176,7 @@ static int adv_event_step_start_listen(ll_ctrl_t* ll,_u32 property)
     }
     else
     {
-        if(ll->adv->availableChnCnt)
-        {
-            ll->sch.timestamp += 1000;
-            ll->adv->availableChnCnt--;
-        }
-        else
-        {
-            ll->sch.timestamp += ll->sch.period;
-            ll->adv->availableChnCnt = ll->adv->channelCnt;
-        }
+        adv_event_process_next_task(ll);
     }
     return 0;
 }
@@ -198,31 +204,24 @@ static int adv_event_step_received_packet_analyze(ll_ctrl_t* ll)
 
 static int adv_event_step_send_scan_rsp(ll_ctrl_t* ll,_u32 property)
 {
-	if(property&ADV_EVENT_PROPERTY_SEND_RSP)
+	if((property&ADV_EVENT_PROPERTY_SEND_RSP)&&(adv_event_step_received_packet_analyze(ll)!=0))
 	{
-		if(adv_event_step_received_packet_analyze(ll)!=0)
-		{
-			scan_rsp_prepare_packet(ll);
-		    adv_event_prepare_phy(ll,PHY_DIR_TX,ll->adv->advEventPhyMode);
-		    ll->phy.start();
-		    return 1;
-		}
+        scan_rsp_prepare_packet(ll);
+        adv_event_prepare_phy(ll,PHY_DIR_TX,ll->adv->advEventPhyMode);
+        ll->phy.start();
+        return 1;
 	}
+    else
+    {
+        adv_event_process_next_task(ll);
+    }
 	return 0;
 }
 
 static int adv_event_step_sch_stop(ll_ctrl_t* ll,_u32 property)
 {
-    if(ll->adv->availableChnCnt)
-    {
-        ll->sch.timestamp += 1000;
-        ll->adv->availableChnCnt--;
-    }
-    else
-    {
-        ll->sch.timestamp += ll->sch.period;
-        ll->adv->availableChnCnt = ll->adv->channelCnt;
-    }
+    adv_event_process_next_task(ll);
+    return 1;
 }
 
 static int adv_event_step_sch_passed(ll_ctrl_t* ll,_u32 property)
@@ -231,6 +230,8 @@ static int adv_event_step_sch_passed(ll_ctrl_t* ll,_u32 property)
 	_u32 periodicDiff = (systemTime - ll->sch.timestamp)/ll->sch.period;
 	ll->sch.timestamp+=((periodicDiff+1)*ll->sch.period);
     ll->adv->availableChnCnt = ll->adv->channelCnt;
+    return 1;
+    //todo,maybe we can jump to next adv channel
 }
 
 static int adv_event_step_sch_canceled(ll_ctrl_t* ll,_u32 property)
@@ -239,20 +240,13 @@ static int adv_event_step_sch_canceled(ll_ctrl_t* ll,_u32 property)
 	_u32 periodicDiff = (systemTime - ll->sch.timestamp)/ll->sch.period;
 	ll->sch.timestamp+=((periodicDiff+1)*ll->sch.period);
     ll->adv->availableChnCnt = ll->adv->channelCnt;
+    return 1;
+    //todo,maybe we can jump to next adv channel
 }
 
 static int adv_event_default_step(ll_ctrl_t* ll,_u32 property)
 {
-    if(ll->adv->availableChnCnt)
-    {
-        ll->sch.timestamp += 1000;
-        ll->adv->availableChnCnt--;
-    }
-    else
-    {
-        ll->sch.timestamp += ll->sch.period;
-        ll->adv->availableChnCnt = ll->adv->channelCnt;
-    }
+    adv_event_process_next_task(ll);
     return 1;
 }
 
@@ -417,7 +411,7 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
     for(_u8 i=0;i<advSequence[advEventType].listLen;i++)
     {
         if(eventClass == advSequence[advEventType].procedureList[i].eventClass)
-        {
+        {//optimize,use hash value to omit for loop
             for(_u8 j=0;j<advSequence[advEventType].procedureList[i].listLen;j++)
             {
                 if(ll->adv->advState == advSequence[advEventType].procedureList[i].sm[j].currentState\
@@ -430,7 +424,7 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
                     }
                     if(advSequence[advEventType].procedureList[i].sm[j].cb!=NULL)
                     {
-                        currentProcessEvent = smEventType;
+                        currentProcessEvent = smEventType;//can optimize,use member value to avoid many entity conflict
                         int ret = advSequence[advEventType].procedureList[i].sm[j].cb(ll,advSequence[advEventType].procedureList[i].property);
                         if(ret)
                         {
