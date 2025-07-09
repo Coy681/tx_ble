@@ -2,12 +2,13 @@
 #include"../../ll_internal.h"
 #include"../../ll.h"
 
-#define BLE_ADV_ACCESS_CODE   0xd6be898e
-#define BLE_ADV_CRC_INIT      0x555555
+#define BLE_ADV_ACCESS_CODE            0xd6be898e
+#define BLE_ADV_CRC_INIT               0x555555
 
-#define BLE_ADV_MAX_LENGTH    37
-#define BLE_ADV_INTERVAL_UNIT 1250
+#define BLE_ADV_DEFAULT_MAX_LENGTH     37
+#define BLE_ADV_INTERVAL_UNIT          1250
 
+#define BLE_ADV_DEFAULT_RX_TIMEOUT_US  (PACKET_DEFAULT_TIFS_TIME + 100) 
 typedef enum
 {
     ADV_EVENT,

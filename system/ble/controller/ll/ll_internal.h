@@ -107,6 +107,8 @@ typedef struct _PACKED
     _u8  availableChnCnt:2;
     _u8  advEventPhyMode:2;
     _u8  advEventType:4;
+    _u8  processingEvent;
+    _u16 rsvd2;
 
     _u8  advState:2;
     _u8  currentChn:6;

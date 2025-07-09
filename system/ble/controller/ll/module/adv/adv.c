@@ -128,8 +128,8 @@ static void adv_event_prepare_phy(ll_ctrl_t* ll,phy_dir_e phydir,phy_mode_e mode
     }
     else if(phydir == PHY_DIR_RX)
     {
-        ll->phy.rxTimeout = PACKET_DEFAULT_TIFS_TIME+50;
-        ll->phy.rxMaxOctets = BLE_ADV_MAX_LENGTH;
+        ll->phy.rxTimeout = BLE_ADV_DEFAULT_RX_TIMEOUT_US;
+        ll->phy.rxMaxOctets = BLE_ADV_DEFAULT_MAX_LENGTH;
         ll->phy.timestamp = system_time();//start rx as soon as possible
     }
 }
@@ -139,12 +139,12 @@ static int adv_event_process_next_task(ll_ctrl_t* ll)
 {
     if(ll->adv->availableChnCnt)
     {
-        ll->sch.timestamp += 1000;
+        ll->sch.timestamp += (ll->sch.duration+ll->sch.startLatency+ll->sch.stopLatency);
         ll->adv->availableChnCnt--;
     }
     else
     {
-        ll->sch.timestamp += ll->sch.period;
+        ll->sch.timestamp += (ll->sch.period + 30*(random_byte()|0x0f));
         ll->adv->availableChnCnt = ll->adv->channelCnt;
     }
 }
@@ -408,40 +408,37 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
     _u8 advEventType  = ll->adv->advEventType;
     DEBUG_GPIO_HIGH(GPIO_6);
 
-    for(_u8 i=0;i<advSequence[advEventType].listLen;i++)
+    if(advSequence[advEventType].listLen>eventClass)
     {
-        if(eventClass == advSequence[advEventType].procedureList[i].eventClass)
-        {//optimize,use hash value to omit for loop
-            for(_u8 j=0;j<advSequence[advEventType].procedureList[i].listLen;j++)
+        for(_u8 i=0;i<advSequence[advEventType].procedureList[eventClass].listLen;i++)
+        {
+            if(ll->adv->advState == advSequence[advEventType].procedureList[eventClass].sm[i].currentState\
+                  && smEventType == advSequence[advEventType].procedureList[eventClass].sm[i].event)
             {
-                if(ll->adv->advState == advSequence[advEventType].procedureList[i].sm[j].currentState\
-                      && smEventType == advSequence[advEventType].procedureList[i].sm[j].event)
+                if(ll->adv->processingEvent == smEventType)
                 {
-                    static int currentProcessEvent = 0;
-                    if(currentProcessEvent == smEventType)
-                    {
-                        return;//reload same event,return
-                    }
-                    if(advSequence[advEventType].procedureList[i].sm[j].cb!=NULL)
-                    {
-                        currentProcessEvent = smEventType;//can optimize,use member value to avoid many entity conflict
-                        int ret = advSequence[advEventType].procedureList[i].sm[j].cb(ll,advSequence[advEventType].procedureList[i].property);
-                        if(ret)
-                        {
-                            ll->adv->advState = advSequence[advEventType].procedureList[i].sm[j].transSuccessState;
-                        }
-                        else
-                        {
-                            ll->adv->advState = advSequence[advEventType].procedureList[i].sm[j].transFailState;
-                        }
-                        if(ll->adv->advState == ADV_SM_STATE_IDLE)
-                        {
-                            sch_process_next_task(ll->sch.llId);
-                        }
-                        currentProcessEvent = 0;
-                    }
-                    break;
+                    return;//reload same event,return
                 }
+                if(advSequence[advEventType].procedureList[eventClass].sm[i].cb!=NULL)
+                {
+                    ll->adv->processingEvent = smEventType;//use member value to avoid many entity conflict
+                    int ret = advSequence[advEventType].procedureList[eventClass].sm[i].cb(ll,advSequence[advEventType].procedureList[i].property);
+                    if(ret)
+                    {
+                        ll->adv->advState = advSequence[advEventType].procedureList[eventClass].sm[i].transSuccessState;
+                    }
+                    else
+                    {
+                        ll->adv->advState = advSequence[advEventType].procedureList[eventClass].sm[i].transFailState;
+                    }
+                    if(ll->adv->advState == ADV_SM_STATE_IDLE)
+                    {
+                        sch_process_next_task(ll->sch.llId);
+                    }
+                    ll->adv->processingEvent = 0;
+                }
+                break;               
+                 
             }
         }
     }
@@ -524,7 +521,7 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         ll->sch.priority = LL_ADV_PRIORITY;
         ll->sch.timestamp = system_time() + 500;//maybe need planner
         ll->sch.period    = ll->adv->interval*BLE_ADV_INTERVAL_UNIT;
-        ll->sch.duration = ll->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(ll->phy.mode,BLE_ADV_MAX_LENGTH,0)+2*PACKET_DEFAULT_TIFS_TIME;
+        ll->sch.duration = ll->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(ll->phy.mode,BLE_ADV_DEFAULT_MAX_LENGTH,0)+2*PACKET_DEFAULT_TIFS_TIME;
         ll->sch.startLatency = 50;
         ll->sch.stopLatency  = 50;
         ll->sch.cb = adv_sch_callback;

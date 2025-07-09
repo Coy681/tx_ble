@@ -12,6 +12,7 @@
 #include"platform/hal/rf.h"
 #include"platform/hal/stimer.h"
 #include"platform/hal/uart.h"
+#include"platform/hal/misc.h"
 
 void platform_init(void);
 

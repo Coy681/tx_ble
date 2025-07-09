@@ -2,6 +2,8 @@
 #include"../../hal/stimer.h"
 #include"common/txCommon.h"
 
+//todo,generate random number
+
 _u8  random_byte(void)
 {
     return 0x55;
