@@ -113,7 +113,7 @@ static void scan_rsp_prepare_packet(ll_ctrl_t* ll)
 }
 
 _RAM_CODE
-static void adv_event_prepare_phy(ll_ctrl_t* ll,phy_dir_e phydir,phy_mode_e mode)
+static void adv_event_prepare_phy(ll_ctrl_t* ll,_u32 timestamp,phy_dir_e phydir,phy_mode_e mode)
 {
     phy_obj_cast(&ll->phy);
     ll->phy.accessCode = BLE_ADV_ACCESS_CODE;
@@ -121,16 +121,15 @@ static void adv_event_prepare_phy(ll_ctrl_t* ll,phy_dir_e phydir,phy_mode_e mode
     ll->phy.mode       = mode;
     ll->phy.dir        = phydir;
     ll->phy.chnIdx     = ll->adv->currentChn;
+    ll->phy.timestamp  = timestamp;
     if(phydir == PHY_DIR_TX)
     {
         ll->phy.txAddress  = ll->txSharedPacket;
-        ll->phy.timestamp  = ll->sch.timestamp;
     }
     else if(phydir == PHY_DIR_RX)
     {
         ll->phy.rxTimeout = BLE_ADV_DEFAULT_RX_TIMEOUT_US;
         ll->phy.rxMaxOctets = BLE_ADV_DEFAULT_MAX_LENGTH;
-        ll->phy.timestamp = system_time();//start rx as soon as possible
     }
 }
 
@@ -164,7 +163,8 @@ static int adv_event_step_send_advertising(ll_ctrl_t* ll,_u32 property)
     ll->adv->instant++;
     ll->adv->currentChn = ll->adv->chnTable[(ll->adv->instant%ll->adv->channelCnt)];
     adv_event_prepare_packet(ll);
-    adv_event_prepare_phy(ll,PHY_DIR_TX,ll->adv->advEventPhyMode);
+    _u32 timestamp = system_time();
+    adv_event_prepare_phy(ll,timestamp,PHY_DIR_TX,ll->adv->advEventPhyMode);
     ll->phy.start();
     DEBUG_GPIO_LOW(GPIO_3);
     return 1;
@@ -175,14 +175,11 @@ static int adv_event_step_start_listen(ll_ctrl_t* ll,_u32 property)
 {
     if(property&ADV_EVENT_PROPERTY_RX)
     {
-        adv_event_prepare_phy(ll,PHY_DIR_TX,ll->adv->advEventPhyMode);
+        _u32 timestamp = system_time();
+        adv_event_prepare_phy(ll,timestamp,PHY_DIR_TX,ll->adv->advEventPhyMode);
         ll->phy.start();
         return 1;
     }
-//    else
-//    {
-//        adv_event_process_next_task(ll);
-//    }
     return 0;
 }
 
@@ -214,14 +211,11 @@ static int adv_event_step_send_scan_rsp(ll_ctrl_t* ll,_u32 property)
 	if((property&ADV_EVENT_PROPERTY_SEND_RSP)&&(adv_event_step_received_packet_analyze(ll)!=0))
 	{
         scan_rsp_prepare_packet(ll);
-        adv_event_prepare_phy(ll,PHY_DIR_TX,ll->adv->advEventPhyMode);
+        _u32 timestamp = system_time();
+        adv_event_prepare_phy(ll,timestamp,PHY_DIR_TX,ll->adv->advEventPhyMode);
         ll->phy.start();
         return 1;
 	}
-//    else
-//    {
-//        adv_event_process_next_task(ll);
-//    }
 	return 0;
 }
 
@@ -443,12 +437,6 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
                     {
                         ll->adv->advState = advSequence[advEventType].procedureList[eventClass].sm[i].transFailState;
                     }
-//                    DEBUG_GPIO_HIGH(GPIO_13);
-//                    DEBUG_GPIO_LOW(GPIO_13);
-//                    if(ll->adv->advState == ADV_SM_STATE_IDLE)
-//                    {
-//                    	sch_schedule_next_task();
-//                    }
                     ll->adv->processingEvent = 0;
                 }
                 break;               
