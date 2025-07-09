@@ -50,9 +50,9 @@ typedef struct
 /*****************************************ADV Sequence ***********************************************/
 typedef struct
 {
-    adv_event_type_e            eventType;//adv mode
-    adv_procedure_list_t const  *procedureList;
-    _u32                        listLen;
+    adv_event_type_e       eventType;//adv mode
+    adv_procedure_list_t   *procedureList;
+    _u32                   listLen;
 }adv_sequence_t;
 
 #define ADV_PROCEDURE_LIST_LENGTH(adv_procedure_list)      (sizeof(adv_procedure_list)/sizeof(adv_procedure_list[0]))
@@ -134,13 +134,17 @@ static void adv_event_prepare_phy(ll_ctrl_t* ll,phy_dir_e phydir,phy_mode_e mode
     }
 }
 
+
 _RAM_CODE
-static int adv_event_process_next_task(ll_ctrl_t* ll)
+static void adv_event_process_next_task(ll_ctrl_t* ll)
 {
     if(ll->adv->availableChnCnt)
     {
-        ll->sch.timestamp += (ll->sch.duration+ll->sch.startLatency+ll->sch.stopLatency);
         ll->adv->availableChnCnt--;
+    }
+    if(ll->adv->availableChnCnt)
+    {
+        ll->sch.timestamp += (ll->sch.duration+ll->sch.startLatency+ll->sch.stopLatency);
     }
     else
     {
@@ -166,6 +170,7 @@ static int adv_event_step_send_advertising(ll_ctrl_t* ll,_u32 property)
     return 1;
 }
 
+_RAM_CODE
 static int adv_event_step_start_listen(ll_ctrl_t* ll,_u32 property)
 {
     if(property&ADV_EVENT_PROPERTY_RX)
@@ -174,13 +179,14 @@ static int adv_event_step_start_listen(ll_ctrl_t* ll,_u32 property)
         ll->phy.start();
         return 1;
     }
-    else
-    {
-        adv_event_process_next_task(ll);
-    }
+//    else
+//    {
+//        adv_event_process_next_task(ll);
+//    }
     return 0;
 }
 
+_RAM_CODE
 static int adv_event_step_received_packet_analyze(ll_ctrl_t* ll)
 {
 	 ll_adv_packet_t* packet = (ll_adv_packet_t*)(ll->phy.rxAddress + ll_get_packet_header_offset_from_address(PHY_DIR_RX));
@@ -202,6 +208,7 @@ static int adv_event_step_received_packet_analyze(ll_ctrl_t* ll)
 	return 0;
 }
 
+_RAM_CODE
 static int adv_event_step_send_scan_rsp(ll_ctrl_t* ll,_u32 property)
 {
 	if((property&ADV_EVENT_PROPERTY_SEND_RSP)&&(adv_event_step_received_packet_analyze(ll)!=0))
@@ -211,19 +218,21 @@ static int adv_event_step_send_scan_rsp(ll_ctrl_t* ll,_u32 property)
         ll->phy.start();
         return 1;
 	}
-    else
-    {
-        adv_event_process_next_task(ll);
-    }
+//    else
+//    {
+//        adv_event_process_next_task(ll);
+//    }
 	return 0;
 }
 
+_RAM_CODE
 static int adv_event_step_sch_stop(ll_ctrl_t* ll,_u32 property)
 {
     adv_event_process_next_task(ll);
     return 1;
 }
 
+_RAM_CODE
 static int adv_event_step_sch_passed(ll_ctrl_t* ll,_u32 property)
 {
 	_u32 systemTime = system_time();
@@ -234,6 +243,7 @@ static int adv_event_step_sch_passed(ll_ctrl_t* ll,_u32 property)
     //todo,maybe we can jump to next adv channel
 }
 
+_RAM_CODE
 static int adv_event_step_sch_canceled(ll_ctrl_t* ll,_u32 property)
 {
 	_u32 systemTime = system_time();
@@ -244,6 +254,7 @@ static int adv_event_step_sch_canceled(ll_ctrl_t* ll,_u32 property)
     //todo,maybe we can jump to next adv channel
 }
 
+_RAM_CODE
 static int adv_event_default_step(ll_ctrl_t* ll,_u32 property)
 {
     adv_event_process_next_task(ll);
@@ -266,22 +277,22 @@ static adv_event_sm_t adv_event_state_machine[]=
     {ADV_SM_STATE_SENDING_RSP,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_SEND_FINISHED,   adv_event_default_step},
     {ADV_SM_STATE_SENDING_RSP,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_STOP,            adv_event_default_step},
 };
-static const adv_procedure_list_t adv_con_scan_undirected_procedure[] =
+static adv_procedure_list_t adv_con_scan_undirected_procedure[] =
 {
     {ADV_EVENT,adv_event_state_machine,ADV_SM_LIST_LENGTH(adv_event_state_machine),ADV_EVENT_PROPERTY_RX},
 };
 
-static const adv_procedure_list_t adv_con_directed_procedure[]=
+static adv_procedure_list_t adv_con_directed_procedure[]=
 {
     {ADV_EVENT,adv_event_state_machine,ADV_SM_LIST_LENGTH(adv_event_state_machine),ADV_EVENT_PROPERTY_RX},
 };
 
-static const adv_procedure_list_t adv_scan_undirected_procedure[]=
+static adv_procedure_list_t adv_scan_undirected_procedure[]=
 {
     {ADV_EVENT,adv_event_state_machine,ADV_SM_LIST_LENGTH(adv_event_state_machine),ADV_EVENT_PROPERTY_RX},
 };
 
-static const adv_procedure_list_t adv_non_con_non_scan_undirected_procedure[]=
+static adv_procedure_list_t adv_non_con_non_scan_undirected_procedure[]=
 {
     {ADV_EVENT,adv_event_state_machine,ADV_SM_LIST_LENGTH(adv_event_state_machine),ADV_EVENT_NONE},
 };
@@ -298,37 +309,37 @@ static adv_event_sm_t adv_extended_event_state_machine[]=
 {
 
 };
-static const adv_procedure_list_t adv_extended_con_undirected_procedure[]=
+static adv_procedure_list_t adv_extended_con_undirected_procedure[]=
 {
     {ADV_EVENT,         adv_event_state_machine,         ADV_SM_LIST_LENGTH(adv_event_state_machine),         ADV_EVENT_NONE},
     {ADV_EXTENDED_EVENT,adv_extended_event_state_machine,ADV_SM_LIST_LENGTH(adv_extended_event_state_machine),ADV_EXTENDED_EVENT_PROPERTY_RX},
 };
 
-static const adv_procedure_list_t adv_extended_con_directed_procedure[]=
+static adv_procedure_list_t adv_extended_con_directed_procedure[]=
 {
     {ADV_EVENT,         adv_event_state_machine,         ADV_SM_LIST_LENGTH(adv_event_state_machine),         ADV_EVENT_NONE},
     {ADV_EXTENDED_EVENT,adv_extended_event_state_machine,ADV_SM_LIST_LENGTH(adv_extended_event_state_machine),ADV_EXTENDED_EVENT_PROPERTY_RX},
 };
 
-static const adv_procedure_list_t adv_extended_scan_undirected_procedure[]=
+static adv_procedure_list_t adv_extended_scan_undirected_procedure[]=
 {
     {ADV_EVENT,         adv_event_state_machine,         ADV_SM_LIST_LENGTH(adv_event_state_machine),         ADV_EVENT_NONE},
     {ADV_EXTENDED_EVENT,adv_extended_event_state_machine,ADV_SM_LIST_LENGTH(adv_extended_event_state_machine),ADV_EXTENDED_EVENT_PROPERTY_RX},
 };
 
-static const adv_procedure_list_t adv_extended_scan_directed_procedure[]=
+static adv_procedure_list_t adv_extended_scan_directed_procedure[]=
 {
     {ADV_EVENT,         adv_event_state_machine,         ADV_SM_LIST_LENGTH(adv_event_state_machine),         ADV_EVENT_NONE},
     {ADV_EXTENDED_EVENT,adv_extended_event_state_machine,ADV_SM_LIST_LENGTH(adv_extended_event_state_machine),ADV_EXTENDED_EVENT_PROPERTY_RX},
 };
 
-static const adv_procedure_list_t adv_extended_non_con_non_scan_undirected_procedure[]=
+static adv_procedure_list_t adv_extended_non_con_non_scan_undirected_procedure[]=
 {
     {ADV_EVENT,         adv_event_state_machine,         ADV_SM_LIST_LENGTH(adv_event_state_machine),         ADV_EVENT_NONE},
     {ADV_EXTENDED_EVENT,adv_extended_event_state_machine,ADV_SM_LIST_LENGTH(adv_extended_event_state_machine),ADV_EXTENDED_EVENT_NONE},
 };
 
-static const adv_procedure_list_t adv_extended_non_con_non_scan_directed_procedure[]=
+static adv_procedure_list_t adv_extended_non_con_non_scan_directed_procedure[]=
 {
     {ADV_EVENT,         adv_event_state_machine,         ADV_SM_LIST_LENGTH(adv_event_state_machine),         ADV_EVENT_NONE},
     {ADV_EXTENDED_EVENT,adv_extended_event_state_machine,ADV_SM_LIST_LENGTH(adv_extended_event_state_machine),ADV_EXTENDED_EVENT_NONE},
@@ -344,7 +355,7 @@ static adv_event_sm_t adv_periodic_event_state_machine[]=
 {
 
 };
-static const adv_procedure_list_t adv_extended_periodic_procedure[]=
+static adv_procedure_list_t adv_extended_periodic_procedure[]=
 {
     {ADV_EVENT,         adv_event_state_machine,         ADV_SM_LIST_LENGTH(adv_event_state_machine),         ADV_EVENT_NONE},
     {ADV_EXTENDED_EVENT,adv_extended_event_state_machine,ADV_SM_LIST_LENGTH(adv_extended_event_state_machine),ADV_EXTENDED_EVENT_NONE},
@@ -361,7 +372,7 @@ static adv_event_sm_t adv_periodic_with_rsp_event_state_machine[]=
 {
 
 };
-static const adv_procedure_list_t adv_extended_periodic_with_rsp_procedure[]=
+static adv_procedure_list_t adv_extended_periodic_with_rsp_procedure[]=
 {
     {ADV_EVENT,                  adv_event_state_machine,                  ADV_SM_LIST_LENGTH(adv_event_state_machine),                  ADV_EVENT_NONE},
     {ADV_EXTENDED_EVENT,         adv_extended_event_state_machine,         ADV_SM_LIST_LENGTH(adv_extended_event_state_machine),         ADV_EXTENDED_EVENT_NONE},
@@ -415,6 +426,7 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
             if(ll->adv->advState == advSequence[advEventType].procedureList[eventClass].sm[i].currentState\
                   && smEventType == advSequence[advEventType].procedureList[eventClass].sm[i].event)
             {
+
                 if(ll->adv->processingEvent == smEventType)
                 {
                     return;//reload same event,return
@@ -431,10 +443,12 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
                     {
                         ll->adv->advState = advSequence[advEventType].procedureList[eventClass].sm[i].transFailState;
                     }
-                    if(ll->adv->advState == ADV_SM_STATE_IDLE)
-                    {
-                        sch_process_next_task(ll->sch.llId);
-                    }
+//                    DEBUG_GPIO_HIGH(GPIO_13);
+//                    DEBUG_GPIO_LOW(GPIO_13);
+//                    if(ll->adv->advState == ADV_SM_STATE_IDLE)
+//                    {
+//                    	sch_schedule_next_task();
+//                    }
                     ll->adv->processingEvent = 0;
                 }
                 break;               
@@ -521,9 +535,16 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         ll->sch.priority = LL_ADV_PRIORITY;
         ll->sch.timestamp = system_time() + 500;//maybe need planner
         ll->sch.period    = ll->adv->interval*BLE_ADV_INTERVAL_UNIT;
-        ll->sch.duration = ll->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(ll->phy.mode,BLE_ADV_DEFAULT_MAX_LENGTH,0)+2*PACKET_DEFAULT_TIFS_TIME;
-        ll->sch.startLatency = 50;
-        ll->sch.stopLatency  = 50;
+        if(ll->adv->advType == LL_ADV_NONCONN_IND)
+        {
+            ll->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,BLE_ADV_DEFAULT_MAX_LENGTH,0)+PACKET_DEFAULT_TIFS_TIME;
+        }
+        else
+        {
+            ll->sch.duration = ll->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(ll->phy.mode,BLE_ADV_DEFAULT_MAX_LENGTH,0)+2*PACKET_DEFAULT_TIFS_TIME;
+        }
+        ll->sch.startLatency = 100;
+        ll->sch.stopLatency  = 75;
         ll->sch.cb = adv_sch_callback;
         sch_message_t* message = (sch_message_t*)tx_message_allocate(8);
         message->eventType = SCHE_MESSAGE_TASK_ADD;
