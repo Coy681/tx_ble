@@ -31,8 +31,6 @@
 #include "lib/include/trng.h"
 #include "lib/include/flash_base.h"
 #include "lib/include/aoa.h"
-#include "lib/include/hadm.h"
-#include "lib/include/hadm_drv.h"
 #include "lib/include/pmp.h"
 
 #include "lib/include/pke/pke.h"
@@ -40,7 +38,7 @@
 
 #include "lib/include/emi.h"
 #include "audio.h"
-#include "analog.h"
+#include "lib/include/analog.h"
 #include "dma.h"
 #include "gpio.h"
 #include "i2c.h"
@@ -66,6 +64,7 @@
 #include "qdec.h"
 #include "flash/flash_type.h"
 #include "flash/flash_common.h"
+#include "sdk_version.h"
 #include "charger.h"
 #include "charger_bin.h"
 #include "plic_sw.h"

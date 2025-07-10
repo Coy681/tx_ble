@@ -23,14 +23,13 @@
  *******************************************************************************************************/
 #include "watchdog.h"
 
-
 /**
  * @brief     start 32k watchdog.
  * @return    none.
  */
 _attribute_ram_code_sec_noinline_ void wd_32k_start(void)
 {
-	analog_write_reg8(0x79, analog_read_reg8(0x79) | 0x01);
+    analog_write_reg8(0x79, analog_read_reg8(0x79) | 0x01);
 }
 
 /**
@@ -41,7 +40,7 @@ _attribute_ram_code_sec_noinline_ void wd_32k_start(void)
  */
 _attribute_ram_code_sec_noinline_ void wd_32k_stop(void)
 {
-	analog_write_reg8(0x79, analog_read_reg8(0x79) & 0xfe);
+    analog_write_reg8(0x79, analog_read_reg8(0x79) & 0xfe);
 }
 
 /**
@@ -55,7 +54,7 @@ _attribute_ram_code_sec_noinline_ void wd_32k_stop(void)
  */
 _attribute_ram_code_sec_noinline_ unsigned char wd_32k_get_status(void)
 {
-	return (analog_read_reg8(0x69) & 0x80);
+    return (analog_read_reg8(0x69) & 0x80);
 }
 
 /**
@@ -65,7 +64,7 @@ _attribute_ram_code_sec_noinline_ unsigned char wd_32k_get_status(void)
  */
 _attribute_ram_code_sec_noinline_ void wd_32k_clear_status(void)
 {
-	analog_write_reg8(0x69, 0x80);
+    analog_write_reg8(0x69, 0x80);
 }
 
 /**
@@ -75,11 +74,11 @@ _attribute_ram_code_sec_noinline_ void wd_32k_clear_status(void)
  */
 _attribute_ram_code_sec_noinline_ void wd_32k_set_interval_ms(unsigned int period_ms)
 {
-	unsigned int tmp_period_ms = 0;
+    unsigned int tmp_period_ms = 0;
 
-	tmp_period_ms = clock_get_32k_tick() + 32 * period_ms;
+    tmp_period_ms = clock_get_32k_tick() + 32 * period_ms;
 
-	analog_write_reg8(0x7c, tmp_period_ms >> 24);
-	analog_write_reg8(0x7b, tmp_period_ms >> 16);
-	analog_write_reg8(0x7a, tmp_period_ms >> 8);
+    analog_write_reg8(0x7c, tmp_period_ms >> 24);
+    analog_write_reg8(0x7b, tmp_period_ms >> 16);
+    analog_write_reg8(0x7a, tmp_period_ms >> 8);
 }

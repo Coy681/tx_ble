@@ -24,24 +24,22 @@
 #include "ctb.h"
 #include "gpio.h"
 #include "lpc.h"
+
 /**
- * @brief		This function serves to initialize CTB.
- * @param[in] 	none
- * @return 		none
+ * @brief       This function serves to initialize CTB.
+ * @param[in]   none
+ * @return      none
  */
 void ctb_init(void)
 {
-	ctb_set_interval_sel(CTB_INTERVAL_0MS);
-	ctb_set_samp_num_sel(CTB_CYCLE_16);
-	ctb_channel_en(CTB_CHANNEL_NUM_8);
-	ctb_set_irq_mask(CTB_CHANNEL_NUM_8);
-	ctb_set_th_h(2);
-	ctb_en();
-	ctb_auto_en();
-	ctb_pwdn_en();
-	ctb_ext_cap_en();
+    ctb_set_interval_sel(CTB_INTERVAL_0MS);
+    ctb_set_samp_num_sel(CTB_CYCLE_16);
+    ctb_channel_en(CTB_CHANNEL_NUM_8);
+    ctb_set_irq_mask(CTB_CHANNEL_NUM_8);
+    ctb_set_th_h(2);
+    ctb_en();
+    ctb_auto_en();
+    ctb_pwdn_en();
+    ctb_ext_cap_en();
     ctb_rst();
 }
-
-
-

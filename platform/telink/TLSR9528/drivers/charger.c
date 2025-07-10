@@ -23,14 +23,11 @@
  *******************************************************************************************************/
 #include "charger.h"
 
-
 /**
- * @brief	This function serves the initialization of charger module charging function.
- * @return	none
+ * @brief   This function serves the initialization of charger module charging function.
+ * @return  none
  */
 void charger_init(void)
 {
-	analog_write_reg8(0x22, analog_read_reg8(0x22) & 0xf8);	//<2>BLAS //<1>TX	//<0>RX
+    analog_write_reg8(0x22, analog_read_reg8(0x22) & 0xf8); //<2>BLAS //<1>TX   //<0>RX
 }
-
-

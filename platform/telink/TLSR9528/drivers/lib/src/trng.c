@@ -29,12 +29,12 @@
 #include "compiler.h"
 #include "core.h"
 /**********************************************************************************************************************
- *                                			  local constants                                                       *
+ *                                            local constants                                                       *
  *********************************************************************************************************************/
 
 
 /**********************************************************************************************************************
- *                                           	local macro                                                        *
+ *                                              local macro                                                        *
  *********************************************************************************************************************/
 
 
@@ -53,7 +53,7 @@ _attribute_data_retention_sec_ unsigned int g_rnd_m_z = 0;
 /**
  * trng error timeout(us),a large value is set by default,can set it by trng_set_error_timeout().
  */
-unsigned int g_trng_error_timeout_us  = 0xffffffff;
+unsigned int g_trng_error_timeout_us = 0xffffffff;
 
 /**********************************************************************************************************************
  *                                              local variable                                                     *
@@ -69,9 +69,10 @@ unsigned int g_trng_error_timeout_us  = 0xffffffff;
  * @brief     This function serves to trng hardware reset(the hardware device is reset to restore it to its initial state (restart the device), the initialization needs to be reconfigured).
  * @return    none.
  */
-void trng_hw_reset(void){
-	reg_rst2 &= (~FLD_RST2_TRNG);
-	reg_rst2 |= FLD_RST2_TRNG;
+void trng_hw_reset(void)
+{
+    reg_rst2 &= (~FLD_RST2_TRNG);
+    reg_rst2 |= FLD_RST2_TRNG;
 }
 
 /**
@@ -84,8 +85,9 @@ void trng_hw_reset(void){
  *            1. at least 1ms;
  *            2. maximum interrupt processing time;
  */
-void trng_set_error_timeout(unsigned int timeout_us){
-	g_trng_error_timeout_us = timeout_us;
+void trng_set_error_timeout(unsigned int timeout_us)
+{
+    g_trng_error_timeout_us = timeout_us;
 }
 
 /**
@@ -97,7 +99,7 @@ void trng_set_error_timeout(unsigned int timeout_us){
  */
 __attribute__((weak)) void trng_timeout_handler(unsigned int trng_error_timeout_code)
 {
-	(void)trng_error_timeout_code;
+    (void)trng_error_timeout_code;
     trng_hw_reset();
 }
 
@@ -105,12 +107,12 @@ __attribute__((weak)) void trng_timeout_handler(unsigned int trng_error_timeout_
  * @brief     This function serves to check whether the trng is ready.
  * @return    0:ready   1:no ready.
  */
-static bool trng_is_ready(void){
-	return !(reg_rbg_sr & FLD_RBG_SR_DRDY);
+static bool trng_is_ready(void)
+{
+    return !(reg_rbg_sr & FLD_RBG_SR_DRDY);
 }
 
-
-#define TRNG_WAIT()                         wait_condition_fails_or_timeout(trng_is_ready,g_trng_error_timeout_us,trng_timeout_handler,(unsigned int)0)
+#define TRNG_WAIT() wait_condition_fails_or_timeout(trng_is_ready, g_trng_error_timeout_us, trng_timeout_handler, (unsigned int)0)
 
 /**
  * @brief     This function performs to get one random number.If chip in suspend TRNG module should be close.
@@ -120,49 +122,47 @@ static bool trng_is_ready(void){
  */
 drv_api_status_e trng_init(void)
 {
-	//TRNG module Reset clear
-	reg_rst2 |= FLD_RST2_TRNG;
-	//turn on TRNG clock
-	reg_clk_en2 |= FLD_CLK2_TRNG_EN;
+    //TRNG module Reset clear
+    reg_rst2 |= FLD_RST2_TRNG;
+    //turn on TRNG clock
+    reg_clk_en2 |= FLD_CLK2_TRNG_EN;
 
-	reg_trng_cr0 &= ~(FLD_TRNG_CR0_RBGEN); //disable
-	reg_trng_rtcr = 0x00;				//TCR_MSEL
-	reg_trng_cr0 |= (FLD_TRNG_CR0_RBGEN); //enable
+    reg_trng_cr0 &= ~(FLD_TRNG_CR0_RBGEN); //disable
+    reg_trng_rtcr = 0x00;                  //TCR_MSEL
+    reg_trng_cr0 |= (FLD_TRNG_CR0_RBGEN);  //enable
 
-	if(TRNG_WAIT()){
-		return DRV_API_TIMEOUT;
-	}
-	g_rnd_m_w = reg_rbg_dr;   //get the random number
-	if(TRNG_WAIT()){
-		return DRV_API_TIMEOUT;
-	}
-	g_rnd_m_z = reg_rbg_dr;
+    if (TRNG_WAIT()) {
+        return DRV_API_TIMEOUT;
+    }
+    g_rnd_m_w = reg_rbg_dr; //get the random number
+    if (TRNG_WAIT()) {
+        return DRV_API_TIMEOUT;
+    }
+    g_rnd_m_z = reg_rbg_dr;
 
-	//Reset TRNG module
-	reg_rst2 &= (~FLD_RST2_TRNG);
-	//turn off TRNG module clock
-	reg_clk_en2 &= ~(FLD_CLK2_TRNG_EN);
+    //Reset TRNG module
+    reg_rst2 &= (~FLD_RST2_TRNG);
+    //turn off TRNG module clock
+    reg_clk_en2 &= ~(FLD_CLK2_TRNG_EN);
 
-	reg_trng_cr0 &= ~(FLD_TRNG_CR0_RBGEN | FLD_TRNG_CR0_ROSEN0 | FLD_TRNG_CR0_ROSEN1 \
-											| FLD_TRNG_CR0_ROSEN2 | FLD_TRNG_CR0_ROSEN3);
+    reg_trng_cr0 &= ~(FLD_TRNG_CR0_RBGEN | FLD_TRNG_CR0_ROSEN0 | FLD_TRNG_CR0_ROSEN1 | FLD_TRNG_CR0_ROSEN2 | FLD_TRNG_CR0_ROSEN3);
 
-	return DRV_API_SUCCESS;
+    return DRV_API_SUCCESS;
 }
 
 /**
  * @brief     This function performs to get one random number.
  * @return    the value of one random number.
  */
-_attribute_ram_code_sec_noinline_  unsigned int trng_rand(void)  //16M clock, code in flash 23us, code in sram 4us
+_attribute_ram_code_sec_noinline_ unsigned int trng_rand(void) //16M clock, code in flash 23us, code in sram 4us
 {
+    g_rnd_m_w           = 18000 * (g_rnd_m_w & 0xffff) + (g_rnd_m_w >> 16);
+    g_rnd_m_z           = 36969 * (g_rnd_m_z & 0xffff) + (g_rnd_m_z >> 16);
+    unsigned int result = (g_rnd_m_z << 16) + g_rnd_m_w;
 
-	g_rnd_m_w = 18000 * (g_rnd_m_w & 0xffff) + (g_rnd_m_w >> 16);
-	g_rnd_m_z = 36969 * (g_rnd_m_z & 0xffff) + (g_rnd_m_z >> 16);
-	unsigned int result = (g_rnd_m_z << 16) + g_rnd_m_w;
-
-	return (unsigned int)( result  ^ stimer_get_tick() );
+    return (unsigned int)(result ^ stimer_get_tick());
 }
- /**********************************************************************************************************************
-  *                    						local function implementation                                             *
-  *********************************************************************************************************************/
 
+/**********************************************************************************************************************
+  *                                         local function implementation                                             *
+  *********************************************************************************************************************/

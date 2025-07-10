@@ -1,12 +1,12 @@
 /********************************************************************************************************
  * @file    compiler.h
  *
- * @brief   This is the header file for Telink RISC-V MCU
+ * @brief   This is the header file for BLE SDK
  *
- * @author  Driver Group
- * @date    2019
+ * @author  BLE GROUP
+ * @date    06,2022
  *
- * @par     Copyright (c) 2019, Telink Semiconductor (Shanghai) Co., Ltd. ("TELINK")
+ * @par     Copyright (c) 2022, Telink Semiconductor (Shanghai) Co., Ltd. ("TELINK")
  *
  *          Licensed under the Apache License, Version 2.0 (the "License");
  *          you may not use this file except in compliance with the License.
@@ -24,20 +24,24 @@
 #ifndef COMPILER_H_
 #define COMPILER_H_
 
-#define _attribute_ram_code_sec_                __attribute__((section(".ram_code")))
-#define _attribute_ram_code_sec_noinline_       __attribute__((section(".ram_code"))) __attribute__((noinline))
+/******************************* platform code Use  *********************************/
+#define _attribute_ram_code_sec_            __attribute__((section(".ram_code")))
+#define _attribute_ram_code_sec_noinline_   __attribute__((section(".ram_code"))) __attribute__((noinline))
 
-#define _attribute_text_sec_                    __attribute__((section(".text"))) __attribute__((noinline))//Inlining happens when __attribute__((noinline)) is not added.
+#define _attribute_text_sec_                __attribute__((section(".text"))) __attribute__((noinline)) //Inlining happens when __attribute__((noinline)) is not added.
+#define _attribute_text_sec_optimize_o2_    __attribute__((section(".text"))) __attribute__((optimize("O2"))) __attribute__((noinline)) __attribute__((no_execit))
 
-#define _attribute_flash_code_sec_noinline_     __attribute__((used,section(".flash_code"))) __attribute__((noinline))
+#ifndef STD_GCC //standard open source risc-V GCC
+#define _attribute_flash_code_sec_noinline_     __attribute__((section(".flash_code"))) __attribute__((optimize("O2"))) __attribute__((noinline)) __attribute__((no_execit))
+#else
+#define _attribute_flash_code_sec_noinline_     __attribute__((section(".flash_code"))) __attribute__((noinline))
+#endif
 
-#define _attribute_aes_data_sec_                __attribute__((section(".aes_data")))
+#define _attribute_aes_data_sec_            __attribute__((section(".aes_data")))
 
-#define _attribute_data_retention_sec_          __attribute__((section(".retention_data")))
+#define _attribute_data_retention_sec_      __attribute__((section(".retention_data")))
 
-#define _attribute_rram_sec_                    __attribute__((section(".rram"))) __attribute__((noinline))
-
-#define _attribute_aligned_(s)                  __attribute__((aligned(s)))
+#define _attribute_aligned_(s)              __attribute__((aligned(s)))
 
 /**
  *  _always_inline needs to be added in the following two cases:
@@ -45,25 +49,43 @@
  * 2. The BLE SDK uses interrupt preemption, flash interface operations can be interrupted by high-priority interrupts, which requires that the high-priority interrupt handler function,can not have a text segment of code.
  *    So the BLE SDK provides the following requirements: Add the following function to _always_inline: rf_set_tx_rx_off, rf_set_ble_crc_adv, rf_set_ble_crc_value, rf_set_rx_maxlen, stimer_get_tick, clock_time_exceed, rf_receiving_flag, dma_config, gpio_toggle, gpio_set_low_level, gpio_set_level.
  */
-#define _always_inline                          inline __attribute__((always_inline)) 
-
+#define _always_inline inline __attribute__((always_inline))
 
 /**
  * No_execit must be added here for the following reasons: When compiling at the optimization level of -Os, link may use exec.it for functions compiled at -O2. To disable this behavior,
  * add -mno-exit to the linking phase (see Andes Programming Guide), or add _attribute_((no_execit)) to functions that don't want to use exec.it.
  */
 #ifndef STD_GCC //standard open source risc-V GCC
-#define _attribute_ram_code_sec_optimize_o2_    __attribute__((section(".ram_code"))) __attribute__((optimize("O2"))) __attribute__((no_execit))
-#define _attribute_ram_code_sec_optimize_o2_noinline_    __attribute__((noinline)) __attribute__((section(".ram_code"))) __attribute__((optimize("O2"))) __attribute__((no_execit))
+    #define _attribute_ram_code_sec_optimize_o2_          __attribute__((section(".ram_code"))) __attribute__((optimize("O2"))) __attribute__((no_execit))
+    #define _attribute_ram_code_sec_optimize_o2_noinline_ __attribute__((noinline)) __attribute__((section(".ram_code"))) __attribute__((optimize("O2"))) __attribute__((no_execit))
 #else
-#define _attribute_ram_code_sec_optimize_o2_    __attribute__((section(".ram_code"))) __attribute__((optimize("O2")))
-#define _attribute_ram_code_sec_optimize_o2_noinline_    __attribute__((noinline)) __attribute__((section(".ram_code"))) __attribute__((optimize("O2")))
+    #define _attribute_ram_code_sec_optimize_o2_          __attribute__((section(".ram_code"))) __attribute__((optimize("O2")))
+    #define _attribute_ram_code_sec_optimize_o2_noinline_ __attribute__((noinline)) __attribute__((section(".ram_code"))) __attribute__((optimize("O2")))
 
 #endif
 /// Pack a structure field
-#define __PACKED __attribute__ ((__packed__))
+#define __PACKED __attribute__((__packed__))
 
 
+/*******************************      BLE Stack Use     ******************************/
+
+#define _attribute_session_(s)               __attribute__((section(s)))
+#define _attribute_noinline_                __attribute__((noinline))        //
+#define _attribute_no_inline_                __attribute__((noinline))
+#define _attribute_data_dlm_                 _attribute_session_(".dlm_data") // dlm:Data Local Memory
+#define _attribute_data_sec_                 _attribute_session_(".data")     // Force only read data to be stored in data segments to avoid compiler optimization
+
+#define _attribute_iram_noinit_data_         __attribute__((section(".iram_noinit_data")))
+#define _attribute_iram_bss_                 __attribute__((section(".iram_bss")))
+
+
+#define _attribute_ram_code_                  __attribute__((section(".ram_code"))) __attribute__((noinline))
+#define _attribute_ram_code_only_             __attribute__((section(".ram_code")))
+
+#define _attribute_text_code_                 __attribute__((section(".text")))
+
+/// define the force inlining attribute for this compiler
+#define __INLINE static __attribute__((__always_inline__)) inline
 
 
 

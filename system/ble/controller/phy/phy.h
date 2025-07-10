@@ -128,7 +128,7 @@ typedef struct _PACKED
     _u32 rxTimeout;
     void (*start)(void);
     void (*stop)(void);
-    _u32 (*hw_get_rx_air_ts)(void);//timestamp means first bit time of preamble                     
+    _u32 (*hw_get_rx_air_ts)(void);//timestamp means first bit time of preamble
     _u32 (*hw_get_prepare_time)(void);//get hardware prepare time
     _u32 (*hw_is_rx_packet_valid)(void);//
     void (*hw_irq_cb)(_u8);//phy_irq_e
