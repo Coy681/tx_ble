@@ -128,11 +128,11 @@ static void adv_event_prepare_phy(ll_ctrl_t* ll,_u32 timestamp,phy_dir_e phydir,
     }
     else if(phydir == PHY_DIR_RX)
     {
+    	ll->phy.rxAddress = ll->rxSharedPacket;
         ll->phy.rxTimeout = BLE_ADV_DEFAULT_RX_TIMEOUT_US;
         ll->phy.rxMaxOctets = BLE_ADV_DEFAULT_MAX_LENGTH;
     }
 }
-
 
 _RAM_CODE
 static void adv_event_process_next_task(ll_ctrl_t* ll)
@@ -159,37 +159,39 @@ static int adv_event_step_send_advertising(ll_ctrl_t* ll,_u32 property)
     {
         return 0;
     }
-    DEBUG_GPIO_HIGH(GPIO_3);
     ll->adv->instant++;
     ll->adv->currentChn = ll->adv->chnTable[(ll->adv->instant%ll->adv->channelCnt)];
     adv_event_prepare_packet(ll);
-    _u32 timestamp = system_time();
-    adv_event_prepare_phy(ll,timestamp,PHY_DIR_TX,ll->adv->advEventPhyMode);
+    adv_event_prepare_phy(ll,ll->sch.timestamp,PHY_DIR_TX,ll->adv->advEventPhyMode);
     ll->phy.start();
-    DEBUG_GPIO_LOW(GPIO_3);
     return 1;
 }
 
 _RAM_CODE
 static int adv_event_step_start_listen(ll_ctrl_t* ll,_u32 property)
 {
+
     if(property&ADV_EVENT_PROPERTY_RX)
     {
         _u32 timestamp = system_time();
-        adv_event_prepare_phy(ll,timestamp,PHY_DIR_TX,ll->adv->advEventPhyMode);
+        adv_event_prepare_phy(ll,timestamp,PHY_DIR_RX,ll->adv->advEventPhyMode);
         ll->phy.start();
         return 1;
     }
     return 0;
 }
 
+volatile _u8 AAA_PACKET[128];
+
 _RAM_CODE
 static int adv_event_step_received_packet_analyze(ll_ctrl_t* ll)
 {
 	 ll_adv_packet_t* packet = (ll_adv_packet_t*)(ll->phy.rxAddress + ll_get_packet_header_offset_from_address(PHY_DIR_RX));
+
 	 if(packet->hdr.pduType == LL_ADV_TYPE_SCAN_REQ && packet->hdr.length == sizeof(scan_type_scan_req_t))
 	 {
 		 //scan req process
+		 txMemcpy(AAA_PACKET,(_u8*)ll->rxSharedPacket,64);
 		 scan_type_scan_req_t* scanReq = (scan_type_scan_req_t*)(packet->data);
 		 if(txMemcmp(ll->ownAddr,scanReq->advA,6) == 0)
 		 {
@@ -205,13 +207,20 @@ static int adv_event_step_received_packet_analyze(ll_ctrl_t* ll)
 	return 0;
 }
 
+//volatile _u32 AAA_TS = 0;
+//volatile _u32 AAA_TS_CLOCK = 0;
+
 _RAM_CODE
 static int adv_event_step_send_scan_rsp(ll_ctrl_t* ll,_u32 property)
 {
 	if((property&ADV_EVENT_PROPERTY_SEND_RSP)&&(adv_event_step_received_packet_analyze(ll)!=0))
 	{
         scan_rsp_prepare_packet(ll);
-        _u32 timestamp = system_time();
+
+        _u32 timestamp = ll->phy.hw_get_rx_air_ts() + ll_get_air_packet_time(ll->adv->advEventPhyMode,sizeof(scan_type_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME;
+//        AAA_TS = timestamp;
+//        AAA_TS_CLOCK = system_time();
+//        while(1);
         adv_event_prepare_phy(ll,timestamp,PHY_DIR_TX,ll->adv->advEventPhyMode);
         ll->phy.start();
         return 1;
@@ -226,11 +235,18 @@ static int adv_event_step_sch_stop(ll_ctrl_t* ll,_u32 property)
     return 1;
 }
 
+volatile _u32 AAA_TICK1 = 0;
+volatile _u32 AAA_TICK2 = 0;
+
 _RAM_CODE
 static int adv_event_step_sch_passed(ll_ctrl_t* ll,_u32 property)
 {
 	_u32 systemTime = system_time();
 	_u32 periodicDiff = (systemTime - ll->sch.timestamp)/ll->sch.period;
+	AAA_TICK1 = ll->sch.timestamp;
+	AAA_TICK2 = systemTime;
+
+	while(1);
 	ll->sch.timestamp+=((periodicDiff+1)*ll->sch.period);
     ll->adv->availableChnCnt = ll->adv->channelCnt;
     return 1;
@@ -249,11 +265,12 @@ static int adv_event_step_sch_canceled(ll_ctrl_t* ll,_u32 property)
 }
 
 _RAM_CODE
-static int adv_event_default_step(ll_ctrl_t* ll,_u32 property)
+static int adv_event_step_send_rsp_finished(ll_ctrl_t* ll,_u32 property)
 {
-    adv_event_process_next_task(ll);
+//    adv_event_process_next_task(ll);
     return 1;
 }
+
 
 static adv_event_sm_t adv_event_state_machine[]=
 {
@@ -263,17 +280,17 @@ static adv_event_sm_t adv_event_state_machine[]=
     {ADV_SM_STATE_IDLE,       ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_PASSED,          adv_event_step_sch_passed},
 
     {ADV_SM_STATE_SENDING_ADV,ADV_SM_STATE_RECEIVING,   ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_SEND_FINISHED,   adv_event_step_start_listen},
-    {ADV_SM_STATE_SENDING_ADV,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_STOP,            adv_event_default_step},
+    {ADV_SM_STATE_SENDING_ADV,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_STOP,            adv_event_step_sch_stop},
 
     {ADV_SM_STATE_RECEIVING,  ADV_SM_STATE_SENDING_RSP, ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_RECEIVE_FINISHED,adv_event_step_send_scan_rsp},
-    {ADV_SM_STATE_RECEIVING,  ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_STOP,            adv_event_default_step},
+    {ADV_SM_STATE_RECEIVING,  ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_STOP,            adv_event_step_sch_stop},
 
-    {ADV_SM_STATE_SENDING_RSP,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_SEND_FINISHED,   adv_event_default_step},
-    {ADV_SM_STATE_SENDING_RSP,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_STOP,            adv_event_default_step},
+    {ADV_SM_STATE_SENDING_RSP,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_SEND_FINISHED,   adv_event_step_send_rsp_finished},
+    {ADV_SM_STATE_SENDING_RSP,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_STOP,            adv_event_step_sch_stop},
 };
 static adv_procedure_list_t adv_con_scan_undirected_procedure[] =
 {
-    {ADV_EVENT,adv_event_state_machine,ADV_SM_LIST_LENGTH(adv_event_state_machine),ADV_EVENT_PROPERTY_RX},
+    {ADV_EVENT,adv_event_state_machine,ADV_SM_LIST_LENGTH(adv_event_state_machine),ADV_EVENT_PROPERTY_RX|ADV_EVENT_PROPERTY_SEND_RSP},
 };
 
 static adv_procedure_list_t adv_con_directed_procedure[]=
@@ -283,7 +300,7 @@ static adv_procedure_list_t adv_con_directed_procedure[]=
 
 static adv_procedure_list_t adv_scan_undirected_procedure[]=
 {
-    {ADV_EVENT,adv_event_state_machine,ADV_SM_LIST_LENGTH(adv_event_state_machine),ADV_EVENT_PROPERTY_RX},
+    {ADV_EVENT,adv_event_state_machine,ADV_SM_LIST_LENGTH(adv_event_state_machine),ADV_EVENT_PROPERTY_RX|ADV_EVENT_PROPERTY_SEND_RSP},
 };
 
 static adv_procedure_list_t adv_non_con_non_scan_undirected_procedure[]=
@@ -428,7 +445,7 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
                 if(advSequence[advEventType].procedureList[eventClass].sm[i].cb!=NULL)
                 {
                     ll->adv->processingEvent = smEventType;//use member value to avoid many entity conflict
-                    int ret = advSequence[advEventType].procedureList[eventClass].sm[i].cb(ll,advSequence[advEventType].procedureList[i].property);
+                    int ret = advSequence[advEventType].procedureList[eventClass].sm[i].cb(ll,advSequence[advEventType].procedureList[eventClass].property);
                     if(ret)
                     {
                         ll->adv->advState = advSequence[advEventType].procedureList[eventClass].sm[i].transSuccessState;
@@ -497,7 +514,6 @@ static void adv_sch_callback(_u8 type)
     adv_sequence_process(SM_SCH_EVENT,type);
     DEBUG_GPIO_LOW(GPIO_5);
 }
-
 
 int ble_ll_enter_advertising_state(ble_ll_event_e event)
 {
