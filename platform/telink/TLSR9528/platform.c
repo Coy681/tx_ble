@@ -29,6 +29,7 @@ void platform_init(void)
     sys_init(DCDC_1P4_LDO_2P0, VBAT_MAX_VALUE_GREATER_THAN_3V6, GPIO_VOLTAGE_3V3, INTERNAL_CAP_XTAL24M);
     gpio_set_up_down_res(GPIO_SWS, GPIO_PIN_PULLUP_1M);
     wd_32k_stop();
+    wd_stop();
     CCLK_32M_HCLK_32M_PCLK_16M;
     flash_plic_preempt_config(1, 1);
     plic_preempt_feature_en(CORE_PREEMPT_PRI_MODE0);

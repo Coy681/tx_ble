@@ -207,8 +207,10 @@ static int adv_event_step_received_packet_analyze(ll_ctrl_t* ll)
 	return 0;
 }
 
-//volatile _u32 AAA_TS = 0;
-//volatile _u32 AAA_TS_CLOCK = 0;
+volatile _u32 ADV_SYSTEM_TIME = 0;
+volatile _u32 ADV_RX_TS = 0;
+volatile _u32 ADV_PACKET_TIME = 0;
+
 
 _RAM_CODE
 static int adv_event_step_send_scan_rsp(ll_ctrl_t* ll,_u32 property)
@@ -216,10 +218,14 @@ static int adv_event_step_send_scan_rsp(ll_ctrl_t* ll,_u32 property)
 	if((property&ADV_EVENT_PROPERTY_SEND_RSP)&&(adv_event_step_received_packet_analyze(ll)!=0))
 	{
         scan_rsp_prepare_packet(ll);
-
+        DEBUG_GPIO_HIGH(GPIO_15);
+        DEBUG_GPIO_LOW(GPIO_15);
+//        ADV_SYSTEM_TIME = system_time();
         _u32 timestamp = ll->phy.hw_get_rx_air_ts() + ll_get_air_packet_time(ll->adv->advEventPhyMode,sizeof(scan_type_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME;
-//        AAA_TS = timestamp;
-//        AAA_TS_CLOCK = system_time();
+//        ADV_RX_TS = ll->phy.hw_get_rx_air_ts();
+//        ADV_PACKET_TIME = ll_get_air_packet_time(ll->adv->advEventPhyMode,sizeof(scan_type_scan_req_t),0);;
+
+
 //        while(1);
         adv_event_prepare_phy(ll,timestamp,PHY_DIR_TX,ll->adv->advEventPhyMode);
         ll->phy.start();
