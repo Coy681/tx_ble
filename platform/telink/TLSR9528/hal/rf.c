@@ -16,9 +16,9 @@ void(*hal_rf_cb)(_u8);
 /*******************rf extra time define********************************/
 
 //rf TX prepare delay
-#define HARDWARE_1M_TX_PREPARE_DELAY         50
-#define HARDWARE_2M_TX_PREPARE_DELAY         50
-#define HARDWARE_CODED_TX_PREPARE_DELAY      50
+#define HARDWARE_1M_TX_PREPARE_DELAY         52
+#define HARDWARE_2M_TX_PREPARE_DELAY         52
+#define HARDWARE_CODED_TX_PREPARE_DELAY      52
 
 //rf RX prepare delay
 #define HARDWARE_1M_RX_PREPARE_DELAY         45
@@ -169,7 +169,7 @@ _RAM_CODE
 void hal_rf_tx(_u8* address,_u32 time)
 {
 	*(_u32*)address = rf_tx_packet_dma_len((_u16)address[5]+2);
-	rf_set_tx_settle_time(HARDWARE_TX_PREPARE_TIME_1M);
+	rf_set_tx_settle_time(52);
     rf_start_stx(address,time*CLOCK_TICK_US);
 }
 /******************hal rf rx setting***************/
@@ -189,7 +189,7 @@ _RAM_CODE
 void hal_rf_rx(_u8* address,_u32 maxOctets,_u32 time)
 {
     rf_set_rx_dma(address,0,maxOctets);
-    rf_set_rx_settle_time(HARDWARE_RX_PREPARE_TIME_1M);
+    rf_set_rx_settle_time(45);
     rf_start_srx(time*CLOCK_TICK_US);
 }
 
@@ -486,6 +486,8 @@ void hal_rf_init(void(*cb)(_u8))
     rf_mode_init();
     rf_set_ble_1M_mode();
 	hal_rf_set_power(HAL_RF_POWER_P4dBm);
+	rf_set_tx_wait_time(0);
+	rf_set_rx_wait_time(0);
 	blc_ll_initFastSettle(1,1);
     plic_set_priority(IRQ_ZB_RT, 2);
     rf_set_irq_mask(FLD_RF_IRQ_RX|FLD_RF_IRQ_TX|FLD_RF_IRQ_RX_TIMEOUT|FLD_RF_IRQ_FIRST_TIMEOUT);

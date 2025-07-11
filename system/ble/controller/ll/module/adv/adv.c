@@ -112,6 +112,11 @@ static void scan_rsp_prepare_packet(ll_ctrl_t* ll)
 	txMemcpy(((adv_type_scan_rsp_t*)packet)->scanRsp,ll->adv->scanRspData,ll->adv->scanRspDataLen);
 }
 
+/**
+ *
+ * @param timestamp - if present,timestamp is air packet time,so need minus hardware prepare time
+ * 				    - if not present,packet send time is not specified,so we can use system time.
+ */
 _RAM_CODE
 static void adv_event_prepare_phy(ll_ctrl_t* ll,_u32 timestamp,phy_dir_e phydir,phy_mode_e mode)
 {
@@ -121,7 +126,15 @@ static void adv_event_prepare_phy(ll_ctrl_t* ll,_u32 timestamp,phy_dir_e phydir,
     ll->phy.mode       = mode;
     ll->phy.dir        = phydir;
     ll->phy.chnIdx     = ll->adv->currentChn;
-    ll->phy.timestamp  = timestamp;
+    if(timestamp)
+    {
+        ll->phy.timestamp  = timestamp - ll->phy.hw_get_prepare_time();
+    }
+    else
+    {
+        ll->phy.timestamp  = system_time();
+    }
+
     if(phydir == PHY_DIR_TX)
     {
         ll->phy.txAddress  = ll->txSharedPacket;
@@ -162,7 +175,7 @@ static int adv_event_step_send_advertising(ll_ctrl_t* ll,_u32 property)
     ll->adv->instant++;
     ll->adv->currentChn = ll->adv->chnTable[(ll->adv->instant%ll->adv->channelCnt)];
     adv_event_prepare_packet(ll);
-    adv_event_prepare_phy(ll,ll->sch.timestamp,PHY_DIR_TX,ll->adv->advEventPhyMode);
+    adv_event_prepare_phy(ll,0,PHY_DIR_TX,ll->adv->advEventPhyMode);
     ll->phy.start();
     return 1;
 }
@@ -170,18 +183,14 @@ static int adv_event_step_send_advertising(ll_ctrl_t* ll,_u32 property)
 _RAM_CODE
 static int adv_event_step_start_listen(ll_ctrl_t* ll,_u32 property)
 {
-
     if(property&ADV_EVENT_PROPERTY_RX)
     {
-        _u32 timestamp = system_time();
-        adv_event_prepare_phy(ll,timestamp,PHY_DIR_RX,ll->adv->advEventPhyMode);
+        adv_event_prepare_phy(ll,0,PHY_DIR_RX,ll->adv->advEventPhyMode);
         ll->phy.start();
         return 1;
     }
     return 0;
 }
-
-volatile _u8 AAA_PACKET[128];
 
 _RAM_CODE
 static int adv_event_step_received_packet_analyze(ll_ctrl_t* ll)
@@ -191,7 +200,6 @@ static int adv_event_step_received_packet_analyze(ll_ctrl_t* ll)
 	 if(packet->hdr.pduType == LL_ADV_TYPE_SCAN_REQ && packet->hdr.length == sizeof(scan_type_scan_req_t))
 	 {
 		 //scan req process
-		 txMemcpy(AAA_PACKET,(_u8*)ll->rxSharedPacket,64);
 		 scan_type_scan_req_t* scanReq = (scan_type_scan_req_t*)(packet->data);
 		 if(txMemcmp(ll->ownAddr,scanReq->advA,6) == 0)
 		 {
@@ -207,26 +215,13 @@ static int adv_event_step_received_packet_analyze(ll_ctrl_t* ll)
 	return 0;
 }
 
-volatile _u32 ADV_SYSTEM_TIME = 0;
-volatile _u32 ADV_RX_TS = 0;
-volatile _u32 ADV_PACKET_TIME = 0;
-
-
 _RAM_CODE
 static int adv_event_step_send_scan_rsp(ll_ctrl_t* ll,_u32 property)
 {
 	if((property&ADV_EVENT_PROPERTY_SEND_RSP)&&(adv_event_step_received_packet_analyze(ll)!=0))
 	{
         scan_rsp_prepare_packet(ll);
-        DEBUG_GPIO_HIGH(GPIO_15);
-        DEBUG_GPIO_LOW(GPIO_15);
-//        ADV_SYSTEM_TIME = system_time();
         _u32 timestamp = ll->phy.hw_get_rx_air_ts() + ll_get_air_packet_time(ll->adv->advEventPhyMode,sizeof(scan_type_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME;
-//        ADV_RX_TS = ll->phy.hw_get_rx_air_ts();
-//        ADV_PACKET_TIME = ll_get_air_packet_time(ll->adv->advEventPhyMode,sizeof(scan_type_scan_req_t),0);;
-
-
-//        while(1);
         adv_event_prepare_phy(ll,timestamp,PHY_DIR_TX,ll->adv->advEventPhyMode);
         ll->phy.start();
         return 1;
@@ -237,22 +232,17 @@ static int adv_event_step_send_scan_rsp(ll_ctrl_t* ll,_u32 property)
 _RAM_CODE
 static int adv_event_step_sch_stop(ll_ctrl_t* ll,_u32 property)
 {
+	ll->phy.stop();
+	ll->adv->advState = ADV_SM_STATE_IDLE;
     adv_event_process_next_task(ll);
     return 1;
 }
-
-volatile _u32 AAA_TICK1 = 0;
-volatile _u32 AAA_TICK2 = 0;
 
 _RAM_CODE
 static int adv_event_step_sch_passed(ll_ctrl_t* ll,_u32 property)
 {
 	_u32 systemTime = system_time();
 	_u32 periodicDiff = (systemTime - ll->sch.timestamp)/ll->sch.period;
-	AAA_TICK1 = ll->sch.timestamp;
-	AAA_TICK2 = systemTime;
-
-	while(1);
 	ll->sch.timestamp+=((periodicDiff+1)*ll->sch.period);
     ll->adv->availableChnCnt = ll->adv->channelCnt;
     return 1;
@@ -273,7 +263,6 @@ static int adv_event_step_sch_canceled(ll_ctrl_t* ll,_u32 property)
 _RAM_CODE
 static int adv_event_step_send_rsp_finished(ll_ctrl_t* ll,_u32 property)
 {
-//    adv_event_process_next_task(ll);
     return 1;
 }
 
@@ -434,7 +423,6 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
     ll_ctrl_t* ll     = ll_get_current_state_machine();
     _u8 eventClass    = adv_get_current_event_class(ll);
     _u8 advEventType  = ll->adv->advEventType;
-    DEBUG_GPIO_HIGH(GPIO_6);
 
     if(advSequence[advEventType].listLen>eventClass)
     {
@@ -467,13 +455,11 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
             }
         }
     }
-    DEBUG_GPIO_LOW(GPIO_6);
 }
 
 _RAM_CODE
 static void adv_phy_irq_callback(_u8 type)
 {   
-    DEBUG_GPIO_HIGH(GPIO_4);
     if(type == PHY_IRQ_TX_FINISHED)
     {
         DEBUG_GPIO_HIGH(GPIO_8);
@@ -490,13 +476,11 @@ static void adv_phy_irq_callback(_u8 type)
         DEBUG_GPIO_LOW(GPIO_10);
     }
     adv_sequence_process(SM_PHY_EVENT,type);
-    DEBUG_GPIO_LOW(GPIO_4);
 }
 
 _RAM_CODE
 static void adv_sch_callback(_u8 type)
 {
-    DEBUG_GPIO_HIGH(GPIO_5);
     if(type == SCH_TASK_START)
     {
         DEBUG_GPIO_HIGH(GPIO_11);
@@ -518,7 +502,6 @@ static void adv_sch_callback(_u8 type)
         DEBUG_GPIO_LOW(GPIO_14);
     }
     adv_sequence_process(SM_SCH_EVENT,type);
-    DEBUG_GPIO_LOW(GPIO_5);
 }
 
 int ble_ll_enter_advertising_state(ble_ll_event_e event)

@@ -70,8 +70,15 @@ _RAM_CODE unsigned int system_clock(void)
 		return lastClockTick;
 	}
 	unsigned int clockTick = stimer_get_tick()|1;
-	stimerTime += ((clockTick-lastClockTick+lastClockRemain)/CLOCK_TICK_US);
-	lastClockRemain = (clockTick-lastClockTick)%CLOCK_TICK_US;
+	_u32 cnt = 0;
+	if(lastClockRemain>CLOCK_TICK_US)
+	{
+		cnt = lastClockRemain/CLOCK_TICK_US;
+		lastClockRemain = lastClockRemain%CLOCK_TICK_US;
+	}
+
+	stimerTime += (((clockTick-lastClockTick)/CLOCK_TICK_US)+cnt);
+	lastClockRemain +=((clockTick-lastClockTick)%CLOCK_TICK_US);
 	lastClockTick = clockTick;
 	return clockTick;
 }

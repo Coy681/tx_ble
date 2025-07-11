@@ -104,8 +104,7 @@ static _u16 packetOctetTime[4] = {
 _RAM_CODE
 _u32 ll_get_air_packet_time(phy_mode_e phy,_u16 len,bool enc)
 {
-    _u16 pduLen = (enc?len+4:len);
-    pduLen+=2;//header
+    _u16 pduLen = (enc?len+4:len)+2;
     return (packetExcludePduTime[phy]+pduLen*packetOctetTime[phy]);
 }
 

@@ -20,18 +20,7 @@ void phy_obj_cast(phy_obj_t* phy)
     }
 }
 
-_RAM_CODE
-static _u32 phy_hw_get_hw_prepare_time(void)
-{
-    if(phyCtrl->dir == PHY_DIR_TX)
-    {
-        return (hal_rf_get_tx_hw_prepare_time(phyCtrl->mode));
-    }
-    else
-    {
-        return (hal_rf_get_rx_hw_prepare_time(phyCtrl->mode));
-    }
-}
+
 
 _RAM_CODE
 static void phy_start(void)
@@ -40,8 +29,6 @@ static void phy_start(void)
     hal_rf_set_access_code(phyCtrl->accessCode);
     hal_rf_set_crc_value(phyCtrl->crcInit);
     hal_rf_set_channel_index(phyCtrl->chnIdx);
-
-    phyCtrl->timestamp -=(phy_hw_get_hw_prepare_time());
     if(lastPhy!= phyCtrl->mode)
     {
         phy_mode[phyCtrl->mode];
@@ -79,6 +66,19 @@ static _u32  phy_hw_if_rx_packet_valid(void)
         return hal_rf_is_packet_valid(phyCtrl->rxAddress);
     }
     return 0;
+}
+
+_RAM_CODE
+static _u32 phy_hw_get_hw_prepare_time(void)
+{
+    if(phyCtrl->dir == PHY_DIR_TX)
+    {
+        return (hal_rf_get_tx_hw_prepare_time(phyCtrl->mode));
+    }
+    else
+    {
+        return (hal_rf_get_rx_hw_prepare_time(phyCtrl->mode));
+    }
 }
 
 _RAM_CODE
