@@ -622,4 +622,44 @@ controller_error_code_e ll_set_scan_response_data(_u8* data,_u8 length);
 
 controller_error_code_e ll_set_advertising_enable(_u8 enable);
 
+
+/***********************Bluetooth LE Extended Advertising **************************/
+#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+controller_error_code_e ll_set_adv_set_ramdom_address(_u8 advHandle,_u8* address)
+{
+
+}
+
+controller_error_code_e ll_set_extended_advertising_paramters()
+{
+
+}
+
+controller_error_code_e ll_set_extended_advertising_data()
+{
+
+}
+
+controller_error_code_e ll_set_extended_scan_response_data()
+{
+
+}
+
+controller_error_code_e ll_set_extended_advertising_enable()
+{
+
+}
+
+controller_error_code_e
+
+#endif
+
+/***********************Bluetooth LE Periodic Advertising **************************/
+#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
+#endif
+
+/***********************Bluetooth LE Periodic With Response Advertising **************************/
+#if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
+#endif
+
 #endif

@@ -283,7 +283,7 @@ struct _PACKED hci_command_read_local_supported_features_retParam_t
 	_u8  status;
     _u64 feature;
 };
-controller_error_code_e hci_read_local_supported_features(_u8* data,_u8 length,bt_hci_event_t** event)
+controller_error_code_e hci_le_read_local_supported_features(_u8* data,_u8 length,bt_hci_event_t** event)
 {
 	struct hci_command_read_local_supported_features_retParam_t *param = \
     hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_read_local_supported_features_retParam_t),event);
@@ -291,12 +291,32 @@ controller_error_code_e hci_read_local_supported_features(_u8* data,_u8 length,b
 	param->feature = ll_get_feature();
 	return SUCCESS;
 }
+
+
+controller_error_code_e hci_le_set_advertising_parameters(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    
+}
+controller_error_code_e hci_le_set_advertising_data(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    
+}
+controller_error_code_e hci_le_set_scan_response_data(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    
+}
+controller_error_code_e hci_le_set_advertising_enable(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    
+}
+
+
 static const hci_command_t hci_command_le_controller_list[] =
 {
     {HCI_LE_SET_EVENT_MASK_COMMAND, NULL},
     {HCI_LE_READ_BUFFER_SIZE_COMMAND, NULL},
     {HCI_LE_READ_BUFFER_SIZE_COMMAND_V2, NULL},
-    {HCI_LE_READ_LOCAL_SUPPORTED_FEATURES_PAGE0_COMMAND, hci_read_local_supported_features},
+    {HCI_LE_READ_LOCAL_SUPPORTED_FEATURES_PAGE0_COMMAND, hci_le_read_local_supported_features},
     {HCI_LE_SET_RANDOM_ADDRESS_COMMAND, NULL},
     {HCI_LE_SET_ADVERTISING_PARAMETERS_COMMAND, NULL},
     {HCI_LE_READ_ADVERTISING_PHYSICAL_CHANNEL_TX_POWER_COMMAND, NULL},
