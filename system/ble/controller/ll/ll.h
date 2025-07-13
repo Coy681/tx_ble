@@ -625,12 +625,12 @@ controller_error_code_e ll_set_advertising_enable(_u8 enable);
 
 /***********************Bluetooth LE Extended Advertising **************************/
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
-controller_error_code_e ll_set_adv_set_ramdom_address(_u8 advHandle,_u8* address)
+controller_error_code_e ll_set_adv_set_random_address(_u8 advHandle,_u8* address)
 {
 
 }
 
-controller_error_code_e ll_set_extended_advertising_paramters()
+controller_error_code_e ll_set_extended_advertising_parameters()
 {
 
 }
@@ -650,7 +650,27 @@ controller_error_code_e ll_set_extended_advertising_enable()
 
 }
 
-controller_error_code_e
+controller_error_code_e ll_read_maximum_advertising_data_length()
+{
+
+}
+
+controller_error_code_e ll_read_number_of_supported_advertising_sets()
+{
+
+}
+
+controller_error_code_e ll_remove_advertising_sets()
+{
+
+}
+
+controller_error_code_e ll_clear_advertising_sets()
+{
+
+}
+
+
 
 #endif
 
