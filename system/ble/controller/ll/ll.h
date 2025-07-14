@@ -625,10 +625,23 @@ controller_error_code_e ll_set_advertising_enable(_u8 enable);
 
 /***********************Bluetooth LE Extended Advertising **************************/
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
-controller_error_code_e ll_set_adv_set_random_address(_u8 advHandle,_u8* address)
+typedef struct 
 {
-
-}
+    _u8  advHandle;
+    _u16 advEventProperty; 
+    _u32 primaryAdvInterval;
+    _u8  primaryAdvChnMap;
+    _u8  ownAddrType;
+    _u8  peerAddrType;
+    _u8  peerAddr;
+    _u8  filterPolicy;
+    _u8  txPower;
+    _u8  primaryAdvPhy;
+    _u8  secondaryAdvMaxSkip;
+    _u8  secondaryAdvPhy;
+    _u8  advSid;
+    _u8  scanReqNotifyEnable;
+}ll_extended_adv_param_t;
 
 controller_error_code_e ll_set_extended_advertising_parameters()
 {
@@ -646,6 +659,11 @@ controller_error_code_e ll_set_extended_scan_response_data()
 }
 
 controller_error_code_e ll_set_extended_advertising_enable()
+{
+
+}
+
+controller_error_code_e ll_set_adv_set_random_address(_u8 advHandle,_u8* address)
 {
 
 }
