@@ -160,6 +160,7 @@ controller_error_code_e ll_reset(void)
 
 /*************************************Bluetooth LE Advertising ******************************/
 
+#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING!=1)
 controller_error_code_e ll_set_advertising_parameters(_u16 interval,\
 	                                                  ll_advertising_type_e type,\
 													  ll_own_address_type_e ownAddressType,\
@@ -278,5 +279,50 @@ controller_error_code_e ll_set_advertising_enable(_u8 enable)
 	return SUCCESS;
 }
 
+#else
+controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_param_t* pAdv)
+{
+	ll_ctrl_t* ll = ll_get_current_state_machine();
+	
+}
 
+controller_error_code_e ll_set_extended_advertising_data()
+{
 
+}
+
+controller_error_code_e ll_set_extended_scan_response_data()
+{
+
+}
+
+controller_error_code_e ll_set_extended_advertising_enable()
+{
+
+}
+
+controller_error_code_e ll_set_adv_set_random_address(_u8 advHandle,_u8* address)
+{
+
+}
+
+controller_error_code_e ll_read_maximum_advertising_data_length()
+{
+
+}
+
+controller_error_code_e ll_read_number_of_supported_advertising_sets()
+{
+
+}
+
+controller_error_code_e ll_remove_advertising_sets()
+{
+
+}
+
+controller_error_code_e ll_clear_advertising_sets()
+{
+
+}
+#endif

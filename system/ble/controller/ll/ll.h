@@ -236,14 +236,14 @@ typedef enum
 #undef LL_SUPPORT_LE_EXTENDED_ADVERTISING
 #define LL_SUPPORT_LE_EXTENDED_ADVERTISING LL_FEATURE_BIT_LE_EXTENDED_ADVERTISING
 #else
-#define LL_SUPPORT_LE_EXTENDED_ADVERTISING 1
+#define LL_SUPPORT_LE_EXTENDED_ADVERTISING 0
 #endif
 
 #ifdef LL_SUPPORT_LE_PERIODIC_ADVERTISING
 #undef LL_SUPPORT_LE_PERIODIC_ADVERTISING
 #define LL_SUPPORT_LE_PERIODIC_ADVERTISING LL_FEATURE_BIT_LE_PERIODIC_ADVERTISING
 #else
-#define LL_SUPPORT_LE_PERIODIC_ADVERTISING 1
+#define LL_SUPPORT_LE_PERIODIC_ADVERTISING 0
 #endif
 
 #ifdef LL_SUPPORT_CHANNEL_SELECTION_ALGORITHM_2
@@ -453,7 +453,7 @@ typedef enum
 #undef LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER
 #define LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER LL_FEATURE_BIT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER
 #else
-#define LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER 1
+#define LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER 0
 #endif
 
 #ifdef LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_SCANNER
@@ -609,6 +609,13 @@ typedef enum
     LL_ADVERTISING_DISABLE = 0,
 }ll_advertising_enable_e;
 
+typedef enum
+{
+    LL_ADV_CHN_37 = BIT(0),
+    LL_ADV_CHN_38 = BIT(1),
+    LL_ADV_CHN_39 = BIT(2),
+}ll_advertising_chn_e;
+#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING!=1)
 controller_error_code_e ll_set_advertising_parameters(_u16 interval,\
                                                      ll_advertising_type_e type,\
                                                      ll_own_address_type_e ownAddressType,\
@@ -624,71 +631,79 @@ controller_error_code_e ll_set_advertising_enable(_u8 enable);
 
 
 /***********************Bluetooth LE Extended Advertising **************************/
-#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
-typedef struct 
+#else
+typedef enum
 {
-    _u8  advHandle;
-    _u16 advEventProperty; 
-    _u32 primaryAdvInterval;
-    _u8  primaryAdvChnMap;
-    _u8  ownAddrType;
-    _u8  peerAddrType;
-    _u8  peerAddr;
-    _u8  filterPolicy;
-    _u8  txPower;
-    _u8  primaryAdvPhy;
-    _u8  secondaryAdvMaxSkip;
-    _u8  secondaryAdvPhy;
-    _u8  advSid;
-    _u8  scanReqNotifyEnable;
+    LL_ADV_EVENT_PROPERTY_CONNECTED                 = BIT(0),
+    LL_ADV_EVENT_PROPERTY_SCANNABLE                 = BIT(1),
+    LL_ADV_EVENT_PROPERTY_DIRECTED                  = BIT(2),
+    LL_ADV_EVENT_PROPERTY_HIGH_DUTY_CONNECTED       = BIT(3),
+    LL_ADV_EVENT_PROPERTY_LEGACY_PDU                = BIT(4),
+    LL_ADV_EVENT_PROPERTY_ANONYMOUS_ADV             = BIT(5),
+    LL_ADV_EVENT_PROPERTY_INCLUDE_TX_POWER          = BIT(6),
+    LL_ADV_EVENT_PROPERTY_DECISION_PDU              = BIT(7),
+    LL_ADV_EVENT_PROPERTY_INCLUDE_ADVA_IN_DECISION  = BIT(8),
+    LL_ADV_EVENT_PROPERTY_INCLUDE_ADI_IN_DECISION   = BIT(9),
+}ll_advertising_event_property_e;
+
+typedef enum
+{
+    LL_ADV_PHY_1M    = 0x01,
+    LL_ADV_PHY_2M    = 0x02,
+    LL_ADV_PHY_CODED = 0x03,
+}ll_advertising_phy_e;
+
+typedef enum
+{
+    LL_ADV_PHY_OPTIONS_NO_PREFERENCE = 0x00,
+    LL_ADV_PHY_OPTIONS_PREFER_S2     = 0x00,
+    LL_ADV_PHY_OPTIONS_PREFER_S8     = 0x00,
+    LL_ADV_PHY_OPTIONS_REQUIRE_S2    = 0x00,
+    LL_ADV_PHY_OPTIONS_REQUIRE_S8    = 0x00,
+}ll_advertising_phy_options_e;
+
+typedef struct _PACKED
+{
+    _u8  advHandle;//0x00->0xEF,identify an advertising set
+    _u16 advEventProperty;//search for "ll_advertising_event_property_e"
+    _u8  filterPolicy;//search for "ll_advertising_filter_policy_e"
+
+    _u8  txPower;//range is -127 to +20,unit is dBm,    0x7F:no preference
+    _u8  advSid;//0x00-0x0F,SID subfield in the ADI field.
+    _u8  ownAddrType;//search for "ll_own_address_type_e"
+    _u8  peerAddrType;//search for "ll_peer_address_type_e"
+
+    _u8  peerAddr[6];
+    _u8  scanReqNotifyEnable;//0x00:disable,0x01:enable
+    _u8  rsvd;
+
+    _u32 primaryAdvInterval;//unit is 625us 
+    _u8  primaryAdvChnMap;//search for "ll_advertising_chn_e"
+    _u8  primaryAdvPhy;//LL_ADV_PHY_1M or LL_ADV_PHY_CODED
+    _u8  primaryAdvphyOptions;//search for "ll_advertising_phy_options_e"
+    _u8  secondaryAdvMaxSkip;////0x00:AUX_ADV_IND shall be prior to the next advertising event.0x01-0xFF,maximum skip events
+    _u8  secondaryAdvPhy;//search for "ll_advertising_phy_e"
+    _u8  secondaryAdvphyOptions;//search for "ll_advertising_phy_options_e"
+    _u16 rsvd1;
 }ll_extended_adv_param_t;
 
-controller_error_code_e ll_set_extended_advertising_parameters()
-{
+controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_param_t* pAdv);
 
-}
+controller_error_code_e ll_set_extended_advertising_data();
 
-controller_error_code_e ll_set_extended_advertising_data()
-{
+controller_error_code_e ll_set_extended_scan_response_data();
 
-}
+controller_error_code_e ll_set_extended_advertising_enable();
 
-controller_error_code_e ll_set_extended_scan_response_data()
-{
+controller_error_code_e ll_set_adv_set_random_address(_u8 advHandle,_u8* address);
 
-}
+controller_error_code_e ll_read_maximum_advertising_data_length();
 
-controller_error_code_e ll_set_extended_advertising_enable()
-{
+controller_error_code_e ll_read_number_of_supported_advertising_sets();
 
-}
+controller_error_code_e ll_remove_advertising_sets();
 
-controller_error_code_e ll_set_adv_set_random_address(_u8 advHandle,_u8* address)
-{
-
-}
-
-controller_error_code_e ll_read_maximum_advertising_data_length()
-{
-
-}
-
-controller_error_code_e ll_read_number_of_supported_advertising_sets()
-{
-
-}
-
-controller_error_code_e ll_remove_advertising_sets()
-{
-
-}
-
-controller_error_code_e ll_clear_advertising_sets()
-{
-
-}
-
-
+controller_error_code_e ll_clear_advertising_sets();
 
 #endif
 
