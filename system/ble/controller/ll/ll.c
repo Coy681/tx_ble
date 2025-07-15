@@ -173,7 +173,7 @@ controller_error_code_e ll_set_advertising_parameters(_u16 interval,\
 	{
 		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_ctrl_t));
 	}
-	ll->adv->interval = interval;
+	ll->adv->advInterval = interval;
 	ll->adv->channelMap = channelMap;
 	ll->adv->advType = type;
 	ll->adv->ownAddressType = ownAddressType;
@@ -283,6 +283,7 @@ controller_error_code_e ll_set_advertising_enable(_u8 enable)
 controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_param_t* pAdv)
 {
 	ll_ctrl_t* ll = ll_get_current_state_machine();
+
 	
 }
 

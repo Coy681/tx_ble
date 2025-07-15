@@ -527,7 +527,7 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         ll->sch.type = SCH_PERIODIC_TASK;
         ll->sch.priority = LL_ADV_PRIORITY;
         ll->sch.timestamp = system_time() + 500;//maybe need planner
-        ll->sch.period    = ll->adv->interval*BLE_ADV_INTERVAL_UNIT;
+        ll->sch.period    = ll->adv->advInterval*BLE_ADV_INTERVAL_UNIT;
         if(ll->adv->advType == LL_ADV_NONCONN_IND)
         {
             ll->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,BLE_ADV_DEFAULT_MAX_LENGTH,0)+PACKET_DEFAULT_TIFS_TIME;

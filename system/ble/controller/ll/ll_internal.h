@@ -4,6 +4,8 @@
 #include"system/scheduler/sch.h"
 #include"../phy/phy.h"
 #include"packet/packet.h"
+#include"ll_feature.h"
+
 
  #ifndef LL_INTERNAL_H_
  #define LL_INTERNAL_H_
@@ -91,11 +93,25 @@ typedef struct _PACKED
 
 typedef struct _PACKED
 {
-    _u8  process;
-    _u8  rsvd0;
-    _u16 rsvd1;
+    _u8  advHandle;
+    _u8  advEventProperty;//ll_advertising_event_property_e
+    _u8  sid;
+    _u8  channelMap:3; // 
+    _u8  channelCnt:2;//
 
-    _u16 interval;//number of 1.25ms
+    _u8  txPower;
+
+    _u8  filterPolicy:2;//'ll_advertising_filter_policy_e'
+    _u8  ownAddressType:2;//'ll_own_address_type_e'
+    _u8  peerAddressType:2;//'ll_peer_address_type_e'
+    _u8  enable:2;
+
+}ll_internal_extended_adv_t;
+
+typedef struct _PACKED
+{
+    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING!=1)
+    _u16 advInterval;//number of 1.25ms
     _u8  advType:3;//search for enum 'll_advertising_type_e'
     _u8  channelMap:3;  
     _u8  channelCnt:2;
@@ -118,10 +134,14 @@ typedef struct _PACKED
     _u8  advDataLen;
     _u8  scanRspDataLen;
 
-    _u32 instant;
-
     _u8* advData;
     _u8* scanRspData;
+
+    _u32 instant;
+    #else
+    ll_internal_extended_adv_t advSet[BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS];
+    #endif
+
 }ll_internal_adv_ctrl_t;
 
 

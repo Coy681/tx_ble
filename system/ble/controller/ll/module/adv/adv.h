@@ -48,14 +48,3 @@ typedef enum
 int ble_ll_enter_advertising_state(ble_ll_event_e event);
 
 
-#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
-
-#ifndef BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS 
-#define BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS       1
-#endif
-
-#ifndef BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH
-#define BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH    64
-#endif
-
-#endif
