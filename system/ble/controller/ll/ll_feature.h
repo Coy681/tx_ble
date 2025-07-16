@@ -64,9 +64,6 @@
 		LL_FEATURE_BIT_ADVERTISING_CODING_SELECTION_HOST_SUPPORT|\
 		LL_FEATURE_BIT_CHANNEL_SOUNDING_HOST_SUPPORT)
 
-
-
-
 /***********************Bluetooth LE Feature Configure**************************/
 #ifdef LL_SUPPORT_LE_ENCRYPTION
 #undef LL_SUPPORT_LE_ENCRYPTION
@@ -482,6 +479,4 @@
     LL_SUPPORT_MONITORING_ADVERTISERS | \
     LL_SUPPORT_FRAME_SPACE_UPDATE | \
     0)
-
-
     #endif

@@ -35,6 +35,7 @@
         "packet.h": "c",
         "scan.h": "c",
         "init.h": "c",
-        "standby.h": "c"
+        "standby.h": "c",
+        "ll_feature.h": "c"
     }
 }

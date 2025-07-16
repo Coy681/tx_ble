@@ -94,17 +94,35 @@ typedef struct _PACKED
 typedef struct _PACKED
 {
     _u8  advHandle;
-    _u8  advEventProperty;//ll_advertising_event_property_e
-    _u8  sid;
-    _u8  channelMap:3; // 
-    _u8  channelCnt:2;//
+    _u8  advEventType:4;//extended adv event type
+    _u8  processingEvent;
 
-    _u8  txPower;
+
+    _u8  advState:3;
+
+    _u8  currentChn:6;
+
+    _u8  primaryChnMap:3; // 
+    _u8  primaryChnCnt:2;//
+    _u16 primaryAdvInterval;
+    _u8  primaryChnTable[3];
+    _u8  primaryAdvPhyMode:2;
+    _u32 primaryInstant
+
+    _u8  secondaryChn;
+    _u8  secondaryAdvPhyMode:2;
+    _u32 secondaryInstant;
 
     _u8  filterPolicy:2;//'ll_advertising_filter_policy_e'
     _u8  ownAddressType:2;//'ll_own_address_type_e'
     _u8  peerAddressType:2;//'ll_peer_address_type_e'
+    _u8  peerAddress[6];
+
+    _u8  sid;
+    _u8  txPower;
     _u8  enable:2;
+    _u8  scanReqNotifyEnable:2;
+    _u8  secondaryAdvMaxSkip;
 
 }ll_internal_extended_adv_t;
 
@@ -141,7 +159,6 @@ typedef struct _PACKED
     #else
     ll_internal_extended_adv_t advSet[BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS];
     #endif
-
 }ll_internal_adv_ctrl_t;
 
 
@@ -175,7 +192,6 @@ typedef struct _PACKED
 {
     
 }ll_internal_broadcast_ctrl_t;
-
 
 /***********************ll sate**********************/
 
