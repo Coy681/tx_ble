@@ -96,8 +96,6 @@ void hal_rf_set_1M_phy(void);
 
 void hal_rf_set_2M_phy(void);
 
-void hal_rf_tx(_u8* address,_u32 time);
-
 void hal_rf_set_rx_timeout(_u32 time);
 
 void hal_rf_set_rx_max_len(_u8 len);
@@ -120,6 +118,8 @@ _u32 hal_rf_get_hw_packet_rx_extra_len(void);
 _u32 hal_rf_get_hw_rx_header_offset(void);
 
 /*******************************operate rf *********************************/
+void hal_rf_tx(_u8* address,_u32 time);
+
 void hal_rf_rx(_u8* address,_u32 maxOctets,_u32 time);
 
 void hal_rf_stop(void);

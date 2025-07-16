@@ -311,6 +311,26 @@ typedef enum
     ADV_EXTENDED_EVENT_PROPERTY_RX = BIT(0),
 }adv_extended_event_property_e;
 
+ll_internal_extended_adv_t* ll_extended_adv_get_entity(_u8 handle)
+{
+    ll_ctrl_t* ll     = ll_get_current_state_machine();
+	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+	{
+		if(ll->adv->advSet[i].advHandle == handle)
+		{
+			return &ll->adv->advSet;
+		}
+	}
+	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+	{
+        if(ll->adv->advSet[i].advHandle == LL_EXTENDED_ADV_INVALID_HANDLE)
+        {
+            return &ll->adv->advSet;
+        }
+    }
+    return NULL;
+}
+
 static adv_event_sm_t adv_extended_event_state_machine[]= 
 {
 

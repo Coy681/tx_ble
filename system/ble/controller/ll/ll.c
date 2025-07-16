@@ -1,5 +1,6 @@
 #include"ll.h"
 #include"ll_internal.h"
+#include"ll_config.h"
 #include"system/task/message/message.h"
 #include"system/task/task.h"
 #include"system/task/event/event.h" 
@@ -280,11 +281,102 @@ controller_error_code_e ll_set_advertising_enable(_u8 enable)
 }
 
 #else
-controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_param_t* pAdv)
+controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_param_t* pParam)
 {
 	ll_ctrl_t* ll = ll_get_current_state_machine();
-
-	
+	if(ll->adv == NULL)
+	{
+		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_ctrl_t));
+	}
+	ll_internal_extended_adv_t* pAdv = ll_extended_adv_get_entity(pParam->advHandle);
+	if(pAdv == NULL)
+	{
+		return MEMORY_CAPACITY_EXCEEDED;
+	}
+	if(pParam->advEventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU)
+	{
+		switch(pParam->advEventProperty)
+		{
+			case (LL_ADV_EVENT_PROPERTY_LEGACY_PDU|LL_ADV_EVENT_PROPERTY_CONNECTED|LL_ADV_EVENT_PROPERTY_SCANNABLE):
+			{
+				pAdv->advEventType = ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED;
+			}
+				break;
+			case (LL_ADV_EVENT_PROPERTY_LEGACY_PDU|LL_ADV_EVENT_PROPERTY_CONNECTED|LL_ADV_EVENT_PROPERTY_DIRECTED):
+			case (LL_ADV_EVENT_PROPERTY_LEGACY_PDU|LL_ADV_EVENT_PROPERTY_CONNECTED|LL_ADV_EVENT_PROPERTY_DIRECTED|LL_ADV_EVENT_PROPERTY_HIGH_DUTY_CONNECTED):
+			{
+				pAdv->advEventType = ADV_EVENT_CONNECTABLE_DIRECTED;
+			}
+				break;
+			case (LL_ADV_EVENT_PROPERTY_LEGACY_PDU|LL_ADV_EVENT_PROPERTY_SCANNABLE):
+			{
+				pAdv->advEventType = ADV_EVENT_SCANNABLE_UNDIRECTED;
+			}
+				break;
+			case (LL_ADV_EVENT_PROPERTY_LEGACY_PDU):
+			{
+				pAdv->advEventType = ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED;
+			}
+		}
+	}
+	else
+	{
+		switch(pParam->advEventProperty&(LL_ADV_EVENT_PROPERTY_CONNECTED|LL_ADV_EVENT_PROPERTY_SCANNABLE|LL_ADV_EVENT_PROPERTY_DIRECTED))
+		{
+			case(LL_ADV_EVENT_PROPERTY_CONNECTED|LL_ADV_EVENT_PROPERTY_DIRECTED):
+			{
+				pAdv->advEventType = ADV_EVENT_EXTENDED_CONNECTABLE_DIRECTED;
+			}
+				break;
+			case(LL_ADV_EVENT_PROPERTY_CONNECTED):
+			{
+				pAdv->advEventType = ADV_EVENT_EXTENDED_CONNECTABLE_UNDIRECTED;
+			}
+				break;
+			case(LL_ADV_EVENT_PROPERTY_SCANNABLE|LL_ADV_EVENT_PROPERTY_DIRECTED):
+			{
+				pAdv->advEventType = ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED;
+			}
+				break;	
+			case(LL_ADV_EVENT_PROPERTY_SCANNABLE):
+			{
+				pAdv->advEventType = ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED;
+			}
+				break;	
+			case(LL_ADV_EVENT_PROPERTY_DIRECTED):
+			{
+				pAdv->advEventType = ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED;
+			}
+				break;	
+			case(0):
+			{
+				pAdv->advEventType = ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED;
+			}
+				break;
+		}
+	}
+	pAdv->filterPolicy = pParam->filterPolicy;
+	if(pParam->txPower!=0x7F)
+	{
+		pAdv->txPower = pParam->txPower;
+	}
+	pAdv->sid                 = pParam->advSid;
+	pAdv->ownAddressType      = pParam->ownAddrType;
+	pAdv->peerAddressType     = pParam->peerAddrType;
+	pAdv->scanReqNotifyEnable = pParam->scanReqNotifyEnable;
+	pAdv->primaryAdvInterval  = pParam->primaryAdvInterval;
+	pAdv->primaryChnCnt       = 0;
+    for(int i=0;i<3;i++)
+    {
+    	if(ll->adv->channelMap&BIT(i))
+    	{
+    		pAdv->primaryChnTable[pAdv->primaryChnCnt] = 37+i;
+    		pAdv->primaryChnCnt++;
+    	}
+    }
+	pAdv->primaryAdvPhyMode   = pParam->primaryAdvPhy;
+	pAdv->secondaryAdvPhyMode = pParam->secondaryAdvPhy;
+	pAdv->secondaryAdvMaxSkip = pParam->secondaryAdvMaxSkip;
 }
 
 controller_error_code_e ll_set_extended_advertising_data()

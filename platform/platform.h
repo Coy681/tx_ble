@@ -16,17 +16,17 @@
 
 void platform_init(void);
 
-int irq_disable(void);
+int  irq_disable(void);
 
 void irq_restore(unsigned int _irq_state);
 
 void irq_enable(void);
 
 // Disable interrupts and save the current interrupt state
-#define IRQ_DISABLE           unsigned int _irq_state = irq_disable()
+#define IRQ_DISABLE           (unsigned int _irq_state = irq_disable())
 
 // Restore the saved interrupt state
-#define IRQ_RESTORE           irq_restore(_irq_state)
+#define IRQ_RESTORE           (irq_restore(_irq_state))
 
 
 #endif /* PLATFORM_H_ */

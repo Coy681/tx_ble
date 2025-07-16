@@ -90,28 +90,30 @@ typedef struct _PACKED
 }ll_internal_standby_ctrl_t;
 
 /***********************ll advertising sate**********************/
-
+#define LL_EXTENDED_ADV_INVALID_HANDLE   0xFF
 typedef struct _PACKED
 {
     _u8  advHandle;
+    _u8  enable:2;
+    _u8  scanReqNotifyEnable:2;
     _u8  advEventType:4;//extended adv event type
     _u8  processingEvent;
 
-
     _u8  advState:3;
-
     _u8  currentChn:6;
 
-    _u8  primaryChnMap:3; // 
     _u8  primaryChnCnt:2;//
-    _u16 primaryAdvInterval;
-    _u8  primaryChnTable[3];
     _u8  primaryAdvPhyMode:2;
-    _u32 primaryInstant
+    _u8  primaryChnTable[3];
+    _u16 primaryAdvInterval;
+    _u32 primaryAnchorPoint;//unit is us
+    _u32 primaryInstant;
 
     _u8  secondaryChn;
     _u8  secondaryAdvPhyMode:2;
+    _u8  secondaryAdvMaxSkip;
     _u32 secondaryInstant;
+    _u32 secondaryAnchorPoint;//unit is us
 
     _u8  filterPolicy:2;//'ll_advertising_filter_policy_e'
     _u8  ownAddressType:2;//'ll_own_address_type_e'
@@ -120,10 +122,18 @@ typedef struct _PACKED
 
     _u8  sid;
     _u8  txPower;
-    _u8  enable:2;
-    _u8  scanReqNotifyEnable:2;
-    _u8  secondaryAdvMaxSkip;
 
+    _u8* advData;
+    _u8* scanRspData;
+
+    _u16 advDataFillOffset;
+    _u16 advDataSendOffset;
+
+    _u16 scanRspDataFillOffset;
+    _u16 scanRspDataSendOffset;
+
+    _u16 advDataLen;
+    _u16 scanRspDataLen;
 }ll_internal_extended_adv_t;
 
 typedef struct _PACKED
@@ -161,6 +171,7 @@ typedef struct _PACKED
     #endif
 }ll_internal_adv_ctrl_t;
 
+ll_internal_extended_adv_t* ll_extended_adv_get_entity(_u8 handle);
 
 /***********************ll connection sate**********************/
 typedef struct _PACKED

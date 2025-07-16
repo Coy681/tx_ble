@@ -174,11 +174,20 @@ typedef enum
 typedef enum
 {
     LL_ADV_PHY_OPTIONS_NO_PREFERENCE = 0x00,
-    LL_ADV_PHY_OPTIONS_PREFER_S2     = 0x00,
-    LL_ADV_PHY_OPTIONS_PREFER_S8     = 0x00,
-    LL_ADV_PHY_OPTIONS_REQUIRE_S2    = 0x00,
-    LL_ADV_PHY_OPTIONS_REQUIRE_S8    = 0x00,
+    LL_ADV_PHY_OPTIONS_PREFER_S2     = 0x01,
+    LL_ADV_PHY_OPTIONS_PREFER_S8     = 0x02,
+    LL_ADV_PHY_OPTIONS_REQUIRE_S2    = 0x03,
+    LL_ADV_PHY_OPTIONS_REQUIRE_S8    = 0x04,
 }ll_advertising_phy_options_e;
+
+typedef enum
+{
+    LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT= 0x00,
+    LL_ADV_DATA_FIRST_FRAGMENT       = 0x01,
+    LL_ADV_DATA_LAST_FRAGMENT        = 0x02,
+    LL_ADV_DATA_COMPLETE             = 0x03,
+    LL_ADV_DATA_UNCHANGED            = 0x04,//just update the advertising data DID
+}ll_advertising_data_operation_e;
 
 typedef struct _PACKED
 {
@@ -205,7 +214,7 @@ typedef struct _PACKED
     _u16 rsvd1;
 }ll_extended_adv_param_t;
 
-controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_param_t* pAdv);
+controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_param_t* pParam);
 
 controller_error_code_e ll_set_extended_advertising_data();
 
