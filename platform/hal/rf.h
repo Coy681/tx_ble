@@ -83,10 +83,10 @@ void hal_rf_set_power(_u8 power);
 
 enum
 {
-    HAL_RF_MODE_1M       = 0x00,
-    HAL_RF_MODE_2M       = 0x01,
-    HAL_RF_MODE_CODED_S2 = 0x02,
-    HAL_RF_MODE_CODED_S8 = 0x03,
+    HAL_RF_MODE_1M       = 0x01,
+    HAL_RF_MODE_2M       = 0x02,
+    HAL_RF_MODE_CODED_S2 = 0x03,
+    HAL_RF_MODE_CODED_S8 = 0x04,
 };
 void hal_rf_set_coded_phy_s2(void);
 

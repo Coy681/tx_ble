@@ -103,11 +103,12 @@ typedef struct _PACKED
     _u8  currentChn:6;
     _u8  advDatafragPerf:1;//fragment preference
     _u8  scanRspDatafragPerf:1;//fragment preference
+    _u16 advEventProperty;  
 
     _u8  primaryChnCnt:2;//
     _u8  primaryAdvPhyMode:2;
     _u8  primaryChnTable[3];
-    _u16 primaryAdvInterval;
+    _u16 primaryAdvInterval;//unit is us
     _u32 primaryAnchorPoint;//unit is us
     _u32 primaryInstant;
 
