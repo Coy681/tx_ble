@@ -101,6 +101,8 @@ typedef struct _PACKED
 
     _u8  advState:3;
     _u8  currentChn:6;
+    _u8  advDatafragPerf:1;//fragment preference
+    _u8  scanRspDatafragPerf:1;//fragment preference
 
     _u8  primaryChnCnt:2;//
     _u8  primaryAdvPhyMode:2;
@@ -122,6 +124,7 @@ typedef struct _PACKED
 
     _u8  sid;
     _u8  txPower;
+    _u16 advDID;
 
     _u8* advData;
     _u8* scanRspData;

@@ -381,10 +381,49 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 
 controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 														ll_advertising_data_operation_e operation,\
-														ll_advertising_data_fragment_perference_e fragPre,\
+														ll_advertising_data_fragment_perference_e fragPref,\
 														_u8 dataLen,\
 														_u8* data)
 {
+	ll_internal_extended_adv_t* pAdv = ll_extended_adv_get_entity(advHandle);
+	if(POINTER_NOT_VALID(pAdv))
+	{
+		return UNKNOWN_ADVERTISING_IDENTIFIER;
+	}
+	switch(operation)
+	{
+		case LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT:
+		{
+			txMemcpy4(pAdv->advData+pAdv->advDataFillOffset,data,dataLen);
+			pAdv->advDataFillOffset+=dataLen;
+		}
+			break;
+		case LL_ADV_DATA_OPERATION_FIRST_FRAGMENT:
+		{
+
+			txMemcpy4(pAdv->advData,data,dataLen);
+			pAdv->advDataFillOffset +=dataLen;
+		}
+			break;	
+		case LL_ADV_DATA_OPERATION_LAST_FRAGMENT:
+		{
+			txMemcpy4(pAdv->advData+pAdv->advDataFillOffset,data,dataLen);
+			pAdv->advDID++;
+		}
+			break;
+		case LL_ADV_DATA_OPERATION_COMPLETE:
+		{
+			txMemcpy(pAdv->advData,data,dataLen);
+			pAdv->advDID++;
+		}
+			break;
+		case LL_ADV_DATA_OPERATION_UNCHANGED:
+		{
+			pAdv->advDID++;
+		}
+			break;
+	}
+	pAdv->fragPerf = fragPref;
 
 }
 

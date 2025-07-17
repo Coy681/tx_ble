@@ -194,7 +194,7 @@ typedef enum
     LL_ADV_DATA_FEAGMENT_ALL_DATA              = 0x00,
     LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT       = 0x01,
 }ll_advertising_data_fragment_perference_e;
-
+ 
 typedef struct _PACKED
 {
     _u8  advHandle;//0x00->0xEF,identify an advertising set
@@ -224,13 +224,13 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 
 controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
                                                          ll_advertising_data_operation_e operation,\
-                                                         ll_advertising_data_fragment_perference_e fragPre,\
+                                                         ll_advertising_data_fragment_perference_e fragPref,\
                                                         _u8 dataLen,\
                                                         _u8* data);
 
 controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
                                                             ll_advertising_data_operation_e operation,\
-                                                            ll_advertising_data_fragment_perference_e fragPre,\
+                                                            ll_advertising_data_fragment_perference_e fragPref,\
                                                             _u8 dataLen,\
                                                             _u8* data);
 
