@@ -379,12 +379,20 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 	pAdv->secondaryAdvMaxSkip = pParam->secondaryAdvMaxSkip;
 }
 
-controller_error_code_e ll_set_extended_advertising_data()
+controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
+														ll_advertising_data_operation_e operation,\
+														ll_advertising_data_fragment_perference_e fragPre,\
+														_u8 dataLen,\
+														_u8* data)
 {
 
 }
 
-controller_error_code_e ll_set_extended_scan_response_data()
+controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
+															ll_advertising_data_operation_e operation,\
+															ll_advertising_data_fragment_perference_e fragPre,\
+															_u8 dataLen,\
+															_u8* data)
 {
 
 }
@@ -393,7 +401,7 @@ controller_error_code_e ll_set_extended_advertising_enable()
 {
 
 }
-
+  
 controller_error_code_e ll_set_adv_set_random_address(_u8 advHandle,_u8* address)
 {
 

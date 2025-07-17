@@ -183,11 +183,17 @@ typedef enum
 typedef enum
 {
     LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT= 0x00,
-    LL_ADV_DATA_FIRST_FRAGMENT       = 0x01,
-    LL_ADV_DATA_LAST_FRAGMENT        = 0x02,
-    LL_ADV_DATA_COMPLETE             = 0x03,
-    LL_ADV_DATA_UNCHANGED            = 0x04,//just update the advertising data DID
+    LL_ADV_DATA_OPERATION_FIRST_FRAGMENT       = 0x01,
+    LL_ADV_DATA_OPERATION_LAST_FRAGMENT        = 0x02,
+    LL_ADV_DATA_OPERATION_COMPLETE             = 0x03,
+    LL_ADV_DATA_OPERATION_UNCHANGED            = 0x04,//just update the advertising data DID
 }ll_advertising_data_operation_e;
+
+typedef enum
+{
+    LL_ADV_DATA_FEAGMENT_ALL_DATA              = 0x00,
+    LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT       = 0x01,
+}ll_advertising_data_fragment_perference_e;
 
 typedef struct _PACKED
 {
@@ -216,9 +222,17 @@ typedef struct _PACKED
 
 controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_param_t* pParam);
 
-controller_error_code_e ll_set_extended_advertising_data();
+controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
+                                                         ll_advertising_data_operation_e operation,\
+                                                         ll_advertising_data_fragment_perference_e fragPre,\
+                                                        _u8 dataLen,\
+                                                        _u8* data);
 
-controller_error_code_e ll_set_extended_scan_response_data();
+controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
+                                                            ll_advertising_data_operation_e operation,\
+                                                            ll_advertising_data_fragment_perference_e fragPre,\
+                                                            _u8 dataLen,\
+                                                            _u8* data);
 
 controller_error_code_e ll_set_extended_advertising_enable();
 
