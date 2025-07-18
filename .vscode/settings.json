@@ -36,6 +36,9 @@
         "scan.h": "c",
         "init.h": "c",
         "standby.h": "c",
-        "ll_feature.h": "c"
+        "ll_feature.h": "c",
+        "txlist.h": "c",
+        "txassert.h": "c",
+        "txheap.h": "c"
     }
 }

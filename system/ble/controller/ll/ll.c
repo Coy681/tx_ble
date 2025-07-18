@@ -668,30 +668,107 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 		return IVALID_HCI_COMMAND_PARAMETERS; 
 	}
 
-	ll_ctrl_t* ll = ll_get_current_state_machine();
-
-	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+	if((enable == 0) && (numSets == 0))
 	{
-		if(ll->adv->advSet[i].advHandle)
+		ll_ctrl_t* ll = ll_get_current_state_machine();
+		for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 		{
-
+			if(ll->adv->advSet[i].advHandle <= 0xEF)
+			{
+				if(ll->adv->advSet[i].advDataFillOffset !=0 || ll->adv->advSet[i].scanRspDataFillOffset !=0)
+				{
+					return COMMAND_DISALLOWED;
+				}
+				if((ll->adv->advSet[i].advEventProperty & LL_ADV_EVENT_PROPERTY_SCANNABLE)&&ll->adv->advSet[i].scanRspDataLen == 0)
+				{	
+					return COMMAND_DISALLOWED;
+				}
+				if((ll->adv->advSet[i].advEventProperty & LL_ADV_EVENT_PROPERTY_CONNECTED)&&ll->adv->advSet[i].advDataLen == 0)
+				{
+					return IVALID_HCI_COMMAND_PARAMETERS;//?,need check if valid
+				}
+			}
+		}
+	}
+	else 
+	{
+		for(_u8 i=0;i<numSets;i++)
+		{	
+			ll_internal_extended_adv_t* pAdv = ll_extended_adv_get_entity(pEnableSubFiled[i].advHandle);
+			if(POINTER_NOT_VALID(pAdv))
+			{
+				return IVALID_HCI_COMMAND_PARAMETERS; 
+			}
+			if(pAdv->advDataFillOffset !=0 || pAdv->scanRspDataFillOffset !=0)
+			{
+				return COMMAND_DISALLOWED;
+			}
+			if((pAdv->advEventProperty & LL_ADV_EVENT_PROPERTY_SCANNABLE)&&pAdv->scanRspDataLen == 0)
+			{	
+				return COMMAND_DISALLOWED;
+			}
+			if((pAdv->advEventProperty & LL_ADV_EVENT_PROPERTY_CONNECTED)&&pAdv->advDataLen == 0)
+			{
+				return IVALID_HCI_COMMAND_PARAMETERS;//?,need check if valid
+			}
 		}
 	}
 
-	if(pAdv->advDataFillOffset !=0 || pAdv->scanRspDataFillOffset !=0)
+	if((enable == 0) && (numSets == 0))
 	{
-		return COMMAND_DISALLOWED;
+		ll_ctrl_t* ll = ll_get_current_state_machine();
+		for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+		{
+			if(ll->adv->advSet[i].advHandle <= 0xEF)
+			{
+				ll->adv->advSet[i].enable   = enable;
+				if(pEnableSubFiled[i].duration!=0)
+				{
+					ll->adv->advSet[i].expireTime =  system_time() + ll->adv->advSet[i].primaryAdvInterval + pEnableSubFiled[i].duration*10000;
+				}
+				else 
+				{
+					ll->adv->advSet[i].expireTime = 0;
+				}
+
+				if(pEnableSubFiled[i].maxEvents!=0)
+				{
+					ll->adv->advSet[i].maxEvents    = pEnableSubFiled[i].maxEvents;
+					ll->adv->advSet[i].eventCounter = 0;
+				}
+				else
+				{
+					ll->adv->advSet[i].maxEvents = 0;
+				}
+			}
+		}
 	}
-	if((pAdv->advEventProperty & LL_ADV_EVENT_PROPERTY_SCANNABLE)&&pAdv->scanRspDataLen == 0)
-	{	
-		return COMMAND_DISALLOWED;
-	}
-	if((pAdv->advEventProperty & LL_ADV_EVENT_PROPERTY_CONNECTED)&&pAdv->advDataLen == 0)
+	else
 	{
-		return IVALID_HCI_COMMAND_PARAMETERS;//?,need check if valid
+		for(_u8 i=0;i<numSets;i++)
+		{	
+			ll_internal_extended_adv_t* pAdv = ll_extended_adv_get_entity(pEnableSubFiled[i].advHandle);
+			pAdv->enable = enable;
+			if(pEnableSubFiled[i].duration!=0)
+			{
+				pAdv->expireTime =  system_time() + pAdv->primaryAdvInterval + pEnableSubFiled[i].duration*10000;
+			}
+			else 
+			{
+				pAdv->expireTime = 0;
+			}
+
+			if(pEnableSubFiled[i].maxEvents!=0)
+			{
+				pAdv->maxEvents    = pEnableSubFiled[i].maxEvents;
+				pAdv->eventCounter = 0;
+			}
+			else
+			{
+				pAdv->maxEvents = 0;
+			}
+		}
 	}
-	//address filter,todo
-	
 }
   
 controller_error_code_e ll_set_adv_set_random_address(_u8 advHandle,_u8* address)
