@@ -249,13 +249,13 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 
 controller_error_code_e ll_set_adv_set_random_address(_u8 advHandle,_u8* address);
 
-controller_error_code_e ll_read_maximum_advertising_data_length();
+controller_error_code_e ll_read_maximum_advertising_data_length(_u16* length);
 
-controller_error_code_e ll_read_number_of_supported_advertising_sets();
+controller_error_code_e ll_read_number_of_supported_advertising_sets(_u8* number);
 
-controller_error_code_e ll_remove_advertising_sets();
+controller_error_code_e ll_remove_advertising_sets(_u8 advHandle);
 
-controller_error_code_e ll_clear_advertising_sets();
+controller_error_code_e ll_clear_advertising_sets(void);
 
 #endif
 

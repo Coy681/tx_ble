@@ -683,10 +683,9 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 	{
 		return IVALID_HCI_COMMAND_PARAMETERS; 
 	}
-
+	ll_ctrl_t* ll = ll_get_current_state_machine();
 	if((enable == 0) && (numSets == 0))
 	{
-		ll_ctrl_t* ll = ll_get_current_state_machine();
 		for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 		{
 			if(ll->adv->advSet[i].advHandle <= 0xEF)
@@ -732,7 +731,6 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 
 	if((enable == 0) && (numSets == 0))
 	{
-		ll_ctrl_t* ll = ll_get_current_state_machine();
 		for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 		{
 			if(ll->adv->advSet[i].advHandle <= 0xEF)
@@ -785,6 +783,7 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 			}
 		}
 	}
+	ble_ll_process_event(ll,BLE_LL_EVENT_START_ADVERTISING);
 	return SUCCESS;
 }
   
@@ -841,6 +840,7 @@ controller_error_code_e ll_remove_advertising_sets(_u8 advHandle)
 
 	if(ll_extended_adv_get_current_set_number()==0)
 	{
+		ll_ctrl_t* ll = ll_get_current_state_machine();
 		ble_ll_process_event(ll,BLE_LL_EVENT_STOP_ADVERTISING);
 	}
 	return SUCCESS;
