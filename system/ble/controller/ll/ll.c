@@ -437,15 +437,17 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 	{
 		return UNKNOWN_ADVERTISING_IDENTIFIER;
 	}
+
 	if(pAdv->advEventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU)
 	{
 		if(dataLen > 31||\
 		   operation!=LL_ADV_DATA_OPERATION_COMPLETE||\
-		   pAdv->advEventType == ADV_EVENT_CONNECTABLE_DIRECTED)
+		   pAdv->advEventType == ADV_EVENT_CONNECTABLE_DIRECTED)//direct pdu don't have advertising data
 		{
 			return IVALID_HCI_COMMAND_PARAMETERS;
 		}
 	}
+
 	if(operation == LL_ADV_DATA_OPERATION_UNCHANGED)
 	{
 		if(pAdv->enable == 0||\
@@ -455,17 +457,14 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 			return IVALID_HCI_COMMAND_PARAMETERS;
 		}
 	}
+
 	if(operation!=LL_ADV_DATA_OPERATION_COMPLETE&&\
 	   operation!=LL_ADV_DATA_OPERATION_UNCHANGED&&\
 	   dataLen == 0)
 	{
 		return IVALID_HCI_COMMAND_PARAMETERS;
 	}
-	if(pAdv->advEventType == ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED||\
-	   pAdv->advEventType == ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED)
-	{
-		return IVALID_HCI_COMMAND_PARAMETERS;//these mode don't have advertising data
-	}
+
 	if(pAdv->enable)
 	{
 		if(operation!=LL_ADV_DATA_OPERATION_COMPLETE&&\
@@ -474,6 +473,13 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 			return COMMAND_DISALLOWED;
 		}
 	}
+
+	if(pAdv->advEventType == ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED||\
+	   pAdv->advEventType == ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED)
+	{
+		return IVALID_HCI_COMMAND_PARAMETERS;//mode don't have advertising data
+	}
+
 	if(dataLen > BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH)
 	{
 		return MEMORY_CAPACITY_EXCEEDED;
@@ -506,21 +512,22 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 			break;
 		case LL_ADV_DATA_OPERATION_FIRST_FRAGMENT:
 		{
-
 			txMemcpy4(pAdv->advData,data,dataLen);
-			pAdv->advDataFillOffset +=dataLen;
+			pAdv->advDataFillOffset = dataLen;
 		}
 			break;	
 		case LL_ADV_DATA_OPERATION_LAST_FRAGMENT:
 		{
 			txMemcpy4(pAdv->advData+pAdv->advDataFillOffset,data,dataLen);
 			pAdv->advDID++;
+			pAdv->advDataLen = pAdv->advDataFillOffset + dataLen;
 		}
 			break;
 		case LL_ADV_DATA_OPERATION_COMPLETE:
 		{
 			txMemcpy(pAdv->advData,data,dataLen);
 			pAdv->advDID++;
+			pAdv->advDataLen = dataLen;
 		}
 			break;
 		case LL_ADV_DATA_OPERATION_UNCHANGED:
@@ -544,6 +551,7 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 	{
 		return UNKNOWN_ADVERTISING_IDENTIFIER;
 	}
+
 	if(pAdv->advEventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU)
 	{
 		if(dataLen > 31||\
@@ -612,28 +620,78 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 			break;
 		case LL_ADV_DATA_OPERATION_FIRST_FRAGMENT:
 		{
-
 			txMemcpy4(pAdv->scanRspData,data,dataLen);
-			pAdv->scanRspDataFillOffset +=dataLen;
+			pAdv->scanRspDataFillOffset=dataLen;
 		}
 			break;	
 		case LL_ADV_DATA_OPERATION_LAST_FRAGMENT:
 		{
 			txMemcpy4(pAdv->scanRspData+pAdv->scanRspDataFillOffset,data,dataLen);
+			pAdv->scanRspDataLen = pAdv->scanRspDataFillOffset+dataLen;
 		}
 			break;
 		case LL_ADV_DATA_OPERATION_COMPLETE:
 		{
 			txMemcpy(pAdv->scanRspData,data,dataLen);
+			pAdv->scanRspDataLen = dataLen;
 		}
 			break;
 	}
 	pAdv->scanRspDatafragPerf = fragPref;
 }
-
-controller_error_code_e ll_set_extended_advertising_enable()
+/**
+ * Advertising disabled condition
+ * 1.Host send "ll_set_extended_advertising_enable" with 'enable' field set to 0
+ * 2.A connection is created using the advertising set.
+ * 3.The duration field expires
+ * 4.The number of extended advertising events for the set exceed the MAX_EXTENDED_ADVERTISING_EVENT. 
+ */
+controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
+														   _u8 numSets,\
+														   ll_extended_adv_enable_subField_e* pEnableSubFiled)
 {
+	//if the ll_set_extended_advertising_enable set again when the adv set is enabled,the timer for duration 
+	//and the number of events counter are reset,any change to random address shall take effect
 
+
+	//disable advertising set will not disable periodic advertising 
+
+	//disable a disabled advertising set have no effect
+
+	//if adv set is marked by more than one advHandle[i] parameter,should return error code 0x12
+	if((enable != 0) && (numSets == 0))
+	{
+		return IVALID_HCI_COMMAND_PARAMETERS;
+	}
+	if(numSets>BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS)
+	{
+		return IVALID_HCI_COMMAND_PARAMETERS; 
+	}
+
+	ll_ctrl_t* ll = ll_get_current_state_machine();
+
+	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+	{
+		if(ll->adv->advSet[i].advHandle)
+		{
+
+		}
+	}
+
+	if(pAdv->advDataFillOffset !=0 || pAdv->scanRspDataFillOffset !=0)
+	{
+		return COMMAND_DISALLOWED;
+	}
+	if((pAdv->advEventProperty & LL_ADV_EVENT_PROPERTY_SCANNABLE)&&pAdv->scanRspDataLen == 0)
+	{	
+		return COMMAND_DISALLOWED;
+	}
+	if((pAdv->advEventProperty & LL_ADV_EVENT_PROPERTY_CONNECTED)&&pAdv->advDataLen == 0)
+	{
+		return IVALID_HCI_COMMAND_PARAMETERS;//?,need check if valid
+	}
+	//address filter,todo
+	
 }
   
 controller_error_code_e ll_set_adv_set_random_address(_u8 advHandle,_u8* address)

@@ -122,6 +122,10 @@ typedef struct _PACKED
     _u8  ownAddressType:2;//'ll_own_address_type_e'
     _u8  peerAddressType:2;//'ll_peer_address_type_e'
     _u8  peerAddress[6];
+    _u8  randomAddress[6];
+
+    _u32 duration;//unit is us 
+    _u8  maxEvents;//
 
     _u8  sid;
     _u8  txPower;

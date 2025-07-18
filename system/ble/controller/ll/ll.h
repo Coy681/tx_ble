@@ -195,7 +195,15 @@ typedef enum
     LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT       = 0x01,
 }ll_advertising_data_fragment_perference_e;
  
-typedef struct _PACKED
+typedef struct 
+{
+    _u8  advHandle;
+    _u16 duration;//unit is 10ms
+    _u8  maxEvents;//0x00:no max number,other2:max number of extended adv events number controller shall send
+}ll_extended_adv_enable_subField_e;
+
+
+typedef struct 
 {
     _u8  advHandle;//0x00->0xEF,identify an advertising set
     _u16 advEventProperty;//search for "ll_advertising_event_property_e"
@@ -220,6 +228,7 @@ typedef struct _PACKED
     _u16 rsvd1;
 }ll_extended_adv_param_t;
 
+
 controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_param_t* pParam);
 
 controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
@@ -234,7 +243,9 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
                                                             _u8 dataLen,\
                                                             _u8* data);
 
-controller_error_code_e ll_set_extended_advertising_enable();
+controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
+                                                           _u8 numSets,\
+                                                           ll_extended_adv_enable_subField_e* pEnableSubFiled);
 
 controller_error_code_e ll_set_adv_set_random_address(_u8 advHandle,_u8* address);
 
