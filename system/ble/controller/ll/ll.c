@@ -286,7 +286,12 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 	ll_ctrl_t* ll = ll_get_current_state_machine();
 	if(ll->adv == NULL)
 	{
-		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_ctrl_t));
+		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_ctrl_t*BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS));
+		ASSERT(ll->adv == NULL);
+		for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+		{
+			ll->adv->advSet[i].advHandle = 0xFF;
+		}
 	}
 	ll_internal_extended_adv_t* pAdv = ll_extended_adv_get_entity(pParam->advHandle);
 	if(pAdv == NULL)
@@ -424,6 +429,7 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 	{
 		pAdv->secondaryAdvPhyMode = PHY_MODE_2M;
 	}
+	return SUCCESS;
 }
 
 controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
@@ -502,6 +508,10 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 		}
 	}
 
+	if(POINTER_NOT_VALID(pAdv->advData))
+	{
+		pAdv->advData = tx_malloc(BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH);
+	}
 	switch(operation)
 	{
 		case LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT:
@@ -537,6 +547,7 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 			break;
 	}
 	pAdv->advDatafragPerf = fragPref;
+	return SUCCESS;
 
 }
 
@@ -610,6 +621,10 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 			return PACKET_TOO_LONG;
 		}
 	}
+	if(POINTER_NOT_VALID(pAdv->advData))
+	{
+		pAdv->advData = tx_malloc(BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH);
+	}
 	switch(operation)
 	{
 		case LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT:
@@ -638,6 +653,7 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 			break;
 	}
 	pAdv->scanRspDatafragPerf = fragPref;
+	return SUCCESS;
 }
 /**
  * Advertising disabled condition
@@ -769,30 +785,86 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 			}
 		}
 	}
+	return SUCCESS;
 }
   
 controller_error_code_e ll_set_adv_set_random_address(_u8 advHandle,_u8* address)
 {
+	ll_internal_extended_adv_t* pAdv = ll_extended_adv_get_entity(advHandle);
 
+	if(POINTER_NOT_VALID(pAdv))
+	{
+		return IVALID_HCI_COMMAND_PARAMETERS;
+	}
+	if(pAdv->enable &&\
+	  (pAdv->advEventProperty&LL_ADV_EVENT_PROPERTY_CONNECTED))
+	{
+		return COMMAND_DISALLOWED;
+	}
+	txMemcpy(pAdv->randomAddress,address,6);
+	return SUCCESS;
 }
 
-controller_error_code_e ll_read_maximum_advertising_data_length()
+controller_error_code_e ll_read_maximum_advertising_data_length(_u16* length)
 {
-
+	*length = BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH;
+	return SUCCESS;
 }
 
-controller_error_code_e ll_read_number_of_supported_advertising_sets()
+controller_error_code_e ll_read_number_of_supported_advertising_sets(_u8* number)
 {
-
+	*number = BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;
+	return SUCCESS;
 }
 
-controller_error_code_e ll_remove_advertising_sets()
+controller_error_code_e ll_remove_advertising_sets(_u8 advHandle)
 {
+	ll_internal_extended_adv_t* pAdv = ll_extended_adv_get_entity(advHandle);
+	if(POINTER_NOT_VALID(pAdv))
+	{
+		return IVALID_HCI_COMMAND_PARAMETERS;
+	}
+	// if() periodic adv is enable,not allowed ro remove the adv
+	// {
 
+	// }
+	if(POINTER_VALID(pAdv->advData))
+	{
+		tx_free(pAdv->advData);
+	}
+	if(POINTER_VALID(pAdv->scanRspData))
+	{
+		tx_free(pAdv->scanRspData);
+	}
+	txMemsetByte(pAdv,0,sizeof(ll_internal_extended_adv_t));
+	pAdv->advHandle = 0xFF;
+
+	if(ll_extended_adv_get_current_set_number()==0)
+	{
+		ble_ll_process_event(ll,BLE_LL_EVENT_STOP_ADVERTISING);
+	}
+	return SUCCESS;
 }
 
-controller_error_code_e ll_clear_advertising_sets()
+controller_error_code_e ll_clear_advertising_sets(void)
 {
+	ll_ctrl_t* ll = ll_get_current_state_machine();
 
+	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+	{
+		if(ll->adv->advSet[i].advHandle!=0xFF)
+		{
+			if(POINTER_VALID(ll->adv->advSet.advData))
+			{
+				tx_free(ll->adv->advSet.advData);
+			}
+			if(POINTER_VALID(ll->adv->advSet.scanRspData))
+			{
+				tx_free(ll->adv->advSet.scanRspData);
+			}
+		}
+	}
+	ble_ll_process_event(ll,BLE_LL_EVENT_STOP_ADVERTISING);
+	return SUCCESS;
 }
 #endif

@@ -182,6 +182,8 @@ typedef struct _PACKED
 }ll_internal_adv_ctrl_t;
 
 ll_internal_extended_adv_t* ll_extended_adv_get_entity(_u8 handle);
+int                         ll_extended_adv_get_current_active_set_number(void);
+int                         ll_extended_adv_get_current_set_number(void);
 
 /***********************ll connection sate**********************/
 typedef struct _PACKED

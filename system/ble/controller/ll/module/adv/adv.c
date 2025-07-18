@@ -331,6 +331,34 @@ ll_internal_extended_adv_t* ll_extended_adv_get_entity(_u8 handle)
     return NULL;
 }
 
+int ll_extended_adv_get_current_active_set_number(void)
+{
+    ll_ctrl_t* ll = ll_get_current_state_machine();
+    _u8 count = 0;
+	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+	{
+        if(ll->adv->advSet[i].advHandle!=0xFF && ll->adv->advSet[i].enable == 1)
+        {
+            count++;
+        }
+    }
+    return count;
+}
+
+int ll_extended_adv_get_current_set_number(void)
+{
+    ll_ctrl_t* ll = ll_get_current_state_machine();
+    _u8 count = 0;
+	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+	{
+        if(ll->advHandle!=0xFF)
+        {
+            count++;
+        }
+    }
+    return count;
+}
+
 static adv_event_sm_t adv_extended_event_state_machine[]= 
 {
 
