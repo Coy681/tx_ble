@@ -174,40 +174,39 @@ controller_error_code_e ll_set_advertising_parameters(_u16 interval,\
 	{
 		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_ctrl_t));
 	}
-	ll->adv->advInterval = interval;
-	ll->adv->channelMap = channelMap;
-	ll->adv->advType = type;
-	ll->adv->ownAddressType = ownAddressType;
-	ll->adv->peerAddressType = peerAddressType;
-	ll->adv->channelCnt = 0;
+	ll_internal_adv_shareSection_t* advSection = &ll->adv->section;
+	advSection->interval = interval;
+	advSection->ownAddressType = ownAddressType;
+	advSection->peerAddressType = peerAddressType;
+	advSection->channelCnt = 0;
     for(int i=0;i<3;i++)
     {
-    	if(ll->adv->channelMap&BIT(i))
+    	if(channelMap&BIT(i))
     	{
-    		ll->adv->chnTable[ll->adv->channelCnt] = 37+i;
-    		ll->adv->channelCnt++;
+    		advSection->chnTable[advSection->channelCnt] = 37+i;
+    		advSection->channelCnt++;
     	}
     }
-	txMemcpy(ll->adv->peerAddress,peerAddress,6);
-	ll->adv->filterPolicy = policy;
+	txMemcpy(advSection->peerAddress,peerAddress,6);
+	advSection->filterPolicy = policy;
 	switch(type)
 	{
 		case LL_ADV_IND:
 		{
-			ll->adv->advEventType = ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED;
+			advSection->eventType = ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED;
 		}break;
 		case LL_ADV_DIRECT_IND_HIGH_DUTY:
 		case LL_ADV_DIRECT_IND_LOW_DUTY:
 		{
-			ll->adv->advEventType = ADV_EVENT_CONNECTABLE_DIRECTED;
+			advSection->eventType = ADV_EVENT_CONNECTABLE_DIRECTED;
 		}break;
 		case LL_ADV_SCAN_IND:
 		{
-			ll->adv->advEventType = ADV_EVENT_SCANNABLE_UNDIRECTED;
+			advSection->eventType = ADV_EVENT_SCANNABLE_UNDIRECTED;
 		}break;
 		case LL_ADV_NONCONN_IND:
 		{
-			ll->adv->advEventType = ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED;
+			advSection->eventType = ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED;
 		}break;
 	}
 	LOG_TRACE(1,"set adv param",0,0)
@@ -221,13 +220,14 @@ controller_error_code_e ll_set_advertising_data(_u8* data,_u8 length)
 	{
 		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_ctrl_t));
 	}
-    if(ll->adv->advData)
+	ll_internal_adv_shareSection_t* advSection = &ll->adv->section;
+    if(advSection->data)
 	{
-		tx_free(ll->adv->advData);
+		tx_free(advSection->data);
 	}
-	ll->adv->advDataLen = length;
-	ll->adv->advData    = tx_malloc(length);
-	txMemcpy(ll->adv->advData,data,length);
+	advSection->dataLen = length;
+	advSection->data    = tx_malloc(length);
+	txMemcpy(advSection->data,data,length);
 	LOG_TRACE(1,"set adv data",0,0)
 	return SUCCESS;
 }
@@ -239,13 +239,14 @@ controller_error_code_e ll_set_scan_response_data(_u8* data,_u8 length)
 	{
 		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_ctrl_t));
 	}
-    if(ll->adv->scanRspData)
+	ll_internal_adv_shareSection_t* advSection = &ll->adv->section;
+    if(advSection->scanRspData)
 	{
-		tx_free(ll->adv->scanRspData);
+		tx_free(advSection->scanRspData);
 	}
-	ll->adv->scanRspDataLen = length;
-	ll->adv->scanRspData    = tx_malloc(length);
-	txMemcpy(ll->adv->scanRspData,data,length);
+	advSection->scanRspDataLen = length;
+	advSection->scanRspData    = tx_malloc(length);
+	txMemcpy(advSection->scanRspData,data,length);
 	LOG_TRACE(1,"set scan rsp data",0,0)
 	return SUCCESS;
 }
@@ -253,16 +254,17 @@ controller_error_code_e ll_set_scan_response_data(_u8* data,_u8 length)
 controller_error_code_e ll_set_advertising_enable(_u8 enable)
 {
 	ll_ctrl_t* ll = ll_get_current_state_machine();
+	ll_internal_adv_shareSection_t* advSection = &ll->adv->section;
 	//assert ll->adv == NULL
-    if(ll->adv->enable == enable)
+    if(advSection->enable == enable)
 	{
 		return SUCCESS;
 	}
 	LOG_TRACE(1,"set scan enable",&enable,1)
-	if(ll->adv->enable!=enable)
+	if(advSection->enable!=enable)
 	{
-		ll->adv->enable = enable;
-		if(ll->adv->enable == LL_ADVERTISING_ENABLE)
+		advSection->enable = enable;
+		if(advSection->enable == LL_ADVERTISING_ENABLE)
 		{
 			if(BLE_LL_STATE_SUCCESS!=ble_ll_process_event(ll,BLE_LL_EVENT_START_ADVERTISING))
 			{
