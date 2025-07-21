@@ -3,15 +3,16 @@
 /*****************************************ADV State Machine***********************************************/
 typedef enum
 {
-    ADV_SM_PHY_EVENT_BASE              = 0x10,
-    ADV_SM_PHY_EVENT_SEND_FINISHED     = ADV_SM_PHY_EVENT_BASE+PHY_IRQ_TX_FINISHED,
-    ADV_SM_PHY_EVENT_RECEIVE_FINISHED  = ADV_SM_PHY_EVENT_BASE+PHY_IRQ_RX_FINISHED,
-    ADV_SM_PHY_EVENT_RECEIVE_TIMEOUT   = ADV_SM_PHY_EVENT_BASE+PHY_IRQ_RX_TIMEOUT,
-    ADV_SM_SCH_EVENT_BASE              = 0x20,
+    ADV_SM_SCH_EVENT_BASE              = 0x10,
     ADV_SM_SCH_EVENT_START             = ADV_SM_SCH_EVENT_BASE+SCH_TASK_START,
     ADV_SM_SCH_EVENT_STOP              = ADV_SM_SCH_EVENT_BASE+SCH_TASK_STOP,             
     ADV_SM_SCH_EVENT_CANCELED          = ADV_SM_SCH_EVENT_BASE+SCH_TASK_CANCELED,
     ADV_SM_SCH_EVENT_PASSED            = ADV_SM_SCH_EVENT_BASE+SCH_TASK_PASSED,
+
+    ADV_SM_PHY_EVENT_BASE              = 0x20,
+    ADV_SM_PHY_EVENT_SEND_FINISHED     = ADV_SM_PHY_EVENT_BASE+PHY_IRQ_TX_FINISHED,
+    ADV_SM_PHY_EVENT_RECEIVE_FINISHED  = ADV_SM_PHY_EVENT_BASE+PHY_IRQ_RX_FINISHED,
+    ADV_SM_PHY_EVENT_RECEIVE_TIMEOUT   = ADV_SM_PHY_EVENT_BASE+PHY_IRQ_RX_TIMEOUT,
 }adv_sm_event_e;
 
 typedef enum
@@ -20,17 +21,18 @@ typedef enum
     ADV_SM_STATE_SENDING_ADV,
     ADV_SM_STATE_SENDING_RSP,
     ADV_SM_STATE_RECEIVING,
-#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
     ADV_SM_STATE_SENDING_AUX_ADV,
-    ADV_SM_STATE_SENDING_AUX_RSP,
+    ADV_SM_STATE_SENDING_AUX_SCAN_RSP,
+    ADV_SM_STATE_SENDING_AUX_CONNECT_RSP,
     ADV_SM_STATE_SENDING_AUX_CHAIN_ADV,
     ADV_SM_STATE_RECEIVING_AUX,
-#endif
-#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
-#endif
+    #endif
+    #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
+    #endif
 
-#if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
-#endif
+    #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
+    #endif
 
 }adv_sm_state_e;
 
@@ -90,6 +92,24 @@ typedef enum
     ADV_EVENT_PROPERTY_RX       = BIT(0),
     ADV_EVENT_PROPERTY_SEND_RSP = BIT(1),
 }adv_event_property_e;
+
+
+typedef enum
+{
+    ADV_EVENT_NONE,
+    ADV_EVENT_PROPERTY_SCANNABLE   = BIT(0),
+    ADV_EVENT_PROPERTY_CONNECTABLE = BIT(1),
+}adv_event_property_e;
+static _u32 advEventProperty[] = 
+{
+    ADV_EVENT_NONE,
+    ADV_EVENT_NONE,
+    ADV_EVENT_PROPERTY_SCANNABLE|ADV_EVENT_PROPERTY_CONNECTABLE,
+    ADV_EVENT_PROPERTY_SCANNABLE,
+    ADV_EVENT_PROPERTY_SCANNABLE,
+}
+
+
 
 _RAM_CODE
 static void adv_event_prepare_packet(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam)
@@ -183,7 +203,7 @@ static void adv_event_process_next_task(ll_ctrl_t* ll,ll_internal_adv_param_t* a
 }
 
 _RAM_CODE
-static int adv_event_step_send_advertising(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
+static int adv_event_step_phy_send_advertising(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
     if(advParam->availableChnCnt==0)
     {
@@ -198,7 +218,7 @@ static int adv_event_step_send_advertising(ll_ctrl_t* ll,ll_internal_adv_param_t
 }
 
 _RAM_CODE
-static int adv_event_step_start_listen(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
+static int adv_event_step_phy_start_listen(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
     if(property&ADV_EVENT_PROPERTY_RX)
     {
@@ -233,7 +253,7 @@ static int adv_event_step_received_packet_analyze(ll_ctrl_t* ll)
 }
 
 _RAM_CODE
-static int adv_event_step_send_scan_rsp(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
+static int adv_event_step_phy_send_scan_rsp(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
 	if((property&ADV_EVENT_PROPERTY_SEND_RSP)&&(adv_event_step_received_packet_analyze(ll)!=0))
 	{
@@ -278,7 +298,7 @@ static int adv_event_step_sch_canceled(ll_ctrl_t* ll,ll_internal_adv_param_t* ad
 }
 
 _RAM_CODE
-static int adv_event_step_send_rsp_finished(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
+static int adv_event_step_phy_send_rsp_finished(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
     return 1;
 }
@@ -286,18 +306,18 @@ static int adv_event_step_send_rsp_finished(ll_ctrl_t* ll,ll_internal_adv_param_
 
 static adv_event_sm_t adv_event_state_machine[]=
 {
-    {ADV_SM_STATE_IDLE,       ADV_SM_STATE_SENDING_ADV, ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_START,           adv_event_step_send_advertising},
+    {ADV_SM_STATE_IDLE,       ADV_SM_STATE_SENDING_ADV, ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_START,           adv_event_step_phy_send_advertising},
     {ADV_SM_STATE_IDLE,       ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_STOP,            adv_event_step_sch_stop},
     {ADV_SM_STATE_IDLE,       ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_CANCELED,        adv_event_step_sch_canceled},
     {ADV_SM_STATE_IDLE,       ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_PASSED,          adv_event_step_sch_passed},
 
-    {ADV_SM_STATE_SENDING_ADV,ADV_SM_STATE_RECEIVING,   ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_SEND_FINISHED,   adv_event_step_start_listen},
+    {ADV_SM_STATE_SENDING_ADV,ADV_SM_STATE_RECEIVING,   ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_SEND_FINISHED,   adv_event_step_phy_start_listen},
     {ADV_SM_STATE_SENDING_ADV,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_STOP,            adv_event_step_sch_stop},
 
-    {ADV_SM_STATE_RECEIVING,  ADV_SM_STATE_SENDING_RSP, ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_RECEIVE_FINISHED,adv_event_step_send_scan_rsp},
+    {ADV_SM_STATE_RECEIVING,  ADV_SM_STATE_SENDING_RSP, ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_RECEIVE_FINISHED,adv_event_step_phy_send_scan_rsp},
     {ADV_SM_STATE_RECEIVING,  ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_STOP,            adv_event_step_sch_stop},
 
-    {ADV_SM_STATE_SENDING_RSP,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_SEND_FINISHED,   adv_event_step_send_rsp_finished},
+    {ADV_SM_STATE_SENDING_RSP,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_SEND_FINISHED,   adv_event_step_phy_send_rsp_finished},
     {ADV_SM_STATE_SENDING_RSP,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_STOP,            adv_event_step_sch_stop},
 };
 static adv_procedure_list_t adv_con_scan_undirected_procedure[] =
@@ -325,7 +345,15 @@ static adv_procedure_list_t adv_non_con_non_scan_undirected_procedure[]=
 typedef enum
 {
     ADV_EXTENDED_EVENT_NONE,
-    ADV_EXTENDED_EVENT_PROPERTY_RX = BIT(0),
+    ADV_EXTENDED_EVENT_PROPERTY_RX          = BIT(0),
+    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+    ADV_EXTENDED_EVENT_PROPERTY_SCANNABLE   = BIT(1),
+    ADV_EXTENDED_EVENT_PROPERTY_CONNECTABLE = BIT(2),
+    #endif
+    #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
+    #endif
+    #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
+    #endif
 }adv_extended_event_property_e;
 
 ll_internal_adv_param_t* ll_extended_adv_get_entity(_u8 handle,_u8 allocate)
@@ -380,9 +408,37 @@ int ll_extended_adv_get_current_set_number(void)
     return count;
 }
 
+
+static int adv_extended_event_step_phy_send_aux_advertising(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
+{
+
+}
+static int adv_extended_event_step_phy_send_chain_advertising(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
+{
+
+}
+static int adv_extended_event_step_phy_start_listen(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
+{
+
+}
+static int adv_extended_event_step_phy_send_aux_scan_rsp(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
+{
+
+}
+static int adv_extended_event_step_phy_send_aux_connect_rsp(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
+{
+
+}
+
 static adv_event_sm_t adv_extended_event_state_machine[]= 
 {
-    ADV_SM_STATE_IDLE
+    {ADV_SM_STATE_IDLE,                  ADV_SM_STATE_SENDING_AUX_ADV,      ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_START,        adv_extended_event_step_phy_send_aux_advertising},
+    {ADV_SM_STATE_SENDING_AUX_ADV,       ADV_SM_STATE_SENDING_AUX_CHAIN_ADV,ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_SEND_FINISHED,adv_extended_event_step_phy_send_chain_advertising},
+    {ADV_SM_STATE_SENDING_AUX_CHAIN_ADV, ADV_SM_STATE_SENDING_AUX_CHAIN_ADV,ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_SEND_FINISHED,adv_extended_event_step_phy_send_chain_advertising},
+
+    {ADV_SM_STATE_SENDING_AUX_ADV,       ADV_SM_STATE_RECEIVING_AUX,        ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_SEND_FINISHED,adv_extended_event_step_phy_start_listen},
+    {ADV_SM_STATE_RECEIVING_AUX,         ADV_SM_STATE_IDLE,                 ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_SEND_FINISHED,adv_extended_event_step_phy_send_aux_scan_rsp},
+    {ADV_SM_STATE_RECEIVING_AUX,         ADV_SM_STATE_IDLE,                 ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_SEND_FINISHED,adv_extended_event_step_phy_send_aux_connect_rsp},
 };
 static adv_procedure_list_t adv_extended_con_undirected_procedure[]=
 {
