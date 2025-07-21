@@ -325,14 +325,14 @@ ll_internal_extended_adv_t* ll_extended_adv_get_entity(_u8 handle)
     ll_ctrl_t* ll     = ll_get_current_state_machine();
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
-		if(ll->adv->advSet[i].advHandle == handle)
+		if(ll->adv->advSet[i].handle == handle)
 		{
 			return &ll->adv->advSet;
 		}
 	}
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
-        if(ll->adv->advSet[i].advHandle == LL_EXTENDED_ADV_INVALID_HANDLE)
+        if(ll->adv->advSet[i].handle == LL_EXTENDED_ADV_INVALID_HANDLE)
         {
             return &ll->adv->advSet;
         }
@@ -346,7 +346,7 @@ int ll_extended_adv_get_current_active_set_number(void)
     _u8 count = 0;
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
-        if(ll->adv->advSet[i].advHandle!=0xFF && ll->adv->advSet[i].enable == 1)
+        if(ll->adv->advSet[i].handle!=LL_EXTENDED_ADV_INVALID_HANDLE && ll->adv->advSet[i].section.enable == 1)
         {
             count++;
         }
@@ -360,7 +360,7 @@ int ll_extended_adv_get_current_set_number(void)
     _u8 count = 0;
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
-        if(ll->adv->advSet[i].advHandle!=0xFF)
+        if(ll->adv->advSet[i].handle!=0xFF)
         {
             count++;
         }

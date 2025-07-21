@@ -121,14 +121,14 @@ typedef struct
     _u8* scanRspData;
 }ll_internal_adv_shareSection_t;
 
-
+//how todo?to merge shared section.
 typedef struct _PACKED
 {
     _u8  handle;
     _u8  scanReqNotifyEnable:2;
     _u8  advDatafragPerf:1;//fragment preference
     _u8  scanRspDatafragPerf:1;//fragment preference
-    _u8  secondaryphyMode:2;
+    _u8  secondaryPhyMode:2;
     _u16 eventProperty;  
 
     _u32 primaryAnchorPoint;//unit is us
