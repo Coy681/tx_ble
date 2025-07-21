@@ -20,6 +20,18 @@ typedef enum
     ADV_SM_STATE_SENDING_ADV,
     ADV_SM_STATE_SENDING_RSP,
     ADV_SM_STATE_RECEIVING,
+#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+    ADV_SM_STATE_SENDING_AUX_ADV,
+    ADV_SM_STATE_SENDING_AUX_RSP,
+    ADV_SM_STATE_SENDING_AUX_CHAIN_ADV,
+    ADV_SM_STATE_RECEIVING_AUX,
+#endif
+#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
+#endif
+
+#if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
+#endif
+
 }adv_sm_state_e;
 
 typedef enum
@@ -370,7 +382,7 @@ int ll_extended_adv_get_current_set_number(void)
 
 static adv_event_sm_t adv_extended_event_state_machine[]= 
 {
-
+    ADV_SM_STATE_IDLE
 };
 static adv_procedure_list_t adv_extended_con_undirected_procedure[]=
 {
@@ -396,16 +408,26 @@ static adv_procedure_list_t adv_extended_scan_directed_procedure[]=
     {ADV_EXTENDED_EVENT,adv_extended_event_state_machine,ADV_SM_LIST_LENGTH(adv_extended_event_state_machine),ADV_EXTENDED_EVENT_PROPERTY_RX},
 };
 
-static adv_procedure_list_t adv_extended_non_con_non_scan_undirected_procedure[]=
+static adv_procedure_list_t adv_extended_non_con_non_scan_undirected_procedure_with_auxiliary[]=
 {
     {ADV_EVENT,         adv_event_state_machine,         ADV_SM_LIST_LENGTH(adv_event_state_machine),         ADV_EVENT_NONE},
     {ADV_EXTENDED_EVENT,adv_extended_event_state_machine,ADV_SM_LIST_LENGTH(adv_extended_event_state_machine),ADV_EXTENDED_EVENT_NONE},
 };
 
-static adv_procedure_list_t adv_extended_non_con_non_scan_directed_procedure[]=
+static adv_procedure_list_t adv_extended_non_con_non_scan_directed_procedure_with_auxiliary[]=
 {
     {ADV_EVENT,         adv_event_state_machine,         ADV_SM_LIST_LENGTH(adv_event_state_machine),         ADV_EVENT_NONE},
     {ADV_EXTENDED_EVENT,adv_extended_event_state_machine,ADV_SM_LIST_LENGTH(adv_extended_event_state_machine),ADV_EXTENDED_EVENT_NONE},
+};
+
+static adv_procedure_list_t adv_extended_non_con_non_scan_undirected_procedure_without_auxiliary[]=
+{
+    {ADV_EVENT,         adv_event_state_machine,         ADV_SM_LIST_LENGTH(adv_event_state_machine),         ADV_EVENT_NONE},
+};
+
+static adv_procedure_list_t adv_extended_non_con_non_scan_directed_procedure_without_auxiliary[]=
+{
+    {ADV_EVENT,         adv_event_state_machine,         ADV_SM_LIST_LENGTH(adv_event_state_machine),         ADV_EVENT_NONE},
 };
 #endif
 /*****************************************ADV Periodic Event Process ***********************************************/
@@ -445,17 +467,19 @@ static adv_procedure_list_t adv_extended_periodic_with_rsp_procedure[]=
 
 static adv_sequence_t advSequence[] = 
 {
-    {ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED,                  adv_con_scan_undirected_procedure,                 ADV_PROCEDURE_LIST_LENGTH(adv_con_scan_undirected_procedure)},
-    {ADV_EVENT_CONNECTABLE_DIRECTED,                              adv_con_directed_procedure,                        ADV_PROCEDURE_LIST_LENGTH(adv_con_directed_procedure)},
-    {ADV_EVENT_SCANNABLE_UNDIRECTED,                              adv_scan_undirected_procedure,                     ADV_PROCEDURE_LIST_LENGTH(adv_scan_undirected_procedure)},
-    {ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED,          adv_non_con_non_scan_undirected_procedure,         ADV_PROCEDURE_LIST_LENGTH(adv_non_con_non_scan_undirected_procedure)},
+    {ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED,                                    adv_con_scan_undirected_procedure,                                   ADV_PROCEDURE_LIST_LENGTH(adv_con_scan_undirected_procedure)},
+    {ADV_EVENT_CONNECTABLE_DIRECTED,                                                adv_con_directed_procedure,                                          ADV_PROCEDURE_LIST_LENGTH(adv_con_directed_procedure)},
+    {ADV_EVENT_SCANNABLE_UNDIRECTED,                                                adv_scan_undirected_procedure,                                       ADV_PROCEDURE_LIST_LENGTH(adv_scan_undirected_procedure)},
+    {ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED,                            adv_non_con_non_scan_undirected_procedure,                           ADV_PROCEDURE_LIST_LENGTH(adv_non_con_non_scan_undirected_procedure)},
     #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
-    {ADV_EVENT_EXTENDED_CONNECTABLE_DIRECTED,                     adv_extended_con_undirected_procedure,             ADV_PROCEDURE_LIST_LENGTH(adv_extended_con_undirected_procedure)},
-    {ADV_EVENT_EXTENDED_CONNECTABLE_UNDIRECTED,                   adv_extended_con_directed_procedure,               ADV_PROCEDURE_LIST_LENGTH(adv_extended_con_directed_procedure)},
-    {ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED,                       adv_extended_scan_undirected_procedure,            ADV_PROCEDURE_LIST_LENGTH(adv_extended_scan_undirected_procedure)},
-    {ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED,                     adv_extended_scan_directed_procedure,              ADV_PROCEDURE_LIST_LENGTH(adv_extended_scan_directed_procedure)},
-    {ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED,   adv_extended_non_con_non_scan_undirected_procedure,ADV_PROCEDURE_LIST_LENGTH(adv_extended_non_con_non_scan_undirected_procedure)},
-    {ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED, adv_extended_non_con_non_scan_directed_procedure,  ADV_PROCEDURE_LIST_LENGTH(adv_extended_non_con_non_scan_directed_procedure)},
+    {ADV_EVENT_EXTENDED_CONNECTABLE_DIRECTED,                                       adv_extended_con_undirected_procedure,                               ADV_PROCEDURE_LIST_LENGTH(adv_extended_con_undirected_procedure)},
+    {ADV_EVENT_EXTENDED_CONNECTABLE_UNDIRECTED,                                     adv_extended_con_directed_procedure,                                 ADV_PROCEDURE_LIST_LENGTH(adv_extended_con_directed_procedure)},
+    {ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED,                                         adv_extended_scan_undirected_procedure,                              ADV_PROCEDURE_LIST_LENGTH(adv_extended_scan_undirected_procedure)},
+    {ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED,                                       adv_extended_scan_directed_procedure,                                ADV_PROCEDURE_LIST_LENGTH(adv_extended_scan_directed_procedure)},
+    {ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITH_AUXILIARY,      adv_extended_non_con_non_scan_undirected_procedure_with_auxiliary,   ADV_PROCEDURE_LIST_LENGTH(adv_extended_non_con_non_scan_undirected_procedure_with_auxiliary)},
+    {ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED_WITH_AUXILIARY,    adv_extended_non_con_non_scan_directed_procedure_with_auxiliary,     ADV_PROCEDURE_LIST_LENGTH(adv_extended_non_con_non_scan_directed_procedure_with_auxiliary)},
+    {ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITHOUT_AUXILIARY,   adv_extended_non_con_non_scan_undirected_procedure_without_auxiliary,ADV_PROCEDURE_LIST_LENGTH(adv_extended_non_con_non_scan_undirected_procedure_without_auxiliary)},
+    {ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED_WITHOUT_AUXILIARY, adv_extended_non_con_non_scan_directed_procedure_without_auxiliary,  ADV_PROCEDURE_LIST_LENGTH(adv_extended_non_con_non_scan_directed_procedure_without_auxiliary)},
     #endif
     #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
     {ADV_EVENT_EXTENDED_PERIODIC,                                 adv_extended_periodic_procedure,                   ADV_PROCEDURE_LIST_LENGTH(adv_extended_periodic_procedure)},
@@ -488,7 +512,7 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
         for(_u8 i=0;i<advSequence[eventType].procedureList[eventClass].listLen;i++)
         {
             if(advParam->state == advSequence[eventType].procedureList[eventClass].sm[i].currentState\
-                  && smEventType == advSequence[eventType].procedureList[eventClass].sm[i].event)
+                && smEventType == advSequence[eventType].procedureList[eventClass].sm[i].event)
             {
 
                 if(advParam->processingEvent == smEventType)
@@ -577,13 +601,14 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
 		#else
         _u8 index = 0;
 		#endif
-        //phy init
-        ll->phy.hw_irq_cb  = adv_phy_irq_callback;
-        ll->ownAddr[0] = ll->ownAddr[1] = ll->ownAddr[2] = ll->ownAddr[3]= ll->ownAddr[4] =ll->ownAddr[5]= 0x12;
+        //param init
         ll->adv->param[index].instant         = 0;
         ll->adv->param[index].availableChnCnt = ll->adv->param[index].channelCnt;
         ll->adv->param[index].phyMode         = PHY_MODE_1M;
         ll->adv->param[index].state           = ADV_SM_STATE_IDLE;
+        ll->ownAddr[0] = ll->ownAddr[1] = ll->ownAddr[2] = ll->ownAddr[3]= ll->ownAddr[4] =ll->ownAddr[5]= 0x12;
+        //phy init
+        ll->phy.hw_irq_cb  = adv_phy_irq_callback;
         phy_obj_cast(&ll->phy);
         phy_obj_init(&ll->phy);
         //sch init
@@ -592,6 +617,9 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         ll->sch.priority = LL_ADV_PRIORITY;
         ll->sch.timestamp = system_time() + 500;//maybe need planner
         ll->sch.period    = ll->adv->param[index].interval;
+        ll->sch.startLatency = 100;
+        ll->sch.stopLatency  = 75;
+        ll->sch.cb = adv_sch_callback;
         if(ll->adv->param[index].eventType == ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED)
         {
             ll->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,BLE_ADV_DEFAULT_MAX_LENGTH,0)+PACKET_DEFAULT_TIFS_TIME;
@@ -600,16 +628,13 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         {
             ll->sch.duration = ll->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(ll->phy.mode,BLE_ADV_DEFAULT_MAX_LENGTH,0)+2*PACKET_DEFAULT_TIFS_TIME;
         }
-        ll->sch.startLatency = 100;
-        ll->sch.stopLatency  = 75;
-        ll->sch.cb = adv_sch_callback;
+
         sch_message_t* message = (sch_message_t*)tx_message_allocate(8);
         message->eventType = SCHE_MESSAGE_TASK_ADD;
         message->message[0] = ((_u32)&ll->sch);
         message->message[1] = ((_u32)&ll->sch)>>8;
         message->message[2] = ((_u32)&ll->sch)>>16;
         message->message[3] = ((_u32)&ll->sch)>>24;
-
         tx_message_send(TX_TASK_ID_SCH,(_u8*)message);
         LOG_TRACE(LL_LOG_TRACE,"enter advertising state",0,0);
         return 1;
