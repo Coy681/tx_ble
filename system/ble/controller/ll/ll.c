@@ -285,17 +285,17 @@ controller_error_code_e ll_set_advertising_enable(_u8 enable)
 controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_param_t* pParam)
 {
 	ll_ctrl_t* ll = ll_get_current_state_machine();
-	if(ll->adv == NULL)
+	if(POINTER_NOT_VALID(ll->adv))
 	{
-		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_ctrl_t)*BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS);
+		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_param_t)*BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS);
 		ASSERT(ll->adv == NULL);
 		for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 		{
-			ll->adv->advSet[i].handle = LL_EXTENDED_ADV_INVALID_HANDLE;
+			ll->adv->param[i].handle = LL_EXTENDED_ADV_INVALID_HANDLE;
 		}
 	}
-	ll_internal_extended_adv_t* pAdv = ll_extended_adv_get_entity(pParam->advHandle);
-	if(pAdv == NULL)
+	ll_internal_adv_param_t* pAdv = ll_extended_adv_get_entity(pParam->advHandle,1);
+	if(POINTER_NOT_VALID(pAdv))
 	{
 		return MEMORY_CAPACITY_EXCEEDED;
 	}
@@ -306,23 +306,24 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 		{
 			case (LL_ADV_EVENT_PROPERTY_LEGACY_PDU|LL_ADV_EVENT_PROPERTY_CONNECTED|LL_ADV_EVENT_PROPERTY_SCANNABLE):
 			{
-				pAdv->section.eventType = ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED;
+				pAdv->eventType = ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED;
 			}
 				break;
 			case (LL_ADV_EVENT_PROPERTY_LEGACY_PDU|LL_ADV_EVENT_PROPERTY_CONNECTED|LL_ADV_EVENT_PROPERTY_DIRECTED):
 			case (LL_ADV_EVENT_PROPERTY_LEGACY_PDU|LL_ADV_EVENT_PROPERTY_CONNECTED|LL_ADV_EVENT_PROPERTY_DIRECTED|LL_ADV_EVENT_PROPERTY_HIGH_DUTY_CONNECTED):
 			{
-				pAdv->section.eventType = ADV_EVENT_CONNECTABLE_DIRECTED;
+				//todo,high duty cycle
+				pAdv->eventType = ADV_EVENT_CONNECTABLE_DIRECTED;
 			}
 				break;
 			case (LL_ADV_EVENT_PROPERTY_LEGACY_PDU|LL_ADV_EVENT_PROPERTY_SCANNABLE):
 			{
-				pAdv->section.eventType = ADV_EVENT_SCANNABLE_UNDIRECTED;
+				pAdv->eventType = ADV_EVENT_SCANNABLE_UNDIRECTED;
 			}
 				break;
 			case (LL_ADV_EVENT_PROPERTY_LEGACY_PDU):
 			{
-				pAdv->section.eventType = ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED;
+				pAdv->eventType = ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED;
 			}
 		}
 	}
@@ -332,37 +333,38 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 		{
 			case(LL_ADV_EVENT_PROPERTY_CONNECTED|LL_ADV_EVENT_PROPERTY_DIRECTED):
 			{
-				pAdv->section.eventType = ADV_EVENT_EXTENDED_CONNECTABLE_DIRECTED;
+				pAdv->eventType = ADV_EVENT_EXTENDED_CONNECTABLE_DIRECTED;
 			}
 				break;
 			case(LL_ADV_EVENT_PROPERTY_CONNECTED):
 			{
-				pAdv->section.eventType = ADV_EVENT_EXTENDED_CONNECTABLE_UNDIRECTED;
+				pAdv->eventType = ADV_EVENT_EXTENDED_CONNECTABLE_UNDIRECTED;
 			}
 				break;
 			case(LL_ADV_EVENT_PROPERTY_SCANNABLE|LL_ADV_EVENT_PROPERTY_DIRECTED):
 			{
-				pAdv->section.eventType = ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED;
+				pAdv->eventType = ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED;
 			}
 				break;	
 			case(LL_ADV_EVENT_PROPERTY_SCANNABLE):
 			{
-				pAdv->section.eventType = ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED;
+				pAdv->eventType = ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED;
 			}
 				break;	
 			case(LL_ADV_EVENT_PROPERTY_DIRECTED):
 			{
-				pAdv->section.eventType = ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED;
+				pAdv->eventType = ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED;
 			}
 				break;	
 			case(0):
 			{
-				pAdv->section.eventType = ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED;
+				pAdv->eventType = ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED;
 			}
 				break;
 		}
 	}
-	pAdv->section.filterPolicy = pParam->filterPolicy;
+	pAdv->filterPolicy = pParam->filterPolicy;
+	pAdv->txPower      = 0;
 	if(pParam->txPower!=0x7F)
 	{
 		pAdv->txPower = pParam->txPower;
@@ -370,16 +372,16 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 	pAdv->sid                      = pParam->advSid;
 	pAdv->scanReqNotifyEnable      = pParam->scanReqNotifyEnable;
 	pAdv->eventProperty            = pParam->advEventProperty;
-	pAdv->secondaryMaxSkip = pParam->secondaryAdvMaxSkip;
-	pAdv->section.ownAddressType   = pParam->ownAddrType;
-	pAdv->section.peerAddressType  = pParam->peerAddrType;
-	pAdv->section.interval         = pParam->primaryAdvInterval * 625;
-	pAdv->section.channelCnt       = 0;
+	pAdv->secondaryMaxSkip         = pParam->secondaryAdvMaxSkip;
+	pAdv->ownAddressType           = pParam->ownAddrType;
+	pAdv->peerAddressType          = pParam->peerAddrType;
+	pAdv->interval                 = pParam->primaryAdvInterval * 625;
+	pAdv->channelCnt               = 0;
     for(int i=0;i<3;i++)
     {
     	if(pParam->primaryAdvChnMap&BIT(i))
     	{
-    		pAdv->section.chnTable[pAdv->section.channelCnt++] = 37+i;
+    		pAdv->chnTable[pAdv->channelCnt++] = 37+i;
     	}
     }
 
@@ -388,21 +390,21 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 		if(pParam->primaryAdvphyOptions == LL_ADV_PHY_OPTIONS_PREFER_S2||\
 	       pParam->primaryAdvphyOptions == LL_ADV_PHY_OPTIONS_REQUIRE_S2)
 		{
-			pAdv->section.phyMode = PHY_MODE_CODED_S2;
+			pAdv->phyMode = PHY_MODE_CODED_S2;
 		}
 		else if(pParam->primaryAdvphyOptions == LL_ADV_PHY_OPTIONS_PREFER_S8||\
 	            pParam->primaryAdvphyOptions == LL_ADV_PHY_OPTIONS_REQUIRE_S8)
 		{
-			pAdv->section.phyMode = HAL_RF_MODE_CODED_S8;
+			pAdv->phyMode = (_u8)HAL_RF_MODE_CODED_S8;
 		}
 		else 
 		{
-			pAdv->section.phyMode = HAL_RF_MODE_CODED_S8;
+			pAdv->phyMode = (_u8)HAL_RF_MODE_CODED_S8;
 		}
 	}
 	else
 	{
-		pAdv->section.phyMode = LL_ADV_PHY_1M;
+		pAdv->phyMode = LL_ADV_PHY_1M;
 	}
 
 
@@ -416,11 +418,11 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 		else if(pParam->secondaryAdvphyOptions == LL_ADV_PHY_OPTIONS_PREFER_S8||\
 	            pParam->secondaryAdvphyOptions == LL_ADV_PHY_OPTIONS_REQUIRE_S8)
 		{
-			pAdv->secondaryPhyMode = PHY_MODE_CODED_S8;
+			pAdv->secondaryPhyMode = (_u8)PHY_MODE_CODED_S8;
 		}
 		else
 		{
-			pAdv->secondaryPhyMode = PHY_MODE_CODED_S8;
+			pAdv->secondaryPhyMode = (_u8)PHY_MODE_CODED_S8;
 		}
 	}
 	else if(pParam->secondaryAdvPhy == LL_ADV_PHY_1M)
@@ -440,7 +442,7 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 														_u8 dataLen,\
 														_u8* data)
 {
-	ll_internal_extended_adv_t* pAdv = ll_extended_adv_get_entity(advHandle);
+	ll_internal_adv_param_t* pAdv = ll_extended_adv_get_entity(advHandle,0);
 	if(POINTER_NOT_VALID(pAdv))
 	{
 		return UNKNOWN_ADVERTISING_IDENTIFIER;
@@ -450,7 +452,7 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 	{
 		if(dataLen > 31||\
 		   operation!=LL_ADV_DATA_OPERATION_COMPLETE||\
-		   pAdv->section.eventType == ADV_EVENT_CONNECTABLE_DIRECTED)//direct pdu don't have advertising data
+		   pAdv->eventType == ADV_EVENT_CONNECTABLE_DIRECTED)//direct pdu don't have advertising data
 		{
 			return IVALID_HCI_COMMAND_PARAMETERS;
 		}
@@ -458,8 +460,8 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 
 	if(operation == LL_ADV_DATA_OPERATION_UNCHANGED)
 	{
-		if(pAdv->section.enable == 0||\
-		   pAdv->section.dataLen == 0||\
+		if(pAdv->enable == 0||\
+		   pAdv->dataLen == 0||\
 		   dataLen != 0)
 		{
 			return IVALID_HCI_COMMAND_PARAMETERS;
@@ -473,7 +475,7 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 		return IVALID_HCI_COMMAND_PARAMETERS;
 	}
 
-	if(pAdv->section.enable)
+	if(pAdv->enable)
 	{
 		if(operation!=LL_ADV_DATA_OPERATION_COMPLETE&&\
 		   operation!=LL_ADV_DATA_OPERATION_UNCHANGED)
@@ -482,8 +484,8 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 		}
 	}
 
-	if(pAdv->section.eventType == ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED||\
-	   pAdv->section.eventType == ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED)
+	if(pAdv->eventType == ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED||\
+	   pAdv->eventType == ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED)
 	{
 		return IVALID_HCI_COMMAND_PARAMETERS;//mode don't have advertising data
 	}
@@ -492,7 +494,7 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 	{
 		return MEMORY_CAPACITY_EXCEEDED;
 	}
-	if(ll_get_air_packet_time(pAdv->secondaryPhyMode,dataLen,0)>(pAdv->section.interval*3/4))
+	if(ll_get_air_packet_time(pAdv->secondaryPhyMode,dataLen,0)>(pAdv->interval*3/4))
 	{
 		return PACKET_TOO_LONG;
 	}
@@ -503,43 +505,50 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 			pAdv->dataFillOffset = 0;
 			return MEMORY_CAPACITY_EXCEEDED;
 		}
-		if(ll_get_air_packet_time(pAdv->secondaryPhyMode,pAdv->dataFillOffset+dataLen,0)>(pAdv->section.interval*3/4))
+		if(ll_get_air_packet_time(pAdv->secondaryPhyMode,pAdv->dataFillOffset+dataLen,0)>(pAdv->interval*3/4))
 		{
 			pAdv->dataFillOffset = 0;
 			return PACKET_TOO_LONG;
 		}
 	}
 
-	if(POINTER_NOT_VALID(pAdv->section.data))
+	if(POINTER_NOT_VALID(pAdv->data))
 	{
-		pAdv->section.data = tx_malloc(BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH);
+		if(operation == LL_ADV_DATA_OPERATION_COMPLETE)
+		{
+			pAdv->data = tx_malloc(dataLen);
+		}
+		else
+		{
+			pAdv->data = tx_malloc(BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH);
+		}
 	}
 	switch(operation)
 	{
 		case LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT:
 		{
-			txMemcpy4(pAdv->section.data+pAdv->dataFillOffset,data,dataLen);
+			txMemcpy4(pAdv->data+pAdv->dataFillOffset,data,dataLen);
 			pAdv->dataFillOffset+=dataLen;
 		}
 			break;
 		case LL_ADV_DATA_OPERATION_FIRST_FRAGMENT:
 		{
-			txMemcpy4(pAdv->section.data,data,dataLen);
+			txMemcpy4(pAdv->data,data,dataLen);
 			pAdv->dataFillOffset = dataLen;
 		}
 			break;	
 		case LL_ADV_DATA_OPERATION_LAST_FRAGMENT:
 		{
-			txMemcpy4(pAdv->section.data+pAdv->dataFillOffset,data,dataLen);
+			txMemcpy4(pAdv->data+pAdv->dataFillOffset,data,dataLen);
 			pAdv->advDID++;
-			pAdv->section.dataLen = pAdv->dataFillOffset + dataLen;
+			pAdv->dataLen = pAdv->dataFillOffset + dataLen;
 		}
 			break;
 		case LL_ADV_DATA_OPERATION_COMPLETE:
 		{
-			txMemcpy(pAdv->section.data,data,dataLen);
+			txMemcpy(pAdv->data,data,dataLen);
 			pAdv->advDID++;
-			pAdv->section.dataLen = dataLen;
+			pAdv->dataLen = dataLen;
 		}
 			break;
 		case LL_ADV_DATA_OPERATION_UNCHANGED:
@@ -559,7 +568,7 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 															_u8 dataLen,\
 															_u8* data)
 {
-	ll_internal_extended_adv_t* pAdv = ll_extended_adv_get_entity(advHandle);
+	ll_internal_adv_param_t* pAdv = ll_extended_adv_get_entity(advHandle,0);
 	if(POINTER_NOT_VALID(pAdv))
 	{
 		return UNKNOWN_ADVERTISING_IDENTIFIER;
@@ -569,17 +578,19 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 	{
 		if(dataLen > 31||\
 		   operation!=LL_ADV_DATA_OPERATION_COMPLETE||\
-		   (pAdv->section.eventType != ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED)&&(pAdv->section.eventType != ADV_EVENT_SCANNABLE_UNDIRECTED))
+		   ((pAdv->eventType != ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED)&&(pAdv->eventType != ADV_EVENT_SCANNABLE_UNDIRECTED)))
 		{
 			return IVALID_HCI_COMMAND_PARAMETERS;
 		}
 	}
 	else 
 	{
-		if(pAdv->section.eventType != ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED||\
-		   pAdv->section.eventType != ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED)
+		if(pAdv->eventType != ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED||\
+		   pAdv->eventType != ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED||\
+		   pAdv->eventType != ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED||\
+		   pAdv->eventType != ADV_EVENT_SCANNABLE_UNDIRECTED)
 		{
-			return ;
+			return IVALID_HCI_COMMAND_PARAMETERS;
 		}
 	}
 
@@ -589,13 +600,13 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 		{
 			return IVALID_HCI_COMMAND_PARAMETERS;
 		}
-		if(pAdv->section.enable)
+		if(pAdv->enable)
 		{
 			return COMMAND_DISALLOWED;
 		}
 	}
 
-	if(pAdv->section.enable)
+	if(pAdv->enable)
 	{
 		if(dataLen == 0)
 		{
@@ -607,7 +618,7 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 	{
 		return MEMORY_CAPACITY_EXCEEDED;
 	}
-	if(ll_get_air_packet_time(pAdv->secondaryPhyMode,dataLen,0)>(pAdv->section.interval*3/4))
+	if(ll_get_air_packet_time(pAdv->secondaryPhyMode,dataLen,0)>(pAdv->interval*3/4))
 	{
 		return PACKET_TOO_LONG;
 	}
@@ -618,39 +629,39 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 			pAdv->scanRspDataFillOffset = 0;
 			return MEMORY_CAPACITY_EXCEEDED;
 		}
-		if(ll_get_air_packet_time(pAdv->secondaryPhyMode,pAdv->scanRspDataFillOffset+dataLen,0)>(pAdv->section.interval*3/4))
+		if(ll_get_air_packet_time(pAdv->secondaryPhyMode,pAdv->scanRspDataFillOffset+dataLen,0)>(pAdv->interval*3/4))
 		{
 			return PACKET_TOO_LONG;
 		}
 	}
-	if(POINTER_NOT_VALID(pAdv->section.data))
+	if(POINTER_NOT_VALID(pAdv->data))
 	{
-		pAdv->section.data = tx_malloc(BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH);
+		pAdv->data = tx_malloc(BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH);
 	}
 	switch(operation)
 	{
 		case LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT:
 		{
-			txMemcpy4(pAdv->section.scanRspData+pAdv->scanRspDataFillOffset,data,dataLen);
+			txMemcpy4(pAdv->scanRspData+pAdv->scanRspDataFillOffset,data,dataLen);
 			pAdv->scanRspDataFillOffset+=dataLen;
 		}
 			break;
 		case LL_ADV_DATA_OPERATION_FIRST_FRAGMENT:
 		{
-			txMemcpy4(pAdv->section.scanRspData,data,dataLen);
+			txMemcpy4(pAdv->scanRspData,data,dataLen);
 			pAdv->scanRspDataFillOffset=dataLen;
 		}
 			break;	
 		case LL_ADV_DATA_OPERATION_LAST_FRAGMENT:
 		{
-			txMemcpy4(pAdv->section.scanRspData+pAdv->scanRspDataFillOffset,data,dataLen);
-			pAdv->section.scanRspDataLen = pAdv->scanRspDataFillOffset+dataLen;
+			txMemcpy4(pAdv->scanRspData+pAdv->scanRspDataFillOffset,data,dataLen);
+			pAdv->scanRspDataLen = pAdv->scanRspDataFillOffset+dataLen;
 		}
 			break;
 		case LL_ADV_DATA_OPERATION_COMPLETE:
 		{
-			txMemcpy(pAdv->section.scanRspData,data,dataLen);
-			pAdv->section.scanRspDataLen = dataLen;
+			txMemcpy(pAdv->scanRspData,data,dataLen);
+			pAdv->scanRspDataLen = dataLen;
 		}
 			break;
 	}
@@ -690,17 +701,17 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 	{
 		for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 		{
-			if(ll->adv->advSet[i].handle <= 0xEF)
+			if(ll->adv->param[i].handle <= 0xEF)
 			{
-				if(ll->adv->advSet[i].dataFillOffset !=0 || ll->adv->advSet[i].scanRspDataFillOffset !=0)
+				if(ll->adv->param[i].dataFillOffset !=0 || ll->adv->param[i].scanRspDataFillOffset !=0)
 				{
 					return COMMAND_DISALLOWED;
 				}
-				if((ll->adv->advSet[i].eventProperty & LL_ADV_EVENT_PROPERTY_SCANNABLE)&&ll->adv->advSet[i].section.scanRspDataLen == 0)
+				if((ll->adv->param[i].eventProperty & LL_ADV_EVENT_PROPERTY_SCANNABLE)&&ll->adv->param[i].scanRspDataLen == 0)
 				{	
 					return COMMAND_DISALLOWED;
 				}
-				if((ll->adv->advSet[i].eventProperty & LL_ADV_EVENT_PROPERTY_CONNECTED)&&ll->adv->advSet[i].section.dataLen == 0)
+				if((ll->adv->param[i].eventProperty & LL_ADV_EVENT_PROPERTY_CONNECTED)&&ll->adv->param[i].dataLen == 0)
 				{
 					return IVALID_HCI_COMMAND_PARAMETERS;//?,need check if valid
 				}
@@ -711,7 +722,7 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 	{
 		for(_u8 i=0;i<numSets;i++)
 		{	
-			ll_internal_extended_adv_t* pAdv = ll_extended_adv_get_entity(pEnableSubFiled[i].advHandle);
+			ll_internal_adv_param_t* pAdv = ll_extended_adv_get_entity(pEnableSubFiled[i].advHandle,0);
 			if(POINTER_NOT_VALID(pAdv))
 			{
 				return IVALID_HCI_COMMAND_PARAMETERS; 
@@ -720,11 +731,11 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 			{
 				return COMMAND_DISALLOWED;
 			}
-			if((pAdv->eventProperty & LL_ADV_EVENT_PROPERTY_SCANNABLE)&&pAdv->section.scanRspDataLen == 0)
+			if((pAdv->eventProperty & LL_ADV_EVENT_PROPERTY_SCANNABLE)&&pAdv->scanRspDataLen == 0)
 			{	
 				return COMMAND_DISALLOWED;
 			}
-			if((pAdv->eventProperty & LL_ADV_EVENT_PROPERTY_CONNECTED)&&pAdv->section.dataLen == 0)
+			if((pAdv->eventProperty & LL_ADV_EVENT_PROPERTY_CONNECTED)&&pAdv->dataLen == 0)
 			{
 				return IVALID_HCI_COMMAND_PARAMETERS;//?,need check if valid
 			}
@@ -735,26 +746,26 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 	{
 		for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 		{
-			if(ll->adv->advSet[i].handle <= 0xEF)
+			if(ll->adv->param[i].handle <= 0xEF)
 			{
-				ll->adv->advSet[i].section.enable   = enable;
+				ll->adv->param[i].enable   = enable;
 				if(pEnableSubFiled[i].duration!=0)
 				{
-					ll->adv->advSet[i].expireTime =  system_time() + ll->adv->advSet[i].section.interval + pEnableSubFiled[i].duration*10000;
+					ll->adv->param[i].expireTime =  system_time() + ll->adv->param[i].interval + pEnableSubFiled[i].duration*10000;
 				}
 				else 
 				{
-					ll->adv->advSet[i].expireTime = 0;
+					ll->adv->param[i].expireTime = 0;
 				}
 
 				if(pEnableSubFiled[i].maxEvents!=0)
 				{
-					ll->adv->advSet[i].maxEvents    = pEnableSubFiled[i].maxEvents;
-					ll->adv->advSet[i].eventCounter = 0;
+					ll->adv->param[i].maxEvents    = pEnableSubFiled[i].maxEvents;
+					ll->adv->param[i].eventCounter = 0;
 				}
 				else
 				{
-					ll->adv->advSet[i].maxEvents = 0;
+					ll->adv->param[i].maxEvents = 0;
 				}
 			}
 		}
@@ -763,11 +774,11 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 	{
 		for(_u8 i=0;i<numSets;i++)
 		{	
-			ll_internal_extended_adv_t* pAdv = ll_extended_adv_get_entity(pEnableSubFiled[i].advHandle);
-			pAdv->section.enable = enable;
+			ll_internal_adv_param_t* pAdv = ll_extended_adv_get_entity(pEnableSubFiled[i].advHandle,0);
+			pAdv->enable = enable;
 			if(pEnableSubFiled[i].duration!=0)
 			{
-				pAdv->expireTime =  system_time() + pAdv->section.interval + pEnableSubFiled[i].duration*10000;
+				pAdv->expireTime =  system_time() + pAdv->interval + pEnableSubFiled[i].duration*10000;
 			}
 			else 
 			{
@@ -791,13 +802,13 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
   
 controller_error_code_e ll_set_adv_set_random_address(_u8 advHandle,_u8* address)
 {
-	ll_internal_extended_adv_t* pAdv = ll_extended_adv_get_entity(advHandle);
+	ll_internal_adv_param_t* pAdv = ll_extended_adv_get_entity(advHandle,0);
 
 	if(POINTER_NOT_VALID(pAdv))
 	{
-		return IVALID_HCI_COMMAND_PARAMETERS;
+		return UNKNOWN_ADVERTISING_IDENTIFIER;
 	}
-	if(pAdv->section.enable &&\
+	if(pAdv->enable &&\
 	  (pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_CONNECTED))
 	{
 		return COMMAND_DISALLOWED;
@@ -820,24 +831,20 @@ controller_error_code_e ll_read_number_of_supported_advertising_sets(_u8* number
 
 controller_error_code_e ll_remove_advertising_sets(_u8 advHandle)
 {
-	ll_internal_extended_adv_t* pAdv = ll_extended_adv_get_entity(advHandle);
+	ll_internal_adv_param_t* pAdv = ll_extended_adv_get_entity(advHandle,0);
 	if(POINTER_NOT_VALID(pAdv))
 	{
 		return IVALID_HCI_COMMAND_PARAMETERS;
 	}
-	// if() periodic adv is enable,not allowed ro remove the adv
-	// {
-
-	// }
-	if(POINTER_VALID(pAdv->section.data))
+	if(POINTER_VALID(pAdv->data))
 	{
-		tx_free(pAdv->section.data);
+		tx_free(pAdv->data);
 	}
-	if(POINTER_VALID(pAdv->section.scanRspData))
+	if(POINTER_VALID(pAdv->scanRspData))
 	{
-		tx_free(pAdv->section.scanRspData);
+		tx_free(pAdv->scanRspData);
 	}
-	txMemsetByte(pAdv,0,sizeof(ll_internal_extended_adv_t));
+	txMemsetByte((_u8*)pAdv,0,sizeof(ll_internal_adv_param_t));
 	pAdv->handle = LL_EXTENDED_ADV_INVALID_HANDLE;
 
 	if(ll_extended_adv_get_current_set_number()==0)
@@ -854,15 +861,15 @@ controller_error_code_e ll_clear_advertising_sets(void)
 
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
-		if(ll->adv->advSet[i].handle!=LL_EXTENDED_ADV_INVALID_HANDLE)
+		if(ll->adv->param[i].handle!=LL_EXTENDED_ADV_INVALID_HANDLE)
 		{
-			if(POINTER_VALID(ll->adv->advSet[i].section.data))
+			if(POINTER_VALID(ll->adv->param[i].data))
 			{
-				tx_free(ll->adv->advSet[i].section.data);
+				tx_free(ll->adv->param[i].data);
 			}
-			if(POINTER_VALID(ll->adv->advSet[i].section.scanRspData))
+			if(POINTER_VALID(ll->adv->param[i].scanRspData))
 			{
-				tx_free(ll->adv->advSet[i].section.scanRspData);
+				tx_free(ll->adv->param[i].scanRspData);
 			}
 		}
 	}

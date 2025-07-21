@@ -219,7 +219,7 @@ typedef struct
     _u8  rsvd;
 
     _u32 primaryAdvInterval;//unit is 625us 
-    _u8  primaryAdvChnMap;//search for "ll_advertising_chn_e"
+    _u8  primaryAdvChnMap;//bit field,search for "ll_advertising_chn_e"
     _u8  primaryAdvPhy;//LL_ADV_PHY_1M or LL_ADV_PHY_CODED
     _u8  primaryAdvphyOptions;//search for "ll_advertising_phy_options_e"
     _u8  secondaryAdvMaxSkip;////0x00:AUX_ADV_IND shall be prior to the next advertising event.0x01-0xFF,maximum skip events

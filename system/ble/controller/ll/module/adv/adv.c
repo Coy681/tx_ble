@@ -65,6 +65,7 @@ static  ll_internal_adv_param_t* adv_get_current_entity(ll_ctrl_t* ll,_u8* class
 	#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING!=1)
 	return &ll->adv->param[0];
 	#else
+	return &ll->adv->param[0];
 	#endif
 }
 
@@ -315,21 +316,25 @@ typedef enum
     ADV_EXTENDED_EVENT_PROPERTY_RX = BIT(0),
 }adv_extended_event_property_e;
 
-ll_internal_extended_adv_t* ll_extended_adv_get_entity(_u8 handle)
+ll_internal_adv_param_t* ll_extended_adv_get_entity(_u8 handle,_u8 allocate)
 {
     ll_ctrl_t* ll     = ll_get_current_state_machine();
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
-		if(ll->adv->advSet[i].handle == handle)
+		if(ll->adv->param[i].handle == handle)
 		{
-			return &ll->adv->advSet[i];
+			return &ll->adv->param[i];
 		}
+	}
+	if(allocate==0)
+	{
+		return NULL;
 	}
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
-        if(ll->adv->advSet[i].handle == LL_EXTENDED_ADV_INVALID_HANDLE)
+        if(ll->adv->param[i].handle == LL_EXTENDED_ADV_INVALID_HANDLE)
         {
-            return &ll->adv->advSet[i];
+            return &ll->adv->param[i];
         }
     }
     return NULL;
@@ -341,7 +346,7 @@ int ll_extended_adv_get_current_active_set_number(void)
     _u8 count = 0;
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
-        if(ll->adv->advSet[i].handle!=LL_EXTENDED_ADV_INVALID_HANDLE && ll->adv->advSet[i].section.enable == 1)
+        if(ll->adv->param[i].handle!=LL_EXTENDED_ADV_INVALID_HANDLE && ll->adv->param[i].enable == 1)
         {
             count++;
         }
@@ -355,7 +360,7 @@ int ll_extended_adv_get_current_set_number(void)
     _u8 count = 0;
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
-        if(ll->adv->advSet[i].handle!=0xFF)
+        if(ll->adv->param[i].handle!=0xFF)
         {
             count++;
         }
@@ -570,6 +575,7 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
 		#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING!=1)
         _u8 index = 0;
 		#else
+        _u8 index = 0;
 		#endif
         //phy init
         ll->phy.hw_irq_cb  = adv_phy_irq_callback;
@@ -608,4 +614,5 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         LOG_TRACE(LL_LOG_TRACE,"enter advertising state",0,0);
         return 1;
     }
+    return 0;
 }
