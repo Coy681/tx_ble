@@ -174,39 +174,38 @@ controller_error_code_e ll_set_advertising_parameters(_u16 interval,\
 	{
 		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_ctrl_t));
 	}
-	ll_internal_adv_shareSection_t* advSection = &ll->adv->section;
-	advSection->interval = interval;
-	advSection->ownAddressType = ownAddressType;
-	advSection->peerAddressType = peerAddressType;
-	advSection->channelCnt = 0;
+	_u8 index = 0;
+	ll->adv->param[index].interval        = interval*625;
+	ll->adv->param[index].ownAddressType  = ownAddressType;
+	ll->adv->param[index].peerAddressType = peerAddressType;
+	ll->adv->param[index].channelCnt = 0;
     for(int i=0;i<3;i++)
     {
     	if(channelMap&BIT(i))
     	{
-    		advSection->chnTable[advSection->channelCnt] = 37+i;
-    		advSection->channelCnt++;
+    		ll->adv->param[index].chnTable[ll->adv->param[index].channelCnt++] = 37+i;
     	}
     }
-	txMemcpy(advSection->peerAddress,peerAddress,6);
-	advSection->filterPolicy = policy;
+	txMemcpy(ll->adv->param[index].peerAddress,peerAddress,6);
+	ll->adv->param[index].filterPolicy = policy;
 	switch(type)
 	{
 		case LL_ADV_IND:
 		{
-			advSection->eventType = ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED;
+			ll->adv->param[index].eventType = ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED;
 		}break;
 		case LL_ADV_DIRECT_IND_HIGH_DUTY:
 		case LL_ADV_DIRECT_IND_LOW_DUTY:
 		{
-			advSection->eventType = ADV_EVENT_CONNECTABLE_DIRECTED;
+			ll->adv->param[index].eventType = ADV_EVENT_CONNECTABLE_DIRECTED;
 		}break;
 		case LL_ADV_SCAN_IND:
 		{
-			advSection->eventType = ADV_EVENT_SCANNABLE_UNDIRECTED;
+			ll->adv->param[index].eventType = ADV_EVENT_SCANNABLE_UNDIRECTED;
 		}break;
 		case LL_ADV_NONCONN_IND:
 		{
-			advSection->eventType = ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED;
+			ll->adv->param[index].eventType = ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED;
 		}break;
 	}
 	LOG_TRACE(1,"set adv param",0,0)
@@ -220,14 +219,14 @@ controller_error_code_e ll_set_advertising_data(_u8* data,_u8 length)
 	{
 		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_ctrl_t));
 	}
-	ll_internal_adv_shareSection_t* advSection = &ll->adv->section;
-    if(advSection->data)
+	_u8 index = 0;
+    if(ll->adv->param[index].data)
 	{
-		tx_free(advSection->data);
+		tx_free(ll->adv->param[index].data);
 	}
-	advSection->dataLen = length;
-	advSection->data    = tx_malloc(length);
-	txMemcpy(advSection->data,data,length);
+    ll->adv->param[index].dataLen = length;
+    ll->adv->param[index].data    = tx_malloc(length);
+	txMemcpy(ll->adv->param[index].data,data,length);
 	LOG_TRACE(1,"set adv data",0,0)
 	return SUCCESS;
 }
@@ -239,14 +238,14 @@ controller_error_code_e ll_set_scan_response_data(_u8* data,_u8 length)
 	{
 		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_ctrl_t));
 	}
-	ll_internal_adv_shareSection_t* advSection = &ll->adv->section;
-    if(advSection->scanRspData)
+	_u8 index = 0;
+    if(ll->adv->param[index].scanRspData)
 	{
-		tx_free(advSection->scanRspData);
+		tx_free(ll->adv->param[index].scanRspData);
 	}
-	advSection->scanRspDataLen = length;
-	advSection->scanRspData    = tx_malloc(length);
-	txMemcpy(advSection->scanRspData,data,length);
+    ll->adv->param[index].scanRspDataLen = length;
+    ll->adv->param[index].scanRspData    = tx_malloc(length);
+	txMemcpy(ll->adv->param[index].scanRspData,data,length);
 	LOG_TRACE(1,"set scan rsp data",0,0)
 	return SUCCESS;
 }
@@ -254,17 +253,17 @@ controller_error_code_e ll_set_scan_response_data(_u8* data,_u8 length)
 controller_error_code_e ll_set_advertising_enable(_u8 enable)
 {
 	ll_ctrl_t* ll = ll_get_current_state_machine();
-	ll_internal_adv_shareSection_t* advSection = &ll->adv->section;
+	_u8 index = 0;
 	//assert ll->adv == NULL
-    if(advSection->enable == enable)
+    if(ll->adv->param[index].enable == enable)
 	{
 		return SUCCESS;
 	}
 	LOG_TRACE(1,"set scan enable",&enable,1)
-	if(advSection->enable!=enable)
+	if(ll->adv->param[index].enable!=enable)
 	{
-		advSection->enable = enable;
-		if(advSection->enable == LL_ADVERTISING_ENABLE)
+		ll->adv->param[index].enable = enable;
+		if(ll->adv->param[index].enable == LL_ADVERTISING_ENABLE)
 		{
 			if(BLE_LL_STATE_SUCCESS!=ble_ll_process_event(ll,BLE_LL_EVENT_START_ADVERTISING))
 			{

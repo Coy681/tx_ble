@@ -92,81 +92,79 @@ typedef struct _PACKED
 /***********************ll advertising sate**********************/
 #define LL_EXTENDED_ADV_INVALID_HANDLE   0xFF
 
-typedef struct 
+typedef struct _PACKED
 {
     _u8  enable:1;
-    _u8  rsvd0:7;
+    _u8  rsvd1:7;
+    /**logic param******************/
     _u8  ownAddressType:2;//'ll_own_address_type_e'
     _u8  peerAddressType:2;//'ll_peer_address_type_e'
     _u8  filterPolicy:2;//'ll_advertising_filter_policy_e'
-    _u8  availableChnCnt:2;//max is channelCnt
+    _u8  rsvd2:2;
+    _u16 rsvd3;
+
     _u8  peerAddress[6];
+    _u8  randomAddress[6];
 
-    _u8  state:2;//state machine sate
-    _u8  eventType:4;//adv event type,search"adv_event_type_e"
+    /**phy and channel param********/
     _u8  channelCnt:2;//total adv channel count,max 3,min 1
-    _u8  processingEvent;//to prevent re-retrance
-    _u16 instant;
-
-    _u8  phyMode:2;
+    _u8  availableChnCnt:2;//max is channelCnt
     _u8  currentChn:6;
     _u8  chnTable[3];
-    
-    _u32 interval;//unit is us
 
+    _u8  phyMode:2;
+    /**state machine param**********/
+    _u8  state:2;//state machine sate
+    _u8  eventType:4;//adv event type,search"adv_event_type_e"
+    _u8  processingEvent;//to prevent re-retrance
+    /**sch param********************/
+    _u16 instant;
+
+    _u32 interval;//unit is us
+    /**data param*******************/
     _u16 dataLen;//to be compatible with adv and extended adv,use 2 byte to store data.
     _u16 scanRspDataLen;
 
-    _u8* data;
-    _u8* scanRspData;
-}ll_internal_adv_shareSection_t;
+    _u8* data;//malloc and free
+    _u8* scanRspData;//malloc and free
 
-//how todo?to merge shared section.
-typedef struct _PACKED
-{
+#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+    _u16 eventProperty;
     _u8  handle;
+    /**phy param*******************/
+    _u8  secondaryPhyMode:2;
+    _u8  secondaryChn:6;
+    /**additional param************/
+    _u8  sid;
+    _u8  txPower;
+    /**sch param*******************/
+    _u8  maxEvents;
+    _u8  secondaryMaxSkip;
+    _u32 primaryAnchorPoint;//unit is us
+    _u32 secondaryAnchorPoint;//unit is us
+    _u32 eventCounter;
+    _u32 expireTime;//unit is us
+
+    _u16 advDID;
+    /**data param*****************/
     _u8  scanReqNotifyEnable:2;
     _u8  advDatafragPerf:1;//fragment preference
     _u8  scanRspDatafragPerf:1;//fragment preference
-    _u8  secondaryPhyMode:2;
-    _u16 eventProperty;  
-
-    _u32 primaryAnchorPoint;//unit is us
-
-    _u8  secondaryChn;
-    _u8  secondaryMaxSkip;
-    _u8  randomAddress[6];
-
-    _u32 secondaryAnchorPoint;//unit is us
-
-    _u32 eventCounter;
-
-    _u32 expireTime;//unit is us 
-
-    _u8  maxEvents;
-    _u8  rsvd1;
-    _u16 rsvd2;
-
-    _u8  sid;
-    _u8  txPower;
-    _u16 advDID;
+    _u8  rsvd4:4;
+    _u8  rsvd5;
 
     _u16 dataFillOffset;
     _u16 dataSendOffset;
 
     _u16 scanRspDataFillOffset;
     _u16 scanRspDataSendOffset;
+#endif
 
-    ll_internal_adv_shareSection_t section;
-}ll_internal_extended_adv_t;
+}ll_internal_adv_param_t;
 
 typedef struct _PACKED
 {
-    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING!=1)
-    ll_internal_adv_shareSection_t section;
-    #else
-    ll_internal_extended_adv_t advSet[BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS];
-    #endif
+    ll_internal_adv_param_t param[BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS];
 }ll_internal_adv_ctrl_t;
 
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
