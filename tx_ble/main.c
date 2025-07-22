@@ -49,7 +49,7 @@ void app_rx_cmd(_u8* data,_u32 len)
 //	 switch(data[0])
 //	 {
 //	 	case 1:
-//	 		ll_set_advertising_parameters(16,LL_ADV_NONCONN_IND,LL_PUBLIC_DEVICE_ADDRESS,LL_PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,0,7,LL_FILTER_LIST_NOT_USE);
+//	 		ll_set_advertising_parameters(16,LL_ADV_SCAN_IND,LL_PUBLIC_DEVICE_ADDRESS,LL_PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,0,7,LL_FILTER_LIST_NOT_USE);
 //	 		break;
 //	 	case 2:
 //	 		ll_set_advertising_data(data1,sizeof(data1));
