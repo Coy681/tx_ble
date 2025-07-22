@@ -1,14 +1,14 @@
 #include"planner.h"
-static tlk_planner_node_t* pPlannerlist;
-tlk_planner_ctrl_t gPlannerCtrl;
+static planner_node_t* pPlannerlist;
+planner_ctrl_t gPlannerCtrl;
 #define NODE_VALID(node)            (node!=NULL)
 
-void tlk_planner_set_base_interval(tlk_planner_time_e baseInterval)
+void planner_set_base_interval(planner_time_e baseInterval)
 {
     gPlannerCtrl.baseInterval = baseInterval;
-    gPlannerCtrl.offsetMax = baseInterval/TLK_PLANNER_UNIT_US;
+    gPlannerCtrl.offsetMax = baseInterval/PLANNER_UNIT_US;
     gPlannerCtrl.plannerStartTime = system_time();
-    tlk_planner_node_t* node = pPlannerlist;
+    planner_node_t* node = pPlannerlist;
     while(NODE_VALID(node))
     {
         node->cb(baseInterval);
@@ -16,13 +16,13 @@ void tlk_planner_set_base_interval(tlk_planner_time_e baseInterval)
     }
 }
 
-tlk_planner_ret_e tlk_planner_insert_node(tlk_planner_node_t* pNode)
+planner_ret_e planner_insert_node(planner_node_t* pNode)
 {
 	ASSERT(pNode!=NULL);
 	pNode->next = NULL;
 	if(NODE_VALID(pPlannerlist))
 	{
-		tlk_planner_node_t* scan = pPlannerlist;
+		planner_node_t* scan = pPlannerlist;
 		while(NODE_VALID(scan->next))
 		{
 			scan = scan->next;
@@ -33,14 +33,14 @@ tlk_planner_ret_e tlk_planner_insert_node(tlk_planner_node_t* pNode)
 	{
 		pPlannerlist = pNode;
 	}
-	return TLK_PLANNER_SUCCESS;
+	return PLANNER_SUCCESS;
 }
 
-tlk_planner_ret_e tlk_planner_delete_node(tlk_planner_node_t* pNode)
+planner_ret_e planner_delete_node(planner_node_t* pNode)
 {
 	ASSERT(pNode!=NULL);
-	tlk_planner_node_t* scan = pPlannerlist;
-	tlk_planner_node_t* prev = NULL;
+	planner_node_t* scan = pPlannerlist;
+	planner_node_t* prev = NULL;
 	while(NODE_VALID(scan))
 	{
 		if(pNode == scan)
@@ -53,7 +53,7 @@ tlk_planner_ret_e tlk_planner_delete_node(tlk_planner_node_t* pNode)
 			{
 				pPlannerlist = pPlannerlist->next;
 			}
-			return TLK_PLANNER_SUCCESS;
+			return PLANNER_SUCCESS;
 		}
 		else
 		{
@@ -61,7 +61,7 @@ tlk_planner_ret_e tlk_planner_delete_node(tlk_planner_node_t* pNode)
 			scan = scan->next;
 		}
 	}
-	return TLK_PLANNER_NOT_FOUND;
+	return PLANNER_NOT_FOUND;
 }
 
 
@@ -75,10 +75,10 @@ volatile _u8 AAA_MAP_STATI1[100];
 //volatile _u8 AAA_MARK1;
 //volatile _u8 AAA_MARK2;
 //volatile _u8 AAA_MARK3;
-static void tlk_planner_generate_map_table(_u8 id,_u8* table,_u8* shiftIndex,_u8* tableStatistics,_u32 interval)
+static void planner_generate_map_table(_u8 id,_u8* table,_u8* shiftIndex,_u8* tableStatistics,_u32 interval)
 {
     _u8 shiftMax = interval/gPlannerCtrl.baseInterval;
-    tlk_planner_node_t* scan = pPlannerlist;
+    planner_node_t* scan = pPlannerlist;
     memcpy((_u8*)AAA_MAP,table,100);
     memcpy((_u8*)AAA_MAP_SHIFT,shiftIndex,100);
     memcpy((_u8*)AAA_MAP_STATI,tableStatistics,100);
@@ -154,12 +154,12 @@ static void tlk_planner_generate_map_table(_u8 id,_u8* table,_u8* shiftIndex,_u8
 //    while(1);
 }
 
-tlk_planner_ret_e tlk_planner_parameter_check(tlk_planner_node_t* pNode)
+planner_ret_e planner_parameter_check(planner_node_t* pNode)
 {
 	ASSERT(pNode!=NULL);
 	if((pNode->interval%gPlannerCtrl.baseInterval)!=0)
 	{
-		return TLK_PLANNER_BW_CONFLICT;
+		return PLANNER_BW_CONFLICT;
 	}
     _u8 shiftMax = pNode->interval/gPlannerCtrl.baseInterval;
     _u8 plannerTable[shiftMax*gPlannerCtrl.offsetMax];
@@ -174,28 +174,28 @@ tlk_planner_ret_e tlk_planner_parameter_check(tlk_planner_node_t* pNode)
             plannerTable[i*gPlannerCtrl.offsetMax+j] = 0;
         }
     }
-    tlk_planner_generate_map_table(pNode->id,plannerTable, plannerShiftIndex, plannerShiftStatistics, pNode->interval);
+    planner_generate_map_table(pNode->id,plannerTable, plannerShiftIndex, plannerShiftStatistics, pNode->interval);
     for(_u32 i=pNode->offset;i<(pNode->offset+pNode->duration);i++)
     {
     	if(i>=gPlannerCtrl.offsetMax)
     	{
-    		return TLK_PLANNER_BW_CONFLICT;
+    		return PLANNER_BW_CONFLICT;
     	}
         if(plannerTable[pNode->shift * gPlannerCtrl.offsetMax + i] == 1)
         {
-            return TLK_PLANNER_BW_CONFLICT;
+            return PLANNER_BW_CONFLICT;
         }
     }
-    return TLK_PLANNER_SUCCESS;
+    return PLANNER_SUCCESS;
 }
 
 
-tlk_planner_ret_e tlk_planner_parameter_request(_u8 mode,_u32 interval,_u16 durationMin,_u16 durationMax,tlk_planner_node_t* pNode)
+planner_ret_e planner_parameter_request(_u8 mode,_u32 interval,_u16 durationMin,_u16 durationMax,planner_node_t* pNode)
 {
 	ASSERT(pNode!=NULL);
     if((interval%gPlannerCtrl.baseInterval)!=0)
 	{
-		return TLK_PLANNER_BW_CONFLICT;
+		return PLANNER_BW_CONFLICT;
 	}
     _u8 shiftMax = interval/gPlannerCtrl.baseInterval;
     _u8 plannerTable[shiftMax*gPlannerCtrl.offsetMax];
@@ -210,16 +210,16 @@ tlk_planner_ret_e tlk_planner_parameter_request(_u8 mode,_u32 interval,_u16 dura
             plannerTable[i*gPlannerCtrl.offsetMax+j] = 0;
         }
     }
-    tlk_planner_generate_map_table(pNode->id,plannerTable, plannerShiftIndex, plannerShiftStatistics, interval);
+    planner_generate_map_table(pNode->id,plannerTable, plannerShiftIndex, plannerShiftStatistics, interval);
     _u8 duration = durationMax;
 
-    if(mode == TLK_PLANNER_MODE_CONCENTRATED || mode == TLK_PLANNER_MODE_SCATTERED)
+    if(mode == PLANNER_MODE_CONCENTRATED || mode == PLANNER_MODE_SCATTERED)
     {
         for(int k=0;k<2;k++)//first try durationMax,then try durationMin.
         {
-            for(_s32 i = (mode == TLK_PLANNER_MODE_CONCENTRATED ? 0 : shiftMax - 1);
-                (mode == TLK_PLANNER_MODE_CONCENTRATED ? i < shiftMax : i >= 0);
-                i += (mode == TLK_PLANNER_MODE_CONCENTRATED ? 1 : -1))
+            for(_s32 i = (mode == PLANNER_MODE_CONCENTRATED ? 0 : shiftMax - 1);
+                (mode == PLANNER_MODE_CONCENTRATED ? i < shiftMax : i >= 0);
+                i += (mode == PLANNER_MODE_CONCENTRATED ? 1 : -1))
             {
                 if(plannerShiftStatistics[i] >= duration)
                 {
@@ -240,7 +240,7 @@ tlk_planner_ret_e tlk_planner_parameter_request(_u8 mode,_u32 interval,_u16 dura
                             pNode->offset = j + 1 - duration ;
                             pNode->interval = interval;
                             pNode->duration = duration;
-                            return TLK_PLANNER_SUCCESS;
+                            return PLANNER_SUCCESS;
                         }
                     }
                 }
@@ -251,14 +251,14 @@ tlk_planner_ret_e tlk_planner_parameter_request(_u8 mode,_u32 interval,_u16 dura
             }
         }
     }
-    return TLK_PLANNER_BW_FULL;
+    return PLANNER_BW_FULL;
 }
 
 
-_u32 tlk_planner_get_ahchor_point(tlk_planner_node_t* pNode,_u32 refTime)
+_u32 planner_get_ahchor_point(planner_node_t* pNode,_u32 refTime)
 {
 	_u32 anchorPoint = 0;
-	_u32 mapAnchorPoint = gPlannerCtrl.plannerStartTime + (pNode->shift*gPlannerCtrl.offsetMax + pNode->offset)*TLK_PLANNER_UNIT_US;
+	_u32 mapAnchorPoint = gPlannerCtrl.plannerStartTime + (pNode->shift*gPlannerCtrl.offsetMax + pNode->offset)*PLANNER_UNIT_US;
 
 	if(txCompareTime(refTime,mapAnchorPoint))
 	{
@@ -279,9 +279,9 @@ _u32 tlk_planner_get_ahchor_point(tlk_planner_node_t* pNode,_u32 refTime)
 	return anchorPoint;
 }
 
-void              tlk_planner_update_map_point_point(void)
+void              planner_update_map_point_point(void)
 {
-	_u32 baseIntervalTime = gPlannerCtrl.baseInterval * TLK_PLANNER_UNIT_US;
+	_u32 baseIntervalTime = gPlannerCtrl.baseInterval * PLANNER_UNIT_US;
     /* calculating planner start tick procedure should be protected, because IRQ will use planner start tick */
     _u32 r = irq_disable();
 
@@ -290,7 +290,7 @@ void              tlk_planner_update_map_point_point(void)
     _u32 mod  = (clockTime - gPlannerCtrl.plannerStartTime)%baseIntervalTime;
 
     gPlannerCtrl.plannerStartTime = clockTime-mod;
-	tlk_planner_node_t* scan = pPlannerlist;
+	planner_node_t* scan = pPlannerlist;
     while(NODE_VALID(scan))
     {
     	_u32 scanMaxShift  = scan->interval/gPlannerCtrl.baseInterval;
@@ -300,4 +300,3 @@ void              tlk_planner_update_map_point_point(void)
     }
     irq_restore(r);
 }
-

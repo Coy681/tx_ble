@@ -84,6 +84,7 @@ typedef struct _PACKED
 
 void sch_schedule_next_task(void);
 
+
 #define TASK_VALID(task)              ((task)!=NULL)
 #define TASK_NOT_VALID(task)          ((task)==NULL)
 #define TASK_START_TIME(task)         (task->timestamp - task->startLatency)

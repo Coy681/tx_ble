@@ -39,6 +39,7 @@
         "ll_feature.h": "c",
         "txlist.h": "c",
         "txassert.h": "c",
-        "txheap.h": "c"
+        "txheap.h": "c",
+        "schmap.h": "c"
     }
 }
