@@ -12,5 +12,5 @@ typedef struct
 {
     _u32 start;
     _u32 end;
-}sch_map_free_slot_t;
+}sch_map_free_slot_t,sch_map_slot_t;
 

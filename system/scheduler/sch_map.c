@@ -4,7 +4,7 @@ void sch_map_calculate_free_space_by_slot(_u32 refTime,sch_map_node_t* node,_u32
 {
     _u32 timelineLength = system_end - system_start + 1;
     ASSERT(nodeCount == 0);
-    
+    _u32 totalMapNodeCount = 0;
 } 
 
 void sch_map_calculate_free_space_by_time(_u32 refTime,)
