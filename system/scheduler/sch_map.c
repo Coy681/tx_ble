@@ -2,13 +2,14 @@
 #include"sch.h"
 
 _RAM_CODE
-void sch_map_calculate_free_space_by_slot(_u32 refTimeStart,_u32 refTimeEnd,sch_map_node_t* node,\
+void sch_map_calculate_free_space_by_time(_u32 refTimeStart,_u32 refTimeEnd,sch_map_node_t* node,\
                                           _u32 nodeCount,sch_map_free_slot_t** freeBlock,_u32* freeCount)
 {
-    if(nodeCount == 0)
-    {
-        return;
-    }
+	if(refTimeStart<=refTimeEnd)
+	{
+    	*freeCount = 0;
+    	return;
+	}
     if(POINTER_NOT_VALID(node)||nodeCount == 0)
     {
     	*freeBlock = (sch_map_free_slot_t*)tx_malloc(sizeof(sch_map_free_slot_t));
@@ -81,6 +82,7 @@ void sch_map_calculate_free_space_by_slot(_u32 refTimeStart,_u32 refTimeEnd,sch_
         }
     }
     *freeBlock =(sch_map_free_slot_t*)tx_malloc((mergedCount+2)*sizeof(sch_map_free_slot_t));
+    *freeCount = 0;
     if(mergedList[0].start>refTimeStart)
     {
     	(*freeBlock)[(*freeCount)].start = refTimeStart;
@@ -103,10 +105,23 @@ void sch_map_calculate_free_space_by_slot(_u32 refTimeStart,_u32 refTimeEnd,sch_
     DEBUG_GPIO_LOW(GPIO_9);
 } 
 
-void sch_map_calculate_free_space_by_time(_u32 refTime,sch_map_node_t* node,\
-                                          _u32 nodeCount,_u32 refTimeStart,_u32 refTimeEnd,\
-                                          sch_map_free_slot_t** freeBlock,_u32* freeCount)
+_RAM_CODE
+void sch_map_calculate_free_space_by_slot(_u32 refTimeStart,_u32 refTimeEnd,sch_map_node_t* node,\
+                                          _u32 nodeCount,sch_map_free_slot_t** freeBlock,_u32* freeCount,_u32 slotUnit)
 {
-    _u32 timelineLength = refTimeStart - refTimeEnd + 1;
-  
+	if(refTimeStart<=refTimeEnd||(refTimeStart-refTimeEnd<slotUnit))
+	{
+    	*freeCount = 0;
+    	return;
+	}
+    _u32 SlotNum = refTimeStart-refTimeEnd
+    if(POINTER_NOT_VALID(node)||nodeCount == 0)
+    {
+    	*freeBlock = (sch_map_free_slot_t*)tx_malloc(sizeof(sch_map_free_slot_t));
+    	(*freeBlock)[0].start = refTimeStart;
+    	(*freeBlock)[0].end   = refTimeEnd;
+    	*freeCount = 1;
+    	return;
+    }
+
 }
