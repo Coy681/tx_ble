@@ -40,6 +40,7 @@ void tx_malloc_init(void)
     pNode->next = NULL;
 }
 
+_RAM_CODE
 _u8* tx_malloc(_u16 length)
 {
 	if(txMalloc.pStart == NULL)
@@ -99,6 +100,8 @@ _u8* tx_malloc(_u16 length)
     }
 }
 volatile _u16 AAA_SIZE = 0;
+
+_RAM_CODE
 tx_malloc_ret_e tx_free(_u8* pFreeNode)
 {
 	if(txMalloc.pStart == NULL)
@@ -162,14 +165,14 @@ tx_malloc_ret_e tx_free(_u8* pFreeNode)
         _u32 clearSize = pNode->size;
         _u32 memorySize = pNode->size;
         pNode->usedFlag = 0;
-        if(pPrevious->usedFlag == NULL)
+        if(pPrevious->usedFlag == 0)
         {
             pStart = pPrevious;
             pClear =  (_u8*)pNode;
             clearSize = pNode->size + 12;
             memorySize = pPrevious->size + 12 + pNode->size;
         }
-        if(pNext->usedFlag == NULL)
+        if(pNext->usedFlag == 0)
         {
             pEnd = pNext->next;
             clearSize+=(12+pNext->size);
@@ -183,7 +186,6 @@ tx_malloc_ret_e tx_free(_u8* pFreeNode)
         pStart->size = memorySize;
         AAA_SIZE = clearSize;
         txMemsetByte(pClear,0,clearSize);
-
         return TX_MALLOC_FREE_SUCCESS;
     }
 }
