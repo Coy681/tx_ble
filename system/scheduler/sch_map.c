@@ -114,7 +114,7 @@ void sch_map_calculate_free_space_by_slot(_u32 refTimeStart,_u32 refTimeEnd,sch_
     	*freeCount = 0;
     	return;
 	}
-    _u32 SlotNum = refTimeStart-refTimeEnd
+    _u32 slotNum = (refTimeStart-refTimeEnd)/slotUnit + 1;
     if(POINTER_NOT_VALID(node)||nodeCount == 0)
     {
     	*freeBlock = (sch_map_free_slot_t*)tx_malloc(sizeof(sch_map_free_slot_t));
@@ -123,5 +123,68 @@ void sch_map_calculate_free_space_by_slot(_u32 refTimeStart,_u32 refTimeEnd,sch_
     	*freeCount = 1;
     	return;
     }
-
+    _u8 slotResource[slotNum]={0};
+    for(int i=0;i<nodeCount;i++)
+    {
+        _u32 nodeStart = node[i].start;
+        _u32 nodeEnd = node[i].end;
+        while(txCompareTime(refTimeEnd,nodeStart))
+        {
+        	_u32 occupySlotStart = (nodeStart-refTimeStart)/slotUnit;
+        	if((nodeStart-refTimeStart)%slotUnit!=0)
+        	{
+        		occupySlotStart-=1;
+        	}
+        	_u32 occupySlotNum = (nodeEnd = nodeEnd-nodeStart)/slotUnit;
+        	if(((nodeEnd-nodeStart)%slotUnit)!=0)
+        	{
+        		occupySlotNum+=1;
+        	}
+        	for(int j=0;j<occupySlotNum;j++)
+        	{
+        		slotResource[occupySlotStart+j]=1;
+        	}
+        	if(node[i].type != SCH_PERIODIC_TASK)
+        	{
+        		break;
+        	}
+            nodeStart += node[i].period;
+            nodeEnd   += node[i].period;
+        }
+    }
+    _u32 freeSpaceCnt = 0;
+    _u32 spaceSwitch = 0;
+    for(int i=0;i<slotNum;i++)
+    {
+    	if(slotResource[i]==0&&spaceSwitch==0)
+    	{
+    		freeSpaceCnt++;
+    		spaceSwitch = 1;
+    	}
+    	else if(slotResource[i]==1&&spaceSwitch==1)
+    	{
+    		spaceSwitch = 0;
+    	}
+    }
+    *freeBlock =(sch_map_free_slot_t*)tx_malloc((freeSpaceCnt)*sizeof(sch_map_free_slot_t));
+    *freeCount = 0;
+    spaceSwitch = 0;
+    for(int i=0;i<slotNum;i++)
+    {
+    	if(slotResource[i]==0&&spaceSwitch==0)
+    	{
+    		freeSpaceCnt++;
+    		spaceSwitch = 1;
+    		(*freeBlock)[(*freeCount)].start = refTimeStart+slotUnit*i;
+    	}
+    	else if(slotResource[i]==1&&spaceSwitch==1)
+    	{
+    		(*freeBlock)[(*freeCount)++].end = refTimeStart+slotUnit*(i-1);
+    		spaceSwitch = 0;
+    	}
+    }
+    if(spaceSwitch == 1)
+    {
+		(*freeBlock)[(*freeCount)++].end = refTimeStart+slotUnit*(slotNum-1);
+    }
 }
