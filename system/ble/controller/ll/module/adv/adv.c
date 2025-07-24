@@ -286,7 +286,7 @@ static int adv_event_step_phy_send_rsp_finished(ll_ctrl_t* ll,ll_internal_adv_pa
     return 1;
 }
 
-
+_DATA
 static adv_event_sm_t adv_event_state_machine[]=
 {
     {adv_event_step_phy_send_advertising, ADV_CONTEXT_DEFAULT|ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,ADV_SM_STATE_IDLE,       ADV_SM_STATE_SENDING_ADV, ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_START},
@@ -410,6 +410,8 @@ static int adv_extended_event_step_sch_passed(ll_ctrl_t* ll,ll_internal_adv_para
 {
 
 }
+
+_DATA
 static adv_event_sm_t adv_extended_event_state_machine[]= 
 {
     {adv_extended_event_step_phy_send_aux_advertising,  ADV_CONTEXT_AUXILIARY|ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,ADV_SM_STATE_IDLE,                  ADV_SM_STATE_SENDING_AUX_ADV,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_START},
@@ -515,7 +517,7 @@ static adv_procedure_list_t adv_extended_periodic_with_rsp_procedure[]=
 };
 #endif
 
-static adv_sequence_t advSequence[] = 
+_DATA static adv_sequence_t advSequence[] =
 {
     {ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED,                                    adv_con_scan_undirected_procedure,                                   ADV_PROCEDURE_LIST_LENGTH(adv_con_scan_undirected_procedure)},
     {ADV_EVENT_CONNECTABLE_DIRECTED,                                                adv_con_directed_procedure,                                          ADV_PROCEDURE_LIST_LENGTH(adv_con_directed_procedure)},
