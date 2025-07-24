@@ -87,7 +87,24 @@ static  ll_internal_adv_param_t* adv_get_current_entity(ll_ctrl_t* ll,_u8* class
 	#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING!=1)
 	return &ll->adv->param[0];
 	#else
-	return &ll->adv->param[0];
+    _u8  advIndex = 0;
+    _u32 timestamp = 0; 
+    for(_u8 i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+    {
+        if((ll->adv[i].primaryAnchorPoint!=0) && (timestamp<ll->adv[i].primaryAnchorPoint))
+        {
+            advIndex = i;
+            timestamp = ll->adv[i].primaryAnchorPoint;
+            *class = ADV_EVENT;
+        }
+        if((ll->adv[i].secondaryAnchorPoint!=0) && (timestamp<ll->adv[i].secondaryAnchorPoint))
+        {
+            advIndex = i;
+            timestamp = ll->adv[i].secondaryAnchorPoint;
+            *class = ADV_EXTENDED_EVENT;
+        }
+    }
+	return &ll->adv->param[advIndex];
 	#endif
 }
 
@@ -377,6 +394,100 @@ int ll_extended_adv_get_current_set_number(void)
     return count;
 }
 
+int ll_extended_adv_map_out_task(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam)
+{
+
+    _u32 refStartTime = system_time()+300;
+    _u32 refEndTime   = refStartTime+advParam->interval;
+    sch_node_t* schNode = sch_get_task_list(SCH_WAITING_LIST);
+
+    _u8 nodeNum    = 0;
+    _u8 nodeCount  = 20;
+    for(_u8 k=0;k<4;k++)
+    {
+        sch_map_slot_t node[nodeCount];
+
+        while(POINTER_VALID(schNode))
+        {
+            if(TASK_START_TIME(schNode)<refEndTime)
+            {
+                node[nodeNum].start = TASK_START_TIME(schNode);
+                node[nodeNum].end   = TASK_STOP_TIME(schNode);
+                if(schNode->type == SCH_PERIODIC_TASK)
+                {
+                    node[nodeNum].type = SCH_PERIODIC_TASK;
+                    node[nodeNum].period = schNode->period;
+                }
+                else 
+                {
+                    node[nodeNum].type = SCH_SPORADIC_TASK;
+                }
+                nodeNum++;
+            }
+            schNode = schNode->next;
+        }
+        sch_node_t* schNode = sch_get_task_list(SCH_CANCELED_LIST);
+        while(POINTER_VALID(schNode))
+        {
+            if(TASK_START_TIME(schNode)<refEndTime)
+            {
+                if(TASK_START_TIME(schNode)<refEndTime)
+                {
+                    node[nodeNum].start = TASK_START_TIME(schNode);
+                    node[nodeNum].end   = TASK_STOP_TIME(schNode);
+                    if(schNode->type == SCH_PERIODIC_TASK)
+                    {
+                        node[nodeNum].type = SCH_PERIODIC_TASK;
+                        node[nodeNum].period = schNode->period;
+                    }
+                    else 
+                    {
+                        node[nodeNum].type = SCH_SPORADIC_TASK;
+                    }
+                    nodeNum++;
+                }
+                schNode = schNode->next;
+            }
+        }
+
+        for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+        {
+            if((ll->adv[i].primaryAnchorPoint!=0)&&ll->adv[i].primaryAnchorPoint<refEndTime)
+            {
+                node[nodeNum].start = ll->adv[i].primaryAnchorPoint - ll->adv[i].taskStartMargin;
+                node[nodeNum].end   = ll->adv[i].primaryAnchorPoint + ll->adv[i].primaryDuration+ll->adv[i].taskStopMargin;
+                if(schNode->type == SCH_PERIODIC_TASK)
+                {
+                    node[nodeNum].type = SCH_PERIODIC_TASK;
+                    node[nodeNum].period = schNode->period;
+                }
+                else 
+                {
+                    node[nodeNum].type = SCH_SPORADIC_TASK;
+                }
+                nodeNum++;
+            }
+            if((ll->adv[i].secondaryAnchorPoint!=0)&&ll->adv[i].secondaryAnchorPoint<refEndTime)
+            {
+                node[nodeNum].start = TASK_START_TIME(schNode);
+                node[nodeNum].end   = TASK_STOP_TIME(schNode);
+                if(schNode->type == SCH_PERIODIC_TASK)
+                {
+                    node[nodeNum].type = SCH_PERIODIC_TASK;
+                    node[nodeNum].period = schNode->period;
+                }
+                else 
+                {
+                    node[nodeNum].type = SCH_SPORADIC_TASK;
+                }
+                nodeNum++;
+            }
+        }
+    }
+
+
+
+}
 
 static int adv_extended_event_step_phy_send_aux_advertising(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {

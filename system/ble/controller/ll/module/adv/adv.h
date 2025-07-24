@@ -9,6 +9,8 @@
 #define BLE_ADV_INTERVAL_UNIT          1250
 
 #define BLE_ADV_DEFAULT_RX_TIMEOUT_US  (PACKET_DEFAULT_TIFS_TIME + 100) 
+
+
 typedef enum
 {
     ADV_EVENT,

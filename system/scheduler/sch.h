@@ -63,6 +63,13 @@ typedef struct _PACKED sch_node_t
     sch_node_t* next;
 }sch_node_t;
 
+typedef enum
+{
+    SCH_WAITING_LIST,
+    SCH_RUNNING_LIST,
+    SCH_CANCELED_LIST,
+}sch_list_type_e;
+
 typedef struct 
 {
     sch_node_t* pWaitingList;
@@ -84,6 +91,7 @@ typedef struct _PACKED
 
 void sch_schedule_next_task(void);
 
+void sch_get_task_list(_u8 type);
 
 #define TASK_VALID(task)              ((task)!=NULL)
 #define TASK_NOT_VALID(task)          ((task)==NULL)

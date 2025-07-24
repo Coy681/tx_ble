@@ -420,6 +420,22 @@ _RAM_CODE static void sch_timer_start(void)
 	DEBUG_GPIO_LOW(GPIO_2);
 }
 
+_RAM_CODE sch_node_t* sch_get_task_list(_u8 type)
+{
+    if(type == SCH_WAITING_LIST)
+    {
+        return schCtrl.pWaitingList;
+    }
+    else if(type == SCH_RUNNING_LIST)
+    {
+        return schCtrl.pRunningTask;
+    }
+    else if(type == SCH_CANCELED_LIST)
+    {
+        return schCtrl.pCanceledList;
+    }
+}
+
  _RAM_CODE static int sch_remove_task(_u8 taskId)
 {
 	IRQ_DISABLE;

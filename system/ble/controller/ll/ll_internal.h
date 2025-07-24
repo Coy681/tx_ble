@@ -76,6 +76,8 @@ typedef int(*ble_ll_event_cb)(ble_ll_event_e);
 typedef enum
 {
     LL_ADV_PRIORITY         = SCH_TASK_PRIORITY_2,
+    LL_ADC_AUX_PRIORITY     = SCH_TASK_PRIORITY_3,
+    LL_ADV_CHAIN_PRIORITY   = SCH_TASK_PRIORITY_4,
     LL_SCAN_PRIORITY        = SCH_TASK_PRIORITY_2,
     LL_CONN_PRIORITY        = SCH_TASK_PRIORITY_2,
     LL_INIT_PRIORITY        = SCH_TASK_PRIORITY_2,
@@ -122,6 +124,10 @@ typedef struct _PACKED
     /**sch param********************/
     _u16 instant;
 
+    _u32 anchorPoint;//unit is us
+    _u32 duration;//unit is us
+    _u32 startMargin;//unit is us
+    _u32 stopMargin;//unit is us
     _u32 interval;//unit is us
     /**data param*******************/
     _u16 dataLen;//to be compatible with adv and extended adv,use 2 byte to store data.
@@ -145,9 +151,10 @@ typedef struct _PACKED
     /**sch param*******************/
     _u8  maxEvents;
     _u8  secondaryMaxSkip;
-
-    _u32 primaryAnchorPoint;//unit is us
     _u32 secondaryAnchorPoint;//unit is us
+    _u32 secondaryDuration;
+    _u32 secondaryStartMargin;
+    _u32 secondaryStopMargin;
     _u32 eventCounter;
     _u32 expireTime;//unit is us
 
