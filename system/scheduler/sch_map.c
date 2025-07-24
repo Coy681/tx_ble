@@ -5,7 +5,7 @@ _RAM_CODE
 void sch_map_calculate_free_space_by_time(_u32 refTimeStart,_u32 refTimeEnd,sch_map_node_t* node,\
                                           _u32 nodeCount,sch_map_free_slot_t** freeBlock,_u32* freeCount)
 {
-	if(refTimeStart<=refTimeEnd)
+	if(refTimeEnd<=refTimeStart)
 	{
     	*freeCount = 0;
     	return;
@@ -18,7 +18,7 @@ void sch_map_calculate_free_space_by_time(_u32 refTimeStart,_u32 refTimeEnd,sch_
     	*freeCount = 1;
     	return;
     }
-    DEBUG_GPIO_HIGH(GPIO_9);
+//    DEBUG_GPIO_HIGH(GPIO_9);
     _u32 mapNodeCount = 0;
     for(int i=0;i<nodeCount;i++)
     {
@@ -102,19 +102,20 @@ void sch_map_calculate_free_space_by_time(_u32 refTimeStart,_u32 refTimeEnd,sch_
     	(*freeBlock)[(*freeCount)].start = mergedList[mergedCount].end;
     	(*freeBlock)[(*freeCount)++].end = refTimeEnd;
     }
-    DEBUG_GPIO_LOW(GPIO_9);
+//    DEBUG_GPIO_LOW(GPIO_9);
 } 
 
 _RAM_CODE
 void sch_map_calculate_free_space_by_slot(_u32 refTimeStart,_u32 refTimeEnd,sch_map_node_t* node,\
                                           _u32 nodeCount,sch_map_free_slot_t** freeBlock,_u32* freeCount,_u32 slotUnit)
 {
-	if(refTimeStart<=refTimeEnd||(refTimeStart-refTimeEnd<slotUnit))
+	if(refTimeStart>=refTimeEnd||(refTimeEnd-refTimeStart<slotUnit))
 	{
     	*freeCount = 0;
     	return;
 	}
-    _u32 slotNum = (refTimeStart-refTimeEnd)/slotUnit + 1;
+
+    _u32 slotNum = (refTimeEnd-refTimeStart)/slotUnit + 1;
     if(POINTER_NOT_VALID(node)||nodeCount == 0)
     {
     	*freeBlock = (sch_map_free_slot_t*)tx_malloc(sizeof(sch_map_free_slot_t));
@@ -123,7 +124,12 @@ void sch_map_calculate_free_space_by_slot(_u32 refTimeStart,_u32 refTimeEnd,sch_
     	*freeCount = 1;
     	return;
     }
-    _u8 slotResource[slotNum]={0};
+//    DEBUG_GPIO_HIGH(GPIO_9);
+    _u8 slotResource[slotNum];
+    for(int i=0;i<slotNum;i++)
+    {
+    	slotResource[i] = 0;
+    }
     for(int i=0;i<nodeCount;i++)
     {
         _u32 nodeStart = node[i].start;
@@ -131,18 +137,15 @@ void sch_map_calculate_free_space_by_slot(_u32 refTimeStart,_u32 refTimeEnd,sch_
         while(txCompareTime(refTimeEnd,nodeStart))
         {
         	_u32 occupySlotStart = (nodeStart-refTimeStart)/slotUnit;
-        	if((nodeStart-refTimeStart)%slotUnit!=0)
+        	_u32 occupySlotEnd   = (nodeEnd-refTimeStart)/slotUnit;
+        	if((nodeEnd-refTimeStart)%slotUnit)
         	{
-        		occupySlotStart-=1;
+        		occupySlotEnd+=1;
         	}
-        	_u32 occupySlotNum = (nodeEnd = nodeEnd-nodeStart)/slotUnit;
-        	if(((nodeEnd-nodeStart)%slotUnit)!=0)
+
+        	for(int j=occupySlotStart;j<occupySlotEnd;j++)
         	{
-        		occupySlotNum+=1;
-        	}
-        	for(int j=0;j<occupySlotNum;j++)
-        	{
-        		slotResource[occupySlotStart+j]=1;
+        		slotResource[j]=1;
         	}
         	if(node[i].type != SCH_PERIODIC_TASK)
         	{
@@ -179,12 +182,21 @@ void sch_map_calculate_free_space_by_slot(_u32 refTimeStart,_u32 refTimeEnd,sch_
     	}
     	else if(slotResource[i]==1&&spaceSwitch==1)
     	{
-    		(*freeBlock)[(*freeCount)++].end = refTimeStart+slotUnit*(i-1);
+    		(*freeBlock)[(*freeCount)++].end = refTimeStart+slotUnit*i;
+    		if(((*freeBlock)[*freeCount].end)>refTimeEnd)
+    		{
+    			((*freeBlock)[*freeCount].end) = refTimeEnd;
+    		}
     		spaceSwitch = 0;
     	}
     }
     if(spaceSwitch == 1)
     {
 		(*freeBlock)[(*freeCount)++].end = refTimeStart+slotUnit*(slotNum-1);
+		if(((*freeBlock)[*freeCount].end)>refTimeEnd)
+		{
+			((*freeBlock)[*freeCount].end) = refTimeEnd;
+		}
     }
+//    DEBUG_GPIO_LOW(GPIO_9);
 }

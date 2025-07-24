@@ -68,28 +68,29 @@ void app_rx_cmd(_u8* data,_u32 len)
 //	 		break;
 //	 }
 
-     _u32 systemTime = 0x100;
- 	 sch_map_node_t node[5]=
- 	 {
- 	   {.start = systemTime+0x300,  .end = systemTime+0x800,  .period = 0x2000,.type = SCH_SPORADIC_TASK},
- 	   {.start = systemTime+0x900,  .end = systemTime+0xc00,  .period = 0x2000,.type = SCH_SPORADIC_TASK},
- 	   {.start = systemTime+0x1200, .end = systemTime+0x2300, .period = 0x3000,.type = SCH_SPORADIC_TASK},
- 	   {.start = systemTime+0x700,  .end = systemTime+0x900,  .period = 0x4000,.type = SCH_SPORADIC_TASK},
- 	   {.start = systemTime+0xc00,  .end = systemTime+0x1500, .period = 0x5000,.type = SCH_SPORADIC_TASK},
- 	 };
- 	sch_map_free_slot_t* freeSlot = NULL;
- 	_u32 freeCount = 0;
-	 switch(data[0])
-	 {
-		case 1:
-			sch_map_calculate_free_space_by_slot(systemTime+0x100,systemTime+0x10000,node,3,&freeSlot,&freeCount);
-			AAA_FREE_LIST = freeSlot;
-			AAA_FREE_LIST_LEN =freeCount;
-			tx_free((_u8*)freeSlot);
-			break;
-		default:
-			break;
-	 }
+//     _u32 systemTime = 0x100;
+// 	 sch_map_node_t node[5]=
+// 	 {
+// 	   {.start = systemTime+0x300,  .end = systemTime+0x800,  .period = 0x2000,.type = SCH_PERIODIC_TASK},
+// 	   {.start = systemTime+0x900,  .end = systemTime+0xc00,  .period = 0x2000,.type = SCH_SPORADIC_TASK},
+// 	   {.start = systemTime+0x1200, .end = systemTime+0x2300, .period = 0x3000,.type = SCH_SPORADIC_TASK},
+// 	   {.start = systemTime+0x700,  .end = systemTime+0x900,  .period = 0x4000,.type = SCH_PERIODIC_TASK},
+// 	   {.start = systemTime+0xc00,  .end = systemTime+0x1500, .period = 0x5000,.type = SCH_PERIODIC_TASK},
+// 	 };
+// 	sch_map_free_slot_t* freeSlot = NULL;
+// 	_u32 freeCount = 0;
+//	 switch(data[0])
+//	 {
+//		case 1:
+//			sch_map_calculate_free_space_by_slot(systemTime+0x100,systemTime+0x1000,node,5,&freeSlot,&freeCount,300);
+//			AAA_FREE_LIST = (_u32)freeSlot;
+//			AAA_FREE_LIST_LEN =freeCount;
+//			while(1);
+//			tx_free((_u8*)freeSlot);
+//			break;
+//		default:
+//			break;
+//	 }
 }
 
 
