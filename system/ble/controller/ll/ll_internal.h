@@ -93,6 +93,16 @@ typedef struct _PACKED
 
 /***********************ll advertising sate**********************/
 #define LL_EXTENDED_ADV_INVALID_HANDLE   0xFF
+#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+typedef struct 
+{
+    _u32 startMargin;
+    _u32 stopMargin;
+    _u32 duration;
+    _u32 anthorPoint;
+}ll_adv_extended_chainInfo_t;
+
+#endif
 
 typedef struct _PACKED
 {
@@ -151,12 +161,15 @@ typedef struct _PACKED
     /**sch param*******************/
     _u8  maxEvents;
     _u8  secondaryMaxSkip;
+    _u32 eventCounter;
+    _u32 expireTime;//unit is us
     _u32 secondaryAnchorPoint;//unit is us
     _u32 secondaryDuration;
     _u32 secondaryStartMargin;
     _u32 secondaryStopMargin;
-    _u32 eventCounter;
-    _u32 expireTime;//unit is us
+
+    _u32 secondaryChainCount;
+    ll_adv_extended_chainInfo_t* chainInfo;
 
     _u16 advDID;
     /**data param*****************/

@@ -399,37 +399,19 @@ int ll_extended_adv_map_out_task(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam
 
     _u32 refStartTime = system_time()+300;
     _u32 refEndTime   = refStartTime+advParam->interval;
-    sch_node_t* schNode = sch_get_task_list(SCH_WAITING_LIST);
-
-    _u8 nodeNum    = 0;
-    _u8 nodeCount  = 20;
-    for(_u8 k=0;k<4;k++)
-    {
-        sch_map_slot_t node[nodeCount];
-
-        while(POINTER_VALID(schNode))
+    _u8  nodeNum    = 0;
+    _u8  nodeCount  = 0;
+    reCal:
+        nodeCount+=20;
+        if(nodeNum>256)
         {
-            if(TASK_START_TIME(schNode)<refEndTime)
-            {
-                node[nodeNum].start = TASK_START_TIME(schNode);
-                node[nodeNum].end   = TASK_STOP_TIME(schNode);
-                if(schNode->type == SCH_PERIODIC_TASK)
-                {
-                    node[nodeNum].type = SCH_PERIODIC_TASK;
-                    node[nodeNum].period = schNode->period;
-                }
-                else 
-                {
-                    node[nodeNum].type = SCH_SPORADIC_TASK;
-                }
-                nodeNum++;
-            }
-            schNode = schNode->next;
+            ASSERT(0);
         }
-        sch_node_t* schNode = sch_get_task_list(SCH_CANCELED_LIST);
-        while(POINTER_VALID(schNode))
+        sch_map_slot_t node[nodeCount];
+        sch_node_t* schNode = sch_get_task_list(SCH_WAITING_LIST);
+        for(_u8 n=0;n<2;n++)
         {
-            if(TASK_START_TIME(schNode)<refEndTime)
+            while(POINTER_VALID(schNode))
             {
                 if(TASK_START_TIME(schNode)<refEndTime)
                 {
@@ -447,8 +429,14 @@ int ll_extended_adv_map_out_task(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam
                     nodeNum++;
                 }
                 schNode = schNode->next;
+                if(nodeNum>nodeCount)
+                {
+                    goto reCal;
+                }               
             }
+            schNode = sch_get_task_list(SCH_CANCELED_LIST);           
         }
+
 
         for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
         {
@@ -466,6 +454,10 @@ int ll_extended_adv_map_out_task(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam
                     node[nodeNum].type = SCH_SPORADIC_TASK;
                 }
                 nodeNum++;
+                if(nodeNum>nodeCount)
+                {
+                    goto reCal;
+                }               
             }
             if((ll->adv[i].secondaryAnchorPoint!=0)&&ll->adv[i].secondaryAnchorPoint<refEndTime)
             {
@@ -481,12 +473,60 @@ int ll_extended_adv_map_out_task(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam
                     node[nodeNum].type = SCH_SPORADIC_TASK;
                 }
                 nodeNum++;
+                if(nodeNum>nodeCount)
+                {
+                    goto reCal;
+                }   
+            }
+        }
+    _u32 freeBlockCount = 0;
+    sch_map_free_slot_t* freeBlock = NULL;
+    sch_map_calculate_free_space_by_time(refStartTime,refEndTime,node,nodeNum,&freeBlock,&freeBlockCount);
+
+    int blockIndex = 0;
+    if(advParam->anchorPoint!=0)
+    {
+        _u32 primarySpace = 3*(advParam->startMargin + advParam->stopMargin + advParam->duration)
+        for(blockIndex=0;blockIndex<freeBlockCount;blockIndex++)
+        {
+            if((freeBlock[blockIndex].end - freeBlock[blockIndex].start)>primarySpace)
+            {
+                advParam->anchorPoint = freeBlock[blockIndex].start;
+                freeBlock[blockIndex].start +=(primarySpace+300);//todo,check need space how much
+                break;
             }
         }
     }
-
-
-
+    if(advParam->secondaryAnchorPoint!=0)
+    {
+        _u32 secondarySpace = advParam->secondaryStartMargin + advParam->secondaryDuration + advParam->secondaryStopMargin;
+        for(;blockIndex<freeBlockCount;blockIndex++)
+        {
+            if((freeBlock[blockIndex].end - freeBlock[blockIndex].start)>secondarySpace)
+            {
+                advParam->secondaryAnchorPoint = freeBlock[blockIndex].start;
+                freeBlock[blockIndex].start +=(primarySpace+300);//todo,check need space how much
+                break;
+            }
+        }
+    }
+    if(advParam->secondaryChainCount!=0)
+    {
+        for(int i=0;i<advParam->secondaryChainCount;i++)
+        {
+            _u32 chainSpace = advParam->chainInfo[i].startMargin+advParam->chainInfo[i].duration+advParam->chainInfo[i].stopMargin;
+            for(;blockIndex<freeBlockCount;blockIndex++)
+            {
+                if((freeBlock[blockIndex].end - freeBlock[blockIndex].start)>chainSpace)
+                {
+                    advParam->chainInfo[i].anthorPoint = freeBlock[blockIndex].start;
+                    freeBlock[blockIndex].start +=(primarySpace+300);//todo,check need space how much
+                    break;
+                }
+            }
+        }
+    }
+    tx_free(freeBlock);
 }
 
 static int adv_extended_event_step_phy_send_aux_advertising(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
