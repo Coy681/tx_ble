@@ -96,6 +96,7 @@ typedef struct _PACKED
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
 typedef struct 
 {
+    _u8  headerFlags;
     _u32 startMargin;
     _u32 stopMargin;
     _u32 duration;
@@ -168,7 +169,9 @@ typedef struct _PACKED
     _u32 secondaryStartMargin;
     _u32 secondaryStopMargin;
 
-    _u32 secondaryChainCount;
+    _u8  primaryHeaderFlags;
+    _u8  secondaryHeaderFlags;
+    _u16 secondaryChainCount;
     ll_adv_extended_chainInfo_t* chainInfo;
 
     _u16 advDID;

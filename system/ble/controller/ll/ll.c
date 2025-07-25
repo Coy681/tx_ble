@@ -334,31 +334,41 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 			case(LL_ADV_EVENT_PROPERTY_CONNECTED|LL_ADV_EVENT_PROPERTY_DIRECTED):
 			{
 				pAdv->eventType = ADV_EVENT_EXTENDED_CONNECTABLE_DIRECTED;
+				pAdv->primaryHeaderFlags|=(ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR);
+				pAdv->secondaryHeaderFlags|=(ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_TARGET_A|ADV_EXTENDED_HEADER_FLAG_ADI);
 			}
 				break;
 			case(LL_ADV_EVENT_PROPERTY_CONNECTED):
 			{
 				pAdv->eventType = ADV_EVENT_EXTENDED_CONNECTABLE_UNDIRECTED;
+				pAdv->primaryHeaderFlags|=(ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR);
+				pAdv->secondaryHeaderFlags|=(ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_ADI);
 			}
 				break;
 			case(LL_ADV_EVENT_PROPERTY_SCANNABLE|LL_ADV_EVENT_PROPERTY_DIRECTED):
 			{
 				pAdv->eventType = ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED;
+				pAdv->primaryHeaderFlags|=(ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR);
+				pAdv->secondaryHeaderFlags|=(ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_TARGET_A|ADV_EXTENDED_HEADER_FLAG_ADI);
 			}
 				break;	
 			case(LL_ADV_EVENT_PROPERTY_SCANNABLE):
 			{
 				pAdv->eventType = ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED;
+				pAdv->primaryHeaderFlags|=(ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR);
+				pAdv->secondaryHeaderFlags|=(ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_ADI);
 			}
 				break;	
 			case(LL_ADV_EVENT_PROPERTY_DIRECTED):
 			{
 				pAdv->eventType = ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITHOUT_AUXILIARY;
+				pAdv->primaryHeaderFlags|=(ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_TARGET_A);
 			}
 				break;	
 			case(0):
 			{
 				pAdv->eventType = ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED_WITHOUT_AUXILIARY;
+				pAdv->primaryHeaderFlags|=(ADV_EXTENDED_HEADER_FLAG_ADV_A);
 			}
 				break;
 		}
@@ -368,6 +378,14 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 	if(pParam->txPower!=0x7F)
 	{
 		pAdv->txPower = pParam->txPower;
+		if(pParam->advEventProperty&(LL_ADV_EVENT_PROPERTY_CONNECTED|LL_ADV_EVENT_PROPERTY_SCANNABLE))
+		{
+			pAdv->secondaryHeaderFlags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
+		}
+		else 
+		{
+			pAdv->primaryHeaderFlags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
+		}
 	}
 	pAdv->sid                      = pParam->advSid;
 	pAdv->scanReqNotifyEnable      = pParam->scanReqNotifyEnable;
@@ -527,10 +545,22 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 	if(pAdv->eventType == ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITHOUT_AUXILIARY)
 	{
 		pAdv->eventType = ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITH_AUXILIARY;
+		pAdv->primaryHeaderFlags=(ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR);
+		pAdv->secondaryHeaderFlags=(ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_ADI);
+		if(pAdv->txPower!=0x7F)
+		{
+			pAdv->secondaryHeaderFlags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
+		}
 	}
-	else if(pAdv->eventType == ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITHOUT_AUXILIARY)
+	else if(pAdv->eventType == ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED_WITHOUT_AUXILIARY)
 	{
 		pAdv->eventType = ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED_WITH_AUXILIARY;	
+		pAdv->primaryHeaderFlags=(ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR);
+		pAdv->secondaryHeaderFlags=(ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_TARGET_A|ADV_EXTENDED_HEADER_FLAG_ADI);
+		if(pAdv->txPower!=0x7F)
+		{
+			pAdv->secondaryHeaderFlags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
+		}
 	}
 
 	switch(operation)
