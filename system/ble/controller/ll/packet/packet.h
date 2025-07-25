@@ -15,7 +15,8 @@
 #include"format/initPacket.h"
 #include"format/scanPacket.h"
 #include"format/syncPacket.h"
- #define PACKET_DEFAULT_TIFS_TIME     150
+#define PACKET_DEFAULT_TIFS_TIME     150
+#define PACKET_T_MAFS_TIME           300
 /**************************Advertising physical channel PDU******************************/
 typedef union 
 {

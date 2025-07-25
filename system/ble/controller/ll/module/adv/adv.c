@@ -396,18 +396,19 @@ int ll_extended_adv_get_current_set_number(void)
 
 int ll_extended_adv_map_out_task(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam)
 {
-
     _u32 refStartTime = system_time()+300;
     _u32 refEndTime   = refStartTime+advParam->interval;
     _u8  nodeNum    = 0;
     _u8  nodeCount  = 0;
     reCal:
+    #error"should test if node can assign again"
         nodeCount+=20;
-        if(nodeNum>256)
+        nodeNum = 0;
+        if(nodeCount>200)
         {
             ASSERT(0);
         }
-        sch_map_slot_t node[nodeCount];
+        sch_map_slot_t node[nodeCount];//20 node can cover most of the situation,if can't,plus 20 and calculate again.
         sch_node_t* schNode = sch_get_task_list(SCH_WAITING_LIST);
         for(_u8 n=0;n<2;n++)
         {
@@ -440,43 +441,48 @@ int ll_extended_adv_map_out_task(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam
 
         for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
         {
-            if((ll->adv[i].primaryAnchorPoint!=0)&&ll->adv[i].primaryAnchorPoint<refEndTime)
+            if(ll->adv[i].handle == advParam[i].handle || ll->adv[i].enable == 0)
+            {
+                continue;
+            }
+            if((ll->adv[i].primaryAnchorPoint!=0)&&txCompareTime(refEndTime,ll->adv[i].primaryAnchorPoint))
             {
                 node[nodeNum].start = ll->adv[i].primaryAnchorPoint - ll->adv[i].taskStartMargin;
                 node[nodeNum].end   = ll->adv[i].primaryAnchorPoint + ll->adv[i].primaryDuration+ll->adv[i].taskStopMargin;
-                if(schNode->type == SCH_PERIODIC_TASK)
-                {
-                    node[nodeNum].type = SCH_PERIODIC_TASK;
-                    node[nodeNum].period = schNode->period;
-                }
-                else 
-                {
-                    node[nodeNum].type = SCH_SPORADIC_TASK;
-                }
+                node[nodeNum].type  = SCH_SPORADIC_TASK;
                 nodeNum++;
                 if(nodeNum>nodeCount)
                 {
                     goto reCal;
                 }               
             }
-            if((ll->adv[i].secondaryAnchorPoint!=0)&&ll->adv[i].secondaryAnchorPoint<refEndTime)
+            if((ll->adv[i].secondaryAnchorPoint!=0)&&txCompareTime(refEndTime,ll->adv[i].secondaryAnchorPoint))
             {
-                node[nodeNum].start = TASK_START_TIME(schNode);
-                node[nodeNum].end   = TASK_STOP_TIME(schNode);
-                if(schNode->type == SCH_PERIODIC_TASK)
-                {
-                    node[nodeNum].type = SCH_PERIODIC_TASK;
-                    node[nodeNum].period = schNode->period;
-                }
-                else 
-                {
-                    node[nodeNum].type = SCH_SPORADIC_TASK;
-                }
+                node[nodeNum].start = ll->adv[i].secondaryAnchorPoint - ll->adv[i].secondaryStartMargin;
+                node[nodeNum].end   = ll->adv[i].secondaryAnchorPoint + ll->adv[i].secondaryDuration+ ll->adv[i].secondaryStopMargin;
+                node[nodeNum].type  = SCH_SPORADIC_TASK;
                 nodeNum++;
                 if(nodeNum>nodeCount)
                 {
                     goto reCal;
                 }   
+            }
+            if((ll->adv[i].secondaryChainCount!=0))
+            {
+                for(int j=0;j<ll->adv[i].secondaryChainCount;j++)
+                {
+                    if((advParam->chainInfo[j].anthorPoint!=0)&&txCompareTime(refEndTime,advParam->chainInfo[j].anthorPoint))
+                    {
+                        node[nodeNum].start = ll->adv[i].chainInfo[j].anthorPoint - ll->adv[i].chainInfo[j].startMargin;
+                        node[nodeNum].end   = ll->adv[i].chainInfo[j].anthorPoint + ll->adv[i].chainInfo[j].duration+ ll->adv[i].chainInfo[j].stopMargin;
+                        node[nodeNum].type   = SCH_SPORADIC_TASK;
+                        nodeNum++;
+                        if(nodeNum>nodeCount)
+                        {
+                            goto reCal;
+                        }   
+                    }
+                }
             }
         }
     _u32 freeBlockCount = 0;
@@ -491,8 +497,8 @@ int ll_extended_adv_map_out_task(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam
         {
             if((freeBlock[blockIndex].end - freeBlock[blockIndex].start)>primarySpace)
             {
-                advParam->anchorPoint = freeBlock[blockIndex].start;
-                freeBlock[blockIndex].start +=(primarySpace+300);//todo,check need space how much
+                advParam->anchorPoint = freeBlock[blockIndex].start+advParam->startMargin;
+                freeBlock[blockIndex].start +=(primarySpace+PACKET_T_MAFS_TIME);//todo,check need space how much
                 break;
             }
         }
@@ -504,8 +510,8 @@ int ll_extended_adv_map_out_task(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam
         {
             if((freeBlock[blockIndex].end - freeBlock[blockIndex].start)>secondarySpace)
             {
-                advParam->secondaryAnchorPoint = freeBlock[blockIndex].start;
-                freeBlock[blockIndex].start +=(primarySpace+300);//todo,check need space how much
+                advParam->secondaryAnchorPoint = freeBlock[blockIndex].start+advParam->secondaryStartMargin;
+                freeBlock[blockIndex].start +=(primarySpace+PACKET_T_MAFS_TIME);//todo,check need space how much
                 break;
             }
         }
@@ -519,8 +525,8 @@ int ll_extended_adv_map_out_task(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam
             {
                 if((freeBlock[blockIndex].end - freeBlock[blockIndex].start)>chainSpace)
                 {
-                    advParam->chainInfo[i].anthorPoint = freeBlock[blockIndex].start;
-                    freeBlock[blockIndex].start +=(primarySpace+300);//todo,check need space how much
+                    advParam->chainInfo[i].anthorPoint = freeBlock[blockIndex].start+advParam->chainInfo[i].startMargin;
+                    freeBlock[blockIndex].start +=(primarySpace+PACKET_T_MAFS_TIME);//todo,check need space how much
                     break;
                 }
             }
@@ -802,14 +808,28 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         }
 		#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING!=1)
         _u8 index = 0;
-		#else
-        _u8 index = 0;
-		#endif
-        //param init
         ll->adv->param[index].instant         = 0;
         ll->adv->param[index].availableChnCnt = ll->adv->param[index].channelCnt;
         ll->adv->param[index].phyMode         = PHY_MODE_1M;
         ll->adv->param[index].state           = ADV_SM_STATE_IDLE;
+        if(ll->adv->param[index].eventType == ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED)
+        {
+            ll->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,BLE_ADV_DEFAULT_MAX_LENGTH,0)+PACKET_DEFAULT_TIFS_TIME;
+        }
+        else
+        {
+            ll->sch.duration = ll->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(ll->phy.mode,BLE_ADV_DEFAULT_MAX_LENGTH,0)+2*PACKET_DEFAULT_TIFS_TIME;
+        }
+		#else
+        for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+        {
+            if(ll->adv[i].enable)
+            {
+
+            }
+        }
+		#endif
+        //param init
         ll->ownAddr[0] = ll->ownAddr[1] = ll->ownAddr[2] = ll->ownAddr[3]= ll->ownAddr[4] =ll->ownAddr[5]= 0x12;
         //phy init
         ll->phy.hw_irq_cb  = adv_phy_irq_callback;
@@ -824,15 +844,6 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         ll->sch.startLatency = 100;
         ll->sch.stopLatency  = 75;
         ll->sch.cb = adv_sch_callback;
-        if(ll->adv->param[index].eventType == ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED)
-        {
-            ll->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,BLE_ADV_DEFAULT_MAX_LENGTH,0)+PACKET_DEFAULT_TIFS_TIME;
-        }
-        else
-        {
-            ll->sch.duration = ll->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(ll->phy.mode,BLE_ADV_DEFAULT_MAX_LENGTH,0)+2*PACKET_DEFAULT_TIFS_TIME;
-        }
-
         sch_message_t* message = (sch_message_t*)tx_message_allocate(8);
         message->eventType = SCHE_MESSAGE_TASK_ADD;
         message->message[0] = ((_u32)&ll->sch);
