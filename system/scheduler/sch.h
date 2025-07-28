@@ -91,7 +91,7 @@ typedef struct _PACKED
 
 void sch_schedule_next_task(void);
 
-sch_node_t* sch_get_task_list(_u8 type)
+sch_node_t* sch_get_task_list(_u8 type);
 
 #define TASK_VALID(task)              ((task)!=NULL)
 #define TASK_NOT_VALID(task)          ((task)==NULL)

@@ -84,7 +84,7 @@ typedef enum
 typedef enum
 {
     LL_ADV_CONNECT_IND           = 0x01,
-    LL_ADV_AUX_SCAN_REQ          = 0x02,
+    LL_ADV_AUX_CONNECT_REQ       = 0x02,
 }ll_adv_connect_pdu_type_e;
 
 _u8* ll_get_adv_packet(_u8* packet,_u8 advType,_u8 chnSel,_u8 txAdd,_u8 rxAdd,_u8 length);

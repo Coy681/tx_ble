@@ -87,6 +87,7 @@ static  ll_internal_adv_param_t* adv_get_current_entity(ll_ctrl_t* ll,_u8* class
 {
 	#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING!=1)
 	return &ll->adv->param[0];
+    *class = ADV_EVENT;
 	#else
     _u8  advIndex = 0;
     _u32 timestamp = 0; 
@@ -773,7 +774,7 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
     ll_internal_adv_param_t* advParam = adv_get_current_entity(ll,&eventClass);
 
     _u8  eventType    = advParam->eventType;
-    
+
     if(advSequence[eventType].listLen>eventClass)
     {
         for(_u8 i=0;i<advSequence[eventType].procedureList[eventClass].listLen;i++)

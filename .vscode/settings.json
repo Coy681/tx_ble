@@ -40,6 +40,8 @@
         "txlist.h": "c",
         "txassert.h": "c",
         "txheap.h": "c",
-        "schmap.h": "c"
+        "schmap.h": "c",
+        "sch_map.h": "c",
+        "advpacket.h": "c"
     }
 }
