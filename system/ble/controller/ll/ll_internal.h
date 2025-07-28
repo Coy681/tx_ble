@@ -97,6 +97,7 @@ typedef struct _PACKED
 typedef struct 
 {
     _u8  headerFlags;
+    _u16 dataLen;
     _u32 startMargin;
     _u32 stopMargin;
     _u32 duration;

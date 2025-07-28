@@ -42,6 +42,14 @@ typedef enum
 	ADV_EXTENDED_HEADER_FLAG_RSVD      = BIT(7),
 }adv_extended_header_flag_e;
 
+typedef enum
+{
+	ADV_EXTENDED_MODE_NON_CONNECTABLE_NON_SCANNABLE = 0,
+	ADV_EXTENDED_MODE_CONNECTABLE_NON_SCANNABLE     = 1,
+	ADV_EXTENDED_MODE_NON_CONNECTABLE_SCANNABLE     = 2,
+	ADV_EXTENDED_MODE_RSVD                          = 3,
+}adv_extended_mode_e;
+
 typedef struct _PACKED{
 	_u8 advA[6];
 }adv_extended_header_subfield_advA_t;

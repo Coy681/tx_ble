@@ -1,5 +1,6 @@
 
 #include"adv.h"
+#include"system/scheduler/sch_map.h"
 /*****************************************ADV State Machine***********************************************/
 typedef enum
 {
@@ -91,16 +92,16 @@ static  ll_internal_adv_param_t* adv_get_current_entity(ll_ctrl_t* ll,_u8* class
     _u32 timestamp = 0; 
     for(_u8 i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
     {
-        if((ll->adv[i].primaryAnchorPoint!=0) && (timestamp<ll->adv[i].primaryAnchorPoint))
+        if((ll->adv->param[i].anchorPoint!=0) && (timestamp<ll->adv->param[i].anchorPoint))
         {
             advIndex = i;
-            timestamp = ll->adv[i].primaryAnchorPoint;
+            timestamp = ll->adv->param[i].anchorPoint;
             *class = ADV_EVENT;
         }
-        if((ll->adv[i].secondaryAnchorPoint!=0) && (timestamp<ll->adv[i].secondaryAnchorPoint))
+        if((ll->adv->param[i].secondaryAnchorPoint!=0) && (timestamp<ll->adv->param[i].secondaryAnchorPoint))
         {
             advIndex = i;
-            timestamp = ll->adv[i].secondaryAnchorPoint;
+            timestamp = ll->adv->param[i].secondaryAnchorPoint;
             *class = ADV_EXTENDED_EVENT;
         }
     }
@@ -108,47 +109,69 @@ static  ll_internal_adv_param_t* adv_get_current_entity(ll_ctrl_t* ll,_u8* class
 	#endif
 }
 
-
-
-/*****************************************ADV Event Process ***********************************************/
 _RAM_CODE
-static void adv_event_prepare_packet(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam)
+static void adv_prepare_packet(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,ll_adv_pdu_type_e pduType,ll_adv_ext_pdu_type_e extPduType)
 {
 	_u8* packet = NULL;
-	switch(advParam->eventType)
+	switch(pduType)
 	{
-		case ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED:
+		case LL_ADV_TYPE_ADV_IND:
 		     packet = ll_get_adv_packet(ll->txSharedPacket,6+advParam->dataLen,LL_ADV_TYPE_ADV_IND,0,advParam->ownAddressType?1:0,0);
 		     txMemcpy(((adv_type_ind_t*)packet)->advA,ll->ownAddr,6);
 		     txMemcpy(((adv_type_ind_t*)packet)->advData,advParam->data,advParam->dataLen);
 		     break;
-        case ADV_EVENT_CONNECTABLE_DIRECTED:
+        case LL_ADV_TYPE_ADV_DIRECT_IND:
 			 packet = ll_get_adv_packet(ll->txSharedPacket,12,LL_ADV_TYPE_ADV_DIRECT_IND,0,advParam->ownAddressType?1:0,advParam->peerAddressType?1:0);
 		     txMemcpy(((adv_type_direct_ind_t*)packet)->advA,ll->ownAddr,6);
 		     txMemcpy(((adv_type_direct_ind_t*)packet)->targetA,advParam->peerAddress,6);
 			 break;
-		case ADV_EVENT_SCANNABLE_UNDIRECTED:
+		case LL_ADV_TYPE_ADV_SCAN_IND:
 		     packet = ll_get_adv_packet(ll->txSharedPacket,6+advParam->dataLen,LL_ADV_TYPE_ADV_SCAN_IND,0,advParam->ownAddressType?1:0,0);
 		     txMemcpy(((adv_type_scan_ind_t*)packet)->advA,ll->ownAddr,6);
 		     txMemcpy(((adv_type_scan_ind_t*)packet)->advData,advParam->data,advParam->dataLen);
 		     break;
-		case ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED:
+		case LL_ADV_TYPE_ADV_NONCONN_IND:
 		     packet = ll_get_adv_packet(ll->txSharedPacket,6+advParam->dataLen,LL_ADV_TYPE_ADV_NONCONN_IND,0,advParam->ownAddressType?1:0,0);
 		     txMemcpy(((adv_type_nonConn_ind_t*)packet)->advA,ll->ownAddr,6);
 		     txMemcpy(((adv_type_nonConn_ind_t*)packet)->advData,advParam->data,advParam->dataLen);
 		     break;
+        case LL_ADV_TYPE_SCAN_RSP:
+             packet = ll_get_adv_packet(ll->txSharedPacket,6+advParam->scanRspDataLen,LL_ADV_TYPE_SCAN_RSP,0,advParam->ownAddressType?1:0,0);
+             txMemcpy(((adv_type_scan_rsp_t*)packet)->advA,ll->ownAddr,6);
+             txMemcpy(((adv_type_scan_rsp_t*)packet)->scanRsp,advParam->scanRspData,advParam->scanRspDataLen);
+             break;
+        #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+        case LL_ADV_TYPE_ADV_EXT_IND:
+             switch(extPduType)
+             {
+                case LL_ADV_EXT_PDU_ADV_EXT_IND:
+                     break;
+                case LL_ADV_EXT_PDU_AUX_ADV_IND:
+                     break;
+                case LL_ADV_EXT_PDU_AUX_SCAN_RSP:
+                     break;
+                case LL_ADV_EXT_PDU_AUX_CHAIN_IND:
+                     break;  
+                #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
+                case LL_ADV_EXT_PDU_AUX_SYNC_IND:
+                     break;
+                #endif
+                #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
+                case LL_ADV_EXT_PDU_AUX_SYNC_SUBEVENT_IND:
+                     break;   
+                #endif                                          
+             }
+             break;
+        case LL_ADV_TYPE_AUX_CONNECT_RSP:
+             break;
+        #endif
+        default:
+             break;
+
 	}
 }
 
-_RAM_CODE
-static void scan_rsp_prepare_packet(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam)
-{
-	_u8* packet = NULL;
-	packet = ll_get_adv_packet(ll->txSharedPacket,6+advParam->scanRspDataLen,LL_ADV_TYPE_SCAN_RSP,0,advParam->ownAddressType?1:0,0);
-	txMemcpy(((adv_type_scan_rsp_t*)packet)->advA,ll->ownAddr,6);
-	txMemcpy(((adv_type_scan_rsp_t*)packet)->scanRsp,advParam->scanRspData,advParam->scanRspDataLen);
-}
-
+/*****************************************ADV Event Process ***********************************************/
 /**
  *
  * @param timestamp - if present,timestamp is air packet time,so need minus hardware prepare time
@@ -211,7 +234,36 @@ static int adv_event_step_phy_send_advertising(ll_ctrl_t* ll,ll_internal_adv_par
     }
     advParam->instant++;
     advParam->currentChn = advParam->chnTable[(advParam->instant%advParam->channelCnt)];
-    adv_event_prepare_packet(ll,advParam);
+    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+    if(advParam->eventProperty & LL_ADV_EVENT_PROPERTY_LEGACY_PDU)
+    {
+    #endif
+        _u8 pduType = 0;
+        if(advParam->eventType == ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED)
+        {
+            pduType = LL_ADV_TYPE_ADV_IND;
+        }
+        else if(advParam->eventType == ADV_EVENT_CONNECTABLE_DIRECTED)
+        {
+            pduType = LL_ADV_TYPE_ADV_DIRECT_IND;
+        }
+        else if(advParam->eventType == ADV_EVENT_SCANNABLE_UNDIRECTED)
+        {
+            pduType = LL_ADV_TYPE_ADV_SCAN_IND;
+        }
+        else if(advParam->eventType == ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED)
+        {
+            pduType = LL_ADV_TYPE_ADV_NONCONN_IND;
+        }
+        adv_prepare_packet(ll,advParam,pduType,0);
+    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+    }
+    else 
+    {
+        adv_prepare_packet(ll,advParam,LL_ADV_TYPE_ADV_EXT_IND,LL_ADV_EXT_PDU_ADV_EXT_IND);
+    }  
+    #endif
+    
     adv_event_prepare_phy(ll,advParam,0,PHY_DIR_TX,advParam->phyMode);
     ll->phy.start();
     return 1;
@@ -257,7 +309,7 @@ static int adv_event_step_phy_send_scan_rsp(ll_ctrl_t* ll,ll_internal_adv_param_
 {
 	if((adv_event_step_received_packet_analyze(ll)!=0)&&(property&ADV_CONTEXT_SCANNABLE))//packet analyze shall be execute first
 	{
-        scan_rsp_prepare_packet(ll,advParam);
+        adv_prepare_packet(ll,advParam,LL_ADV_TYPE_SCAN_RSP,0);
         _u32 timestamp = ll->phy.hw_get_rx_air_ts() + ll_get_air_packet_time(advParam->phyMode,sizeof(scan_type_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME;
         adv_event_prepare_phy(ll,advParam,timestamp,PHY_DIR_TX,advParam->phyMode);
         ll->phy.start();
@@ -342,6 +394,7 @@ static adv_procedure_list_t adv_non_con_non_scan_undirected_procedure[]=
 
 /*****************************************ADV Extended Event Process ***********************************************/
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+
 ll_internal_adv_param_t* ll_extended_adv_get_entity(_u8 handle,_u8 allocate)
 {
     ll_ctrl_t* ll     = ll_get_current_state_machine();
@@ -394,6 +447,7 @@ int ll_extended_adv_get_current_set_number(void)
     return count;
 }
 
+_RAM_CODE
 int ll_extended_adv_map_out_task(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam)
 {
     _u32 refStartTime = system_time()+300;
@@ -401,14 +455,14 @@ int ll_extended_adv_map_out_task(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam
     _u8  nodeNum    = 0;
     _u8  nodeCount  = 0;
     reCal:
-    #error"should test if node can assign again"
+    // #error"should test if node can assign again"
         nodeCount+=20;
         nodeNum = 0;
         if(nodeCount>200)
         {
             ASSERT(0);
         }
-        sch_map_slot_t node[nodeCount];//20 node can cover most of the situation,if can't,plus 20 and calculate again.
+        sch_map_node_t node[nodeCount];//20 node can cover most of the situation,if can't,plus 20 and calculate again.
         sch_node_t* schNode = sch_get_task_list(SCH_WAITING_LIST);
         for(_u8 n=0;n<2;n++)
         {
@@ -441,14 +495,14 @@ int ll_extended_adv_map_out_task(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam
 
         for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
         {
-            if(ll->adv[i].handle == advParam[i].handle || ll->adv[i].enable == 0)
+            if(ll->adv->param[i].handle == advParam[i].handle || ll->adv->param[i].handle == 0)
             {
                 continue;
             }
-            if((ll->adv[i].primaryAnchorPoint!=0)&&txCompareTime(refEndTime,ll->adv[i].primaryAnchorPoint))
+            if((ll->adv->param[i].anchorPoint!=0)&&txCompareTime(refEndTime,ll->adv->param[i].anchorPoint))
             {
-                node[nodeNum].start = ll->adv[i].primaryAnchorPoint - ll->adv[i].taskStartMargin;
-                node[nodeNum].end   = ll->adv[i].primaryAnchorPoint + ll->adv[i].primaryDuration+ll->adv[i].taskStopMargin;
+                node[nodeNum].start = ll->adv->param[i].anchorPoint - ll->adv->param[i].startMargin;
+                node[nodeNum].end   = ll->adv->param[i].anchorPoint + ll->adv->param[i].duration+ll->adv->param[i].stopMargin;
                 node[nodeNum].type  = SCH_SPORADIC_TASK;
                 nodeNum++;
                 if(nodeNum>nodeCount)
@@ -456,10 +510,10 @@ int ll_extended_adv_map_out_task(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam
                     goto reCal;
                 }               
             }
-            if((ll->adv[i].secondaryAnchorPoint!=0)&&txCompareTime(refEndTime,ll->adv[i].secondaryAnchorPoint))
+            if((ll->adv->param[i].secondaryAnchorPoint!=0)&&txCompareTime(refEndTime,ll->adv->param[i].secondaryAnchorPoint))
             {
-                node[nodeNum].start = ll->adv[i].secondaryAnchorPoint - ll->adv[i].secondaryStartMargin;
-                node[nodeNum].end   = ll->adv[i].secondaryAnchorPoint + ll->adv[i].secondaryDuration+ ll->adv[i].secondaryStopMargin;
+                node[nodeNum].start = ll->adv->param[i].secondaryAnchorPoint - ll->adv->param[i].secondaryStartMargin;
+                node[nodeNum].end   = ll->adv->param[i].secondaryAnchorPoint + ll->adv->param[i].secondaryDuration + ll->adv->param[i].secondaryStopMargin;
                 node[nodeNum].type  = SCH_SPORADIC_TASK;
                 nodeNum++;
                 if(nodeNum>nodeCount)
@@ -467,14 +521,14 @@ int ll_extended_adv_map_out_task(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam
                     goto reCal;
                 }   
             }
-            if((ll->adv[i].secondaryChainCount!=0))
+            if((ll->adv->param[i].secondaryChainCount!=0))
             {
-                for(int j=0;j<ll->adv[i].secondaryChainCount;j++)
+                for(int j=0;j<ll->adv->param[i].secondaryChainCount;j++)
                 {
                     if((advParam->chainInfo[j].anthorPoint!=0)&&txCompareTime(refEndTime,advParam->chainInfo[j].anthorPoint))
                     {
-                        node[nodeNum].start = ll->adv[i].chainInfo[j].anthorPoint - ll->adv[i].chainInfo[j].startMargin;
-                        node[nodeNum].end   = ll->adv[i].chainInfo[j].anthorPoint + ll->adv[i].chainInfo[j].duration+ ll->adv[i].chainInfo[j].stopMargin;
+                        node[nodeNum].start = ll->adv->param[i].chainInfo[j].anthorPoint - ll->adv->param[i].chainInfo[j].startMargin;
+                        node[nodeNum].end   = ll->adv->param[i].chainInfo[j].anthorPoint + ll->adv->param[i].chainInfo[j].duration+ ll->adv->param[i].chainInfo[j].stopMargin;
                         node[nodeNum].type   = SCH_SPORADIC_TASK;
                         nodeNum++;
                         if(nodeNum>nodeCount)
@@ -492,7 +546,7 @@ int ll_extended_adv_map_out_task(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam
     int blockIndex = 0;
     if(advParam->anchorPoint!=0)
     {
-        _u32 primarySpace = 3*(advParam->startMargin + advParam->stopMargin + advParam->duration)
+        _u32 primarySpace = 3*(advParam->startMargin + advParam->stopMargin + advParam->duration);
         for(blockIndex=0;blockIndex<freeBlockCount;blockIndex++)
         {
             if((freeBlock[blockIndex].end - freeBlock[blockIndex].start)>primarySpace)
@@ -511,7 +565,7 @@ int ll_extended_adv_map_out_task(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam
             if((freeBlock[blockIndex].end - freeBlock[blockIndex].start)>secondarySpace)
             {
                 advParam->secondaryAnchorPoint = freeBlock[blockIndex].start+advParam->secondaryStartMargin;
-                freeBlock[blockIndex].start +=(primarySpace+PACKET_T_MAFS_TIME);//todo,check need space how much
+                freeBlock[blockIndex].start +=(secondarySpace+PACKET_T_MAFS_TIME);//todo,check need space how much
                 break;
             }
         }
@@ -526,7 +580,7 @@ int ll_extended_adv_map_out_task(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam
                 if((freeBlock[blockIndex].end - freeBlock[blockIndex].start)>chainSpace)
                 {
                     advParam->chainInfo[i].anthorPoint = freeBlock[blockIndex].start+advParam->chainInfo[i].startMargin;
-                    freeBlock[blockIndex].start +=(primarySpace+PACKET_T_MAFS_TIME);//todo,check need space how much
+                    freeBlock[blockIndex].start +=(chainSpace+PACKET_T_MAFS_TIME);//todo,check need space how much
                     break;
                 }
             }
@@ -537,6 +591,10 @@ int ll_extended_adv_map_out_task(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam
 
 static int adv_extended_event_step_phy_send_aux_advertising(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
+    //if there is next packet?
+    //prepare packet
+
+    //prepare phy
 	return 1;
 }
 static int adv_extended_event_step_phy_send_chain_advertising(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
@@ -557,15 +615,15 @@ static int adv_extended_event_step_phy_send_aux_connect_rsp(ll_ctrl_t* ll,ll_int
 }
 static int adv_extended_event_step_sch_stop(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
-
+	return 1;
 }
 static int adv_extended_event_step_sch_canceled(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
-
+	return 1;
 }
 static int adv_extended_event_step_sch_passed(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
-
+	return 1;
 }
 
 _DATA
@@ -715,14 +773,14 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
     ll_internal_adv_param_t* advParam = adv_get_current_entity(ll,&eventClass);
 
     _u8  eventType    = advParam->eventType;
-
+    
     if(advSequence[eventType].listLen>eventClass)
     {
         for(_u8 i=0;i<advSequence[eventType].procedureList[eventClass].listLen;i++)
         {
             if(advParam->state  == advSequence[eventType].procedureList[eventClass].sm[i].currentState\
                 && smEventType  == advSequence[eventType].procedureList[eventClass].sm[i].event\
-				&& (advSequence[eventType].procedureList[eventClass].context&advSequence[eventType].procedureList[eventClass].sm[i].context))
+				&& (advSequence[eventType].procedureList[eventClass].context & advSequence[eventType].procedureList[eventClass].sm[i].context))
             {
 
                 if(advParam->processingEvent == smEventType)
@@ -807,12 +865,12 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
             return 0;
         }
 		#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING!=1)
-        _u8 index = 0;
-        ll->adv->param[index].instant         = 0;
-        ll->adv->param[index].availableChnCnt = ll->adv->param[index].channelCnt;
-        ll->adv->param[index].phyMode         = PHY_MODE_1M;
-        ll->adv->param[index].state           = ADV_SM_STATE_IDLE;
-        if(ll->adv->param[index].eventType == ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED)
+        ll_internal_adv_param_t* advParam = &ll->adv->param[0];
+        advParam->instant         = 0;
+        advParam->availableChnCnt = advParam->channelCnt;
+        advParam->phyMode         = PHY_MODE_1M;
+        advParam->state           = ADV_SM_STATE_IDLE;
+        if(advParam->eventType == ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED)
         {
             ll->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,BLE_ADV_DEFAULT_MAX_LENGTH,0)+PACKET_DEFAULT_TIFS_TIME;
         }
@@ -823,11 +881,13 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
 		#else
         for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
         {
-            if(ll->adv[i].enable)
+            if(ll->adv->param[i].enable)
             {
-
+                ll_extended_adv_map_out_task(ll,&ll->adv->param[i]);
             }
         }
+        _u8 eventClass = 0;
+        ll_internal_adv_param_t* advParam = adv_get_current_entity(ll,&eventClass);
 		#endif
         //param init
         ll->ownAddr[0] = ll->ownAddr[1] = ll->ownAddr[2] = ll->ownAddr[3]= ll->ownAddr[4] =ll->ownAddr[5]= 0x12;
@@ -840,7 +900,7 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         ll->sch.type = SCH_PERIODIC_TASK;
         ll->sch.priority = LL_ADV_PRIORITY;
         ll->sch.timestamp = system_time() + 500;//maybe need planner
-        ll->sch.period    = ll->adv->param[index].interval;
+        ll->sch.period    = advParam->interval;
         ll->sch.startLatency = 100;
         ll->sch.stopLatency  = 75;
         ll->sch.cb = adv_sch_callback;

@@ -36,7 +36,7 @@ typedef struct _PACKED
     _u8 data[2];
 }ll_adv_packet_t;
 
-enum
+typedef enum
 {
     LL_ADV_TYPE_ADV_IND               = 0x00,//0b0000,Primary   advertising,transmited or received on LE 1M PHY
     LL_ADV_TYPE_ADV_DIRECT_IND        = 0x01,//0b0001,Primary   advertising,transmited or received on LE 1M PHY
@@ -62,7 +62,30 @@ enum
 
     LL_ADV_TYPE_AUX_CONNECT_RSP       = 0x08,//0b1000,Secondary advertising,transmited or received on LE 1M PHY,LE 2M PHY,LE CODED PHY
     LL_ADV_TYPE_ADV_DECISION_IND      = 0x09,//0b1001,Primary   advertising,transmited or received on LE 1M PHY,LE CODED PHY
-};
+}ll_adv_pdu_type_e;
+
+typedef enum
+{
+    LL_ADV_EXT_PDU_ADV_EXT_IND           = 0x01,
+    LL_ADV_EXT_PDU_AUX_ADV_IND           = 0x02,
+    LL_ADV_EXT_PDU_AUX_SCAN_RSP          = 0x03,
+    LL_ADV_EXT_PDU_AUX_SYNC_IND          = 0x04,
+    LL_ADV_EXT_PDU_AUX_CHAIN_IND         = 0x05,
+    LL_ADV_EXT_PDU_AUX_SYNC_SUBEVENT_IND = 0x06,
+    LL_ADV_EXT_PDU_AUX_SYNC_SUBEVENT_RSP = 0x07,
+}ll_adv_ext_pdu_type_e;
+
+typedef enum
+{
+    LL_ADV_SCAN_REQ              = 0x01,
+    LL_ADV_AUX_SCAN_REQ          = 0x02,
+}ll_adv_scan_req_pdu_type_e;
+
+typedef enum
+{
+    LL_ADV_CONNECT_IND           = 0x01,
+    LL_ADV_AUX_SCAN_REQ          = 0x02,
+}ll_adv_connect_pdu_type_e;
 
 _u8* ll_get_adv_packet(_u8* packet,_u8 advType,_u8 chnSel,_u8 txAdd,_u8 rxAdd,_u8 length);
 /**************************Data physical channel PDU******************************/

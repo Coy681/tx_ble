@@ -55,6 +55,7 @@ target_compile_options(proj_build PRIVATE $<$<COMPILE_LANGUAGE:ASM>: ${ASM_INCLU
 set(ASM_OPTS -mcmodel=medium -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -O2 -x assembler-with-cpp -mcpu=d25f -mext-dsp -fomit-frame-pointer -fno-strict-aliasing -std=c99 -fno-jump-tables -fno-fat-lto-objects -fuse-ld=bfd)
 target_compile_options(proj_build PRIVATE $<$<COMPILE_LANGUAGE:ASM>: ${ASM_OPTS}>)
 
+
 # c_opts_define
 
 # c_opts_include
