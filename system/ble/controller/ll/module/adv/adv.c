@@ -110,6 +110,47 @@ static  ll_internal_adv_param_t* adv_get_current_entity(ll_ctrl_t* ll,_u8* class
 	#endif
 }
 
+#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+_RAM_CODE 
+static void adv_extended_generate_adv_data(ll_ctrl_t* ll,_u8* packet,ll_internal_adv_param_t* advParam)
+{
+    if(advParam->secondaryHeaderFlags & ADV_EXTENDED_HEADER_FLAG_ADV_A)
+    {
+        txMemcpy(packet,ll->ownAddr,6);
+        packet+=sizeof(adv_extended_header_subfield_advA_t);
+    }
+    else if(advParam->secondaryHeaderFlags & ADV_EXTENDED_HEADER_FLAG_TARGET_A)
+    {
+        txMemcpy(packet,ll->ownAddr,6);
+        packet+=sizeof(adv_extended_header_subfield_targetA_t);
+    }
+    else if(advParam->secondaryHeaderFlags & ADV_EXTENDED_HEADER_FLAG_CTE_INFO)
+    {
+        ((adv_extended_header_subfield_cteInfo_t*)packet)->info = 0;
+        packet+=sizeof(adv_extended_header_subfield_cteInfo_t);
+    }
+    else if(advParam->secondaryHeaderFlags & ADV_EXTENDED_HEADER_FLAG_ADI)
+    {
+        ((adv_extended_header_subfield_adi_t*)packet)->did = advParam->advDID;
+        ((adv_extended_header_subfield_adi_t*)packet)->sid = advParam->sid;
+        packet+=sizeof(adv_extended_header_subfield_adi_t);
+    }
+    else if(advParam->secondaryHeaderFlags & ADV_EXTENDED_HEADER_FLAG_AUX_PTR)
+    {
+        ((adv_extended_header_subfield_auxPtr_t*)packet)->auxOffset = 0;
+        packet+=sizeof(adv_extended_header_subfield_auxPtr_t);
+    }
+    else if(advParam->secondaryHeaderFlags & ADV_EXTENDED_HEADER_FLAG_SYNC_INFO)
+    {
+        packet+=sizeof(adv_extended_header_subfield_syncInfo_t);
+    }
+    else if(advParam->secondaryHeaderFlags & ADV_EXTENDED_HEADER_FLAG_TX_POWER)
+    {
+        packet+=sizeof(adv_extended_header_subfield_Tx_Power_t);
+    }
+}
+#endif
+
 _RAM_CODE
 static void adv_prepare_packet(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,ll_adv_pdu_type_e pduType,ll_adv_ext_pdu_type_e extPduType)
 {
@@ -146,19 +187,25 @@ static void adv_prepare_packet(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,l
              switch(extPduType)
              {
                 case LL_ADV_EXT_PDU_ADV_EXT_IND:
+                     packet = ll_get_adv_packet(packet,6+advParam->dataLen,LL_ADV_TYPE_ADV_EXT_IND,0,advParam->ownAddressType?1:0,0);
                      break;
                 case LL_ADV_EXT_PDU_AUX_ADV_IND:
+                     packet = ll_get_adv_packet(packet,6+advParam->dataLen,LL_ADV_TYPE_ADV_EXT_IND,0,advParam->ownAddressType?1:0,0);
                      break;
                 case LL_ADV_EXT_PDU_AUX_SCAN_RSP:
+                     packet = ll_get_adv_packet(packet,6+advParam->dataLen,LL_ADV_TYPE_ADV_EXT_IND,0,advParam->ownAddressType?1:0,0);
                      break;
                 case LL_ADV_EXT_PDU_AUX_CHAIN_IND:
+                     packet = ll_get_adv_packet(packet,6+advParam->dataLen,LL_ADV_TYPE_ADV_EXT_IND,0,advParam->ownAddressType?1:0,0);
                      break;  
                 #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
                 case LL_ADV_EXT_PDU_AUX_SYNC_IND:
+                     packet = ll_get_adv_packet(packet,6+advParam->dataLen,LL_ADV_TYPE_ADV_EXT_IND,0,advParam->ownAddressType?1:0,0);
                      break;
                 #endif
                 #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
                 case LL_ADV_EXT_PDU_AUX_SYNC_SUBEVENT_IND:
+                     packet = ll_get_adv_packet(packet,6+advParam->dataLen,LL_ADV_TYPE_ADV_EXT_IND,0,advParam->ownAddressType?1:0,0);
                      break;   
                 #endif                                          
              }
