@@ -198,7 +198,7 @@ typedef enum
 typedef struct 
 {
     _u8  advHandle;
-    _u16 duration;//unit is 10ms
+    _u16 duration;//unit is 10ms,0x0000,no max duration,continue to advertising until host disable it
     _u8  maxEvents;//0x00:no max number,other2:max number of extended adv events number controller shall send
 }ll_extended_adv_enable_subField_e;
 
@@ -220,7 +220,7 @@ typedef struct
 
     _u32 primaryAdvInterval;//unit is 625us 
     _u8  primaryAdvChnMap;//bit field,search for "ll_advertising_chn_e"
-    _u8  primaryAdvPhy;//LL_ADV_PHY_1M or LL_ADV_PHY_CODED
+    _u8  primaryAdvPhy;//LL_ADV_PHY_1M or LL_ADV_PHY_CODED,if legacy pdu,must 1M phy
     _u8  primaryAdvphyOptions;//search for "ll_advertising_phy_options_e"
     _u8  secondaryAdvMaxSkip;////0x00:AUX_ADV_IND shall be prior to the next advertising event.0x01-0xFF,maximum skip events
     _u8  secondaryAdvPhy;//search for "ll_advertising_phy_e"

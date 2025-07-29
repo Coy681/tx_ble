@@ -287,13 +287,15 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 	ll_ctrl_t* ll = ll_get_current_state_machine();
 	if(POINTER_NOT_VALID(ll->adv))
 	{
+
 		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_param_t)*BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS);
-		ASSERT(ll->adv == NULL);
+		ASSERT(ll->adv != NULL);
 		for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 		{
 			ll->adv->param[i].handle = LL_EXTENDED_ADV_INVALID_HANDLE;
 		}
 	}
+
 	ll_internal_adv_param_t* pAdv = ll_extended_adv_get_entity(pParam->advHandle,1);
 	if(POINTER_NOT_VALID(pAdv))
 	{
@@ -424,8 +426,6 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 	{
 		pAdv->phyMode = LL_ADV_PHY_1M;
 	}
-
-
 	if(pParam->secondaryAdvPhy == LL_ADV_PHY_CODED)
 	{
 		if(pParam->secondaryAdvphyOptions == LL_ADV_PHY_OPTIONS_PREFER_S2||\
@@ -454,6 +454,10 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 	return SUCCESS;
 }
 
+volatile int AAA_DATA_ADDRESS;
+volatile int AAA_RSP_ADDRESS;
+volatile int AAA_DATA_LEN;
+volatile int AAA_RSP_LEN;
 controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 														ll_advertising_data_operation_e operation,\
 														ll_advertising_data_fragment_perference_e fragPref,\
@@ -540,6 +544,7 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 		{
 			pAdv->data = tx_malloc(BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH);
 		}
+		AAA_DATA_ADDRESS = pAdv->data;
 	}
 	
 	if(pAdv->eventType == ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITHOUT_AUXILIARY)
@@ -597,10 +602,12 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 		}
 			break;
 	}
+	AAA_DATA_LEN = pAdv->dataLen;
 	pAdv->advDatafragPerf = fragPref;
 	return SUCCESS;
 
 }
+
 
 controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 															ll_advertising_data_operation_e operation,\
@@ -674,9 +681,17 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 			return PACKET_TOO_LONG;
 		}
 	}
-	if(POINTER_NOT_VALID(pAdv->data))
+	if(POINTER_NOT_VALID(pAdv->scanRspData))
 	{
-		pAdv->data = tx_malloc(BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH);
+		if(operation == LL_ADV_DATA_OPERATION_COMPLETE)
+		{
+			pAdv->scanRspData = tx_malloc(dataLen);
+		}
+		else
+		{
+			pAdv->scanRspData = tx_malloc(BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH);
+		}
+		AAA_RSP_ADDRESS = pAdv->scanRspData;
 	}
 	switch(operation)
 	{
@@ -706,6 +721,7 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 			break;
 	}
 	pAdv->scanRspDatafragPerf = fragPref;
+	AAA_RSP_LEN = pAdv->scanRspDataLen;
 	return SUCCESS;
 }
 /**

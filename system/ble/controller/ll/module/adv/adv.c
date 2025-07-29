@@ -208,6 +208,8 @@ static void adv_prepare_packet(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,l
                      packet = ll_get_adv_packet(packet,6+advParam->dataLen,LL_ADV_TYPE_ADV_EXT_IND,0,advParam->ownAddressType?1:0,0);
                      break;   
                 #endif                                          
+                default:
+                	 break;
              }
              break;
         case LL_ADV_TYPE_AUX_CONNECT_RSP:
@@ -215,7 +217,6 @@ static void adv_prepare_packet(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,l
         #endif
         default:
              break;
-
 	}
 }
 
@@ -461,6 +462,7 @@ ll_internal_adv_param_t* ll_extended_adv_get_entity(_u8 handle,_u8 allocate)
 	{
         if(ll->adv->param[i].handle == LL_EXTENDED_ADV_INVALID_HANDLE)
         {
+        	ll->adv->param[i].handle = handle;
             return &ll->adv->param[i];
         }
     }
@@ -912,6 +914,10 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         {   
             return 0;
         }
+        //phy init
+        ll->phy.hw_irq_cb  = adv_phy_irq_callback;
+        phy_obj_cast(&ll->phy);
+        phy_obj_init(&ll->phy);
 		#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING!=1)
         ll_internal_adv_param_t* advParam = &ll->adv->param[0];
         advParam->instant         = 0;
@@ -939,10 +945,6 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
 		#endif
         //param init
         ll->ownAddr[0] = ll->ownAddr[1] = ll->ownAddr[2] = ll->ownAddr[3]= ll->ownAddr[4] =ll->ownAddr[5]= 0x12;
-        //phy init
-        ll->phy.hw_irq_cb  = adv_phy_irq_callback;
-        phy_obj_cast(&ll->phy);
-        phy_obj_init(&ll->phy);
         //sch init
         ll->sch.llId = ll->id;
         ll->sch.type = SCH_PERIODIC_TASK;
