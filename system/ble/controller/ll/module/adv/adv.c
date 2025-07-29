@@ -912,6 +912,10 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         {   
             return 0;
         }
+        //phy init
+        ll->phy.hw_irq_cb  = adv_phy_irq_callback;
+        phy_obj_cast(&ll->phy);
+        phy_obj_init(&ll->phy);
 		#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING!=1)
         ll_internal_adv_param_t* advParam = &ll->adv->param[0];
         advParam->instant         = 0;
@@ -939,10 +943,6 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
 		#endif
         //param init
         ll->ownAddr[0] = ll->ownAddr[1] = ll->ownAddr[2] = ll->ownAddr[3]= ll->ownAddr[4] =ll->ownAddr[5]= 0x12;
-        //phy init
-        ll->phy.hw_irq_cb  = adv_phy_irq_callback;
-        phy_obj_cast(&ll->phy);
-        phy_obj_init(&ll->phy);
         //sch init
         ll->sch.llId = ll->id;
         ll->sch.type = SCH_PERIODIC_TASK;

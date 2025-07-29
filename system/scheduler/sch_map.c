@@ -148,7 +148,7 @@ void sch_map_calculate_free_space_by_slot(_u32 refTimeStart,_u32 refTimeEnd,sch_
     {
         _u32 nodeStart = node[i].start;
         _u32 nodeEnd = node[i].end;
-        #error"need test"
+//        #error"need test"
         if(txCompareTime(refTimeStart,nodeEnd))
         {
             if(node[i].type == SCH_PERIODIC_TASK)
