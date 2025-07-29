@@ -208,6 +208,8 @@ static void adv_prepare_packet(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,l
                      packet = ll_get_adv_packet(packet,6+advParam->dataLen,LL_ADV_TYPE_ADV_EXT_IND,0,advParam->ownAddressType?1:0,0);
                      break;   
                 #endif                                          
+                default:
+                	 break;
              }
              break;
         case LL_ADV_TYPE_AUX_CONNECT_RSP:
@@ -215,7 +217,6 @@ static void adv_prepare_packet(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,l
         #endif
         default:
              break;
-
 	}
 }
 
@@ -461,6 +462,7 @@ ll_internal_adv_param_t* ll_extended_adv_get_entity(_u8 handle,_u8 allocate)
 	{
         if(ll->adv->param[i].handle == LL_EXTENDED_ADV_INVALID_HANDLE)
         {
+        	ll->adv->param[i].handle = handle;
             return &ll->adv->param[i];
         }
     }
