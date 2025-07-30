@@ -73,6 +73,7 @@ void app_rx_cmd(_u8* data,_u32 len)
 		.maxEvents = 0x00,
 	};
 	int status = 0;
+
 	switch(data[0])
 	{
 		case 1:

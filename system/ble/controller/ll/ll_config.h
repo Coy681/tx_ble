@@ -1,5 +1,9 @@
 #include"ll_feature.h"
 
+#ifndef BLE_PHY_ADV_MAX_TX_LEN
+#define BLE_PHY_ADV_MAX_TX_LEN                     128
+#endif
+
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING!=1)
 #ifndef BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS
 #define BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS       1//fixed value,can not configurable

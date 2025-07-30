@@ -93,103 +93,121 @@ typedef struct _PACKED
 
 /***********************ll advertising sate**********************/
 #define LL_EXTENDED_ADV_INVALID_HANDLE   0xFF
+typedef struct
+{
+    _u32 anchorPoint;
+    _u32 duration;
+    _u32 startMargin;
+    _u32 stopMargin;
+    _u32 interval;
+    _u32 eventCnt;
+}ll_adv_sch_entry_t;
+
+typedef struct 
+{
+    _u8  phyMode;
+    _u8  chn;
+    _u16 rxMaxOctets;
+    _u32 accessCode;
+    _u32 crcInit;
+    _u8* txAddress;
+    _u8* rxAddress;
+}ll_adv_phy_entry_t;
+
+typedef struct 
+{
+   _u16 dataLen;//to be compatible with adv and extended adv,use 2 byte to store data.
+   _u8* data;
+}ll_adv_data_entry_t;
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
 typedef struct 
 {
-    _u8  headerFlags;
-    _u16 dataLen;
-    _u32 startMargin;
-    _u32 stopMargin;
-    _u32 duration;
-    _u32 anthorPoint;
-}ll_adv_extended_chainInfo_t;
-
+    _u8  flags;
+    ll_adv_data_entry_t data; 
+    ll_adv_sch_entry_t  sch;
+    ll_adv_phy_entry_t  phy; 
+}ll_adv_ea_chain_t;
 #endif
 
-typedef struct _PACKED
+typedef struct 
 {
-    _u8  enable:1;
-    _u8  rsvd1:7;
-    /**logic param******************/
-    _u8  ownAddressType:2;//'ll_own_address_type_e'
-    _u8  peerAddressType:2;//'ll_peer_address_type_e'
-    _u8  filterPolicy:2;//'ll_advertising_filter_policy_e'
-    _u8  rsvd2:2;
-    _u16 rsvd3;
-
-    _u8  peerAddress[6];
-    _u8  randomAddress[6];
-
-    /**phy and channel param********/
     _u8  channelCnt:2;//total adv channel count,max 3,min 1
     _u8  availableChnCnt:2;//max is channelCnt
-    _u8  rsvd4:4;
-    _u8  rsvd5:2;
-    _u8  currentChn:6;
     _u8  chnTable[3];
-
-    _u8  phyMode:3;
-    /**state machine param**********/
-    _u8  state:5;//state machine sate
-    _u8  eventType:4;//adv event type,search"adv_event_type_e"
-    _u8  processingEvent:4;//to prevent re-retrance
-    /**sch param********************/
-    _u16 instant;
-
-    _u32 anchorPoint;//unit is us
-    _u32 duration;//unit is us
-    _u32 startMargin;//unit is us
-    _u32 stopMargin;//unit is us
-    _u32 interval;//unit is us
-    /**data param*******************/
-    _u16 dataLen;//to be compatible with adv and extended adv,use 2 byte to store data.
-    _u16 scanRspDataLen;
-
-    _u8* data;//malloc and free
-    _u8* scanRspData;//malloc and free
+    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+    _u8  flags;
+    #endif
+    ll_adv_sch_entry_t  sch;
+    ll_adv_phy_entry_t  phy;
+    ll_adv_data_entry_t data;
+    ll_adv_data_entry_t scanRsp;
+}ll_adv_set_t;
 
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
-    _u16 eventProperty;
+typedef struct 
+{
     _u8  handle;
-    /**phy param*******************/
-    _u8  secondaryPhyMode:3;
-    _u8  rsvd6:5;
-    _u8  rsvd7:2;
-    _u8  secondaryChn:6;
+    _u8  flags;
+    _u16 eventProperty;
 
-    /**additional param************/
-    _u8  sid;
-    _u8  txPower;
-    /**sch param*******************/
+    _u16 sid:4;
+    _u16 did:12;
+    _u8  power;
+
     _u8  maxEvents;
     _u8  secondaryMaxSkip;
-    _u32 eventCounter;
-    _u32 expireTime;//unit is us
-    _u32 secondaryAnchorPoint;//unit is us
-    _u32 secondaryDuration;
-    _u32 secondaryStartMargin;
-    _u32 secondaryStopMargin;
-
-    _u8  primaryHeaderFlags;
-    _u8  secondaryHeaderFlags;
-    _u16 secondaryChainCount;
-    ll_adv_extended_chainInfo_t* chainInfo;
-
-    _u16 advDID;
-    /**data param*****************/
     _u8  scanReqNotifyEnable:2;
     _u8  advDatafragPerf:1;//fragment preference
     _u8  scanRspDatafragPerf:1;//fragment preference
-    _u8  rsvd8:4;
-    _u8  rsvd9;
+    _u8  chainCnt;
 
-    _u16 dataFillOffset;
-    _u16 dataSendOffset;
+    _u32 expireTime;//unit is us
 
-    _u16 scanRspDataFillOffset;
-    _u16 scanRspDataSendOffset;
+    ll_adv_sch_entry_t sch;
+    ll_adv_phy_entry_t phy;
+    ll_adv_ea_chain_t* chain;
+}ll_adv_ea_set_t;
+
 #endif
 
+#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
+typedef struct 
+{
+
+}ll_adv_pa_set_t;
+#endif
+
+#if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
+typedef struct 
+{
+
+}ll_adv_pawr_set_t;
+#endif
+
+
+typedef struct
+{
+    _u8  enable:1;
+    _u8  state:5;//state machine sate
+    _u8  eventType:4;//adv event type,search"adv_event_type_e"
+    _u8  processingEvent:4;//to prevent re-retrance
+
+    _u8  ownAddressType:2;//'ll_own_address_type_e'
+    _u8  peerAddressType:2;//'ll_peer_address_type_e'
+    _u8  filterPolicy:2;//'ll_advertising_filter_policy_e'
+    _u8  peerAddress[6];
+    _u8  randomAddress[6];
+
+    ll_adv_set_t*      adv;
+    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+    ll_adv_ea_set_t*   ea;
+    #endif
+    #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
+    ll_adv_pa_set_t*   pa;
+    #endif
+    #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
+    ll_adv_pawr_set_t* pawr
+    #endif
 }ll_internal_adv_param_t;
 
 typedef struct _PACKED

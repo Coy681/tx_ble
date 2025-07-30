@@ -449,7 +449,7 @@ ll_internal_adv_param_t* ll_extended_adv_get_entity(_u8 handle,_u8 allocate)
     ll_ctrl_t* ll     = ll_get_current_state_machine();
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
-		if(ll->adv->param[i].handle == handle)
+		if(POINTER_VALID(ll->adv->param[i].adv)&&ll->adv->param[i].handle == handle)
 		{
 			return &ll->adv->param[i];
 		}
@@ -505,7 +505,7 @@ int ll_extended_adv_map_out_task(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam
     _u8  nodeNum    = 0;
     _u8  nodeCount  = 0;
     reCal:
-    // #error"should test if node can assign again"
+//     #error"should test if node can assign again"
         nodeCount+=20;
         nodeNum = 0;
         if(nodeCount>200)
@@ -637,6 +637,7 @@ int ll_extended_adv_map_out_task(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam
         }
     }
     tx_free(freeBlock);
+    while(1);
 }
 
 static int adv_extended_event_step_phy_send_aux_advertising(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
@@ -938,6 +939,9 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
             if(ll->adv->param[i].enable)
             {
                 ll_extended_adv_map_out_task(ll,&ll->adv->param[i]);
+                ll->adv->param[i].instant = 0;
+                ll->adv->param[i].availableChnCnt = ll->adv->param[i].channelCnt;
+                ll->adv->param[i].state = ADV_SM_STATE_IDLE;
             }
         }
         _u8 eventClass = 0;
