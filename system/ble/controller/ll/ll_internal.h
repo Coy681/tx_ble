@@ -216,7 +216,7 @@ typedef struct
     #endif
 }ll_internal_adv_param_t;
 
-typedef struct _PACKED
+typedef struct
 {
     ll_internal_adv_param_t param[BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS];
 }ll_internal_adv_ctrl_t;
