@@ -143,27 +143,27 @@ typedef struct
     #endif
     ll_adv_sch_entry_t  sch;
     ll_adv_phy_entry_t  phy;
-    ll_adv_data_entry_t data;
-    ll_adv_data_entry_t scanRsp;
 }ll_adv_set_t;
 
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
 typedef struct 
 {
-    _u8  handle;
-    _u8  flags;
     _u16 eventProperty;
-
     _u16 sid:4;
     _u16 did:12;
-    _u8  power;
 
+    _u8  flags;
+    _u8  power;
     _u8  maxEvents;
     _u8  secondaryMaxSkip;
+
     _u8  scanReqNotifyEnable:2;
     _u8  advDatafragPerf:1;//fragment preference
     _u8  scanRspDatafragPerf:1;//fragment preference
+    _u8  rsvd1:4;
     _u8  chainCnt;
+
+    _u16 rsvd2;
 
     _u32 expireTime;//unit is us
 
@@ -195,14 +195,21 @@ typedef struct
     _u8  state:5;//state machine sate
     _u8  eventType:4;//adv event type,search"adv_event_type_e"
     _u8  processingEvent:4;//to prevent re-retrance
-
+    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+    _u8  handle;
+    #else
+    _u8  rsvd1;
+    #endif
     _u8  ownAddressType:2;//'ll_own_address_type_e'
     _u8  peerAddressType:2;//'ll_peer_address_type_e'
     _u8  filterPolicy:2;//'ll_advertising_filter_policy_e'
-    _u8  rsvd1:2;
-    _u8  rsvd2;
+    _u8  rsvd2:2;
+
     _u8  peerAddress[6];
     _u8  randomAddress[6];
+
+    ll_adv_data_entry_t data;
+    ll_adv_data_entry_t scanRsp;
 
     ll_adv_set_t*      la;//legacy advertising
     #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)

@@ -223,13 +223,13 @@ controller_error_code_e ll_set_advertising_data(_u8* data,_u8 length)
 		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_ctrl_t));
 		ll->adv->param[index].la = (ll_adv_set_t*)tx_malloc(sizeof(ll_adv_set_t));
 	}
-    if(ll->adv->param[index].la->data.addr)
+    if(ll->adv->param[index].data.addr)
 	{
-		tx_free(ll->adv->param[index].la->data.addr);
+		tx_free(ll->adv->param[index].data.addr);
 	}
-    ll->adv->param[index].la->data.len  = length;
-    ll->adv->param[index].la->data.addr = tx_malloc(length);
-	txMemcpy(ll->adv->param[index].la->data.addr,data,length);
+    ll->adv->param[index].data.len  = length;
+    ll->adv->param[index].data.addr = tx_malloc(length);
+	txMemcpy(ll->adv->param[index].data.addr,data,length);
 	LOG_TRACE(1,"set adv data",0,0)
 	return SUCCESS;
 }
@@ -243,13 +243,13 @@ controller_error_code_e ll_set_scan_response_data(_u8* data,_u8 length)
 		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_ctrl_t));
 		ll->adv->param[index].la = (ll_adv_set_t*)tx_malloc(sizeof(ll_adv_set_t));
 	}
-    if(ll->adv->param[index].la->scanRsp.addr)
+    if(ll->adv->param[index].scanRsp.addr)
 	{
-		tx_free(ll->adv->param[index].la->scanRsp.addr);
+		tx_free(ll->adv->param[index].scanRsp.addr);
 	}
-    ll->adv->param[index].la->scanRsp.len  = length;
-    ll->adv->param[index].la->scanRsp.addr = tx_malloc(length);
-	txMemcpy(ll->adv->param[index].la->scanRsp.addr,data,length);
+    ll->adv->param[index].scanRsp.len  = length;
+    ll->adv->param[index].scanRsp.addr = tx_malloc(length);
+	txMemcpy(ll->adv->param[index].scanRsp.addr,data,length);
 	LOG_TRACE(1,"set scan rsp data",0,0)
 	return SUCCESS;
 }
@@ -335,125 +335,128 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 	}
 	else
 	{
+		if(POINTER_NOT_VALID(pAdv->ea))
+		{
+			pAdv->ea = (ll_adv_ea_set_t*)tx_malloc(sizeof(ll_adv_ea_set_t));
+		}
 		switch(pParam->advEventProperty&(LL_ADV_EVENT_PROPERTY_CONNECTED|LL_ADV_EVENT_PROPERTY_SCANNABLE|LL_ADV_EVENT_PROPERTY_DIRECTED))
 		{
 			case(LL_ADV_EVENT_PROPERTY_CONNECTED|LL_ADV_EVENT_PROPERTY_DIRECTED):
 			{
 				pAdv->eventType = ADV_EVENT_EXTENDED_CONNECTABLE_DIRECTED;
-				pAdv->primaryHeaderFlags|=(ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR);
-				pAdv->secondaryHeaderFlags|=(ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_TARGET_A|ADV_EXTENDED_HEADER_FLAG_ADI);
+				pAdv->la->flags|=(ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR);
+				pAdv->ea->flags|=(ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_TARGET_A|ADV_EXTENDED_HEADER_FLAG_ADI);
 			}
 				break;
 			case(LL_ADV_EVENT_PROPERTY_CONNECTED):
 			{
 				pAdv->eventType = ADV_EVENT_EXTENDED_CONNECTABLE_UNDIRECTED;
-				pAdv->primaryHeaderFlags|=(ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR);
-				pAdv->secondaryHeaderFlags|=(ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_ADI);
+				pAdv->la->flags|=(ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR);
+				pAdv->ea->flags|=(ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_ADI);
 			}
 				break;
 			case(LL_ADV_EVENT_PROPERTY_SCANNABLE|LL_ADV_EVENT_PROPERTY_DIRECTED):
 			{
 				pAdv->eventType = ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED;
-				pAdv->primaryHeaderFlags|=(ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR);
-				pAdv->secondaryHeaderFlags|=(ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_TARGET_A|ADV_EXTENDED_HEADER_FLAG_ADI);
+				pAdv->la->flags|=(ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR);
+				pAdv->ea->flags|=(ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_TARGET_A|ADV_EXTENDED_HEADER_FLAG_ADI);
 			}
 				break;	
 			case(LL_ADV_EVENT_PROPERTY_SCANNABLE):
 			{
 				pAdv->eventType = ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED;
-				pAdv->primaryHeaderFlags|=(ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR);
-				pAdv->secondaryHeaderFlags|=(ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_ADI);
+				pAdv->la->flags|=(ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR);
+				pAdv->ea->flags|=(ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_ADI);
 			}
 				break;	
 			case(LL_ADV_EVENT_PROPERTY_DIRECTED):
 			{
 				pAdv->eventType = ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITHOUT_AUXILIARY;
-				pAdv->primaryHeaderFlags|=(ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_TARGET_A);
+				pAdv->la->flags|=(ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_TARGET_A);
 			}
 				break;	
 			case(0):
 			{
 				pAdv->eventType = ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED_WITHOUT_AUXILIARY;
-				pAdv->primaryHeaderFlags|=(ADV_EXTENDED_HEADER_FLAG_ADV_A);
+				pAdv->la->flags|=(ADV_EXTENDED_HEADER_FLAG_ADV_A);
 			}
 				break;
 		}
-	}
-	pAdv->filterPolicy = pParam->filterPolicy;
-	pAdv->txPower      = 0;
-	if(pParam->txPower!=0x7F)
-	{
-		pAdv->txPower = pParam->txPower;
-		if(pParam->advEventProperty&(LL_ADV_EVENT_PROPERTY_CONNECTED|LL_ADV_EVENT_PROPERTY_SCANNABLE))
+		pAdv->ea->sid                  = pParam->advSid;
+		pAdv->ea->scanReqNotifyEnable  = pParam->scanReqNotifyEnable;
+		pAdv->ea->eventProperty        = pParam->advEventProperty;
+		pAdv->ea->secondaryMaxSkip     = pParam->secondaryAdvMaxSkip;
+		pAdv->ea->power  = 0;
+		if(pParam->txPower!=0x7F)
 		{
-			pAdv->secondaryHeaderFlags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
+			pAdv->ea->power = pParam->txPower;
+			if(pParam->advEventProperty&(LL_ADV_EVENT_PROPERTY_CONNECTED|LL_ADV_EVENT_PROPERTY_SCANNABLE))
+			{
+				pAdv->ea->flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
+			}
+			else 
+			{
+				pAdv->la->flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
+			}
+		}
+		if(pParam->secondaryAdvPhy == LL_ADV_PHY_CODED)
+		{
+			if(pParam->secondaryAdvphyOptions == LL_ADV_PHY_OPTIONS_PREFER_S2||\
+			pParam->secondaryAdvphyOptions == LL_ADV_PHY_OPTIONS_REQUIRE_S2)
+			{
+				pAdv->ea->phy.mode = PHY_MODE_CODED_S2;
+			}
+			else if(pParam->secondaryAdvphyOptions == LL_ADV_PHY_OPTIONS_PREFER_S8||\
+					pParam->secondaryAdvphyOptions == LL_ADV_PHY_OPTIONS_REQUIRE_S8)
+			{
+				pAdv->ea->phy.mode = (_u8)PHY_MODE_CODED_S8;
+			}
+			else
+			{
+				pAdv->ea->phy.mode = (_u8)PHY_MODE_CODED_S8;
+			}
+		}
+		else if(pParam->secondaryAdvPhy == LL_ADV_PHY_1M)
+		{
+			pAdv->ea->phy.mode = PHY_MODE_1M;
 		}
 		else 
 		{
-			pAdv->primaryHeaderFlags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
+			pAdv->ea->phy.mode = PHY_MODE_2M;
 		}
 	}
-	pAdv->sid                      = pParam->advSid;
-	pAdv->scanReqNotifyEnable      = pParam->scanReqNotifyEnable;
-	pAdv->eventProperty            = pParam->advEventProperty;
-	pAdv->secondaryMaxSkip         = pParam->secondaryAdvMaxSkip;
+	pAdv->filterPolicy = pParam->filterPolicy;
 	pAdv->ownAddressType           = pParam->ownAddrType;
 	pAdv->peerAddressType          = pParam->peerAddrType;
-	pAdv->interval                 = pParam->primaryAdvInterval * 625;
-	pAdv->channelCnt               = 0;
+	pAdv->la->sch.interval         = pParam->primaryAdvInterval * 625;
+	pAdv->la->channelCnt           = 0;
     for(int i=0;i<3;i++)
     {
     	if(pParam->primaryAdvChnMap&BIT(i))
     	{
-    		pAdv->chnTable[pAdv->channelCnt++] = 37+i;
+    		pAdv->la->chnTable[pAdv->la->channelCnt++] = 37+i;
     	}
     }
-
 	if(pParam->primaryAdvPhy == LL_ADV_PHY_CODED)
 	{
 		if(pParam->primaryAdvphyOptions == LL_ADV_PHY_OPTIONS_PREFER_S2||\
 	       pParam->primaryAdvphyOptions == LL_ADV_PHY_OPTIONS_REQUIRE_S2)
 		{
-			pAdv->phyMode = PHY_MODE_CODED_S2;
+			pAdv->la->phy.mode = PHY_MODE_CODED_S2;
 		}
 		else if(pParam->primaryAdvphyOptions == LL_ADV_PHY_OPTIONS_PREFER_S8||\
 	            pParam->primaryAdvphyOptions == LL_ADV_PHY_OPTIONS_REQUIRE_S8)
 		{
-			pAdv->phyMode = (_u8)HAL_RF_MODE_CODED_S8;
+			pAdv->la->phy.mode = (_u8)HAL_RF_MODE_CODED_S8;
 		}
 		else 
 		{
-			pAdv->phyMode = (_u8)HAL_RF_MODE_CODED_S8;
+			pAdv->la->phy.mode = (_u8)HAL_RF_MODE_CODED_S8;
 		}
 	}
 	else
 	{
-		pAdv->phyMode = LL_ADV_PHY_1M;
-	}
-	if(pParam->secondaryAdvPhy == LL_ADV_PHY_CODED)
-	{
-		if(pParam->secondaryAdvphyOptions == LL_ADV_PHY_OPTIONS_PREFER_S2||\
-	       pParam->secondaryAdvphyOptions == LL_ADV_PHY_OPTIONS_REQUIRE_S2)
-		{
-			pAdv->secondaryPhyMode = PHY_MODE_CODED_S2;
-		}
-		else if(pParam->secondaryAdvphyOptions == LL_ADV_PHY_OPTIONS_PREFER_S8||\
-	            pParam->secondaryAdvphyOptions == LL_ADV_PHY_OPTIONS_REQUIRE_S8)
-		{
-			pAdv->secondaryPhyMode = (_u8)PHY_MODE_CODED_S8;
-		}
-		else
-		{
-			pAdv->secondaryPhyMode = (_u8)PHY_MODE_CODED_S8;
-		}
-	}
-	else if(pParam->secondaryAdvPhy == LL_ADV_PHY_1M)
-	{
-		pAdv->secondaryPhyMode = PHY_MODE_1M;
-	}
-	else 
-	{
-		pAdv->secondaryPhyMode = PHY_MODE_2M;
+		pAdv->la->phy.mode = LL_ADV_PHY_1M;
 	}
 	return SUCCESS;
 }
@@ -473,8 +476,7 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 	{
 		return UNKNOWN_ADVERTISING_IDENTIFIER;
 	}
-
-	if(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU)
+	if(POINTER_NOT_VALID(pAdv->ea))
 	{
 		if(dataLen > 31||\
 		   operation!=LL_ADV_DATA_OPERATION_COMPLETE||\

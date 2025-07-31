@@ -161,9 +161,9 @@ static void adv_prepare_packet(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,l
 	switch(pduType)
 	{
 		case LL_ADV_TYPE_ADV_IND:
-		     packet = ll_get_adv_packet(ll->txSharedPacket,6+advParam->la->data.len,LL_ADV_TYPE_ADV_IND,0,advParam->ownAddressType?1:0,0);
+		     packet = ll_get_adv_packet(ll->txSharedPacket,6+advParam->data.len,LL_ADV_TYPE_ADV_IND,0,advParam->ownAddressType?1:0,0);
 		     txMemcpy(((adv_type_ind_t*)packet)->advA,ll->ownAddr,6);
-		     txMemcpy(((adv_type_ind_t*)packet)->advData,advParam->la->data.addr,advParam->la->data.len);
+		     txMemcpy(((adv_type_ind_t*)packet)->advData,advParam->data.addr,advParam->data.len);
 		     break;
         case LL_ADV_TYPE_ADV_DIRECT_IND:
 			 packet = ll_get_adv_packet(ll->txSharedPacket,12,LL_ADV_TYPE_ADV_DIRECT_IND,0,advParam->ownAddressType?1:0,advParam->peerAddressType?1:0);
@@ -171,19 +171,19 @@ static void adv_prepare_packet(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,l
 		     txMemcpy(((adv_type_direct_ind_t*)packet)->targetA,advParam->peerAddress,6);
 			 break;
 		case LL_ADV_TYPE_ADV_SCAN_IND:
-		     packet = ll_get_adv_packet(ll->txSharedPacket,6+advParam->la->data.len,LL_ADV_TYPE_ADV_SCAN_IND,0,advParam->ownAddressType?1:0,0);
+		     packet = ll_get_adv_packet(ll->txSharedPacket,6+advParam->data.len,LL_ADV_TYPE_ADV_SCAN_IND,0,advParam->ownAddressType?1:0,0);
 		     txMemcpy(((adv_type_scan_ind_t*)packet)->advA,ll->ownAddr,6);
-		     txMemcpy(((adv_type_scan_ind_t*)packet)->advData,advParam->la->data.addr,advParam->la->data.len);
+		     txMemcpy(((adv_type_scan_ind_t*)packet)->advData,advParam->data.addr,advParam->data.len);
 		     break;
 		case LL_ADV_TYPE_ADV_NONCONN_IND:
-		     packet = ll_get_adv_packet(ll->txSharedPacket,6+advParam->la->data.len,LL_ADV_TYPE_ADV_NONCONN_IND,0,advParam->ownAddressType?1:0,0);
+		     packet = ll_get_adv_packet(ll->txSharedPacket,6+advParam->data.len,LL_ADV_TYPE_ADV_NONCONN_IND,0,advParam->ownAddressType?1:0,0);
 		     txMemcpy(((adv_type_nonConn_ind_t*)packet)->advA,ll->ownAddr,6);
-		     txMemcpy(((adv_type_nonConn_ind_t*)packet)->advData,advParam->la->data.addr,advParam->la->data.len);
+		     txMemcpy(((adv_type_nonConn_ind_t*)packet)->advData,advParam->data.addr,advParam->data.len);
 		     break;
         case LL_ADV_TYPE_SCAN_RSP:
-             packet = ll_get_adv_packet(ll->txSharedPacket,6+advParam->la->scanRsp.len,LL_ADV_TYPE_SCAN_RSP,0,advParam->ownAddressType?1:0,0);
+             packet = ll_get_adv_packet(ll->txSharedPacket,6+advParam->scanRsp.len,LL_ADV_TYPE_SCAN_RSP,0,advParam->ownAddressType?1:0,0);
              txMemcpy(((adv_type_scan_rsp_t*)packet)->advA,ll->ownAddr,6);
-             txMemcpy(((adv_type_scan_rsp_t*)packet)->scanRsp,advParam->la->scanRsp.addr,advParam->la->scanRsp.len);
+             txMemcpy(((adv_type_scan_rsp_t*)packet)->scanRsp,advParam->scanRsp.addr,advParam->scanRsp.len);
              break;
         #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
         case LL_ADV_TYPE_ADV_EXT_IND:
@@ -327,7 +327,7 @@ static int adv_event_step_phy_start_listen(ll_ctrl_t* ll,ll_internal_adv_param_t
 {
     if(property&(ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE))//connectable or scannable adv event both shall can start listen
     {
-    	_u32 timestamp = advParam->la->sch.anchorPoint + ll_get_air_packet_time(advParam->la->phy.mode,6+advParam->la->data.len,0)+PACKET_DEFAULT_TIFS_TIME;
+    	_u32 timestamp = advParam->la->sch.anchorPoint + ll_get_air_packet_time(advParam->la->phy.mode,6+advParam->data.len,0)+PACKET_DEFAULT_TIFS_TIME;
         adv_prepare_phy(ll,&advParam->la->phy,timestamp,PHY_DIR_RX);
         ll->phy.start();
         return 1;
@@ -457,7 +457,7 @@ ll_internal_adv_param_t* ll_extended_adv_get_entity(_u8 handle,_u8 allocate)
     ll_ctrl_t* ll     = ll_get_current_state_machine();
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
-		if(POINTER_VALID(ll->adv->param[i].adv)&&ll->adv->param[i].handle == handle)
+		if(POINTER_VALID(ll->adv->param[i].ea)&&ll->adv->param[i].handle == handle)
 		{
 			return &ll->adv->param[i];
 		}
@@ -466,11 +466,16 @@ ll_internal_adv_param_t* ll_extended_adv_get_entity(_u8 handle,_u8 allocate)
 	{
 		return NULL;
 	}
+
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
         if(ll->adv->param[i].handle == LL_EXTENDED_ADV_INVALID_HANDLE)
         {
         	ll->adv->param[i].handle = handle;
+            if(POINTER_NOT_VALID(ll->adv->param[i].la))
+            {
+                ll->adv->param[i].la = (ll_adv_set_t*)tx_malloc(sizeof(ll_adv_set_t));
+            }
             return &ll->adv->param[i];
         }
     }
