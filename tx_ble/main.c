@@ -47,84 +47,85 @@ void app_rx_cmd(_u8* data,_u32 len)
 			       0x02,0x01,0x05,
                    0x03,0x19,0x80,0x01,
                    0x05,0x02,0x12,0x18,0x0f,0x18};
-	ll_extended_adv_param_t extendedAdvParam =
-	{
-		.advHandle              = 0x00,
-		.advEventProperty       = LL_ADV_EVENT_PROPERTY_LEGACY_PDU|LL_ADV_EVENT_PROPERTY_SCANNABLE,
-		.filterPolicy           = LL_FILTER_LIST_NOT_USE,
-		.txPower                = 0x7f,
-		.advSid                 = 0x00,
-		.ownAddrType            = LL_PUBLIC_DEVICE_ADDRESS,
-		.peerAddrType           = LL_PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,
-		.peerAddr               = {0x00,0x00,0x00,0x00,0x00,0x00},
-		.scanReqNotifyEnable    = 0,
-		.primaryAdvInterval     = 16,
-		.primaryAdvChnMap       = LL_ADV_CHN_37|LL_ADV_CHN_38|LL_ADV_CHN_39,
-		.primaryAdvPhy          = LL_ADV_PHY_1M,
-		.primaryAdvphyOptions   = 0,
-		.secondaryAdvMaxSkip    = 0,
-		.secondaryAdvPhy        = 0,
-		.secondaryAdvphyOptions = 0,
-	};
-	ll_extended_adv_enable_subField_e advEnable =
-	{
-		.advHandle = 0x00,
-		.duration  = 0x00,
-		.maxEvents = 0x00,
-	};
-	int status = 0;
+//	ll_extended_adv_param_t extendedAdvParam =
+//	{
+//		.advHandle              = 0x00,
+//		.advEventProperty       = LL_ADV_EVENT_PROPERTY_LEGACY_PDU|LL_ADV_EVENT_PROPERTY_SCANNABLE,
+//		.filterPolicy           = LL_FILTER_LIST_NOT_USE,
+//		.txPower                = 0x7f,
+//		.advSid                 = 0x00,
+//		.ownAddrType            = LL_PUBLIC_DEVICE_ADDRESS,
+//		.peerAddrType           = LL_PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,
+//		.peerAddr               = {0x00,0x00,0x00,0x00,0x00,0x00},
+//		.scanReqNotifyEnable    = 0,
+//		.primaryAdvInterval     = 16,
+//		.primaryAdvChnMap       = LL_ADV_CHN_37|LL_ADV_CHN_38|LL_ADV_CHN_39,
+//		.primaryAdvPhy          = LL_ADV_PHY_1M,
+//		.primaryAdvphyOptions   = 0,
+//		.secondaryAdvMaxSkip    = 0,
+//		.secondaryAdvPhy        = 0,
+//		.secondaryAdvphyOptions = 0,
+//	};
+//	ll_extended_adv_enable_subField_e advEnable =
+//	{
+//		.advHandle = 0x00,
+//		.duration  = 0x00,
+//		.maxEvents = 0x00,
+//	};
+//	int status = 0;
+//
+//	switch(data[0])
+//	{
+//		case 1:
+//			status = ll_set_extended_advertising_parameters(&extendedAdvParam);
+//			LOG_TRACE(1,"set extended param",&status,4)
+//			break;
+//		case 2:
+//			status = ll_set_extended_advertising_data(0x00,\
+//					                         LL_ADV_DATA_OPERATION_COMPLETE,\
+//											 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
+//											 sizeof(data1),
+//											 data1);
+//			LOG_TRACE(1,"set extended data",&status,4)
+//			break;
+//		case 3:
+//			status = ll_set_extended_scan_response_data(0x00,\
+//					                         LL_ADV_DATA_OPERATION_COMPLETE,\
+//											 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
+//											 sizeof(data1),
+//											 data1);
+//			LOG_TRACE(1,"set scan rsp data",&status,4)
+//			break;
+//		case 4:
+//			status = ll_set_extended_advertising_enable(1,\
+//					                           1,\
+//											   &advEnable);
+//			LOG_TRACE(1,"set adv enable",&status,4)
+//			break;
+//		default:
+//			break;
+//	}
+	 switch(data[0])
+	 {
 
-	switch(data[0])
-	{
-		case 1:
-			status = ll_set_extended_advertising_parameters(&extendedAdvParam);
-			LOG_TRACE(1,"set extended param",&status,4)
-			break;
-		case 2:
-			status = ll_set_extended_advertising_data(0x00,\
-					                         LL_ADV_DATA_OPERATION_COMPLETE,\
-											 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
-											 sizeof(data1),
-											 data1);
-			LOG_TRACE(1,"set extended data",&status,4)
-			break;
-		case 3:
-			status = ll_set_extended_scan_response_data(0x00,\
-					                         LL_ADV_DATA_OPERATION_COMPLETE,\
-											 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
-											 sizeof(data1),
-											 data1);
-			LOG_TRACE(1,"set scan rsp data",&status,4)
-			break;
-		case 4:
-			status = ll_set_extended_advertising_enable(1,\
-					                           1,\
-											   &advEnable);
-			LOG_TRACE(1,"set adv enable",&status,4)
-			break;
-		default:
-			break;
-	}
-//	 switch(data[0])
-//	 {
-//	 	case 1:
-//	 		ll_set_advertising_parameters(16,LL_ADV_NONCONN_IND,LL_PUBLIC_DEVICE_ADDRESS,LL_PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,0,7,LL_FILTER_LIST_NOT_USE);
-//	 		break;
-//	 	case 2:
-//	 		ll_set_advertising_data(data1,sizeof(data1));
-//	 		break;
-//	 	case 3:
-//	 	    ll_set_scan_response_data(data1,sizeof(data1));
-//	 		break;
-//	 	case 4:
-//	 		ll_set_advertising_enable(1);
-//	 		break;
-//	 	case 5:
-//	 		ll_set_advertising_enable(0);
-//	 		break;
-//	 	default:
-//	 		break;
-//	 }
+	 	case 1:
+	 		ll_set_advertising_parameters(16,LL_ADV_IND,LL_PUBLIC_DEVICE_ADDRESS,LL_PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,0,7,LL_FILTER_LIST_NOT_USE);
+	 		break;
+	 	case 2:
+	 		ll_set_advertising_data(data1,sizeof(data1));
+	 		break;
+	 	case 3:
+	 	    ll_set_scan_response_data(data1,sizeof(data1));
+	 		break;
+	 	case 4:
+	 		ll_set_advertising_enable(1);
+	 		break;
+	 	case 5:
+	 		ll_set_advertising_enable(0);
+	 		break;
+	 	default:
+	 		break;
+	 }
 
 //     _u32 systemTime = 0x100;
 // 	 sch_map_node_t node[5]=

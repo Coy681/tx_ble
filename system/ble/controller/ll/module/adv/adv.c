@@ -230,10 +230,10 @@ static void adv_prepare_phy(ll_ctrl_t* ll,ll_adv_phy_entry_t* phy,_u32 timestamp
     phy_obj_cast(&ll->phy);
     ll->phy.accessCode = phy->accessCode;
     ll->phy.crcInit    = phy->crcInit;
-    ll->phy.dir        = phydir;
     ll->phy.mode       = phy->mode;
     ll->phy.chnIdx     = phy->chn;
-    if(timestamp)
+    ll->phy.dir        = phydir;
+    if(timestamp!=0)
     {
         ll->phy.timestamp  = timestamp - ll->phy.hw_get_prepare_time();
     }
@@ -244,11 +244,11 @@ static void adv_prepare_phy(ll_ctrl_t* ll,ll_adv_phy_entry_t* phy,_u32 timestamp
 
     if(phydir == PHY_DIR_TX)
     {
-        ll->phy.txAddress   = phy->rxAddress;
+        ll->phy.txAddress   = phy->txAddress;
     }
     else if(phydir == PHY_DIR_RX)
     {
-    	ll->phy.rxAddress   = phy->txAddress;
+    	ll->phy.rxAddress   = phy->rxAddress;
         ll->phy.rxTimeout   = BLE_ADV_DEFAULT_RX_TIMEOUT_US;
         ll->phy.rxMaxOctets = phy->rxMaxOctets;
     }
@@ -265,10 +265,12 @@ static void adv_event_process_next_task(ll_ctrl_t* ll,ll_adv_set_t* la)
     if(la->availableChnCnt)
     {
         ll->sch.timestamp += (ll->sch.duration+ll->sch.startLatency+ll->sch.stopLatency);
+        la->sch.anchorPoint = ll->sch.timestamp;
     }
     else
     {
         ll->sch.timestamp += (ll->sch.period + 30*(random_byte()|0x0f));
+        la->sch.anchorPoint = ll->sch.timestamp;
         la->availableChnCnt = la->channelCnt;
     }
 }
@@ -322,7 +324,8 @@ static int adv_event_step_phy_start_listen(ll_ctrl_t* ll,ll_internal_adv_param_t
 {
     if(property&(ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE))//connectable or scannable adv event both shall can start listen
     {
-        adv_prepare_phy(ll,advParam,0,PHY_DIR_RX);
+    	_u32 timestamp = advParam->la->sch.anchorPoint + ll_get_air_packet_time(advParam->la->phy.mode,6+advParam->la->data.len,0)+PACKET_DEFAULT_TIFS_TIME;
+        adv_prepare_phy(ll,&advParam->la->phy,timestamp,PHY_DIR_RX);
         ll->phy.start();
         return 1;
     }
@@ -333,6 +336,7 @@ _RAM_CODE
 static int adv_event_step_received_packet_analyze(ll_ctrl_t* ll)
 {
 	 ll_adv_packet_t* packet = (ll_adv_packet_t*)(ll->phy.rxAddress + ll_get_packet_header_offset_from_address(PHY_DIR_RX));
+
 
 	 if(packet->hdr.pduType == LL_ADV_TYPE_SCAN_REQ && packet->hdr.length == sizeof(scan_type_scan_req_t))
 	 {
@@ -381,6 +385,7 @@ static int adv_event_step_sch_passed(ll_ctrl_t* ll,ll_internal_adv_param_t* advP
 	_u32 systemTime = system_time();
 	_u32 periodicDiff = (systemTime - ll->sch.timestamp)/ll->sch.period;
 	ll->sch.timestamp+=((periodicDiff+1)*ll->sch.period);
+	advParam->la->sch.anchorPoint = ll->sch.timestamp;
 	advParam->la->availableChnCnt = advParam->la->channelCnt;
     return 1;
     //todo,maybe we can jump to next adv channel
@@ -392,6 +397,7 @@ static int adv_event_step_sch_canceled(ll_ctrl_t* ll,ll_internal_adv_param_t* ad
 	_u32 systemTime = system_time();
 	_u32 periodicDiff = (systemTime - ll->sch.timestamp)/ll->sch.period;
 	ll->sch.timestamp+=((periodicDiff+1)*ll->sch.period);
+	advParam->la->sch.anchorPoint = ll->sch.timestamp;
 	advParam->la->availableChnCnt = advParam->la->channelCnt;
     return 1;
     //todo,maybe we can jump to next adv channel
@@ -919,6 +925,8 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         phy_obj_init(&ll->phy);
 		#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING!=1)
         ll_internal_adv_param_t* advParam = &ll->adv->param[0];
+        //state machine init
+        advParam->state                   = ADV_SM_STATE_IDLE;
         advParam->la->availableChnCnt     = advParam->la->channelCnt;
         //sch init
         advParam->la->sch.eventCnt        = 0;
@@ -940,8 +948,7 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         advParam->la->phy.rxMaxOctets     = BLE_ADV_DEFAULT_MAX_LENGTH;
         advParam->la->phy.rxAddress       = ll->rxSharedPacket;
         advParam->la->phy.txAddress       = ll->txSharedPacket;
-        //state machine init
-        advParam->state                   = ADV_SM_STATE_IDLE;
+
 		#else
         for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
         {
@@ -964,6 +971,7 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         ll->sch.priority     = LL_ADV_PRIORITY;
         ll->sch.timestamp    = advParam->la->sch.anchorPoint;//maybe need planner
         ll->sch.period       = advParam->la->sch.interval;
+        ll->sch.duration     = advParam->la->sch.duration;
         ll->sch.startLatency = advParam->la->sch.startMargin;
         ll->sch.stopLatency  = advParam->la->sch.stopMargin;
         ll->sch.cb           = adv_sch_callback;
