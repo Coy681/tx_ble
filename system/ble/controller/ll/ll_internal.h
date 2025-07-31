@@ -93,6 +93,10 @@ typedef struct _PACKED
 
 /***********************ll advertising sate**********************/
 #define LL_EXTENDED_ADV_INVALID_HANDLE   0xFF
+
+/**
+ * sch entry,phy entry,data entry maybe can expand to all ll state.
+ */
 typedef struct
 {
     _u32 anchorPoint;
@@ -105,7 +109,7 @@ typedef struct
 
 typedef struct 
 {
-    _u8  phyMode;
+    _u8  mode;
     _u8  chn;
     _u16 rxMaxOctets;
     _u32 accessCode;
@@ -116,8 +120,8 @@ typedef struct
 
 typedef struct 
 {
-   _u16 dataLen;//to be compatible with adv and extended adv,use 2 byte to store data.
-   _u8* data;
+   _u16 len;//to be compatible with adv and extended adv,use 2 byte to store data.
+   _u8* addr;
 }ll_adv_data_entry_t;
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
 typedef struct 
@@ -135,7 +139,7 @@ typedef struct
     _u8  availableChnCnt:2;//max is channelCnt
     _u8  chnTable[3];
     #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
-    _u8  flags;
+    _u8  flags;//primary pdu extended header flags.
     #endif
     ll_adv_sch_entry_t  sch;
     ll_adv_phy_entry_t  phy;
@@ -195,18 +199,20 @@ typedef struct
     _u8  ownAddressType:2;//'ll_own_address_type_e'
     _u8  peerAddressType:2;//'ll_peer_address_type_e'
     _u8  filterPolicy:2;//'ll_advertising_filter_policy_e'
+    _u8  rsvd1:2;
+    _u8  rsvd2;
     _u8  peerAddress[6];
     _u8  randomAddress[6];
 
-    ll_adv_set_t*      adv;
+    ll_adv_set_t*      la;//legacy advertising
     #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
-    ll_adv_ea_set_t*   ea;
+    ll_adv_ea_set_t*   ea;//extended advertising
     #endif
     #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
-    ll_adv_pa_set_t*   pa;
+    ll_adv_pa_set_t*   pa;//periodic advertising
     #endif
     #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
-    ll_adv_pawr_set_t* pawr
+    ll_adv_pawr_set_t* pawr//periodic advertising with response
     #endif
 }ll_internal_adv_param_t;
 

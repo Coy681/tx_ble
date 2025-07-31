@@ -170,24 +170,26 @@ controller_error_code_e ll_set_advertising_parameters(_u16 interval,\
 	                                                  ll_advertising_filter_policy_e policy)
 {
 	ll_ctrl_t* ll = ll_get_current_state_machine();
+	_u8 index = 0;
 	if(ll->adv == NULL)
 	{
 		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_ctrl_t));
+		ll->adv->param[index].la = (ll_adv_set_t*)tx_malloc(sizeof(ll_adv_set_t));
 	}
-	_u8 index = 0;
-	ll->adv->param[index].interval        = interval*625;
 	ll->adv->param[index].ownAddressType  = ownAddressType;
 	ll->adv->param[index].peerAddressType = peerAddressType;
-	ll->adv->param[index].channelCnt = 0;
+	ll->adv->param[index].filterPolicy = policy;
+	txMemcpy(ll->adv->param[index].peerAddress,peerAddress,6);
+	
+	ll->adv->param[index].la->sch.interval = interval*625;
+	ll->adv->param[index].la->channelCnt   = 0;
     for(int i=0;i<3;i++)
     {
     	if(channelMap&BIT(i))
     	{
-    		ll->adv->param[index].chnTable[ll->adv->param[index].channelCnt++] = 37+i;
+    		ll->adv->param[index].la->chnTable[ll->adv->param[index].la->channelCnt++] = 37+i;
     	}
     }
-	txMemcpy(ll->adv->param[index].peerAddress,peerAddress,6);
-	ll->adv->param[index].filterPolicy = policy;
 	switch(type)
 	{
 		case LL_ADV_IND:
@@ -215,18 +217,19 @@ controller_error_code_e ll_set_advertising_parameters(_u16 interval,\
 controller_error_code_e ll_set_advertising_data(_u8* data,_u8 length)
 {
 	ll_ctrl_t* ll = ll_get_current_state_machine();
+	_u8 index = 0;
 	if(ll->adv == NULL)
 	{
 		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_ctrl_t));
+		ll->adv->param[index].la = (ll_adv_set_t*)tx_malloc(sizeof(ll_adv_set_t));
 	}
-	_u8 index = 0;
-    if(ll->adv->param[index].data)
+    if(ll->adv->param[index].la->data.addr)
 	{
-		tx_free(ll->adv->param[index].data);
+		tx_free(ll->adv->param[index].la->data.addr);
 	}
-    ll->adv->param[index].dataLen = length;
-    ll->adv->param[index].data    = tx_malloc(length);
-	txMemcpy(ll->adv->param[index].data,data,length);
+    ll->adv->param[index].la->data.len  = length;
+    ll->adv->param[index].la->data.addr = tx_malloc(length);
+	txMemcpy(ll->adv->param[index].la->data.addr,data,length);
 	LOG_TRACE(1,"set adv data",0,0)
 	return SUCCESS;
 }
@@ -234,18 +237,19 @@ controller_error_code_e ll_set_advertising_data(_u8* data,_u8 length)
 controller_error_code_e ll_set_scan_response_data(_u8* data,_u8 length)
 {
 	ll_ctrl_t* ll = ll_get_current_state_machine();
+	_u8 index = 0;
 	if(ll->adv == NULL)
 	{
 		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_ctrl_t));
+		ll->adv->param[index].la = (ll_adv_set_t*)tx_malloc(sizeof(ll_adv_set_t));
 	}
-	_u8 index = 0;
-    if(ll->adv->param[index].scanRspData)
+    if(ll->adv->param[index].la->scanRsp.addr)
 	{
-		tx_free(ll->adv->param[index].scanRspData);
+		tx_free(ll->adv->param[index].la->scanRsp.addr);
 	}
-    ll->adv->param[index].scanRspDataLen = length;
-    ll->adv->param[index].scanRspData    = tx_malloc(length);
-	txMemcpy(ll->adv->param[index].scanRspData,data,length);
+    ll->adv->param[index].la->scanRsp.len  = length;
+    ll->adv->param[index].la->scanRsp.addr = tx_malloc(length);
+	txMemcpy(ll->adv->param[index].la->scanRsp.addr,data,length);
 	LOG_TRACE(1,"set scan rsp data",0,0)
 	return SUCCESS;
 }

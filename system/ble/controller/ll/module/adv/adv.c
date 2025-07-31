@@ -158,9 +158,9 @@ static void adv_prepare_packet(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,l
 	switch(pduType)
 	{
 		case LL_ADV_TYPE_ADV_IND:
-		     packet = ll_get_adv_packet(ll->txSharedPacket,6+advParam->dataLen,LL_ADV_TYPE_ADV_IND,0,advParam->ownAddressType?1:0,0);
+		     packet = ll_get_adv_packet(ll->txSharedPacket,6+advParam->la->data.len,LL_ADV_TYPE_ADV_IND,0,advParam->ownAddressType?1:0,0);
 		     txMemcpy(((adv_type_ind_t*)packet)->advA,ll->ownAddr,6);
-		     txMemcpy(((adv_type_ind_t*)packet)->advData,advParam->data,advParam->dataLen);
+		     txMemcpy(((adv_type_ind_t*)packet)->advData,advParam->la->data.addr,advParam->la->data.len);
 		     break;
         case LL_ADV_TYPE_ADV_DIRECT_IND:
 			 packet = ll_get_adv_packet(ll->txSharedPacket,12,LL_ADV_TYPE_ADV_DIRECT_IND,0,advParam->ownAddressType?1:0,advParam->peerAddressType?1:0);
@@ -168,19 +168,19 @@ static void adv_prepare_packet(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,l
 		     txMemcpy(((adv_type_direct_ind_t*)packet)->targetA,advParam->peerAddress,6);
 			 break;
 		case LL_ADV_TYPE_ADV_SCAN_IND:
-		     packet = ll_get_adv_packet(ll->txSharedPacket,6+advParam->dataLen,LL_ADV_TYPE_ADV_SCAN_IND,0,advParam->ownAddressType?1:0,0);
+		     packet = ll_get_adv_packet(ll->txSharedPacket,6+advParam->la->data.len,LL_ADV_TYPE_ADV_SCAN_IND,0,advParam->ownAddressType?1:0,0);
 		     txMemcpy(((adv_type_scan_ind_t*)packet)->advA,ll->ownAddr,6);
-		     txMemcpy(((adv_type_scan_ind_t*)packet)->advData,advParam->data,advParam->dataLen);
+		     txMemcpy(((adv_type_scan_ind_t*)packet)->advData,advParam->la->data.addr,advParam->la->data.len);
 		     break;
 		case LL_ADV_TYPE_ADV_NONCONN_IND:
-		     packet = ll_get_adv_packet(ll->txSharedPacket,6+advParam->dataLen,LL_ADV_TYPE_ADV_NONCONN_IND,0,advParam->ownAddressType?1:0,0);
+		     packet = ll_get_adv_packet(ll->txSharedPacket,6+advParam->la->data.len,LL_ADV_TYPE_ADV_NONCONN_IND,0,advParam->ownAddressType?1:0,0);
 		     txMemcpy(((adv_type_nonConn_ind_t*)packet)->advA,ll->ownAddr,6);
-		     txMemcpy(((adv_type_nonConn_ind_t*)packet)->advData,advParam->data,advParam->dataLen);
+		     txMemcpy(((adv_type_nonConn_ind_t*)packet)->advData,advParam->la->data.addr,advParam->la->data.len);
 		     break;
         case LL_ADV_TYPE_SCAN_RSP:
-             packet = ll_get_adv_packet(ll->txSharedPacket,6+advParam->scanRspDataLen,LL_ADV_TYPE_SCAN_RSP,0,advParam->ownAddressType?1:0,0);
+             packet = ll_get_adv_packet(ll->txSharedPacket,6+advParam->la->scanRsp.len,LL_ADV_TYPE_SCAN_RSP,0,advParam->ownAddressType?1:0,0);
              txMemcpy(((adv_type_scan_rsp_t*)packet)->advA,ll->ownAddr,6);
-             txMemcpy(((adv_type_scan_rsp_t*)packet)->scanRsp,advParam->scanRspData,advParam->scanRspDataLen);
+             txMemcpy(((adv_type_scan_rsp_t*)packet)->scanRsp,advParam->la->scanRsp.addr,advParam->la->scanRsp.len);
              break;
         #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
         case LL_ADV_TYPE_ADV_EXT_IND:
@@ -220,21 +220,19 @@ static void adv_prepare_packet(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,l
 	}
 }
 
-/*****************************************ADV Event Process ***********************************************/
 /**
- *
- * @param timestamp - if present,timestamp is air packet time,so need minus hardware prepare time
+ * @param timestamp - if present,timestamp is air packet anchor point,so need minus hardware prepare time
  * 				    - if not present,packet send time is not specified,so we can use system time.
  */
 _RAM_CODE
-static void adv_event_prepare_phy(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 timestamp,phy_dir_e phydir,phy_mode_e mode)
+static void adv_prepare_phy(ll_ctrl_t* ll,ll_adv_phy_entry_t* phy,_u32 timestamp,phy_dir_e phydir)
 {
     phy_obj_cast(&ll->phy);
-    ll->phy.accessCode = BLE_ADV_ACCESS_CODE;
-    ll->phy.crcInit    = BLE_ADV_CRC_INIT;
-    ll->phy.mode       = mode;
+    ll->phy.accessCode = phy->accessCode;
+    ll->phy.crcInit    = phy->crcInit;
     ll->phy.dir        = phydir;
-    ll->phy.chnIdx     = advParam->currentChn;
+    ll->phy.mode       = phy->mode;
+    ll->phy.chnIdx     = phy->chn;
     if(timestamp)
     {
         ll->phy.timestamp  = timestamp - ll->phy.hw_get_prepare_time();
@@ -246,43 +244,44 @@ static void adv_event_prepare_phy(ll_ctrl_t* ll,ll_internal_adv_param_t* advPara
 
     if(phydir == PHY_DIR_TX)
     {
-        ll->phy.txAddress  = ll->txSharedPacket;
+        ll->phy.txAddress   = phy->rxAddress;
     }
     else if(phydir == PHY_DIR_RX)
     {
-    	ll->phy.rxAddress = ll->rxSharedPacket;
-        ll->phy.rxTimeout = BLE_ADV_DEFAULT_RX_TIMEOUT_US;
-        ll->phy.rxMaxOctets = BLE_ADV_DEFAULT_MAX_LENGTH;
+    	ll->phy.rxAddress   = phy->txAddress;
+        ll->phy.rxTimeout   = BLE_ADV_DEFAULT_RX_TIMEOUT_US;
+        ll->phy.rxMaxOctets = phy->rxMaxOctets;
     }
 }
 
+/*****************************************ADV Event Process ***********************************************/
 _RAM_CODE
-static void adv_event_process_next_task(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam)
+static void adv_event_process_next_task(ll_ctrl_t* ll,ll_adv_set_t* la)
 {
-    if(advParam->availableChnCnt)
+    if(la->availableChnCnt)
     {
-    	advParam->availableChnCnt--;
+    	la->availableChnCnt--;
     }
-    if(advParam->availableChnCnt)
+    if(la->availableChnCnt)
     {
         ll->sch.timestamp += (ll->sch.duration+ll->sch.startLatency+ll->sch.stopLatency);
     }
     else
     {
         ll->sch.timestamp += (ll->sch.period + 30*(random_byte()|0x0f));
-        advParam->availableChnCnt = advParam->channelCnt;
+        la->availableChnCnt = la->channelCnt;
     }
 }
 
 _RAM_CODE
 static int adv_event_step_phy_send_advertising(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
-    if(advParam->availableChnCnt==0)
+    if(advParam->la->availableChnCnt==0)
     {
         return 0;
     }
-    advParam->instant++;
-    advParam->currentChn = advParam->chnTable[(advParam->instant%advParam->channelCnt)];
+    advParam->la->sch.eventCnt++;
+    advParam->la->phy.chn = advParam->la->chnTable[(advParam->la->sch.eventCnt%advParam->la->channelCnt)];
     #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
     if(advParam->eventProperty & LL_ADV_EVENT_PROPERTY_LEGACY_PDU)
     {
@@ -313,7 +312,7 @@ static int adv_event_step_phy_send_advertising(ll_ctrl_t* ll,ll_internal_adv_par
     }  
     #endif
     
-    adv_event_prepare_phy(ll,advParam,0,PHY_DIR_TX,advParam->phyMode);
+    adv_prepare_phy(ll,&advParam->la->phy,advParam->la->sch.anchorPoint,PHY_DIR_TX);
     ll->phy.start();
     return 1;
 }
@@ -323,7 +322,7 @@ static int adv_event_step_phy_start_listen(ll_ctrl_t* ll,ll_internal_adv_param_t
 {
     if(property&(ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE))//connectable or scannable adv event both shall can start listen
     {
-        adv_event_prepare_phy(ll,advParam,0,PHY_DIR_RX,advParam->phyMode);
+        adv_prepare_phy(ll,advParam,0,PHY_DIR_RX);
         ll->phy.start();
         return 1;
     }
@@ -359,8 +358,8 @@ static int adv_event_step_phy_send_scan_rsp(ll_ctrl_t* ll,ll_internal_adv_param_
 	if((adv_event_step_received_packet_analyze(ll)!=0)&&(property&ADV_CONTEXT_SCANNABLE))//packet analyze shall be execute first
 	{
         adv_prepare_packet(ll,advParam,LL_ADV_TYPE_SCAN_RSP,0);
-        _u32 timestamp = ll->phy.hw_get_rx_air_ts() + ll_get_air_packet_time(advParam->phyMode,sizeof(scan_type_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME;
-        adv_event_prepare_phy(ll,advParam,timestamp,PHY_DIR_TX,advParam->phyMode);
+        _u32 timestamp = ll->phy.hw_get_rx_air_ts() + ll_get_air_packet_time(advParam->la->phy.mode,sizeof(scan_type_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME;
+        adv_prepare_phy(ll,&advParam->la->phy,timestamp,PHY_DIR_TX);
         ll->phy.start();
         return 1;
 	}
@@ -372,7 +371,7 @@ static int adv_event_step_sch_stop(ll_ctrl_t* ll,ll_internal_adv_param_t* advPar
 {
 	ll->phy.stop();
 	advParam->state = ADV_SM_STATE_IDLE;
-    adv_event_process_next_task(ll,advParam);
+    adv_event_process_next_task(ll,advParam->la);
     return 1;
 }
 
@@ -382,7 +381,7 @@ static int adv_event_step_sch_passed(ll_ctrl_t* ll,ll_internal_adv_param_t* advP
 	_u32 systemTime = system_time();
 	_u32 periodicDiff = (systemTime - ll->sch.timestamp)/ll->sch.period;
 	ll->sch.timestamp+=((periodicDiff+1)*ll->sch.period);
-	advParam->availableChnCnt = advParam->channelCnt;
+	advParam->la->availableChnCnt = advParam->la->channelCnt;
     return 1;
     //todo,maybe we can jump to next adv channel
 }
@@ -393,7 +392,7 @@ static int adv_event_step_sch_canceled(ll_ctrl_t* ll,ll_internal_adv_param_t* ad
 	_u32 systemTime = system_time();
 	_u32 periodicDiff = (systemTime - ll->sch.timestamp)/ll->sch.period;
 	ll->sch.timestamp+=((periodicDiff+1)*ll->sch.period);
-	advParam->availableChnCnt = advParam->channelCnt;
+	advParam->la->availableChnCnt = advParam->la->channelCnt;
     return 1;
     //todo,maybe we can jump to next adv channel
 }
@@ -833,7 +832,6 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
                 && smEventType  == advSequence[eventType].procedureList[eventClass].sm[i].event\
 				&& (advSequence[eventType].procedureList[eventClass].context & advSequence[eventType].procedureList[eventClass].sm[i].context))
             {
-
                 if(advParam->processingEvent == smEventType)
                 {
                     return;//reload same event,return
@@ -921,18 +919,29 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         phy_obj_init(&ll->phy);
 		#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING!=1)
         ll_internal_adv_param_t* advParam = &ll->adv->param[0];
-        advParam->instant         = 0;
-        advParam->availableChnCnt = advParam->channelCnt;
-        advParam->phyMode         = PHY_MODE_1M;
-        advParam->state           = ADV_SM_STATE_IDLE;
+        advParam->la->availableChnCnt     = advParam->la->channelCnt;
+        //sch init
+        advParam->la->sch.eventCnt        = 0;
+        advParam->la->sch.anchorPoint     = system_time() + 500;
         if(advParam->eventType == ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED)
         {
-            ll->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,BLE_ADV_DEFAULT_MAX_LENGTH,0)+PACKET_DEFAULT_TIFS_TIME;
+            advParam->la->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,BLE_ADV_DEFAULT_MAX_LENGTH,0)+PACKET_DEFAULT_TIFS_TIME;
         }
         else
         {
-            ll->sch.duration = ll->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(ll->phy.mode,BLE_ADV_DEFAULT_MAX_LENGTH,0)+2*PACKET_DEFAULT_TIFS_TIME;
+            advParam->la->sch.duration = ll->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(ll->phy.mode,BLE_ADV_DEFAULT_MAX_LENGTH,0)+2*PACKET_DEFAULT_TIFS_TIME;
         }
+        advParam->la->sch.startMargin     = 100;
+        advParam->la->sch.stopMargin      = 75;
+        //phy init
+        advParam->la->phy.mode            = PHY_MODE_1M;
+        advParam->la->phy.crcInit         = BLE_ADV_CRC_INIT;
+        advParam->la->phy.accessCode      = BLE_ADV_ACCESS_CODE;
+        advParam->la->phy.rxMaxOctets     = BLE_ADV_DEFAULT_MAX_LENGTH;
+        advParam->la->phy.rxAddress       = ll->rxSharedPacket;
+        advParam->la->phy.txAddress       = ll->txSharedPacket;
+        //state machine init
+        advParam->state                   = ADV_SM_STATE_IDLE;
 		#else
         for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
         {
@@ -949,17 +958,17 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
 		#endif
         //param init
         ll->ownAddr[0] = ll->ownAddr[1] = ll->ownAddr[2] = ll->ownAddr[3]= ll->ownAddr[4] =ll->ownAddr[5]= 0x12;
-        //sch init
-        ll->sch.llId = ll->id;
-        ll->sch.type = SCH_PERIODIC_TASK;
-        ll->sch.priority = LL_ADV_PRIORITY;
-        ll->sch.timestamp = system_time() + 500;//maybe need planner
-        ll->sch.period    = advParam->interval;
-        ll->sch.startLatency = 100;
-        ll->sch.stopLatency  = 75;
-        ll->sch.cb = adv_sch_callback;
+        //ll entity sch init
+        ll->sch.llId         = ll->id;
+        ll->sch.type         = SCH_PERIODIC_TASK;
+        ll->sch.priority     = LL_ADV_PRIORITY;
+        ll->sch.timestamp    = advParam->la->sch.anchorPoint;//maybe need planner
+        ll->sch.period       = advParam->la->sch.interval;
+        ll->sch.startLatency = advParam->la->sch.startMargin;
+        ll->sch.stopLatency  = advParam->la->sch.stopMargin;
+        ll->sch.cb           = adv_sch_callback;
         sch_message_t* message = (sch_message_t*)tx_message_allocate(8);
-        message->eventType = SCHE_MESSAGE_TASK_ADD;
+        message->eventType  = SCHE_MESSAGE_TASK_ADD;
         message->message[0] = ((_u32)&ll->sch);
         message->message[1] = ((_u32)&ll->sch)>>8;
         message->message[2] = ((_u32)&ll->sch)>>16;
