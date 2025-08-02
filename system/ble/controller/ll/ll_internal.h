@@ -148,22 +148,18 @@ typedef struct
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
 typedef struct 
 {
-    _u16 eventProperty;
     _u16 sid:4;
     _u16 did:12;
-
     _u8  flags;
     _u8  power;
+
     _u8  maxEvents;
     _u8  secondaryMaxSkip;
-
     _u8  scanReqNotifyEnable:2;
     _u8  advDatafragPerf:1;//fragment preference
     _u8  scanRspDatafragPerf:1;//fragment preference
-    _u8  rsvd1:4;
+    _u8  chainInx:4;
     _u8  chainCnt;
-
-    _u16 rsvd2;
 
     _u32 expireTime;//unit is us
 
@@ -197,6 +193,8 @@ typedef struct
     _u8  processingEvent:4;//to prevent re-retrance
     #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
     _u8  handle;
+    _u8  auxiliary;
+    _u16 eventProperty;
     #else
     _u8  rsvd1;
     #endif
@@ -236,7 +234,7 @@ int                      ll_extended_adv_get_current_set_number(void);
 /***********************ll connection sate**********************/
 typedef struct _PACKED
 {
-    
+     
 }ll_internal_connection_ctrl_t;
 
 
