@@ -28,7 +28,8 @@ typedef enum
 typedef enum
 {
     ADV_PDU_CLASS_LEG,
-    ADV_PDU_CLASS_RSP,
+    ADV_PDU_CLASS_SCAN_RSP,
+    ADV_PDU_CLASS_CONN_RSP,
     ADV_PDU_CLASS_EXT,
     ADV_PDU_CLASS_AUX,
     ADV_PDU_CLASS_CHAIN,

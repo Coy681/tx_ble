@@ -105,27 +105,27 @@ void app_rx_cmd(_u8* data,_u32 len)
 //		default:
 //			break;
 //	}
-	 switch(data[0])
-	 {
+	//  switch(data[0])
+	//  {
 
-	 	case 1:
-	 		ll_set_advertising_parameters(16,LL_ADV_IND,LL_PUBLIC_DEVICE_ADDRESS,LL_PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,0,7,LL_FILTER_LIST_NOT_USE);
-	 		break;
-	 	case 2:
-	 		ll_set_advertising_data(data1,sizeof(data1));
-	 		break;
-	 	case 3:
-	 	    ll_set_scan_response_data(data1,sizeof(data1));
-	 		break;
-	 	case 4:
-	 		ll_set_advertising_enable(1);
-	 		break;
-	 	case 5:
-	 		ll_set_advertising_enable(0);
-	 		break;
-	 	default:
-	 		break;
-	 }
+	//  	case 1:
+	//  		ll_set_advertising_parameters(16,LL_ADV_IND,LL_PUBLIC_DEVICE_ADDRESS,LL_PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,0,7,LL_FILTER_LIST_NOT_USE);
+	//  		break;
+	//  	case 2:
+	//  		ll_set_advertising_data(data1,sizeof(data1));
+	//  		break;
+	//  	case 3:
+	//  	    ll_set_scan_response_data(data1,sizeof(data1));
+	//  		break;
+	//  	case 4:
+	//  		ll_set_advertising_enable(1);
+	//  		break;
+	//  	case 5:
+	//  		ll_set_advertising_enable(0);
+	//  		break;
+	//  	default:
+	//  		break;
+	//  }
 
 //     _u32 systemTime = 0x100;
 // 	 sch_map_node_t node[5]=

@@ -161,6 +161,8 @@ typedef struct
     _u8  chainInx:4;
     _u8  chainCnt;
 
+    _u8  dataLen;
+
     _u32 expireTime;//unit is us
 
     ll_adv_sch_entry_t sch;
