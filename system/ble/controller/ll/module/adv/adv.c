@@ -360,19 +360,32 @@ static void adv_event_non_connectable_non_scannable_undirected_packet_prapare(ll
 _RAM_CODE
 static void adv_event_extended_connectable_directed_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
 {
+    _u8 flags = 0;
+    _u8 extHeaderLen = 0;
     switch(pduClass)
     {
         case ADV_PDU_CLASS_EXT:
         {
-
+            flags  = ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
+            adv_ext_ind_pdu_prepare(ll,advParam,flags);
         }
         case ADV_PDU_CLASS_AUX:
         {
-
+            flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_TARGET_A|ADV_EXTENDED_HEADER_FLAG_ADI;
+            if(advParam->ea->power!=0x7f)
+            {   
+                flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
+            }
+            adv_aux_adv_ind_pdu_prepare(ll,advParam,flags);
         }
         case ADV_PDU_CLASS_CONN_RSP:
         {
-
+            flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_ADI;
+            if(advParam->ea->power!=0x7f)
+            {   
+                flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
+            }
+            adv_aux_scan_rsp_pdu_prepare(ll,advParam,flags);
         }
     }
 }
