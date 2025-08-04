@@ -12,7 +12,7 @@
 #include"module/brd/brd.h"
 #include"module/standby/standby.h"
 /************************************ll implementation***************************************/
-ll_ctrl_t* llSm;
+ll_t* ll;
 static _u8 llSmConut;
 static _u8 llCurrentSm;
 
@@ -32,52 +32,74 @@ void ll_init_state_machine(_u8 number)
 	{
 		llSmConut = 1;
 	}
-	llSm = (ll_ctrl_t*)tx_malloc(number*sizeof(ll_ctrl_t));
+
+	ll = (ll_sm_t*)tx_malloc(sizeof(ll_t));
+	for(_u8 i=0;i<6;i++)
+	{
+		ll[i].addr[i] = 0x12+i;//todo,temporary value
+	}
+	ll->sm = (ll_sm_t*)tx_malloc(number*sizeof(ll_sm_t));
 	for(_u8 i=0;i<llSmConut;i++)
 	{
-		llSm[i].id  = i;
-		llSm[i].state =  (_u8)BLE_LL_STATE_STANDBY;
-		for(_u8 j=0;j<6;j++)
-		{
-			llSm[i].ownAddr[j] = 0x12+j;//todo,temporary value
-		}
+		ll->sm[i].id  = i;
+		ll->sm[i].state =  (_u8)BLE_LL_STATE_STANDBY;
 	}
-	llCurrentSm = llSm[0].id;
+	llCurrentSm = ll->sm[0].id;
 	phy_init();
 
 }
 
 _RAM_CODE
-ll_ctrl_t* ll_get_idle_state_machine(void)
+ll_sm_t* ll_get_idle_state_machine(void)
 {
 	for(_u8 i=0;i<llSmConut;i++)
 	{
-		if(llSm[i].state == (_u8)BLE_LL_STATE_STANDBY)
+		if(ll->sm[i].state == (_u8)BLE_LL_STATE_STANDBY)
 		{
-			return &llSm[i];
+			return &ll->sm[i];
 		}
 	}
 	return NULL;
 }
 
 _RAM_CODE
-ll_ctrl_t* ll_get_state_machine_by_id(_u8 id)
+ll_sm_t* ll_get_state_machine_by_id(_u8 id)
 {
 	for(_u8 i=0;i<llSmConut;i++)
 	{
-		if(llSm[i].id == id)
+		if(ll->sm[i].id == id)
 		{
-			return &llSm[i];
+			return &ll->sm[i];
 		}
 	}
 	return NULL;
 }
 
 _RAM_CODE
-ll_ctrl_t* ll_get_current_state_machine(void)
+ll_sm_t* ll_get_current_state_machine(void)
 {
-	return &llSm[llCurrentSm];
+	return &ll->sm[llCurrentSm];
 }
+
+_RAM_CODE
+_u8*     ll_get_device_address(void)
+{
+	return ll->addr;
+}
+
+_RAM_CODE
+_u8*     ll_get_shared_phy_tx_address(void)
+{
+	return ll->txAddr;
+}
+
+_RAM_CODE
+_u8*     ll_get_shared_phy_rx_address(void)
+{
+	return ll->rxAddr;
+}
+
+
 static const ble_ll_state_table_t ble_ll_state_table[]=
 {
     //standby state transition
@@ -108,7 +130,7 @@ static const ble_ll_state_table_t ble_ll_state_table[]=
 	{BLE_LL_STATE_CONNECTION,     BLE_LL_STATE_STANDBY,          BLE_LL_EVENT_STOP_CONNECTION,      ble_ll_enter_standby_state},
 };
 
-ble_ll_state_status_e ble_ll_process_event(ll_ctrl_t* sm,ble_ll_event_e event)
+ble_ll_state_status_e ble_ll_process_event(ll_sm_t* sm,ble_ll_event_e event)
 {
 	if(sm==NULL)
 	{
@@ -173,7 +195,7 @@ controller_error_code_e ll_set_advertising_parameters(_u16 interval,\
 													  _u8* peerAddress,_u8 channelMap,\
 	                                                  ll_advertising_filter_policy_e policy)
 {
-	ll_ctrl_t* ll = ll_get_current_state_machine();
+	ll_sm_t* ll = ll_get_current_state_machine();
 	_u8 index = 0;
 	if(ll->adv == NULL)
 	{
@@ -220,7 +242,7 @@ controller_error_code_e ll_set_advertising_parameters(_u16 interval,\
 
 controller_error_code_e ll_set_advertising_data(_u8* data,_u8 length)
 {
-	ll_ctrl_t* ll = ll_get_current_state_machine();
+	ll_sm_t* ll = ll_get_current_state_machine();
 	_u8 index = 0;
 	if(ll->adv == NULL)
 	{
@@ -240,7 +262,7 @@ controller_error_code_e ll_set_advertising_data(_u8* data,_u8 length)
 	
 controller_error_code_e ll_set_scan_response_data(_u8* data,_u8 length)
 {
-	ll_ctrl_t* ll = ll_get_current_state_machine();
+	ll_sm_t* ll = ll_get_current_state_machine();
 	_u8 index = 0;
 	if(ll->adv == NULL)
 	{
@@ -260,7 +282,7 @@ controller_error_code_e ll_set_scan_response_data(_u8* data,_u8 length)
 
 controller_error_code_e ll_set_advertising_enable(_u8 enable)
 {
-	ll_ctrl_t* ll = ll_get_current_state_machine();
+	ll_sm_t* ll = ll_get_current_state_machine();
 	_u8 index = 0;
 	//assert ll->adv == NULL
     if(ll->adv->param[index].enable == enable)
@@ -292,7 +314,7 @@ controller_error_code_e ll_set_advertising_enable(_u8 enable)
 #else
 controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_param_t* pParam)
 {
-	ll_ctrl_t* ll = ll_get_current_state_machine();
+	ll_sm_t* ll = ll_get_current_state_machine();
 	if(POINTER_NOT_VALID(ll->adv))
 	{
 
@@ -742,7 +764,7 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 	{
 		return IVALID_HCI_COMMAND_PARAMETERS; 
 	}
-	ll_ctrl_t* ll = ll_get_current_state_machine();
+	ll_sm_t* ll = ll_get_current_state_machine();
 	if((enable == 0) && (numSets == 0))
 	{
 		for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
@@ -910,7 +932,7 @@ controller_error_code_e ll_remove_advertising_sets(_u8 advHandle)
 
 	if(ll_extended_adv_get_current_set_number()==0)
 	{
-		ll_ctrl_t* ll = ll_get_current_state_machine();
+		ll_sm_t* ll = ll_get_current_state_machine();
 		ble_ll_process_event(ll,BLE_LL_EVENT_STOP_ADVERTISING);
 	}
 	return SUCCESS;
@@ -918,7 +940,7 @@ controller_error_code_e ll_remove_advertising_sets(_u8 advHandle)
 
 controller_error_code_e ll_clear_advertising_sets(void)
 {
-	ll_ctrl_t* ll = ll_get_current_state_machine();
+	ll_sm_t* ll = ll_get_current_state_machine();
 
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{

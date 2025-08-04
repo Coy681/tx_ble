@@ -249,11 +249,11 @@ struct _PACKED hci_command_read_brAddr_retParam_t
 //ll_get_current_state_machine
 controller_error_code_e hci_le_read_bdAddr(_u8* data,_u8 length,bt_hci_event_t** event)
 {
-	ll_ctrl_t* ll = ll_get_current_state_machine();
+	ll_sm_t* ll = ll_get_current_state_machine();
 	struct hci_command_read_brAddr_retParam_t* param = \
 	hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_read_brAddr_retParam_t),event);
 	param->status = (_u8)SUCCESS;
-	txMemcpy(param->addr,ll->ownAddr,6);
+	txMemcpy(param->addr,ll_get_device_address(),6);
 	return SUCCESS;
 }
 

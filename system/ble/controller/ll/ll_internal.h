@@ -266,15 +266,12 @@ typedef struct _PACKED
 
 /***********************ll sate**********************/
 
-typedef struct _PACKED
+typedef struct
 {
-    _u8  state;
     _u8  id;
-    _u8  ownAddr[6];
+    _u8  state;
     phy_obj_t  phy;
     sch_node_t sch;
-    _u8  rxSharedPacket[128];
-    _u8  txSharedPacket[128];
     ll_internal_standby_ctrl_t*         standby;
     ll_internal_adv_ctrl_t*             adv;
     ll_internal_connection_ctrl_t*      conn;
@@ -282,14 +279,25 @@ typedef struct _PACKED
     ll_internal_initiating_ctrl_t*      initiating;
     ll_internal_synchronous_ctrl_t*     synchronous;
     ll_internal_broadcast_ctrl_t*       broadcast;
-}ll_ctrl_t;
+}ll_sm_t;
+
+typedef struct _PACKED
+{
+    _u8      addr[6];
+    _u8      txAddr[128];
+    _u8      rxAddr[128];
+    ll_sm_t* sm;
+}ll_t;
 
 /************************get state machine****************************/
-ll_ctrl_t* ll_get_idle_state_machine(void);
-ll_ctrl_t* ll_get_state_machine_by_id(_u8 id);
-ll_ctrl_t* ll_get_current_state_machine(void);
+ll_sm_t* ll_get_idle_state_machine(void);
+ll_sm_t* ll_get_state_machine_by_id(_u8 id);
+ll_sm_t* ll_get_current_state_machine(void);
+_u8*     ll_get_device_address(void);
+_u8*     ll_get_shared_phy_tx_address(void);
+_u8*     ll_get_shared_phy_rx_address(void);
 
-ble_ll_state_status_e ble_ll_process_event(ll_ctrl_t* sm,ble_ll_event_e event);
+ble_ll_state_status_e ble_ll_process_event(ll_sm_t* sm,ble_ll_event_e event);
 
 
 

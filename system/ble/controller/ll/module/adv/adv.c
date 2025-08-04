@@ -50,7 +50,7 @@ typedef enum
     ADV_CONTEXT_AUXILIARY   = BIT(3),
 }adv_context_e;
 
-typedef int(*adv_event_sm_cb)(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 conetxt);
+typedef int(*adv_event_sm_cb)(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 conetxt);
 typedef struct _PACKED
 {
     adv_event_sm_cb cb;
@@ -86,7 +86,7 @@ static ll_internal_adv_param_t* currentAdvSet;
 static int currentEventClass;
 
 _RAM_CODE 
-void adv_get_next_event(ll_ctrl_t* ll)
+void adv_get_next_event(ll_sm_t* ll)
 {
 	#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING!=1)
     currentAdvSet = &ll->adv->param[0];
@@ -158,11 +158,11 @@ static _u16 adv_calculate_extended_header_length(_u8 flags)
     }
 }
 
-static void adv_extended_generate_adv_data(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u8** packet,_u8 flags)
+static void adv_extended_generate_adv_data(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8** packet,_u8 flags)
 {
     if(flags & ADV_EXTENDED_HEADER_FLAG_ADV_A)
     {
-        txMemcpy(*packet,ll->ownAddr,6);
+        txMemcpy(*packet,ll_get_device_address(),6);
         *packet+=sizeof(adv_extended_header_subfield_advA_t);
     }
     else if(flags & ADV_EXTENDED_HEADER_FLAG_TARGET_A)
@@ -200,50 +200,50 @@ static void adv_extended_generate_adv_data(ll_ctrl_t* ll,ll_internal_adv_param_t
 //ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED
 
 //LL_ADV_TYPE_ADV_IND
-static void adv_ind_pdu_prepare(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam)
+static void adv_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
     _u8* packet = ll_get_adv_packet(advParam->la->phy.txAddress,6+advParam->data.len,LL_ADV_TYPE_ADV_IND,0,advParam->ownAddressType?1:0,0);
-    txMemcpy(((adv_type_ind_t*)packet)->advA,ll->ownAddr,6);
+    txMemcpy(((adv_type_ind_t*)packet)->advA,ll_get_device_address(),6);
     txMemcpy(((adv_type_ind_t*)packet)->advData,advParam->data.addr,advParam->data.len);
 }
 //LL_ADV_TYPE_ADV_DIRECT_IND
-static void adv_direct_ind_pdu_prepare(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam)
+static void adv_direct_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
     _u8* packet = ll_get_adv_packet(advParam->la->phy.txAddress,12,LL_ADV_TYPE_ADV_DIRECT_IND,0,advParam->ownAddressType?1:0,advParam->peerAddressType?1:0);
-    txMemcpy(((adv_type_direct_ind_t*)packet)->advA,ll->ownAddr,6);
+    txMemcpy(((adv_type_direct_ind_t*)packet)->advA,ll_get_device_address(),6);
     txMemcpy(((adv_type_direct_ind_t*)packet)->targetA,advParam->peerAddress,6);
 }
 //LL_ADV_TYPE_ADV_NONCONN_IND
-static void adv_non_conn_pdu_prepare(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam)
+static void adv_non_conn_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
     _u8* packet = ll_get_adv_packet(advParam->la->phy.txAddress,6+advParam->data.len,LL_ADV_TYPE_ADV_NONCONN_IND,0,advParam->ownAddressType?1:0,0);
-    txMemcpy(((adv_type_nonConn_ind_t*)packet)->advA,ll->ownAddr,6);
+    txMemcpy(((adv_type_nonConn_ind_t*)packet)->advA,ll_get_device_address(),6);
     txMemcpy(((adv_type_nonConn_ind_t*)packet)->advData,advParam->data.addr,advParam->data.len);
 }
 //LL_ADV_TYPE_SCAN_RSP
-static void adv_scan_rsp_pdu_prepare(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam)
+static void adv_scan_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
     _u8* packet = ll_get_adv_packet(advParam->la->phy.txAddress,6+advParam->scanRsp.len,LL_ADV_TYPE_SCAN_RSP,0,advParam->ownAddressType?1:0,0);
-    txMemcpy(((adv_type_scan_rsp_t*)packet)->advA,ll->ownAddr,6);
+    txMemcpy(((adv_type_scan_rsp_t*)packet)->advA,ll_get_device_address(),6);
     txMemcpy(((adv_type_scan_rsp_t*)packet)->scanRsp,advParam->scanRsp.addr,advParam->scanRsp.len);
 }
 //LL_ADV_TYPE_ADV_SCAN_IND
-static void adv_scan_ind_pdu_prepare(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam)
+static void adv_scan_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
     _u8* packet = ll_get_adv_packet(advParam->la->phy.txAddress,6+advParam->data.len,LL_ADV_TYPE_ADV_SCAN_IND,0,advParam->ownAddressType?1:0,0);
-    txMemcpy(((adv_type_scan_ind_t*)packet)->advA,ll->ownAddr,6);
+    txMemcpy(((adv_type_scan_ind_t*)packet)->advA,ll_get_device_address(),6);
     txMemcpy(((adv_type_scan_ind_t*)packet)->advData,advParam->data.addr,advParam->data.len);
 }
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
 //LL_ADV_TYPE_ADV_EXT_IND
-static void adv_ext_ind_pdu_prepare(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u8 flags)
+static void adv_ext_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 flags)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
     _u8* packet = ll_get_adv_packet(advParam->ea->phy.txAddress,headerLen,LL_ADV_TYPE_ADV_EXT_IND,0,advParam->ownAddressType?1:0,0);
     adv_extended_generate_adv_data(ll,advParam,&packet,flags);
 }
 //LL_ADV_TYPE_AUX_ADV_IND
-static void adv_aux_adv_ind_pdu_prepare(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u8 flags)
+static void adv_aux_adv_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 flags)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
     _u8* packet = ll_get_adv_packet(advParam->ea->phy.txAddress,headerLen+advParam->ea->dataLen,LL_ADV_TYPE_AUX_ADV_IND,0,advParam->ownAddressType?1:0,0);
@@ -254,7 +254,7 @@ static void adv_aux_adv_ind_pdu_prepare(ll_ctrl_t* ll,ll_internal_adv_param_t* a
     }
 }
 //LL_ADV_TYPE_AUX_SCAN_RSP
-static void adv_aux_scan_rsp_pdu_prepare(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u8 flags)
+static void adv_aux_scan_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 flags)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
     _u8* packet = ll_get_adv_packet(advParam->ea->phy.txAddress,headerLen+advParam->ea->dataLen,LL_ADV_TYPE_AUX_SCAN_RSP,0,advParam->ownAddressType?1:0,0);
@@ -265,7 +265,7 @@ static void adv_aux_scan_rsp_pdu_prepare(ll_ctrl_t* ll,ll_internal_adv_param_t* 
     }
 }
 //LL_ADV_TYPE_AUX_CHAIN_IND
-static void adv_aux_chain_ind_pdu_prepare(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u8 flags)
+static void adv_aux_chain_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 flags)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
     _u8* packet = ll_get_adv_packet(advParam->ea->chain[advParam->ea->chainInx].phy.txAddress,headerLen+advParam->ea->chain[advParam->ea->chainInx].data.len,LL_ADV_TYPE_AUX_CHAIN_IND,0,advParam->ownAddressType?1:0,0);
@@ -278,7 +278,7 @@ static void adv_aux_chain_ind_pdu_prepare(ll_ctrl_t* ll,ll_internal_adv_param_t*
 #endif
 #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
 //LL_ADV_TYPE_AUX_SYNC_IND
-static void adv_aux_sync_ind_pdu_prepare(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam)
+static void adv_aux_sync_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
 
 }
@@ -286,18 +286,18 @@ static void adv_aux_sync_ind_pdu_prepare(ll_ctrl_t* ll,ll_internal_adv_param_t* 
 
 #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
 //LL_ADV_TYPE_AUX_SYNC_SUBEVENT_IND
-static void adv_aux_sync_subevent_ind_pdu_prepare(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam)
+static void adv_aux_sync_subevent_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
 
 }
 //LL_ADV_TYPE_AUX_SYNC_SUBEVENT_RSP
-static void adv_aux_sync_subevent_rsp_pdu_prepare(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam)
+static void adv_aux_sync_subevent_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
 
 }
 #endif
 _RAM_CODE
-static void adv_event_connectable_scannable_undirected_packet_prapare(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+static void adv_event_connectable_scannable_undirected_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
 {
     _u8* packet = NULL;
     switch(pduClass)
@@ -314,7 +314,7 @@ static void adv_event_connectable_scannable_undirected_packet_prapare(ll_ctrl_t*
 }
 //ADV_EVENT_CONNECTABLE_DIRECTED
 _RAM_CODE
-static void adv_event_connectable_directed_packet_prapare(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+static void adv_event_connectable_directed_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
 {
     _u8* packet = NULL;
     switch(pduClass)
@@ -327,7 +327,7 @@ static void adv_event_connectable_directed_packet_prapare(ll_ctrl_t* ll,ll_inter
 }
 //ADV_EVENT_SCANNABLE_UNDIRECTED
 _RAM_CODE
-static void adv_event_scannable_undirected_packet_prapare(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+static void adv_event_scannable_undirected_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
 {
     _u8* packet = NULL;
     switch(pduClass)
@@ -344,7 +344,7 @@ static void adv_event_scannable_undirected_packet_prapare(ll_ctrl_t* ll,ll_inter
 }
 //ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED
 _RAM_CODE
-static void adv_event_non_connectable_non_scannable_undirected_packet_prapare(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+static void adv_event_non_connectable_non_scannable_undirected_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
 {
     _u8* packet = NULL;
     switch(pduClass)
@@ -358,7 +358,7 @@ static void adv_event_non_connectable_non_scannable_undirected_packet_prapare(ll
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
 //ADV_EVENT_EXTENDED_CONNECTABLE_DIRECTED
 _RAM_CODE
-static void adv_event_extended_connectable_directed_packet_prapare(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+static void adv_event_extended_connectable_directed_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
 {
     switch(pduClass)
     {
@@ -378,7 +378,7 @@ static void adv_event_extended_connectable_directed_packet_prapare(ll_ctrl_t* ll
 }
 //ADV_EVENT_EXTENDED_CONNECTABLE_UNDIRECTED
 _RAM_CODE
-static void adv_event_extended_connectable_undirected_packet_prapare(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+static void adv_event_extended_connectable_undirected_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
 {
     switch(pduClass)
     {
@@ -398,7 +398,7 @@ static void adv_event_extended_connectable_undirected_packet_prapare(ll_ctrl_t* 
 }
 //ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED
 _RAM_CODE
-static void adv_event_extended_scannable_directed_packet_prapare(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+static void adv_event_extended_scannable_directed_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
 {
     switch(pduClass)
     {
@@ -418,7 +418,7 @@ static void adv_event_extended_scannable_directed_packet_prapare(ll_ctrl_t* ll,l
 }
 //ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED
 _RAM_CODE
-static void adv_event_extended_scannable_undirected_packet_prapare(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+static void adv_event_extended_scannable_undirected_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
 {
     switch(pduClass)
     {
@@ -438,7 +438,7 @@ static void adv_event_extended_scannable_undirected_packet_prapare(ll_ctrl_t* ll
 }
 //ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITH_AUXILIARY
 _RAM_CODE
-static void adv_event_extended_non_connectable_non_scannable_directed_with_auxiliary_packet_prapare(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+static void adv_event_extended_non_connectable_non_scannable_directed_with_auxiliary_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
 {
     switch(pduClass)
     {
@@ -458,7 +458,7 @@ static void adv_event_extended_non_connectable_non_scannable_directed_with_auxil
 }
 //ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED_WITH_AUXILIARY
 _RAM_CODE
-static void adv_event_extended_non_connectable_non_scannable_undirected_with_auxiliary_packet_prapare(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+static void adv_event_extended_non_connectable_non_scannable_undirected_with_auxiliary_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
 {
     switch(pduClass)
     {
@@ -478,7 +478,7 @@ static void adv_event_extended_non_connectable_non_scannable_undirected_with_aux
 }
 //ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITHOUT_AUXILIARY
 _RAM_CODE
-static void adv_event_extended_non_connectable_non_scannable_directed_without_auxiliary_packet_prapare(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+static void adv_event_extended_non_connectable_non_scannable_directed_without_auxiliary_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
 {
     switch(pduClass)
     {
@@ -490,7 +490,7 @@ static void adv_event_extended_non_connectable_non_scannable_directed_without_au
 }
 //ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED_WITHOUT_AUXILIARY
 _RAM_CODE
-static void adv_event_extended_non_connectable_non_scannable_undirected_without_auxiliary_packet_prapare(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+static void adv_event_extended_non_connectable_non_scannable_undirected_without_auxiliary_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
 {
     switch(pduClass)
     {
@@ -504,7 +504,7 @@ static void adv_event_extended_non_connectable_non_scannable_undirected_without_
 #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
 //ADV_EVENT_EXTENDED_PERIODIC
 _RAM_CODE
-static void adv_event_extended_periodic_packet_prapare(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+static void adv_event_extended_periodic_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
 {
     
 }
@@ -513,13 +513,13 @@ static void adv_event_extended_periodic_packet_prapare(ll_ctrl_t* ll,ll_internal
 #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
 //ADV_EVENT_EXTENDED_PERIODIC_WITH_RESPONSE
 _RAM_CODE
-static void adv_event_extended_periodic_with_response_packet_prapare(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+static void adv_event_extended_periodic_with_response_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
 {
     
 }
 #endif
 
-typedef void(*adv_packet_prepare_f)(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass);
+typedef void(*adv_packet_prepare_f)(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass);
 
 typedef struct 
 {
@@ -555,7 +555,7 @@ adv_packet_prepare_f adv_prepare_packet[] =
  * 				    - if not present,packet send time is not specified,so we can use system time.
  */
 _RAM_CODE
-static void adv_prepare_phy(ll_ctrl_t* ll,ll_adv_phy_entry_t* phy,_u32 timestamp,phy_dir_e phydir)
+static void adv_prepare_phy(ll_sm_t* ll,ll_adv_phy_entry_t* phy,_u32 timestamp,phy_dir_e phydir)
 {
     phy_obj_cast(&ll->phy);
     ll->phy.accessCode = phy->accessCode;
@@ -586,7 +586,7 @@ static void adv_prepare_phy(ll_ctrl_t* ll,ll_adv_phy_entry_t* phy,_u32 timestamp
 
 /*****************************************ADV Event Process ***********************************************/
 _RAM_CODE
-static void adv_event_process_next_task(ll_ctrl_t* ll,ll_adv_set_t* la)
+static void adv_event_process_next_task(ll_sm_t* ll,ll_adv_set_t* la)
 {
     if(la->availableChnCnt)
     {
@@ -606,7 +606,7 @@ static void adv_event_process_next_task(ll_ctrl_t* ll,ll_adv_set_t* la)
 }
 
 _RAM_CODE
-static int adv_event_step_phy_send_advertising(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
+static int adv_event_step_phy_send_advertising(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
     if(advParam->la->availableChnCnt==0)
     {
@@ -634,7 +634,7 @@ static int adv_event_step_phy_send_advertising(ll_ctrl_t* ll,ll_internal_adv_par
 }
 
 _RAM_CODE
-static int adv_event_step_phy_start_listen(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
+static int adv_event_step_phy_start_listen(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
     if(property&(ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE))//connectable or scannable adv event both shall can start listen
     {
@@ -647,7 +647,7 @@ static int adv_event_step_phy_start_listen(ll_ctrl_t* ll,ll_internal_adv_param_t
 }
 
 _RAM_CODE
-static int adv_event_step_received_packet_analyze(ll_ctrl_t* ll)
+static int adv_event_step_received_packet_analyze(ll_sm_t* ll)
 {
 	 ll_adv_packet_t* packet = (ll_adv_packet_t*)(ll->phy.rxAddress + ll_get_packet_header_offset_from_address(PHY_DIR_RX));
 
@@ -656,7 +656,7 @@ static int adv_event_step_received_packet_analyze(ll_ctrl_t* ll)
 	 {
 		 //scan req process
 		 scan_type_scan_req_t* scanReq = (scan_type_scan_req_t*)(packet->data);
-		 if(txMemcmp(ll->ownAddr,scanReq->advA,6) == 0)
+		 if(txMemcmp(ll_get_device_address(),scanReq->advA,6) == 0)
 		 {
 			 return 1;
 		 }
@@ -671,7 +671,7 @@ static int adv_event_step_received_packet_analyze(ll_ctrl_t* ll)
 }
 
 _RAM_CODE
-static int adv_event_step_phy_send_scan_rsp(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
+static int adv_event_step_phy_send_scan_rsp(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
 	if((adv_event_step_received_packet_analyze(ll)!=0)&&(property&ADV_CONTEXT_SCANNABLE))//packet analyze shall be execute first
 	{
@@ -685,7 +685,7 @@ static int adv_event_step_phy_send_scan_rsp(ll_ctrl_t* ll,ll_internal_adv_param_
 }
 
 _RAM_CODE
-static int adv_event_step_sch_stop(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
+static int adv_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
 	ll->phy.stop();
 	advParam->state = ADV_SM_STATE_IDLE;
@@ -694,7 +694,7 @@ static int adv_event_step_sch_stop(ll_ctrl_t* ll,ll_internal_adv_param_t* advPar
 }
 
 _RAM_CODE
-static int adv_event_step_sch_passed(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
+static int adv_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
 	_u32 systemTime = system_time();
 	_u32 periodicDiff = (systemTime - ll->sch.timestamp)/ll->sch.period;
@@ -706,7 +706,7 @@ static int adv_event_step_sch_passed(ll_ctrl_t* ll,ll_internal_adv_param_t* advP
 }
 
 _RAM_CODE
-static int adv_event_step_sch_canceled(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
+static int adv_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
 	_u32 systemTime = system_time();
 	_u32 periodicDiff = (systemTime - ll->sch.timestamp)/ll->sch.period;
@@ -718,7 +718,7 @@ static int adv_event_step_sch_canceled(ll_ctrl_t* ll,ll_internal_adv_param_t* ad
 }
 
 _RAM_CODE
-static int adv_event_step_phy_send_rsp_finished(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
+static int adv_event_step_phy_send_rsp_finished(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
     return 1;
 }
@@ -765,7 +765,7 @@ static adv_procedure_list_t adv_non_con_non_scan_undirected_procedure[]=
 
 ll_internal_adv_param_t* ll_extended_adv_get_entity(_u8 handle,_u8 allocate)
 {
-    ll_ctrl_t* ll     = ll_get_current_state_machine();
+    ll_sm_t* ll     = ll_get_current_state_machine();
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
 		if(POINTER_VALID(ll->adv->param[i].ea)&&ll->adv->param[i].handle == handle)
@@ -795,7 +795,7 @@ ll_internal_adv_param_t* ll_extended_adv_get_entity(_u8 handle,_u8 allocate)
 
 int ll_extended_adv_get_current_active_set_number(void)
 {
-    ll_ctrl_t* ll = ll_get_current_state_machine();
+    ll_sm_t* ll = ll_get_current_state_machine();
     _u8 count = 0;
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
@@ -809,7 +809,7 @@ int ll_extended_adv_get_current_active_set_number(void)
 
 int ll_extended_adv_get_current_set_number(void)
 {
-    ll_ctrl_t* ll = ll_get_current_state_machine();
+    ll_sm_t* ll = ll_get_current_state_machine();
     _u8 count = 0;
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
@@ -822,7 +822,7 @@ int ll_extended_adv_get_current_set_number(void)
 }
 
 _RAM_CODE
-int ll_extended_adv_map_out_task(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam)
+int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
     _u32 refStartTime = system_time()+300;
     _u32 refEndTime   = refStartTime+advParam->la->sch.interval;
@@ -961,38 +961,38 @@ int ll_extended_adv_map_out_task(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam
     while(1);
 }
 
-static int adv_extended_event_step_phy_send_aux_advertising(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
+static int adv_extended_event_step_phy_send_aux_advertising(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
     //prepare packet
 
     //prepare phy
 	return 1;
 }
-static int adv_extended_event_step_phy_send_chain_advertising(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
+static int adv_extended_event_step_phy_send_chain_advertising(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
 	return 1;
 }
-static int adv_extended_event_step_phy_start_listen_aux(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
+static int adv_extended_event_step_phy_start_listen_aux(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
 	return 1;
 }
-static int adv_extended_event_step_phy_send_aux_scan_rsp(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
+static int adv_extended_event_step_phy_send_aux_scan_rsp(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
 	return 1;
 }
-static int adv_extended_event_step_phy_send_aux_connect_rsp(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
+static int adv_extended_event_step_phy_send_aux_connect_rsp(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
 	return 1;
 }
-static int adv_extended_event_step_sch_stop(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
+static int adv_extended_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
 	return 1;
 }
-static int adv_extended_event_step_sch_canceled(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
+static int adv_extended_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
 	return 1;
 }
-static int adv_extended_event_step_sch_passed(ll_ctrl_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
+static int adv_extended_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
 	return 1;
 }
@@ -1139,7 +1139,7 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
     {
     	smEventType = ADV_SM_PHY_EVENT_BASE+event;
     }
-    ll_ctrl_t* ll     = ll_get_current_state_machine();
+    ll_sm_t* ll     = ll_get_current_state_machine();
     _u8 eventType     = currentAdvSet->eventType;
     _u8 eventClass    = currentEventClass;
     if(advSequence[eventType].listLen>eventClass)
@@ -1226,7 +1226,7 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
 {
     if(event == BLE_LL_EVENT_START_ADVERTISING)
     {
-        ll_ctrl_t* ll = ll_get_current_state_machine();
+        ll_sm_t* ll = ll_get_current_state_machine();
         if(ll->adv == NULL)
         {   
             return 0;
@@ -1258,8 +1258,8 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         advParam->la->phy.crcInit         = BLE_ADV_CRC_INIT;
         advParam->la->phy.accessCode      = BLE_ADV_ACCESS_CODE;
         advParam->la->phy.rxMaxOctets     = BLE_ADV_DEFAULT_MAX_LENGTH;
-        advParam->la->phy.rxAddress       = ll->rxSharedPacket;
-        advParam->la->phy.txAddress       = ll->txSharedPacket;
+        advParam->la->phy.rxAddress       = ll_get_shared_phy_rx_address();
+        advParam->la->phy.txAddress       = ll_get_shared_phy_tx_address();
 		#else
         for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
         {
@@ -1293,14 +1293,14 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
                 advParam->la->phy.crcInit         = BLE_ADV_CRC_INIT;
                 advParam->la->phy.accessCode      = BLE_ADV_ACCESS_CODE;
                 advParam->la->phy.rxMaxOctets     = BLE_ADV_DEFAULT_MAX_LENGTH;
-                advParam->la->phy.rxAddress       = ll->rxSharedPacket;
-                advParam->la->phy.txAddress       = ll->txSharedPacket;
+                advParam->la->phy.rxAddress       = ll_get_shared_phy_rx_address();
+                advParam->la->phy.txAddress       = ll_get_shared_phy_tx_address();
                 //ea sch and phy init
                 advParam->ea->phy.crcInit         = BLE_ADV_CRC_INIT;
                 advParam->ea->phy.accessCode      = BLE_ADV_ACCESS_CODE;
                 advParam->ea->phy.rxMaxOctets     = BLE_ADV_DEFAULT_MAX_LENGTH;
-                advParam->ea->phy.rxAddress       = ll->rxSharedPacket;
-                advParam->ea->phy.txAddress       = ll->txSharedPacket;
+                advParam->ea->phy.rxAddress       = ll_get_shared_phy_rx_address();
+                advParam->ea->phy.txAddress       = ll_get_shared_phy_tx_address();
                 if(POINTER_VALID(advParam->ea->chain))
                 {
                     for(int i=0;i<advParam->ea->chainCnt;i++)
@@ -1317,7 +1317,7 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
                         }
                         advParam->ea->chain[i].phy.crcInit    = BLE_ADV_CRC_INIT;
                         advParam->ea->chain[i].phy.accessCode = BLE_ADV_ACCESS_CODE;
-                        advParam->ea->chain[i].phy.txAddress  = ll->txSharedPacket;
+                        advParam->ea->chain[i].phy.txAddress  = ll_get_shared_phy_tx_address();
                     }
                     advParam->ea->sch.startMargin     = 100;
                     advParam->ea->sch.stopMargin      = 100;
@@ -1333,8 +1333,6 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         _u8 eventClass = 0;
 		#endif
         adv_get_next_event(ll);
-        //param init
-        ll->ownAddr[0] = ll->ownAddr[1] = ll->ownAddr[2] = ll->ownAddr[3]= ll->ownAddr[4] =ll->ownAddr[5]= 0x12;
         //ll entity sch init
         ll->sch.llId         = ll->id;
         ll->sch.type         = SCH_PERIODIC_TASK;
