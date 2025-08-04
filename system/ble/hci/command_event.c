@@ -240,6 +240,24 @@ static const hci_command_t hci_command_controller_baseband_list[] =
     {HCI_SET_MIN_ENCRYPTION_KEY_SIZE_COMMAND, NULL}
 };
 
+struct _PACKED hci_command_read_brAddr_retParam_t
+{
+	_u8 status;
+    _u8 addr[6];
+};
+
+//ll_get_current_state_machine
+controller_error_code_e hci_le_read_bdAddr(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+	ll_ctrl_t* ll = ll_get_current_state_machine();
+	struct hci_command_read_brAddr_retParam_t* param = \
+	hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_read_brAddr_retParam_t),event);
+	param->status = (_u8)SUCCESS;
+	txMemcpy(param->addr,ll->ownAddr,6);
+	return SUCCESS;
+}
+
+
 static const hci_command_t hci_command_informational_parameters_list[] =
 {
     {HCI_READ_LOCAL_VERSION_INFORMATION_COMMAND, NULL},
@@ -247,7 +265,7 @@ static const hci_command_t hci_command_informational_parameters_list[] =
     {HCI_READ_LOCAL_SUPPORTED_FEATURES_COMMAND, NULL},
     {HCI_READ_LOCAL_EXTENDED_FEATURES_COMMAND, NULL},
     {HCI_READ_BUFFER_SIZE_COMMAND, NULL},
-    {HCI_READ_BDADDR_COMMAND, NULL},
+    {HCI_READ_BDADDR_COMMAND, hci_le_read_bdAddr},
     {HCI_READ_DATA_BLOCK_SIZE_COMMAND, NULL},
     {HCI_READ_LOCAL_SUPPORTED_CODECS_COMMAND, NULL},
     {HCI_READ_LOCAL_SIMPLE_PAIRING_OPTIONS_COMMAND, NULL},

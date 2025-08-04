@@ -37,6 +37,10 @@ void ll_init_state_machine(_u8 number)
 	{
 		llSm[i].id  = i;
 		llSm[i].state =  (_u8)BLE_LL_STATE_STANDBY;
+		for(_u8 j=0;j<6;j++)
+		{
+			llSm[i].ownAddr[j] = 0x12+j;//todo,temporary value
+		}
 	}
 	llCurrentSm = llSm[0].id;
 	phy_init();
