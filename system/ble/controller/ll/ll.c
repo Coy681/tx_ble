@@ -927,15 +927,15 @@ controller_error_code_e ll_remove_advertising_sets(_u8 advHandle)
 	}
 	if(POINTER_VALID(pAdv->ea->chain))
 	{
-		tx_free(pAdv->ea->chain);
+		tx_free((_u8*)pAdv->ea->chain);
 	}
 	if(POINTER_VALID(pAdv->la))
 	{
-		tx_free(pAdv->la);
+		tx_free((_u8*)pAdv->la);
 	}
 	if(POINTER_VALID(pAdv->ea))
 	{
-		tx_free(pAdv->ea);
+		tx_free((_u8*)pAdv->ea);
 	}
 	txMemsetByte((_u8*)pAdv,0,sizeof(ll_internal_adv_param_t));
 	pAdv->handle = LL_EXTENDED_ADV_INVALID_HANDLE;
@@ -971,15 +971,15 @@ controller_error_code_e ll_clear_advertising_sets(void)
 			}
 			if(POINTER_VALID(pAdv->ea->chain))
 			{
-				tx_free(pAdv->ea->chain);
+				tx_free((_u8*)pAdv->ea->chain);
 			}
 			if(POINTER_VALID(pAdv->la))
 			{
-				tx_free(pAdv->la);
+				tx_free((_u8*)pAdv->la);
 			}
 			if(POINTER_VALID(pAdv->ea))
 			{
-				tx_free(pAdv->ea);
+				tx_free((_u8*)pAdv->ea);
 			}
 		}
 	}
