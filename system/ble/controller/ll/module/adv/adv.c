@@ -132,68 +132,73 @@ static _u16 adv_calculate_extended_header_length(_u8 flags)
     {
         extHdLen+=sizeof(adv_extended_header_subfield_advA_t);
     }
-    else if(flags & ADV_EXTENDED_HEADER_FLAG_TARGET_A)
+    if(flags & ADV_EXTENDED_HEADER_FLAG_TARGET_A)
     {
         extHdLen+=sizeof(adv_extended_header_subfield_targetA_t);
     }
-    else if(flags & ADV_EXTENDED_HEADER_FLAG_CTE_INFO)
+    if(flags & ADV_EXTENDED_HEADER_FLAG_CTE_INFO)
     {
         extHdLen+=sizeof(adv_extended_header_subfield_cteInfo_t);
     }
-    else if(flags & ADV_EXTENDED_HEADER_FLAG_ADI)
+    if(flags & ADV_EXTENDED_HEADER_FLAG_ADI)
     {
         extHdLen+=sizeof(adv_extended_header_subfield_adi_t);
     }
-    else if(flags & ADV_EXTENDED_HEADER_FLAG_AUX_PTR)
+    if(flags & ADV_EXTENDED_HEADER_FLAG_AUX_PTR)
     {
         extHdLen+=sizeof(adv_extended_header_subfield_auxPtr_t);
     }
-    else if(flags & ADV_EXTENDED_HEADER_FLAG_SYNC_INFO)
+    if(flags & ADV_EXTENDED_HEADER_FLAG_SYNC_INFO)
     {
         extHdLen+=sizeof(adv_extended_header_subfield_syncInfo_t);
     }
-    else if(flags & ADV_EXTENDED_HEADER_FLAG_TX_POWER)
+    if(flags & ADV_EXTENDED_HEADER_FLAG_TX_POWER)
     {
         extHdLen+=sizeof(adv_extended_header_subfield_Tx_Power_t);
     }
 }
 
-static void adv_extended_generate_adv_data(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8** packet,_u8 flags)
+static void adv_generate_extended_header(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8* packet,_u8 advMode,_u8 flags)
 {
+    adv_extended_header_t* extHeader = (adv_extended_header_t*)packet;
+    extHeader->advMode = advMode;
+    extHeader->flags   = flags;
+    _u8 offset = 0;
     if(flags & ADV_EXTENDED_HEADER_FLAG_ADV_A)
     {
-        txMemcpy(*packet,ll_get_device_address(),6);
-        *packet+=sizeof(adv_extended_header_subfield_advA_t);
+        txMemcpy(extHeader->param,ll_get_device_address(),6);
+        offset+=sizeof(adv_extended_header_subfield_advA_t);
     }
-    else if(flags & ADV_EXTENDED_HEADER_FLAG_TARGET_A)
+    if(flags & ADV_EXTENDED_HEADER_FLAG_TARGET_A)
     {
-        txMemcpy(*packet,advParam->peerAddress,6);
-        *packet+=sizeof(adv_extended_header_subfield_targetA_t);
+        txMemcpy(extHeader->param+offset,advParam->peerAddress,6);
+        offset+=sizeof(adv_extended_header_subfield_targetA_t);
     }
-    else if(flags & ADV_EXTENDED_HEADER_FLAG_CTE_INFO)
+    if(flags & ADV_EXTENDED_HEADER_FLAG_CTE_INFO)
     {
-        ((adv_extended_header_subfield_cteInfo_t*)(*packet))->info = 0;
-        *packet+=sizeof(adv_extended_header_subfield_cteInfo_t);
+        ((adv_extended_header_subfield_cteInfo_t*)(extHeader->param+offset))->info = 0;
+        offset+=sizeof(adv_extended_header_subfield_cteInfo_t);
     }
-    else if(flags & ADV_EXTENDED_HEADER_FLAG_ADI)
+    if(flags & ADV_EXTENDED_HEADER_FLAG_ADI)
     {
-        ((adv_extended_header_subfield_adi_t*)(*packet))->did = advParam->ea->did;
-        ((adv_extended_header_subfield_adi_t*)(*packet))->sid = advParam->ea->sid;
-        *packet+=sizeof(adv_extended_header_subfield_adi_t);
+        ((adv_extended_header_subfield_adi_t*)(extHeader->param+offset))->did = advParam->ea->did;
+        ((adv_extended_header_subfield_adi_t*)(extHeader->param+offset))->sid = advParam->ea->sid;
+        offset+=sizeof(adv_extended_header_subfield_adi_t);
     }
-    else if(flags & ADV_EXTENDED_HEADER_FLAG_AUX_PTR)
+    if(flags & ADV_EXTENDED_HEADER_FLAG_AUX_PTR)
     {
-        ((adv_extended_header_subfield_auxPtr_t*)(*packet))->auxOffset = 0;
-        *packet+=sizeof(adv_extended_header_subfield_auxPtr_t);
+        ((adv_extended_header_subfield_auxPtr_t*)(extHeader->param+offset))->auxOffset = 0;
+        offset+=sizeof(adv_extended_header_subfield_auxPtr_t);
     }
-    else if(flags & ADV_EXTENDED_HEADER_FLAG_SYNC_INFO)
+    if(flags & ADV_EXTENDED_HEADER_FLAG_SYNC_INFO)
     {
-        *packet+=sizeof(adv_extended_header_subfield_syncInfo_t);
+        offset+=sizeof(adv_extended_header_subfield_syncInfo_t);
     }
-    else if(flags & ADV_EXTENDED_HEADER_FLAG_TX_POWER)
+    if(flags & ADV_EXTENDED_HEADER_FLAG_TX_POWER)
     {
-        *packet+=sizeof(adv_extended_header_subfield_Tx_Power_t);
+        offset+=sizeof(adv_extended_header_subfield_Tx_Power_t);
     }
+    extHeader->len = 1+offset;
 }
 #endif
 
@@ -236,50 +241,50 @@ static void adv_scan_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advPar
 }
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
 //LL_ADV_TYPE_ADV_EXT_IND
-static void adv_ext_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 flags)
+static void adv_ext_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
     _u8* packet = ll_get_adv_packet(advParam->ea->phy.txAddress,headerLen,LL_ADV_TYPE_ADV_EXT_IND,0,advParam->ownAddressType?1:0,0);
-    adv_extended_generate_adv_data(ll,advParam,&packet,flags);
+    adv_generate_extended_header(ll,advParam,packet,advMode,flags);
 }
 //LL_ADV_TYPE_AUX_ADV_IND
-static void adv_aux_adv_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 flags)
+static void adv_aux_adv_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
     _u8* packet = ll_get_adv_packet(advParam->ea->phy.txAddress,headerLen+advParam->ea->dataLen,LL_ADV_TYPE_AUX_ADV_IND,0,advParam->ownAddressType?1:0,0);
-    adv_extended_generate_adv_data(ll,advParam,&packet,flags);
+    adv_generate_extended_header(ll,advParam,packet,advMode,flags);
     if(advParam->ea->dataLen!=0)
     {
-        txMemcpy(packet,advParam->data.addr,advParam->ea->dataLen);
+        txMemcpy(packet+(2+((adv_extended_header_t*)packet)->len),advParam->data.addr,advParam->ea->dataLen);
     }
 }
 //LL_ADV_TYPE_AUX_SCAN_RSP
-static void adv_aux_scan_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 flags)
+static void adv_aux_scan_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
     _u8* packet = ll_get_adv_packet(advParam->ea->phy.txAddress,headerLen+advParam->ea->dataLen,LL_ADV_TYPE_AUX_SCAN_RSP,0,advParam->ownAddressType?1:0,0);
-    adv_extended_generate_adv_data(ll,advParam,&packet,flags);
+    adv_generate_extended_header(ll,advParam,packet,advMode,flags);
     if(advParam->ea->dataLen!=0)
     {
-        txMemcpy(packet,advParam->scanRsp.addr,advParam->ea->dataLen);
+        txMemcpy(packet+(2+((adv_extended_header_t*)packet)->len),advParam->scanRsp.addr,advParam->ea->dataLen);
     }
 }
 //LL_ADV_TYPE_AUX_CONNECT_RSP
-static void adv_aux_conn_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 flags)
+static void adv_aux_conn_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
     _u8* packet = ll_get_adv_packet(advParam->ea->phy.txAddress,headerLen,LL_ADV_TYPE_AUX_CONNECT_RSP,0,advParam->ownAddressType?1:0,0);
-    adv_extended_generate_adv_data(ll,advParam,&packet,flags);
+    adv_generate_extended_header(ll,advParam,packet,advMode,flags);
 }
 //LL_ADV_TYPE_AUX_CHAIN_IND
-static void adv_aux_chain_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 flags)
+static void adv_aux_chain_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
     _u8* packet = ll_get_adv_packet(advParam->ea->chain[advParam->ea->chainInx].phy.txAddress,headerLen+advParam->ea->chain[advParam->ea->chainInx].data.len,LL_ADV_TYPE_AUX_CHAIN_IND,0,advParam->ownAddressType?1:0,0);
-    adv_extended_generate_adv_data(ll,advParam,&packet,flags);
+    adv_generate_extended_header(ll,advParam,packet,advMode,flags);
     if(advParam->ea->chain[advParam->ea->chainInx].data.len!=0)
     {
-        txMemcpy(packet,advParam->ea->chain[advParam->ea->chainInx].data.addr,advParam->ea->chain[advParam->ea->chainInx].data.len);
+        txMemcpy(packet+(2+((adv_extended_header_t*)packet)->len),advParam->ea->chain[advParam->ea->chainInx].data.addr,advParam->ea->chain[advParam->ea->chainInx].data.len);
     }
 }
 #endif
@@ -368,14 +373,17 @@ _RAM_CODE
 static void adv_event_extended_connectable_directed_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
 {
     _u8 flags = 0;
+    _u8 advMode = 0;
     _u8 extHeaderLen = 0;
     switch(pduClass)
     {
         case ADV_PDU_CLASS_EXT:
         {
-            flags  = ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-            adv_ext_ind_pdu_prepare(ll,advParam,flags);
+            flags   = ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
+            advMode = 1; 
+            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags);
         }
+            break;
         case ADV_PDU_CLASS_AUX:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_TARGET_A|ADV_EXTENDED_HEADER_FLAG_ADI;
@@ -383,13 +391,16 @@ static void adv_event_extended_connectable_directed_packet_prapare(ll_sm_t* ll,l
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            adv_aux_adv_ind_pdu_prepare(ll,advParam,flags);
+            advMode = 1; 
+            adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags);
         }
+            break;
         case ADV_PDU_CLASS_CONN_RSP:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_TARGET_A;
-            adv_aux_conn_rsp_pdu_prepare(ll,advParam,flags);
+            adv_aux_conn_rsp_pdu_prepare(ll,advParam,advMode,flags);
         }
+            break;
     }
 }
 //ADV_EVENT_EXTENDED_CONNECTABLE_UNDIRECTED
@@ -397,28 +408,34 @@ _RAM_CODE
 static void adv_event_extended_connectable_undirected_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
 {
     _u8 flags = 0;
+    _u8 advMode = 0;
     _u8 extHeaderLen = 0;
     switch(pduClass)
     {
         case ADV_PDU_CLASS_EXT:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-            adv_ext_ind_pdu_prepare(ll,advParam,flags);
+            advMode = 1;
+            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags);
         }
+        break;
         case ADV_PDU_CLASS_AUX:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_ADI;
+            advMode = 1;
             if(advParam->ea->power!=0x7f)
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            adv_aux_adv_ind_pdu_prepare(ll,advParam,flags);
+            adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags);
         }
+        break;
         case ADV_PDU_CLASS_CONN_RSP:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_TARGET_A;
-            adv_aux_conn_rsp_pdu_prepare(ll,advParam,flags);
+            adv_aux_conn_rsp_pdu_prepare(ll,advParam,advMode,flags);
         }
+        break;
     }
 }
 //ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED
@@ -426,14 +443,17 @@ _RAM_CODE
 static void adv_event_extended_scannable_directed_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
 {
     _u8 flags = 0;
+    _u8 advMode = 0;
     _u8 extHeaderLen = 0;
     switch(pduClass)
     {
         case ADV_PDU_CLASS_EXT:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-            adv_ext_ind_pdu_prepare(ll,advParam,flags);
+            advMode = 2;
+            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags);
         }
+        break;
         case ADV_PDU_CLASS_AUX:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_TARGET_A|ADV_EXTENDED_HEADER_FLAG_ADI;
@@ -441,8 +461,10 @@ static void adv_event_extended_scannable_directed_packet_prapare(ll_sm_t* ll,ll_
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            adv_aux_adv_ind_pdu_prepare(ll,advParam,flags);
+            advMode = 2;
+            adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags);
         }
+        break;
         case ADV_PDU_CLASS_SCAN_RSP:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_ADI;
@@ -454,8 +476,9 @@ static void adv_event_extended_scannable_directed_packet_prapare(ll_sm_t* ll,ll_
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            adv_aux_scan_rsp_pdu_prepare(ll,advParam,flags);
+            adv_aux_scan_rsp_pdu_prepare(ll,advParam,advMode,flags);
         }
+        break;
         case ADV_PDU_CLASS_CHAIN:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI;
@@ -463,8 +486,9 @@ static void adv_event_extended_scannable_directed_packet_prapare(ll_sm_t* ll,ll_
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
             }
-            adv_aux_chain_ind_pdu_prepare(ll,advParam,flags);
+            adv_aux_chain_ind_pdu_prepare(ll,advParam,advMode,flags);
         }
+        break;
     }
 }
 //ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED
@@ -472,23 +496,28 @@ _RAM_CODE
 static void adv_event_extended_scannable_undirected_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
 {
     _u8 flags = 0;
+    _u8 advMode = 0;
     _u8 extHeaderLen = 0;
     switch(pduClass)
     {
         case ADV_PDU_CLASS_EXT:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-            adv_ext_ind_pdu_prepare(ll,advParam,flags);
+            advMode = 2;
+            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags);
         }
+        break;
         case ADV_PDU_CLASS_AUX:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_ADI;
+            advMode = 2;
             if(advParam->ea->power!=0x7f)
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            adv_aux_adv_ind_pdu_prepare(ll,advParam,flags);
+            adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags);
         }
+        break;
         case ADV_PDU_CLASS_SCAN_RSP:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_ADI;
@@ -500,8 +529,9 @@ static void adv_event_extended_scannable_undirected_packet_prapare(ll_sm_t* ll,l
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            adv_aux_scan_rsp_pdu_prepare(ll,advParam,flags);
+            adv_aux_scan_rsp_pdu_prepare(ll,advParam,advMode,flags);
         }
+        break;
         case ADV_PDU_CLASS_CHAIN:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI;
@@ -509,8 +539,9 @@ static void adv_event_extended_scannable_undirected_packet_prapare(ll_sm_t* ll,l
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
             }
-            adv_aux_chain_ind_pdu_prepare(ll,advParam,flags);
+            adv_aux_chain_ind_pdu_prepare(ll,advParam,advMode,flags);
         }
+        break;
     }
 }
 //ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITH_AUXILIARY
@@ -518,14 +549,16 @@ _RAM_CODE
 static void adv_event_extended_non_connectable_non_scannable_directed_with_auxiliary_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
 {
     _u8 flags = 0;
+    _u8 advMode = 0;
     _u8 extHeaderLen = 0;
     switch(pduClass)
     {
         case ADV_PDU_CLASS_EXT:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-            adv_ext_ind_pdu_prepare(ll,advParam,flags);
+            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags);
         }
+        break;
         case ADV_PDU_CLASS_AUX:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_TARGET_A|ADV_EXTENDED_HEADER_FLAG_ADI;
@@ -538,8 +571,9 @@ static void adv_event_extended_non_connectable_non_scannable_directed_with_auxil
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
             }
             //sync info optional
-            adv_aux_adv_ind_pdu_prepare(ll,advParam,flags);
+            adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags);
         }
+        break;
         case ADV_PDU_CLASS_CHAIN:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI;
@@ -551,8 +585,9 @@ static void adv_event_extended_non_connectable_non_scannable_directed_with_auxil
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            adv_aux_chain_ind_pdu_prepare(ll,advParam,flags);
+            adv_aux_chain_ind_pdu_prepare(ll,advParam,advMode,flags);
         }
+        break;
     }
 }
 //ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED_WITH_AUXILIARY
@@ -560,14 +595,16 @@ _RAM_CODE
 static void adv_event_extended_non_connectable_non_scannable_undirected_with_auxiliary_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
 {
     _u8 flags = 0;
+    _u8 advMode = 0;
     _u8 extHeaderLen = 0;
     switch(pduClass)
     {
         case ADV_PDU_CLASS_EXT:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-            adv_ext_ind_pdu_prepare(ll,advParam,flags);
+            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags);
         }
+        break;
         case ADV_PDU_CLASS_AUX:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_ADI;
@@ -580,8 +617,9 @@ static void adv_event_extended_non_connectable_non_scannable_undirected_with_aux
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
             }   
             //sync info optional
-            adv_aux_adv_ind_pdu_prepare(ll,advParam,flags);
+            adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags);
         }
+        break;
         case ADV_PDU_CLASS_CHAIN:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI;
@@ -593,8 +631,9 @@ static void adv_event_extended_non_connectable_non_scannable_undirected_with_aux
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            adv_aux_chain_ind_pdu_prepare(ll,advParam,flags);
+            adv_aux_chain_ind_pdu_prepare(ll,advParam,advMode,flags);
         }
+        break;
     }
 }
 //ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITHOUT_AUXILIARY
@@ -602,6 +641,7 @@ _RAM_CODE
 static void adv_event_extended_non_connectable_non_scannable_directed_without_auxiliary_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
 {
     _u8 flags = 0;
+    _u8 advMode = 0;
     _u8 extHeaderLen = 0;
     switch(pduClass)
     {
@@ -612,7 +652,7 @@ static void adv_event_extended_non_connectable_non_scannable_directed_without_au
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            adv_ext_ind_pdu_prepare(ll,advParam,flags);
+            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags);
         }
     }
 }
@@ -621,6 +661,7 @@ _RAM_CODE
 static void adv_event_extended_non_connectable_non_scannable_undirected_without_auxiliary_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
 {
     _u8 flags = 0;
+    _u8 advMode = 0;
     _u8 extHeaderLen = 0;
     switch(pduClass)
     {
@@ -631,7 +672,7 @@ static void adv_event_extended_non_connectable_non_scannable_undirected_without_
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            adv_ext_ind_pdu_prepare(ll,advParam,flags);
+            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags);
         }
     }
 }
@@ -1092,7 +1133,7 @@ int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
             }
         }
     }
-    tx_free(freeBlock);
+    tx_free((_u8*)freeBlock);
     while(1);
 }
 

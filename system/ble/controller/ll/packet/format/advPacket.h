@@ -51,6 +51,13 @@ typedef enum
 }adv_extended_mode_e;
 
 typedef struct _PACKED{
+	_u8 len:6;
+	_u8 advMode:2;
+	_u8 flags;
+	_u8 param[0];
+}adv_extended_header_t;
+
+typedef struct _PACKED{
 	_u8 advA[6];
 }adv_extended_header_subfield_advA_t;
 
