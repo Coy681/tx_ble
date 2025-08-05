@@ -286,6 +286,8 @@ typedef struct _PACKED
     _u8      addr[6];
     _u8      txAddr[128];
     _u8      rxAddr[128];
+    _u64     eventMask;
+    _u64     leEventMask;
     ll_sm_t* sm;
 }ll_t;
 
@@ -296,6 +298,7 @@ ll_sm_t* ll_get_current_state_machine(void);
 _u8*     ll_get_device_address(void);
 _u8*     ll_get_shared_phy_tx_address(void);
 _u8*     ll_get_shared_phy_rx_address(void);
+
 
 ble_ll_state_status_e ble_ll_process_event(ll_sm_t* sm,ble_ll_event_e event);
 

@@ -131,20 +131,29 @@ struct hci_command_reset_retParam_t
 };
 controller_error_code_e hci_reset_command(_u8* data,_u8 length,bt_hci_event_t** event)
 {
-    struct hci_command_reset_retParam_t* param;
     controller_error_code_e status = ll_reset();
-    if(status == SUCCESS)
-    {
-        param = hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_reset_retParam_t),event);
-        param->status = (_u8)SUCCESS;
+    struct hci_command_reset_retParam_t* param = (struct hci_command_reset_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_reset_retParam_t),event);
+    param->status = (_u8)status;
+    return status;
+}
 
-    }
-    return SUCCESS;
+struct _PACKED hci_command_set_event_mask_retParam_t
+{
+	_u8 status;
+};
+
+controller_error_code_e hci_set_event_mask(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+	_u64 eventMask = ((_u64)data[0])|((_u64)data[1]<<8)|((_u64)data[2]<<16)|((_u64)data[3]<<24)|(((_u64)data[4]<<32))|((_u64)data[5]<<40)|((_u64)data[6]<<48)|((_u64)data[7]<<56);
+	controller_error_code_e status = ll_set_event_mask(eventMask);
+	struct hci_command_set_event_mask_retParam_t* param = (struct hci_command_set_event_mask_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_set_event_mask_retParam_t),event);
+	param->status = status;
+	return status;
 }
 
 static const hci_command_t hci_command_controller_baseband_list[] =
 {
-    {HCI_SET_EVENT_MASK_COMMAND, NULL},
+    {HCI_SET_EVENT_MASK_COMMAND, hci_set_event_mask},
     {HCI_RESET_COMMAND, hci_reset_command},
     {HCI_SET_EVENT_FILTER_COMMAND, NULL},
     {HCI_FLUSH_COMMAND, NULL},
@@ -328,10 +337,24 @@ controller_error_code_e hci_le_set_advertising_enable(_u8* data,_u8 length,bt_hc
     
 }
 
+struct _PACKED hci_command_le_set_event_mask_retParam_t
+{
+	_u8  status;
+};
+
+controller_error_code_e hci_le_set_event_mask(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+	_u64 eventMask = ((_u64)data[0])|((_u64)data[1]<<8)|((_u64)data[2]<<16)|((_u64)data[3]<<24)|(((_u64)data[4]<<32))|((_u64)data[5]<<40)|((_u64)data[6]<<48)|((_u64)data[7]<<56);
+	controller_error_code_e status = ll_set_le_event_mask(eventMask);
+	struct hci_command_le_set_event_mask_retParam_t* param =\
+	(struct hci_command_le_set_event_mask_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_le_set_event_mask_retParam_t),event);
+	param->status = status;
+	return status;
+}
 
 static const hci_command_t hci_command_le_controller_list[] =
 {
-    {HCI_LE_SET_EVENT_MASK_COMMAND, NULL},
+    {HCI_LE_SET_EVENT_MASK_COMMAND, hci_le_set_event_mask},
     {HCI_LE_READ_BUFFER_SIZE_COMMAND, NULL},
     {HCI_LE_READ_BUFFER_SIZE_COMMAND_V2, NULL},
     {HCI_LE_READ_LOCAL_SUPPORTED_FEATURES_PAGE0_COMMAND, hci_le_read_local_supported_features},

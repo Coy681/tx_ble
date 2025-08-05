@@ -33,10 +33,10 @@ void ll_init_state_machine(_u8 number)
 		llSmConut = 1;
 	}
 
-	ll = (ll_sm_t*)tx_malloc(sizeof(ll_t));
+	ll = (ll_t*)tx_malloc(sizeof(ll_t));
 	for(_u8 i=0;i<6;i++)
 	{
-		ll[i].addr[i] = 0x12+i;//todo,temporary value
+		ll->addr[i] = 0x12+i;//todo,temporary value
 	}
 	ll->sm = (ll_sm_t*)tx_malloc(number*sizeof(ll_sm_t));
 	for(_u8 i=0;i<llSmConut;i++)
@@ -184,7 +184,17 @@ controller_error_code_e ll_reset(void)
     return SUCCESS;
 }
 
+controller_error_code_e ll_set_event_mask(_u64 eventMask)
+{
+	ll->eventMask = eventMask;
+	return SUCCESS;
+}
 
+controller_error_code_e ll_set_le_event_mask(_u64 eventMask)
+{
+	ll->leEventMask = eventMask;
+	return SUCCESS;
+}
 /*************************************Bluetooth LE Advertising ******************************/
 
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING!=1)

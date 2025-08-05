@@ -87,6 +87,9 @@ void ll_init_state_machine(_u8 number);
 
 controller_error_code_e ll_reset(void);
 
+controller_error_code_e ll_set_event_mask(_u64 eventMask);
+controller_error_code_e ll_set_le_event_mask(_u64 eventMask);
+
 _u64 ll_get_feature(void);
 /***********************Bluetooth LE Advertising **************************/
 typedef enum
