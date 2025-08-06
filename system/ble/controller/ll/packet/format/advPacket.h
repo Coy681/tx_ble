@@ -82,9 +82,9 @@ typedef enum
 
 typedef enum
 {
-	ADV_EXTENDED_AUX_PTR_CA_0_50PPM        = 1,
-	ADV_EXTENDED_AUX_PTR_CA_51_500PPM      = 0,
-}adv_extended_header_auxPtr_offsetUnit_e;
+	ADV_EXTENDED_CA_0_50PPM        = 1,
+	ADV_EXTENDED_CA_51_500PPM      = 0,
+}adv_extended_header_CA_e;
 
 typedef struct _PACKED{
 	_u8  chnInx:6;

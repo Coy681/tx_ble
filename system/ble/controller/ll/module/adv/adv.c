@@ -196,7 +196,7 @@ static void adv_generate_extended_header(ll_sm_t* ll,ll_internal_adv_param_t* ad
     if(flags & ADV_EXTENDED_HEADER_FLAG_AUX_PTR)
     {
         ((adv_extended_header_subfield_auxPtr_t*)(extHeader->param+offset))->chnInx = auxInfo->channel;
-        ((adv_extended_header_subfield_auxPtr_t*)(extHeader->param+offset))->ca     = 0;
+        ((adv_extended_header_subfield_auxPtr_t*)(extHeader->param+offset))->ca     = ADV_EXTENDED_CA_51_500PPM;
         ((adv_extended_header_subfield_auxPtr_t*)(extHeader->param+offset))->auxPhy = auxInfo->phy;
         if(txCompareTime(auxInfo->anchorPoint,auxInfo->targetAnchorPoint))
         {
@@ -270,47 +270,47 @@ static void adv_scan_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advPar
 }
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
 //LL_ADV_TYPE_ADV_EXT_IND
-static void adv_ext_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags)
+static void adv_ext_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
     _u8* packet = ll_get_adv_packet(advParam->ea->phy.txAddress,headerLen,LL_ADV_TYPE_ADV_EXT_IND,0,advParam->ownAddressType?1:0,0);
-    adv_generate_extended_header(ll,advParam,packet,advMode,flags);
+    adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo);
 }
 //LL_ADV_TYPE_AUX_ADV_IND
-static void adv_aux_adv_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags)
+static void adv_aux_adv_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
     _u8* packet = ll_get_adv_packet(advParam->ea->phy.txAddress,headerLen+advParam->ea->dataLen,LL_ADV_TYPE_AUX_ADV_IND,0,advParam->ownAddressType?1:0,0);
-    adv_generate_extended_header(ll,advParam,packet,advMode,flags);
+    adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo);
     if(advParam->ea->dataLen!=0)
     {
         txMemcpy(packet+(2+((adv_extended_header_t*)packet)->len),advParam->data.addr,advParam->ea->dataLen);
     }
 }
 //LL_ADV_TYPE_AUX_SCAN_RSP
-static void adv_aux_scan_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags)
+static void adv_aux_scan_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
     _u8* packet = ll_get_adv_packet(advParam->ea->phy.txAddress,headerLen+advParam->ea->dataLen,LL_ADV_TYPE_AUX_SCAN_RSP,0,advParam->ownAddressType?1:0,0);
-    adv_generate_extended_header(ll,advParam,packet,advMode,flags);
+    adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo);
     if(advParam->ea->dataLen!=0)
     {
         txMemcpy(packet+(2+((adv_extended_header_t*)packet)->len),advParam->scanRsp.addr,advParam->ea->dataLen);
     }
 }
 //LL_ADV_TYPE_AUX_CONNECT_RSP
-static void adv_aux_conn_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags)
+static void adv_aux_conn_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
     _u8* packet = ll_get_adv_packet(advParam->ea->phy.txAddress,headerLen,LL_ADV_TYPE_AUX_CONNECT_RSP,0,advParam->ownAddressType?1:0,0);
-    adv_generate_extended_header(ll,advParam,packet,advMode,flags);
+    adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo);
 }
 //LL_ADV_TYPE_AUX_CHAIN_IND
-static void adv_aux_chain_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags)
+static void adv_aux_chain_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
     _u8* packet = ll_get_adv_packet(advParam->ea->chain[advParam->ea->chainInx].phy.txAddress,headerLen+advParam->ea->chain[advParam->ea->chainInx].data.len,LL_ADV_TYPE_AUX_CHAIN_IND,0,advParam->ownAddressType?1:0,0);
-    adv_generate_extended_header(ll,advParam,packet,advMode,flags);
+    adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo);
     if(advParam->ea->chain[advParam->ea->chainInx].data.len!=0)
     {
         txMemcpy(packet+(2+((adv_extended_header_t*)packet)->len),advParam->ea->chain[advParam->ea->chainInx].data.addr,advParam->ea->chain[advParam->ea->chainInx].data.len);
@@ -410,13 +410,18 @@ static void adv_event_extended_connectable_directed_packet_prapare(ll_sm_t* ll,l
     _u8 flags = 0;
     _u8 advMode = 0;
     _u8 extHeaderLen = 0;
+    adv_extended_header_auxInfo_t auxInfo = {0};
     switch(pduClass)
     {
         case ADV_PDU_CLASS_EXT:
         {
             flags   = ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
             advMode = 1; 
-            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags);
+            auxInfo.anchorPoint       = advParam->la->sch.anchorPoint;
+            auxInfo.targetAnchorPoint = advParam->ea->sch.anchorPoint;
+            auxInfo.channel           = advParam->ea->phy.chn;
+            auxInfo.phy               = advParam->ea->phy.mode;
+            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
         break;
         case ADV_PDU_CLASS_AUX:
@@ -427,13 +432,13 @@ static void adv_event_extended_connectable_directed_packet_prapare(ll_sm_t* ll,l
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
             advMode = 1; 
-            adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags);
+            adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
         break;
         case ADV_PDU_CLASS_CONN_RSP:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_TARGET_A;
-            adv_aux_conn_rsp_pdu_prepare(ll,advParam,advMode,flags);
+            adv_aux_conn_rsp_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
         break;
     }
@@ -445,13 +450,18 @@ static void adv_event_extended_connectable_undirected_packet_prapare(ll_sm_t* ll
     _u8 flags = 0;
     _u8 advMode = 0;
     _u8 extHeaderLen = 0;
+    adv_extended_header_auxInfo_t auxInfo = {0};
     switch(pduClass)
     {
         case ADV_PDU_CLASS_EXT:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
             advMode = 1;
-            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags);
+            auxInfo.anchorPoint       = advParam->la->sch.anchorPoint;
+            auxInfo.targetAnchorPoint = advParam->ea->sch.anchorPoint;
+            auxInfo.channel           = advParam->ea->phy.chn;
+            auxInfo.phy               = advParam->ea->phy.mode;
+            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
         break;
         case ADV_PDU_CLASS_AUX:
@@ -462,13 +472,13 @@ static void adv_event_extended_connectable_undirected_packet_prapare(ll_sm_t* ll
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags);
+            adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
         break;
         case ADV_PDU_CLASS_CONN_RSP:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_TARGET_A;
-            adv_aux_conn_rsp_pdu_prepare(ll,advParam,advMode,flags);
+            adv_aux_conn_rsp_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
         break;
     }
@@ -480,13 +490,18 @@ static void adv_event_extended_scannable_directed_packet_prapare(ll_sm_t* ll,ll_
     _u8 flags = 0;
     _u8 advMode = 0;
     _u8 extHeaderLen = 0;
+    adv_extended_header_auxInfo_t auxInfo = {0};
     switch(pduClass)
     {
         case ADV_PDU_CLASS_EXT:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
             advMode = 2;
-            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags);
+            auxInfo.anchorPoint       = advParam->la->sch.anchorPoint;
+            auxInfo.targetAnchorPoint = advParam->ea->sch.anchorPoint;
+            auxInfo.channel           = advParam->ea->phy.chn;
+            auxInfo.phy               = advParam->ea->phy.mode;
+            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
         break;
         case ADV_PDU_CLASS_AUX:
@@ -497,21 +512,25 @@ static void adv_event_extended_scannable_directed_packet_prapare(ll_sm_t* ll,ll_
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
             advMode = 2;
-            adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags);
+            adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
         break;
         case ADV_PDU_CLASS_SCAN_RSP:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_ADI;
-            if(advParam->ea->chainCnt!=0)
-            {
-                flags|= ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-            }
             if(advParam->ea->power!=0x7f)
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            adv_aux_scan_rsp_pdu_prepare(ll,advParam,advMode,flags);
+            if(advParam->ea->chainCnt!=0)
+            {
+                flags|= ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
+                auxInfo.anchorPoint       = advParam->ea->sch.anchorPoint;
+                auxInfo.targetAnchorPoint = advParam->ea->chain[0].sch.anchorPoint;
+                auxInfo.channel           = advParam->ea->chain[0].phy.chn;
+                auxInfo.phy               = advParam->ea->chain[0].phy.mode;
+            }
+            adv_aux_scan_rsp_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
         break;
         case ADV_PDU_CLASS_CHAIN:
@@ -520,8 +539,12 @@ static void adv_event_extended_scannable_directed_packet_prapare(ll_sm_t* ll,ll_
             if(advParam->ea->chainCnt!=advParam->ea->chainInx)
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
+                auxInfo.anchorPoint       = advParam->ea->chain[advParam->ea->chainInx].sch.anchorPoint;
+                auxInfo.targetAnchorPoint = advParam->ea->chain[advParam->ea->chainInx+1].sch.anchorPoint;
+                auxInfo.channel           = advParam->ea->chain[advParam->ea->chainInx+1].phy.chn;
+                auxInfo.phy               = advParam->ea->chain[advParam->ea->chainInx+1].phy.mode;
             }
-            adv_aux_chain_ind_pdu_prepare(ll,advParam,advMode,flags);
+            adv_aux_chain_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
         break;
     }
@@ -533,13 +556,18 @@ static void adv_event_extended_scannable_undirected_packet_prapare(ll_sm_t* ll,l
     _u8 flags = 0;
     _u8 advMode = 0;
     _u8 extHeaderLen = 0;
+    adv_extended_header_auxInfo_t auxInfo = {0};
     switch(pduClass)
     {
         case ADV_PDU_CLASS_EXT:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
             advMode = 2;
-            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags);
+            auxInfo.anchorPoint       = advParam->la->sch.anchorPoint;
+            auxInfo.targetAnchorPoint = advParam->ea->sch.anchorPoint;
+            auxInfo.channel           = advParam->ea->phy.chn;
+            auxInfo.phy               = advParam->ea->phy.mode;
+            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
         break;
         case ADV_PDU_CLASS_AUX:
@@ -550,21 +578,25 @@ static void adv_event_extended_scannable_undirected_packet_prapare(ll_sm_t* ll,l
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags);
+            adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
         break;
         case ADV_PDU_CLASS_SCAN_RSP:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_ADI;
-            if(advParam->ea->chainCnt!=0)
-            {
-                flags|= ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-            }
             if(advParam->ea->power!=0x7f)
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            adv_aux_scan_rsp_pdu_prepare(ll,advParam,advMode,flags);
+            if(advParam->ea->chainCnt!=0)
+            {
+                flags|= ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
+                auxInfo.anchorPoint       = advParam->ea->sch.anchorPoint;
+                auxInfo.targetAnchorPoint = advParam->ea->chain[0].sch.anchorPoint;
+                auxInfo.channel           = advParam->ea->chain[0].phy.chn;
+                auxInfo.phy               = advParam->ea->chain[0].phy.mode;
+            }
+            adv_aux_scan_rsp_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
         break;
         case ADV_PDU_CLASS_CHAIN:
@@ -573,8 +605,12 @@ static void adv_event_extended_scannable_undirected_packet_prapare(ll_sm_t* ll,l
             if(advParam->ea->chainCnt!=advParam->ea->chainInx)
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
+                auxInfo.anchorPoint       = advParam->ea->chain[advParam->ea->chainInx].sch.anchorPoint;
+                auxInfo.targetAnchorPoint = advParam->ea->chain[advParam->ea->chainInx+1].sch.anchorPoint;
+                auxInfo.channel           = advParam->ea->chain[advParam->ea->chainInx+1].phy.chn;
+                auxInfo.phy               = advParam->ea->chain[advParam->ea->chainInx+1].phy.mode;
             }
-            adv_aux_chain_ind_pdu_prepare(ll,advParam,advMode,flags);
+            adv_aux_chain_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
         break;
     }
@@ -586,12 +622,17 @@ static void adv_event_extended_non_connectable_non_scannable_directed_with_auxil
     _u8 flags = 0;
     _u8 advMode = 0;
     _u8 extHeaderLen = 0;
+    adv_extended_header_auxInfo_t auxInfo = {0};
     switch(pduClass)
     {
         case ADV_PDU_CLASS_EXT:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags);
+            auxInfo.anchorPoint       = advParam->la->sch.anchorPoint;
+            auxInfo.targetAnchorPoint = advParam->ea->sch.anchorPoint;
+            auxInfo.channel           = advParam->ea->phy.chn;
+            auxInfo.phy               = advParam->ea->phy.mode;
+            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
         break;
         case ADV_PDU_CLASS_AUX:
@@ -604,23 +645,31 @@ static void adv_event_extended_non_connectable_non_scannable_directed_with_auxil
             if(advParam->ea->chainCnt!=0)
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
+                auxInfo.anchorPoint       = advParam->ea->sch.anchorPoint;
+                auxInfo.targetAnchorPoint = advParam->ea->chain[0].sch.anchorPoint;
+                auxInfo.channel           = advParam->ea->chain[0].phy.chn;
+                auxInfo.phy               = advParam->ea->chain[0].phy.mode;
             }
             //sync info optional
-            adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags);
+            adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
         break;
         case ADV_PDU_CLASS_CHAIN:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI;
-            if(advParam->ea->chainCnt!=advParam->ea->chainInx)
-            {
-                flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-            }
             if(advParam->ea->power!=0x7f)
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            adv_aux_chain_ind_pdu_prepare(ll,advParam,advMode,flags);
+            if(advParam->ea->chainCnt!=advParam->ea->chainInx)
+            {
+                flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
+                auxInfo.anchorPoint       = advParam->ea->chain[advParam->ea->chainInx].sch.anchorPoint;
+                auxInfo.targetAnchorPoint = advParam->ea->chain[advParam->ea->chainInx+1].sch.anchorPoint;
+                auxInfo.channel           = advParam->ea->chain[advParam->ea->chainInx+1].phy.chn;
+                auxInfo.phy               = advParam->ea->chain[advParam->ea->chainInx+1].phy.mode;
+            }
+            adv_aux_chain_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
         break;
     }
@@ -632,12 +681,17 @@ static void adv_event_extended_non_connectable_non_scannable_undirected_with_aux
     _u8 flags = 0;
     _u8 advMode = 0;
     _u8 extHeaderLen = 0;
+    adv_extended_header_auxInfo_t auxInfo = {0};
     switch(pduClass)
     {
         case ADV_PDU_CLASS_EXT:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags);
+            auxInfo.anchorPoint       = advParam->la->sch.anchorPoint;
+            auxInfo.targetAnchorPoint = advParam->ea->sch.anchorPoint;
+            auxInfo.channel           = advParam->ea->phy.chn;
+            auxInfo.phy               = advParam->ea->phy.mode;
+            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
         break;
         case ADV_PDU_CLASS_AUX:
@@ -650,23 +704,31 @@ static void adv_event_extended_non_connectable_non_scannable_undirected_with_aux
             if(advParam->ea->chainCnt!=0)
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
+                auxInfo.anchorPoint       = advParam->ea->sch.anchorPoint;
+                auxInfo.targetAnchorPoint = advParam->ea->chain[0].sch.anchorPoint;
+                auxInfo.channel           = advParam->ea->chain[0].phy.chn;
+                auxInfo.phy               = advParam->ea->chain[0].phy.mode;
             }   
             //sync info optional
-            adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags);
+            adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
         break;
         case ADV_PDU_CLASS_CHAIN:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI;
-            if(advParam->ea->chainCnt!=advParam->ea->chainInx)
-            {
-                flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-            }
             if(advParam->ea->power!=0x7f)
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            adv_aux_chain_ind_pdu_prepare(ll,advParam,advMode,flags);
+            if(advParam->ea->chainCnt!=advParam->ea->chainInx)
+            {
+                flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
+                auxInfo.anchorPoint       = advParam->ea->chain[advParam->ea->chainInx].sch.anchorPoint;
+                auxInfo.targetAnchorPoint = advParam->ea->chain[advParam->ea->chainInx+1].sch.anchorPoint;
+                auxInfo.channel           = advParam->ea->chain[advParam->ea->chainInx+1].phy.chn;
+                auxInfo.phy               = advParam->ea->chain[advParam->ea->chainInx+1].phy.mode;
+            }
+            adv_aux_chain_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
         break;
     }
@@ -678,6 +740,7 @@ static void adv_event_extended_non_connectable_non_scannable_directed_without_au
     _u8 flags = 0;
     _u8 advMode = 0;
     _u8 extHeaderLen = 0;
+    adv_extended_header_auxInfo_t auxInfo = {0};
     switch(pduClass)
     {
         case ADV_PDU_CLASS_EXT:
@@ -687,7 +750,7 @@ static void adv_event_extended_non_connectable_non_scannable_directed_without_au
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags);
+            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
     }
 }
@@ -698,6 +761,7 @@ static void adv_event_extended_non_connectable_non_scannable_undirected_without_
     _u8 flags = 0;
     _u8 advMode = 0;
     _u8 extHeaderLen = 0;
+    adv_extended_header_auxInfo_t auxInfo = {0};
     switch(pduClass)
     {
         case ADV_PDU_CLASS_EXT:
@@ -707,7 +771,7 @@ static void adv_event_extended_non_connectable_non_scannable_undirected_without_
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags);
+            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
     }
 }
@@ -1175,12 +1239,15 @@ int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 static int adv_extended_event_step_phy_send_aux_advertising(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
     //prepare packet
-
+    adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_AUX);
     //prepare phy
+    adv_prepare_phy(ll,&advParam->ea->phy,advParam->ea->sch.anchorPoint,PHY_DIR_TX);
 	return 1;
 }
 static int adv_extended_event_step_phy_send_chain_advertising(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
+    adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_CHAIN);
+    adv_prepare_phy(ll,&advParam->ea->phy,advParam->ea->sch.anchorPoint,PHY_DIR_TX);
 	return 1;
 }
 static int adv_extended_event_step_phy_start_listen_aux(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
@@ -1528,6 +1595,7 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
                         }
                         advParam->ea->chain[i].phy.crcInit    = BLE_ADV_CRC_INIT;
                         advParam->ea->chain[i].phy.accessCode = BLE_ADV_ACCESS_CODE;
+                        advParam->ea->chain[i].phy.mode       = advParam->ea->phy.mode;
                         advParam->ea->chain[i].phy.txAddress  = ll_get_shared_phy_tx_address();
                     }
                     advParam->ea->sch.startMargin     = 100;
