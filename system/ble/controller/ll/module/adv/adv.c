@@ -158,7 +158,15 @@ static _u16 adv_calculate_extended_header_length(_u8 flags)
     }
 }
 
-static void adv_generate_extended_header(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8* packet,_u8 advMode,_u8 flags)
+typedef struct 
+{
+    _u32 anchorPoint;
+    _u32 targetAnchorPoint;
+    _u8  phy;
+    _u8  channel;
+}adv_extended_header_auxInfo_t;
+
+static void adv_generate_extended_header(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8* packet,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo)
 {
     adv_extended_header_t* extHeader = (adv_extended_header_t*)packet;
     extHeader->advMode = advMode;
@@ -187,7 +195,28 @@ static void adv_generate_extended_header(ll_sm_t* ll,ll_internal_adv_param_t* ad
     }
     if(flags & ADV_EXTENDED_HEADER_FLAG_AUX_PTR)
     {
-        ((adv_extended_header_subfield_auxPtr_t*)(extHeader->param+offset))->auxOffset = 0;
+        ((adv_extended_header_subfield_auxPtr_t*)(extHeader->param+offset))->chnInx = auxInfo->channel;
+        ((adv_extended_header_subfield_auxPtr_t*)(extHeader->param+offset))->ca     = 0;
+        ((adv_extended_header_subfield_auxPtr_t*)(extHeader->param+offset))->auxPhy = auxInfo->phy;
+        if(txCompareTime(auxInfo->anchorPoint,auxInfo->targetAnchorPoint))
+        {
+            ((adv_extended_header_subfield_auxPtr_t*)(extHeader->param+offset))->auxOffset   = 0;
+            ((adv_extended_header_subfield_auxPtr_t*)(extHeader->param+offset))->offsetUnits = 0;
+        }  
+        else
+        {
+            _u32 anchorDiff = auxInfo->targetAnchorPoint - auxInfo->anchorPoint;
+            if(anchorDiff>(30*0x1fff))
+            {
+                ((adv_extended_header_subfield_auxPtr_t*)(extHeader->param+offset))->auxOffset   = anchorDiff/300;
+                ((adv_extended_header_subfield_auxPtr_t*)(extHeader->param+offset))->offsetUnits = ADV_EXTENDED_AUX_PTR_OFFSET_UNIT_300US;
+            }
+            else
+            {
+                ((adv_extended_header_subfield_auxPtr_t*)(extHeader->param+offset))->auxOffset   = anchorDiff/30;
+                ((adv_extended_header_subfield_auxPtr_t*)(extHeader->param+offset))->offsetUnits = ADV_EXTENDED_AUX_PTR_OFFSET_UNIT_30US;
+            }
+        }
         offset+=sizeof(adv_extended_header_subfield_auxPtr_t);
     }
     if(flags & ADV_EXTENDED_HEADER_FLAG_SYNC_INFO)
@@ -318,10 +347,12 @@ static void adv_event_connectable_scannable_undirected_packet_prapare(ll_sm_t* l
         {
             adv_ind_pdu_prepare(ll,advParam);
         }
+        break;
         case ADV_PDU_CLASS_SCAN_RSP:
         {   
             adv_scan_rsp_pdu_prepare(ll,advParam);
         } 
+        break;
     }
 }
 //ADV_EVENT_CONNECTABLE_DIRECTED
@@ -335,6 +366,7 @@ static void adv_event_connectable_directed_packet_prapare(ll_sm_t* ll,ll_interna
         {
             adv_direct_ind_pdu_prepare(ll,advParam);
         }
+        break;
     }
 }
 //ADV_EVENT_SCANNABLE_UNDIRECTED
@@ -348,10 +380,12 @@ static void adv_event_scannable_undirected_packet_prapare(ll_sm_t* ll,ll_interna
         {
             adv_scan_ind_pdu_prepare(ll,advParam);
         }
+        break;
         case ADV_PDU_CLASS_SCAN_RSP:
         {   
             adv_scan_rsp_pdu_prepare(ll,advParam);
         } 
+        break;
     }
 }
 //ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED
@@ -365,6 +399,7 @@ static void adv_event_non_connectable_non_scannable_undirected_packet_prapare(ll
         {
             adv_non_conn_pdu_prepare(ll,advParam);
         }
+        break;
     }
 }
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
@@ -383,7 +418,7 @@ static void adv_event_extended_connectable_directed_packet_prapare(ll_sm_t* ll,l
             advMode = 1; 
             adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags);
         }
-            break;
+        break;
         case ADV_PDU_CLASS_AUX:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_TARGET_A|ADV_EXTENDED_HEADER_FLAG_ADI;
@@ -394,13 +429,13 @@ static void adv_event_extended_connectable_directed_packet_prapare(ll_sm_t* ll,l
             advMode = 1; 
             adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags);
         }
-            break;
+        break;
         case ADV_PDU_CLASS_CONN_RSP:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_TARGET_A;
             adv_aux_conn_rsp_pdu_prepare(ll,advParam,advMode,flags);
         }
-            break;
+        break;
     }
 }
 //ADV_EVENT_EXTENDED_CONNECTABLE_UNDIRECTED

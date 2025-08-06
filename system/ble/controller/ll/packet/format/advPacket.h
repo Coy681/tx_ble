@@ -74,10 +74,22 @@ typedef struct _PACKED{
 	_u16 sid:4;
 }adv_extended_header_subfield_adi_t;
 
+typedef enum
+{
+	ADV_EXTENDED_AUX_PTR_OFFSET_UNIT_30US  = 0,
+	ADV_EXTENDED_AUX_PTR_OFFSET_UNIT_300US = 1,
+}adv_extended_header_auxPtr_offsetUnit_e;
+
+typedef enum
+{
+	ADV_EXTENDED_AUX_PTR_CA_0_50PPM        = 1,
+	ADV_EXTENDED_AUX_PTR_CA_51_500PPM      = 0,
+}adv_extended_header_auxPtr_offsetUnit_e;
+
 typedef struct _PACKED{
 	_u8  chnInx:6;
-	_u8  ca:1;
-	_u8  offsetUnits:1;
+	_u8  ca:1;//clock accuracy,0:51-500ppm,1:0-50ppm
+	_u8  offsetUnits:1;//0:30us,1:300us
 	_u16 auxOffset:13;
 	_u16 auxPhy:3;
 }adv_extended_header_subfield_auxPtr_t;
