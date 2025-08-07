@@ -2,9 +2,9 @@
 ## 写在前面
 人生如此精彩，每天都能够一直体验新事物是无疑是一件很幸福的事情，做技术也是如此，重复性的工作总是使人怠惰，每天都充满挑战才会让人过的精彩，才能让生活充满乐趣。
 
-低功耗蓝牙这项技术，截至目前为止，从事四年时间有余，开发这个BLE Controller的初衷没有任何商业化的目的，只是对这些年自己的所学做一个总结记录(或许我以后不再从事这个领域，也算是对自己这些年的努力有个交代，不留遗憾)，又算是一种让自己温故知新的一种方式，若干年后，等到自己老了，再回顾过往，能感到年华没有虚度，我是留下了一些东西的，那真是一件美好的事情。
+低功耗蓝牙这项技术，截至目前为止，从事四年时间有余，开发这个BLE Controller的初衷没有任何商业化的目的，只是对这些年自己的所学做一个总结记录(或许我以后不再从事这个领域，也算是对自己这些年的努力有个交代，不留遗憾)，又算是一种让自己温故知新的一种方式，若干年后，等到自己老了，再回顾过往，能感到年华没有虚度，再回味过往精彩的日子，那可真令人怀念。
 
-在这四年，我经历过做项目，过认证，出SDK，干杂活出身，但庆幸的是，抓住了所有可能的机会，入门到熟悉再到如数家珍，度过的很快。这些年的经历让自己很有感触，努力做好每一件事，无论事情是大是小，你都需要有自己的思考，思考原理，架构，用途，发展方向，细节实现，或许过程会很艰辛，但只要你坚持到最后，你一定会感到很有趣的。
+在这四年，我经历过做项目，过认证，出SDK，干杂活出身，但庆幸的是，抓住了所有可能的机会，对技术从入门到熟悉再到如数家珍，度过的很快。这些年的经历让自己很有感触，努力做好每一件事，无论事情是大是小，你都需要有自己的思考，思考原理，架构，用途，发展方向，细节实现，或许过程会很艰辛，但只要你坚持到最后，你一定会感到很有趣的。
 
 我把对BLE Controller的实现分为几部分，基础模块包括时序调度，时序规划。协议包括HCI,PHY,LL等。其中LL又包含广播，扫描等部分，如下图
 
@@ -55,18 +55,63 @@ Bluetooth LL支持多状态机的实现，支持多状态的自由组合，在�
 - sporadic task：突发性任务，只执行一次
 - asap task：As soon as possible，尽可能占用带宽类型的任务。
 
-时序调度模块，将每个任务虚拟成一个节点，该节点具有下述特性(简述)
+时序调度模块不存储任何信息，一个任务如果要使用时序调度模块，需要首先抽象出时序节点(参考下述实现)，然后调用时序调度模块的API将该任务抽象出的时序节点送入时序调度模块，如果当前存在的时序节点非空，时序调度模块就会开始按照时间顺序执行待调度任务。
 
-- anchor point
-- interval
-- duration
-- start latency
-- stop latency
-- callback
-- priority
+时序调度模块对实时性要求较高，因此实现依赖硬件timer,通过调用硬件timer来精准的掌控模块内任务的执行。**时序调度模块需要使用hal层的timer模块**
 
+时序调度模块将每个任务虚拟成一个节点，该节点具有下述特性(简述)
 
+- anchor point：任务执行的锚点，对于周期性任务，其锚点会周期性变化
+- interval：周期性任务的执行间隔，非周期性任务该值无意义
+- duration：任务执行时间，指的是从锚点开始到任务执行结束的时间。
+- start latency：任务从准备到开始执行的时间，在锚点之前。
+- stop latency：任务执行结束后的收尾时间，在anchor point + duration之后的时间。
+- callback：任务调度执行回调，时序调度模块通过回调来通知任务开始执行，结束执行，任务执行时间错过，或者任务被取消等。
+- priority：任务优先级，如果多个任务执行时间有折叠，时序调度模块会优先执行高优先级的任务。
 
+时序调度模块共有三条链路，分别是
+
+- waiting list:待调度列表
+- running list：正在执行的任务节点
+- canceled list：因为任务冲突，导致任务被取消的任务列表，但后续仍然可能被执行到的任务
+
+假设当前存在两个任务A和B，时序调度模块将任务之间的相对关系分为以下六种
+
+**case A:** A开始与B之前，A结束于B之前(start before end before)
+
+![sch caseA](picture/sch/timing/A_start_before_end_before.svg "sch caseA")
+
+这种情况任务A和任务B之间完全没有冲突，任务A可能和其他任务冲突。
+
+**case B:** A开始于B之前，A结束于B之间(start before end during)
+
+![sch caseB](picture/sch/timing/B_start_before_end_during.svg "sch caseB")
+
+这种情况任务A和任务B冲突，任务A可能在任务的前半部份和其他任务冲突。
+
+**case C:** A开始与B之前，A结束于B之后(start before end after)
+
+![sch caseC](picture/sch/timing/C_start_before_end_after.svg "sch caseC")
+
+这种情况任务A和任务B冲突，任务A的前半部份可能和其他任务冲突，任务A的后半部份也可能和其他任务冲突
+
+**case D:** A开始与B之间，A结束于B之间(start during end during)
+
+![sch caseD](picture/sch/timing/D_start_during_end_during.svg "sch caseD")
+
+这种情况任务A和任务B冲突，任务A不会和其他任务冲突
+
+**case E:** A开始于B之间，A结束于B之后(start during end after)
+
+![sch caseE](picture/sch/timing/E_start_during_end_after.svg "sch caseE")
+
+这种情况任务A和任务B冲突，任务A的后半部份可能和其他任务冲突。
+
+**case F:** A开始于B之后，A结束于B之后(start after end after)
+
+![sch caseF](picture/sch/timing/F_start_after_end_after.svg "sch caseF")
+
+这种情况任务A和任务B完全不冲突，但任务A可能和其他任务冲突。
 
 ### 时序规划
 
