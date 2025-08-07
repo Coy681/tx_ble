@@ -49,6 +49,23 @@ Bluetooth LL支持多状态机的实现，支持多状态的自由组合，在�
 
 ### 时序调度
 
+时序调度模块将任务分为三类，分别是
+
+- periodic task:周期性任务，在任务开始之后，会按照一定周期持续执行
+- sporadic task：突发性任务，只执行一次
+- asap task：As soon as possible，尽可能占用带宽类型的任务。
+
+时序调度模块，将每个任务虚拟成一个节点，该节点具有下述特性(简述)
+
+- anchor point
+- interval
+- duration
+- start latency
+- stop latency
+- callback
+- priority
+
+
 
 
 ### 时序规划
