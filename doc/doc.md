@@ -118,18 +118,18 @@ Bluetooth LL支持多状态机的实现，支持多状态的自由组合，在�
 
 #### 任务调度
 
-如果当前系统要添加新的任务，需要首先
+时序调度模块通过以下步骤调度任务
 
 1. 将待添加任务虚拟成时序节点，填充anchor point,interval,duration等特性
 2. 调用时序调度模块API,尝试任务添加到时序调度模块的waiting list里面。
     - 如果任务不和已有任务冲突，或者和已有任务冲突但优先级较高，则任务成功插入待调度任务链表waiting list。
-    - 如果任务和已有任务冲突且优先级较低，则任务插入waiting list失败，转而插入到canceled list，等待后续调度机会(如果其他任务提前结束，canceled list任务还是有可能被执行的)。
-3. 时序调度模块依次调度waiting list中任务，waiting list任务执行到时，时序调度模块将任务从waiting list取出，插入running list中去。
+    - 如果任务和已有任务冲突且优先级较低，插入到canceled list，等待后续调度机会(如果其他任务提前结束，canceled list任务还是有可能被执行的)。
+3. 时序调度模块按照时间顺序依次调度waiting list中的任务，waiting list任务执行到时，时序调度模块将任务从waiting list取出，插入running list中去。
 4. 时序调度模块执行running list首节点的task start callback，任务执行开始。同时，时序调度模块设置timer,待当前任务结束时间点到达，执行running list首节点的task end callback,任务调度执行结束。
 5. 时序调度模块继续调度waiting list中的下一个任务，依次滚动执行。
-6. 系统在提取waiting list中的下一个任务执行时，首先查看canceled list任务，如果canceled list中的首结点任务不和waiting list首节点任务冲突，且位于waiting list首节点之前执行，则时序调度模块提取canceled list首节点执行。
+6. 系统在提取waiting list中的下一个任务执行时，首先查看canceled list任务，如果canceled list中的首结点任务不和waiting list首节点任务冲突，且结束时间位于waiting list首节点之前，则时序调度模块提取canceled li st首节点执行。
 
-
+   
 
 
 ### 时序规划
