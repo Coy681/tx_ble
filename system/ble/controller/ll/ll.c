@@ -623,6 +623,33 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 		}
 			break;
 	}
+	if(!(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU)&&(operation == LL_ADV_DATA_OPERATION_LAST_FRAGMENT||operation == LL_ADV_DATA_OPERATION_COMPLETE))
+	{
+		//process data fragment
+		if(pAdv->data.len<(BLE_PHY_ADV_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN))
+		{
+			pAdv->ea->dataLen = pAdv->data.len;
+			pAdv->ea->chainCnt= 0;
+		}
+		else
+		{
+			pAdv->ea->dataLen = BLE_PHY_ADV_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN;
+			_u8 remainCnt     = ((pAdv->data.len-pAdv->ea->dataLen)%BLE_PHY_ADV_MAX_TX_LEN);
+			_u8 chainCnt      = ((pAdv->data.len-pAdv->ea->dataLen)/BLE_PHY_ADV_MAX_TX_LEN + (remainCnt==0?0:1));
+			pAdv->ea->chainCnt= chainCnt;
+			pAdv->ea->chain   = (ll_adv_ea_chain_t*)tx_malloc(chainCnt*sizeof(ll_adv_ea_chain_t));
+			_u16 offset       = pAdv->ea->dataLen;
+			_u8 remainLen     = pAdv->data.len-pAdv->ea->dataLen - BLE_PHY_ADV_MAX_TX_LEN*(chainCnt-1);
+			for(_u8 i=0;i<chainCnt-1;i++)
+			{
+				pAdv->ea->chain[i].data.len = BLE_PHY_ADV_MAX_TX_LEN;
+				pAdv->ea->chain[i].data.addr= (pAdv->data.addr+offset);
+				offset+=BLE_PHY_ADV_MAX_TX_LEN;
+			}
+			pAdv->ea->chain[chainCnt-1].data.len = remainLen;
+			pAdv->ea->chain[chainCnt-1].data.addr= (pAdv->data.addr+offset);
+		}	
+	}
 	AAA_DATA_LEN = pAdv->data.len;
 	pAdv->ea->advDatafragPerf = fragPref;
 	return SUCCESS;
@@ -733,6 +760,7 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 			txMemcpy4(pAdv->scanRsp.addr+dataFillOffset,data,dataLen);
 			pAdv->scanRsp.len = dataFillOffset+dataLen;
 			dataFillOffset = 0;
+			
 		}
 			break;
 		case LL_ADV_DATA_OPERATION_COMPLETE:
@@ -741,6 +769,33 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 			pAdv->scanRsp.len = dataLen;
 		}
 			break;
+	}
+	if(!(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU)&&(operation == LL_ADV_DATA_OPERATION_LAST_FRAGMENT||operation == LL_ADV_DATA_OPERATION_COMPLETE))
+	{
+		//process data fragment
+		if(pAdv->scanRsp.len<(BLE_PHY_ADV_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN))
+		{
+			pAdv->ea->dataLen = pAdv->scanRsp.len;
+			pAdv->ea->chainCnt= 0;
+		}
+		else
+		{
+			pAdv->ea->dataLen = BLE_PHY_ADV_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN;
+			_u8 remainCnt     = ((pAdv->scanRsp.len-pAdv->ea->dataLen)%BLE_PHY_ADV_MAX_TX_LEN);
+			_u8 chainCnt      = ((pAdv->scanRsp.len-pAdv->ea->dataLen)/BLE_PHY_ADV_MAX_TX_LEN + (remainCnt==0?0:1));
+			pAdv->ea->chainCnt= chainCnt;
+			pAdv->ea->chain   = (ll_adv_ea_chain_t*)tx_malloc(chainCnt*sizeof(ll_adv_ea_chain_t));
+			_u16 offset       = pAdv->ea->dataLen;
+			_u8 remainLen     = pAdv->scanRsp.len-pAdv->ea->dataLen - BLE_PHY_ADV_MAX_TX_LEN*(chainCnt-1);
+			for(_u8 i=0;i<chainCnt-1;i++)
+			{
+				pAdv->ea->chain[i].data.len = BLE_PHY_ADV_MAX_TX_LEN;
+				pAdv->ea->chain[i].data.addr= (pAdv->scanRsp.addr+offset);
+				offset+=BLE_PHY_ADV_MAX_TX_LEN;
+			}
+			pAdv->ea->chain[chainCnt-1].data.len = remainLen;
+			pAdv->ea->chain[chainCnt-1].data.addr= (pAdv->scanRsp.addr+offset);
+		}	
 	}
 	pAdv->ea->scanRspDatafragPerf = fragPref;
 	AAA_RSP_LEN = pAdv->scanRsp.len;

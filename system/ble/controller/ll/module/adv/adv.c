@@ -121,7 +121,7 @@ void adv_get_next_event(ll_sm_t* ll)
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
 _RAM_CODE 
 
-static _u16 adv_calculate_extended_header_length(_u8 flags)
+_u16 adv_calculate_extended_header_length(_u8 flags)
 {
     if(flags == 0)
     {   
@@ -1088,7 +1088,7 @@ int ll_extended_adv_get_current_set_number(void)
     _u8 count = 0;
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
-        if(ll->adv->param[i].handle!=0xFF)
+        if(ll->adv->param[i].handle!=LL_EXTENDED_ADV_INVALID_HANDLE)
         {
             count++;
         }
@@ -1523,11 +1523,11 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         advParam->la->sch.anchorPoint     = system_time() + 500;
         if(advParam->eventType == ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED)
         {
-            advParam->la->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,BLE_ADV_DEFAULT_MAX_LENGTH,0)+PACKET_DEFAULT_TIFS_TIME;
+            advParam->la->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,BLE_PHY_ADV_MAX_TX_LEN,0)+PACKET_DEFAULT_TIFS_TIME;
         }
         else
         {
-            advParam->la->sch.duration = ll->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(ll->phy.mode,BLE_ADV_DEFAULT_MAX_LENGTH,0)+2*PACKET_DEFAULT_TIFS_TIME;
+            advParam->la->sch.duration = ll->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(ll->phy.mode,BLE_PHY_ADV_MAX_TX_LEN,0)+2*PACKET_DEFAULT_TIFS_TIME;
         }
         advParam->la->sch.startMargin     = 100;
         advParam->la->sch.stopMargin      = 75;
@@ -1535,7 +1535,7 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         advParam->la->phy.mode            = PHY_MODE_1M;
         advParam->la->phy.crcInit         = BLE_ADV_CRC_INIT;
         advParam->la->phy.accessCode      = BLE_ADV_ACCESS_CODE;
-        advParam->la->phy.rxMaxOctets     = BLE_ADV_DEFAULT_MAX_LENGTH;
+        advParam->la->phy.rxMaxOctets     = BLE_PHY_ADV_MAX_TX_LEN;
         advParam->la->phy.rxAddress       = ll_get_shared_phy_rx_address();
         advParam->la->phy.txAddress       = ll_get_shared_phy_tx_address();
 		#else
@@ -1550,33 +1550,36 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
                 advParam->la->availableChnCnt = 0;
                 advParam->la->availableChnCnt     = advParam->la->channelCnt;
                 advParam->la->sch.eventCnt        = 0;
+
+
+
                 if(advParam->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU)
                 {
                     if(advParam->eventType == ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED)
                     {
-                        advParam->la->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,BLE_ADV_DEFAULT_MAX_LENGTH,0)+PACKET_DEFAULT_TIFS_TIME;
+                        advParam->la->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,BLE_PHY_ADV_MAX_TX_LEN,0)+PACKET_DEFAULT_TIFS_TIME;
                     }
                     else
                     {
-                        advParam->la->sch.duration = ll->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(ll->phy.mode,BLE_ADV_DEFAULT_MAX_LENGTH,0)+2*PACKET_DEFAULT_TIFS_TIME;
+                        advParam->la->sch.duration = ll->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(ll->phy.mode,BLE_PHY_ADV_MAX_TX_LEN,0)+2*PACKET_DEFAULT_TIFS_TIME;
                     }
                 }
                 else
                 {
-                    advParam->la->sch.duration = ll->phy.hw_get_prepare_time() + ll_get_air_packet_time(ll->phy.mode,BLE_ADV_DEFAULT_MAX_LENGTH,0)+PACKET_DEFAULT_TIFS_TIME;
+                    advParam->la->sch.duration = ll->phy.hw_get_prepare_time() + ll_get_air_packet_time(ll->phy.mode,BLE_PHY_ADV_MAX_TX_LEN,0)+PACKET_DEFAULT_TIFS_TIME;
                 }
                 advParam->la->sch.startMargin     = 100;
                 advParam->la->sch.stopMargin      = 75;
 
                 advParam->la->phy.crcInit         = BLE_ADV_CRC_INIT;
                 advParam->la->phy.accessCode      = BLE_ADV_ACCESS_CODE;
-                advParam->la->phy.rxMaxOctets     = BLE_ADV_DEFAULT_MAX_LENGTH;
+                advParam->la->phy.rxMaxOctets     = BLE_PHY_ADV_MAX_TX_LEN;
                 advParam->la->phy.rxAddress       = ll_get_shared_phy_rx_address();
                 advParam->la->phy.txAddress       = ll_get_shared_phy_tx_address();
                 //ea sch and phy init
                 advParam->ea->phy.crcInit         = BLE_ADV_CRC_INIT;
                 advParam->ea->phy.accessCode      = BLE_ADV_ACCESS_CODE;
-                advParam->ea->phy.rxMaxOctets     = BLE_ADV_DEFAULT_MAX_LENGTH;
+                advParam->ea->phy.rxMaxOctets     = BLE_PHY_ADV_MAX_TX_LEN;
                 advParam->ea->phy.rxAddress       = ll_get_shared_phy_rx_address();
                 advParam->ea->phy.txAddress       = ll_get_shared_phy_tx_address();
                 if(POINTER_VALID(advParam->ea->chain))
@@ -1609,7 +1612,7 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
                 ll_extended_adv_map_out_task(ll,&ll->adv->param[i]);
             }
         }
-        _u8 eventClass = 0;
+
 		#endif
         adv_get_next_event(ll);
         //ll entity sch init
