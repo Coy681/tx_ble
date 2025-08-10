@@ -1252,6 +1252,11 @@ static int adv_extended_event_step_phy_send_chain_advertising(ll_sm_t* ll,ll_int
 }
 static int adv_extended_event_step_phy_start_listen_aux(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
+    if(property & (ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE))
+    {
+        // _u32 timestamp = advParam->la->sch.anchorPoint + ll_get_air_packet_time(advParam->la->phy.mode,6+advParam->data.len,0)+PACKET_DEFAULT_TIFS_TIME;
+        // adv_prepare_phy(ll,&advParam->ea->phy,advParam->ea->sch.anchorPoint,PHY_DIR_TX);
+    }
 	return 1;
 }
 static int adv_extended_event_step_phy_send_aux_scan_rsp(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
