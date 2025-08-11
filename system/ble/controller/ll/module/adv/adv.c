@@ -794,14 +794,7 @@ static void adv_event_extended_periodic_with_response_packet_prapare(ll_sm_t* ll
 }
 #endif
 
-typedef void(*adv_packet_prepare_f)(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass);
-
-typedef struct 
-{
-    
-}adv_packet_prepare_map_t;
-
-adv_packet_prepare_f adv_prepare_packet[] = 
+void(*adv_prepare_packet[])(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)  =
 {
     adv_event_connectable_scannable_undirected_packet_prapare,
     adv_event_connectable_directed_packet_prapare,
@@ -838,6 +831,7 @@ static void adv_prepare_phy(ll_sm_t* ll,ll_adv_phy_entry_t* phy,_u32 timestamp,p
     ll->phy.mode       = phy->mode;
     ll->phy.chnIdx     = phy->chn;
     ll->phy.dir        = phydir;
+
     if(timestamp!=0)
     {
         ll->phy.timestamp  = timestamp - ll->phy.hw_get_prepare_time();
@@ -902,7 +896,6 @@ static int adv_event_step_phy_send_advertising(ll_sm_t* ll,ll_internal_adv_param
     }
   
     #endif
-    
     adv_prepare_phy(ll,&advParam->la->phy,advParam->la->sch.anchorPoint,PHY_DIR_TX);
     ll->phy.start();
     return 1;
@@ -913,8 +906,8 @@ static int adv_event_step_phy_start_listen(ll_sm_t* ll,ll_internal_adv_param_t* 
 {
     if(property&(ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE))//connectable or scannable adv event both shall can start listen
     {
-    	_u32 timestamp = advParam->la->sch.anchorPoint + ll_get_air_packet_time(advParam->la->phy.mode,6+advParam->data.len,0)+PACKET_DEFAULT_TIFS_TIME;
-        adv_prepare_phy(ll,&advParam->la->phy,timestamp,PHY_DIR_RX);
+//    	_u32 timestamp = advParam->la->sch.anchorPoint + ll_get_air_packet_time(advParam->la->phy.mode,6+advParam->data.len,0)+PACKET_DEFAULT_TIFS_TIME;
+        adv_prepare_phy(ll,&advParam->la->phy,0,PHY_DIR_RX);
         ll->phy.start();
         return 1;
     }
@@ -1528,11 +1521,11 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         advParam->la->sch.anchorPoint     = system_time() + 500;
         if(advParam->eventType == ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED)
         {
-            advParam->la->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,BLE_PHY_ADV_MAX_TX_LEN,0)+PACKET_DEFAULT_TIFS_TIME;
+            advParam->la->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(PHY_MODE_1M,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+PACKET_DEFAULT_TIFS_TIME;
         }
         else
         {
-            advParam->la->sch.duration = ll->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(ll->phy.mode,BLE_PHY_ADV_MAX_TX_LEN,0)+2*PACKET_DEFAULT_TIFS_TIME;
+            advParam->la->sch.duration = ll->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(PHY_MODE_1M,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+2*PACKET_DEFAULT_TIFS_TIME;
         }
         advParam->la->sch.startMargin     = 100;
         advParam->la->sch.stopMargin      = 75;
@@ -1540,7 +1533,7 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         advParam->la->phy.mode            = PHY_MODE_1M;
         advParam->la->phy.crcInit         = BLE_ADV_CRC_INIT;
         advParam->la->phy.accessCode      = BLE_ADV_ACCESS_CODE;
-        advParam->la->phy.rxMaxOctets     = BLE_PHY_ADV_MAX_TX_LEN;
+        advParam->la->phy.rxMaxOctets     = BLE_ADV_PRI_PHY_MAX_TX_LEN;
         advParam->la->phy.rxAddress       = ll_get_shared_phy_rx_address();
         advParam->la->phy.txAddress       = ll_get_shared_phy_tx_address();
 		#else
@@ -1551,73 +1544,9 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
                 ll_internal_adv_param_t* advParam = &ll->adv->param[i];
                 //sm init
                 advParam->state = ADV_SM_STATE_IDLE;
-                //la sch and phy init
-                advParam->la->availableChnCnt = 0;
-                advParam->la->availableChnCnt     = advParam->la->channelCnt;
-                advParam->la->sch.eventCnt        = 0;
-
-
-
-                if(advParam->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU)
-                {
-                    if(advParam->eventType == ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED)
-                    {
-                        advParam->la->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,BLE_PHY_ADV_MAX_TX_LEN,0)+PACKET_DEFAULT_TIFS_TIME;
-                    }
-                    else
-                    {
-                        advParam->la->sch.duration = ll->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(ll->phy.mode,BLE_PHY_ADV_MAX_TX_LEN,0)+2*PACKET_DEFAULT_TIFS_TIME;
-                    }
-                }
-                else
-                {
-                    advParam->la->sch.duration = ll->phy.hw_get_prepare_time() + ll_get_air_packet_time(ll->phy.mode,BLE_PHY_ADV_MAX_TX_LEN,0)+PACKET_DEFAULT_TIFS_TIME;
-                }
-                advParam->la->sch.startMargin     = 100;
-                advParam->la->sch.stopMargin      = 75;
-
-                advParam->la->phy.crcInit         = BLE_ADV_CRC_INIT;
-                advParam->la->phy.accessCode      = BLE_ADV_ACCESS_CODE;
-                advParam->la->phy.rxMaxOctets     = BLE_PHY_ADV_MAX_TX_LEN;
-                advParam->la->phy.rxAddress       = ll_get_shared_phy_rx_address();
-                advParam->la->phy.txAddress       = ll_get_shared_phy_tx_address();
-                //ea sch and phy init
-                advParam->ea->phy.crcInit         = BLE_ADV_CRC_INIT;
-                advParam->ea->phy.accessCode      = BLE_ADV_ACCESS_CODE;
-                advParam->ea->phy.rxMaxOctets     = BLE_PHY_ADV_MAX_TX_LEN;
-                advParam->ea->phy.rxAddress       = ll_get_shared_phy_rx_address();
-                advParam->ea->phy.txAddress       = ll_get_shared_phy_tx_address();
-                if(POINTER_VALID(advParam->ea->chain))
-                {
-                    for(int i=0;i<advParam->ea->chainCnt;i++)
-                    {
-                        advParam->ea->chain[i].sch.startMargin = 100;
-                        advParam->ea->chain[i].sch.eventCnt    = 0;
-                        if(i==advParam->ea->chainCnt)
-                        {
-                            advParam->ea->chain[i].sch.stopMargin  = 200;
-                        }
-                        else
-                        {
-                            advParam->ea->chain[i].sch.stopMargin  = 100;
-                        }
-                        advParam->ea->chain[i].phy.crcInit    = BLE_ADV_CRC_INIT;
-                        advParam->ea->chain[i].phy.accessCode = BLE_ADV_ACCESS_CODE;
-                        advParam->ea->chain[i].phy.mode       = advParam->ea->phy.mode;
-                        advParam->ea->chain[i].phy.txAddress  = ll_get_shared_phy_tx_address();
-                    }
-                    advParam->ea->sch.startMargin     = 100;
-                    advParam->ea->sch.stopMargin      = 100;
-                }
-                else
-                {
-                    advParam->ea->sch.startMargin     = 100;
-                    advParam->ea->sch.stopMargin      = 200;
-                }
                 ll_extended_adv_map_out_task(ll,&ll->adv->param[i]);
             }
         }
-
 		#endif
         adv_get_next_event(ll);
         //ll entity sch init

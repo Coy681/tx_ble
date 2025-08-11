@@ -260,10 +260,11 @@ typedef struct _PACKED
 
 /***********************ll sate**********************/
 
-typedef struct
+typedef struct _PACKED
 {
     _u8  id;
     _u8  state;
+    _u16 rsvd;
     phy_obj_t  phy;
     sch_node_t sch;
     ll_internal_standby_ctrl_t*         standby;
@@ -277,9 +278,10 @@ typedef struct
 
 typedef struct _PACKED
 {
-    _u8      addr[6];
     _u8      txAddr[128];
     _u8      rxAddr[128];
+    _u8      addr[6];
+    _u8      rsvd[2];
     _u64     eventMask;
     _u64     leEventMask;
     ll_sm_t* sm;

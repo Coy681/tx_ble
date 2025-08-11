@@ -1,6 +1,13 @@
 #include"ll_feature.h"
 
 
+#ifndef BLE_ADV_PRI_PHY_MAX_TX_LEN
+#define BLE_ADV_PRI_PHY_MAX_TX_LEN                     37//fix value,37 octets.
+#endif
+
+#ifndef BLE_ADV_SEC_PHY_MAX_TX_LEN
+#define BLE_ADV_SEC_PHY_MAX_TX_LEN                     128//Configurable,min is adv extended header length,which is 64 octets.
+#endif
 
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING!=1)
 #ifndef BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS
@@ -12,9 +19,7 @@
 #endif
 
 
-#ifndef BLE_PHY_ADV_MAX_TX_LEN
-#define BLE_PHY_ADV_MAX_TX_LEN                     37//legacy mode max tx len is fix,37 octets.
-#endif
+
 
 #else
 
@@ -26,8 +31,6 @@
 #define BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH    512
 #endif
 
-#ifndef BLE_PHY_ADV_MAX_TX_LEN
-#define BLE_PHY_ADV_MAX_TX_LEN                     128//min is adv extended header length,64 octets.
-#endif
+
 
 #endif
