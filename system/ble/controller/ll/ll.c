@@ -327,7 +327,6 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 	ll_sm_t* ll = ll_get_current_state_machine();
 	if(POINTER_NOT_VALID(ll->adv))
 	{
-
 		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_param_t)*BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS);
 		ASSERT(ll->adv != NULL);
 		for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
@@ -341,7 +340,19 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 	{
 		return MEMORY_CAPACITY_EXCEEDED;
 	}
-
+	pAdv->eventProperty     = pParam->advEventProperty;
+	pAdv->filterPolicy      = pParam->filterPolicy;
+	pAdv->ownAddressType    = pParam->ownAddrType;
+	pAdv->peerAddressType   = pParam->peerAddrType;
+	pAdv->la->sch.interval  = pParam->primaryAdvInterval * 625;
+	pAdv->la->channelCnt    = 0;
+    for(int i=0;i<3;i++)
+    {
+    	if(pParam->primaryAdvChnMap&BIT(i))
+    	{
+    		pAdv->la->chnTable[pAdv->la->channelCnt++] = 37+i;
+    	}
+    }
 	if(pParam->advEventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU)
 	{
 		switch(pParam->advEventProperty)
@@ -447,19 +458,6 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 			pAdv->ea->phy.mode = PHY_MODE_2M;
 		}
 	}
-	pAdv->eventProperty     = pParam->advEventProperty;
-	pAdv->filterPolicy      = pParam->filterPolicy;
-	pAdv->ownAddressType    = pParam->ownAddrType;
-	pAdv->peerAddressType   = pParam->peerAddrType;
-	pAdv->la->sch.interval  = pParam->primaryAdvInterval * 625;
-	pAdv->la->channelCnt    = 0;
-    for(int i=0;i<3;i++)
-    {
-    	if(pParam->primaryAdvChnMap&BIT(i))
-    	{
-    		pAdv->la->chnTable[pAdv->la->channelCnt++] = 37+i;
-    	}
-    }
 	if(pParam->primaryAdvPhy == LL_ADV_PHY_CODED)
 	{
 		if(pParam->primaryAdvphyOptions == LL_ADV_PHY_OPTIONS_PREFER_S2||\
