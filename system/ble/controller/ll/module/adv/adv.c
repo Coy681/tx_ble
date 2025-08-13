@@ -1036,7 +1036,7 @@ ll_internal_adv_param_t* ll_extended_adv_get_entity(_u8 handle,_u8 allocate)
     ll_sm_t* ll     = ll_get_current_state_machine();
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
-		if(POINTER_VALID(ll->adv->param[i].ea)&&ll->adv->param[i].handle == handle)
+		if(POINTER_VALID(ll->adv->param[i].la)&&ll->adv->param[i].handle == handle)
 		{
 			return &ll->adv->param[i];
 		}
@@ -1544,7 +1544,9 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
                 ll_internal_adv_param_t* advParam = &ll->adv->param[i];
                 //sm init
                 advParam->state = ADV_SM_STATE_IDLE;
+			    DEBUG_GPIO_HIGH(GPIO_12);
                 ll_extended_adv_map_out_task(ll,&ll->adv->param[i]);
+			    DEBUG_GPIO_LOW(GPIO_12);
             }
         }
 		#endif

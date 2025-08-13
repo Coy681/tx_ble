@@ -468,11 +468,11 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 		else if(pParam->primaryAdvphyOptions == LL_ADV_PHY_OPTIONS_PREFER_S8||\
 	            pParam->primaryAdvphyOptions == LL_ADV_PHY_OPTIONS_REQUIRE_S8)
 		{
-			pAdv->la->phy.mode = (_u8)HAL_RF_MODE_CODED_S8;
+			pAdv->la->phy.mode = (_u8)PHY_MODE_CODED_S8;
 		}
 		else 
 		{
-			pAdv->la->phy.mode = (_u8)HAL_RF_MODE_CODED_S8;
+			pAdv->la->phy.mode = (_u8)PHY_MODE_CODED_S8;
 		}
 	}
 	else
@@ -828,6 +828,7 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 		return IVALID_HCI_COMMAND_PARAMETERS; 
 	}
 	ll_sm_t* ll = ll_get_current_state_machine();
+
 	if((enable == 0) && (numSets == 0))
 	{
 		for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
@@ -864,7 +865,6 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 			}
 		}
 	}
-
 	if((enable == 0) && (numSets == 0))
 	{
 		for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
@@ -935,8 +935,10 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 				pAdv->la->sch.startMargin = 100;
 				pAdv->la->sch.stopMargin  = 100;
 		        phy_obj_cast(&ll->phy);
+		        phy_obj_init(&ll->phy);
                 if(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU)
                 {
+
                     if(pAdv->eventType == ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED)
                     {
                     	pAdv->la->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+PACKET_DEFAULT_TIFS_TIME;
@@ -982,6 +984,7 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
                     	pAdv->ea->sch.stopMargin      = 200;//shall location the next event
                     }
                 }
+
 			}
 		}
 	}
