@@ -624,13 +624,14 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 	if(!(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU)&&(operation == LL_ADV_DATA_OPERATION_LAST_FRAGMENT||operation == LL_ADV_DATA_OPERATION_COMPLETE))
 	{
 		//process data fragment
-		if(pAdv->data.len<(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN))
+		if(pAdv->data.len<=(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN))
 		{
 			pAdv->ea->dataLen = pAdv->data.len;
 			pAdv->ea->chainCnt= 0;
 		}
 		else
 		{
+			pAdv->chained     = 1;
 			pAdv->ea->dataLen = BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN;
 			_u8 remainCnt     = ((pAdv->data.len-pAdv->ea->dataLen)%BLE_ADV_SEC_PHY_MAX_TX_LEN);
 			_u8 chainCnt      = ((pAdv->data.len-pAdv->ea->dataLen)/BLE_ADV_SEC_PHY_MAX_TX_LEN + (remainCnt==0?0:1));
@@ -771,13 +772,14 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 	if(!(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU)&&(operation == LL_ADV_DATA_OPERATION_LAST_FRAGMENT||operation == LL_ADV_DATA_OPERATION_COMPLETE))
 	{
 		//process data fragment
-		if(pAdv->scanRsp.len<(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN))
+		if(pAdv->scanRsp.len<=(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN))
 		{
 			pAdv->ea->dataLen = pAdv->scanRsp.len;
 			pAdv->ea->chainCnt= 0;
 		}
 		else
 		{
+			pAdv->chained     = 1;
 			pAdv->ea->dataLen = BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN;
 			_u8 remainCnt     = ((pAdv->scanRsp.len-pAdv->ea->dataLen)%BLE_ADV_SEC_PHY_MAX_TX_LEN);
 			_u8 chainCnt      = ((pAdv->scanRsp.len-pAdv->ea->dataLen)/BLE_ADV_SEC_PHY_MAX_TX_LEN + (remainCnt==0?0:1));

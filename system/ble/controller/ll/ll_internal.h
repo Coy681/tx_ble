@@ -189,7 +189,8 @@ typedef struct
     _u8  processingEvent:4;//to prevent re-retrance
     #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
     _u8  handle;
-    _u8  auxiliary;
+    _u8  auxiliary:1;
+    _u8  chained:1;
     _u16 eventProperty;
     #else
     _u8  rsvd1;

@@ -82,6 +82,11 @@ typedef struct
 #define ADV_SEQUENCE_LIST_LENGTH(adv_sequence_list)        (sizeof(adv_sequence_list)/sizeof(adv_sequence_list[0]))
 #define ADV_SM_LIST_LENGTH(adv_sm_list)                    (sizeof(adv_sm_list)/sizeof(adv_sm_list[0]))
 
+#define ADV_SCH_MAP_PRI       BIT(0)
+#define ADV_SCH_MAP_AUX       BIT(1)
+#define ADV_SCH_MAP_CHAIN     BIT(2)
+#define ADV_SCH_MAP_ALL       BIT(0)|BIT(1)|BIT(2)
+
 static ll_internal_adv_param_t* currentAdvSet;
 static int currentEventClass;
 
@@ -116,6 +121,193 @@ void adv_get_next_event(ll_sm_t* ll)
     #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
     #endif
 	#endif
+}
+
+/**
+ * @param timestamp - if present,timestamp is air packet anchor point,so need minus hardware prepare time
+ * 				    - if not present,packet send time is not specified,so we can use system time.
+ */
+_RAM_CODE
+static void adv_prepare_phy(ll_sm_t* ll,ll_adv_phy_entry_t* phy,_u32 timestamp,phy_dir_e phydir)
+{
+    phy_obj_cast(&ll->phy);
+    ll->phy.accessCode = phy->accessCode;
+    ll->phy.crcInit    = phy->crcInit;
+    ll->phy.mode       = phy->mode;
+    ll->phy.chnIdx     = phy->chn;
+    ll->phy.dir        = phydir;
+
+    if(timestamp!=0)
+    {
+        ll->phy.timestamp  = timestamp - ll->phy.hw_get_prepare_time();
+    }
+    else
+    {
+        ll->phy.timestamp  = system_time();
+    }
+
+    if(phydir == PHY_DIR_TX)
+    {
+        ll->phy.txAddress   = phy->txAddress;
+    }
+    else if(phydir == PHY_DIR_RX)
+    {
+    	ll->phy.rxAddress   = phy->rxAddress;
+        ll->phy.rxTimeout   = BLE_ADV_DEFAULT_RX_TIMEOUT_US;
+        ll->phy.rxMaxOctets = phy->rxMaxOctets;
+    }
+}
+
+_RAM_CODE
+static void adv_sub_node_remap(ll_sm_t* ll,ll_adv_sch_entry_t* advSch)
+{
+    ll->sch.timestamp    = advSch->anchorPoint;
+    ll->sch.duration     = ll->sch.durationMin= advSch->duration;
+    ll->sch.startLatency = advSch->startMargin;
+    ll->sch.stopLatency  = advSch->stopMargin;
+}
+
+_RAM_CODE
+int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 refStart,_u8 mapType)
+{
+    _u32 refStartTime = refStart;
+    _u32 refEndTime   = refStartTime+advParam->la->sch.interval;
+    _u8  nodeNum    = 0;
+    _u8  nodeCount  = 0;
+    reCal:
+        nodeCount+=20;
+        nodeNum = 0;
+        if(nodeCount>60)
+        {
+            ASSERT(0);
+        }
+        sch_map_node_t node[nodeCount];//20 node can cover most of the situation,if can't,plus 20 and calculate again.
+        sch_node_t* schNode = sch_get_task_list(SCH_WAITING_LIST);
+        for(_u8 n=0;n<2;n++)
+        {
+            while(POINTER_VALID(schNode))
+            {
+                if(TASK_START_TIME(schNode)<refEndTime)
+                {
+                    node[nodeNum].start = TASK_START_TIME(schNode);
+                    node[nodeNum].end   = TASK_STOP_TIME(schNode);
+                    if(schNode->type == SCH_PERIODIC_TASK)
+                    {
+                        node[nodeNum].type = SCH_PERIODIC_TASK;
+                        node[nodeNum].period = schNode->period;
+                    }
+                    else 
+                    {
+                        node[nodeNum].type = SCH_SPORADIC_TASK;
+                    }
+                    nodeNum++;
+                }
+                schNode = schNode->next;
+                if(nodeNum>nodeCount)
+                {
+                    goto reCal;
+                }               
+            }
+            schNode = sch_get_task_list(SCH_CANCELED_LIST);           
+        }
+
+
+        for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+        {
+            if(ll->adv->param[i].handle == advParam[i].handle || ll->adv->param[i].handle == 0)
+            {
+                continue;
+            }
+            if((ll->adv->param[i].la->sch.interval!=0)&&txCompareTime(refEndTime,ll->adv->param[i].la->sch.interval))
+            {
+                node[nodeNum].start = ll->adv->param[i].la->sch.anchorPoint - ll->adv->param[i].la->sch.startMargin;
+                node[nodeNum].end   = ll->adv->param[i].la->sch.anchorPoint + ll->adv->param[i].la->sch.startMargin+ll->adv->param[i].la->sch.stopMargin;
+                node[nodeNum].type  = SCH_SPORADIC_TASK;
+                nodeNum++;
+                if(nodeNum>nodeCount)
+                {
+                    goto reCal;
+                }               
+            }
+            if((ll->adv->param[i].ea->sch.anchorPoint!=0)&&txCompareTime(refEndTime,ll->adv->param[i].ea->sch.anchorPoint))
+            {
+                node[nodeNum].start = ll->adv->param[i].ea->sch.anchorPoint - ll->adv->param[i].ea->sch.startMargin;
+                node[nodeNum].end   = ll->adv->param[i].ea->sch.anchorPoint + ll->adv->param[i].ea->sch.duration + ll->adv->param[i].ea->sch.stopMargin;
+                node[nodeNum].type  = SCH_SPORADIC_TASK;
+                nodeNum++;
+                if(nodeNum>nodeCount)
+                {
+                    goto reCal;
+                }   
+            }
+            if((ll->adv->param[i].ea->chainCnt>0))
+            {
+                for(int j=0;j<ll->adv->param[i].ea->chainCnt;j++)
+                {
+                    if((ll->adv->param[i].ea->chain[j].sch.anchorPoint!=0)&&txCompareTime(refEndTime,ll->adv->param[i].ea->chain[j].sch.anchorPoint))
+                    {
+                        node[nodeNum].start = ll->adv->param[i].ea->chain[j].sch.anchorPoint - ll->adv->param[i].ea->chain[j].sch.startMargin;
+                        node[nodeNum].end   = ll->adv->param[i].ea->chain[j].sch.anchorPoint + ll->adv->param[i].ea->chain[j].sch.duration+ ll->adv->param[i].ea->chain[j].sch.stopMargin;
+                        node[nodeNum].type   = SCH_SPORADIC_TASK;
+                        nodeNum++;
+                        if(nodeNum>nodeCount)
+                        {
+                            goto reCal;
+                        }   
+                    }
+                }
+            }
+        }
+    //end of symbol "reCal"
+    _u32 freeBlockCount = 0;
+    sch_map_free_slot_t* freeBlock = NULL;
+    sch_map_calculate_free_space_by_time(refStartTime,refEndTime,node,nodeNum,&freeBlock,&freeBlockCount);
+    int blockIndex = 0;
+    if(mapType&ADV_SCH_MAP_PRI)
+    {
+        _u32 primarySpace = 3*(advParam->la->sch.startMargin + advParam->la->sch.stopMargin + advParam->la->sch.duration);
+        for(blockIndex=0;blockIndex<freeBlockCount;blockIndex++)
+        {
+            if((freeBlock[blockIndex].end - freeBlock[blockIndex].start)>primarySpace)
+            {
+                advParam->la->sch.anchorPoint = freeBlock[blockIndex].start+advParam->la->sch.startMargin;
+                freeBlock[blockIndex].start +=(primarySpace+PACKET_T_MAFS_TIME);//todo,check need space how much
+                break;
+            }
+        }
+    }
+	#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+    if((mapType&ADV_SCH_MAP_AUX)&&advParam->auxiliary)
+    {
+        _u32 secondarySpace = advParam->ea->sch.startMargin + advParam->ea->sch.duration + advParam->la->sch.stopMargin;
+        for(;blockIndex<freeBlockCount;blockIndex++)
+        {
+            if((freeBlock[blockIndex].end - freeBlock[blockIndex].start)>secondarySpace)
+            {
+                advParam->ea->sch.anchorPoint = freeBlock[blockIndex].start+advParam->ea->sch.startMargin;
+                freeBlock[blockIndex].start +=(secondarySpace+PACKET_T_MAFS_TIME);//todo,check need space how much
+                break;
+            }
+        }
+        if((mapType&ADV_SCH_MAP_CHAIN)&&advParam->chained)
+        {
+            for(int i=0;i<advParam->ea->chainCnt;i++)
+            {
+                _u32 chainSpace = advParam->ea->chain[i].sch.startMargin+advParam->ea->chain[i].sch.duration+advParam->ea->chain[i].sch.stopMargin;
+                for(;blockIndex<freeBlockCount;blockIndex++)
+                {
+                    if((freeBlock[blockIndex].end - freeBlock[blockIndex].start)>chainSpace)
+                    {
+                        advParam->ea->chain[i].sch.anchorPoint = freeBlock[blockIndex].start+advParam->ea->chain[i].sch.startMargin;
+                        freeBlock[blockIndex].start +=(chainSpace+PACKET_T_MAFS_TIME);//todo,check need space how much
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    #endif
+    tx_free((_u8*)freeBlock);
 }
 
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
@@ -818,61 +1010,8 @@ void(*adv_prepare_packet[])(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pd
     #endif
 };
 
-/**
- * @param timestamp - if present,timestamp is air packet anchor point,so need minus hardware prepare time
- * 				    - if not present,packet send time is not specified,so we can use system time.
- */
-_RAM_CODE
-static void adv_prepare_phy(ll_sm_t* ll,ll_adv_phy_entry_t* phy,_u32 timestamp,phy_dir_e phydir)
-{
-    phy_obj_cast(&ll->phy);
-    ll->phy.accessCode = phy->accessCode;
-    ll->phy.crcInit    = phy->crcInit;
-    ll->phy.mode       = phy->mode;
-    ll->phy.chnIdx     = phy->chn;
-    ll->phy.dir        = phydir;
-
-    if(timestamp!=0)
-    {
-        ll->phy.timestamp  = timestamp - ll->phy.hw_get_prepare_time();
-    }
-    else
-    {
-        ll->phy.timestamp  = system_time();
-    }
-
-    if(phydir == PHY_DIR_TX)
-    {
-        ll->phy.txAddress   = phy->txAddress;
-    }
-    else if(phydir == PHY_DIR_RX)
-    {
-    	ll->phy.rxAddress   = phy->rxAddress;
-        ll->phy.rxTimeout   = BLE_ADV_DEFAULT_RX_TIMEOUT_US;
-        ll->phy.rxMaxOctets = phy->rxMaxOctets;
-    }
-}
 
 /*****************************************ADV Event Process ***********************************************/
-_RAM_CODE
-static void adv_event_process_next_task(ll_sm_t* ll,ll_adv_set_t* la)
-{
-    if(la->availableChnCnt)
-    {
-    	la->availableChnCnt--;
-    }
-    if(la->availableChnCnt)
-    {
-        ll->sch.timestamp += (ll->sch.duration+ll->sch.startLatency+ll->sch.stopLatency);
-        la->sch.anchorPoint = ll->sch.timestamp;
-    }
-    else
-    {
-        ll->sch.timestamp += (ll->sch.period + 30*(random_byte()|0x0f));
-        la->sch.anchorPoint = ll->sch.timestamp;
-        la->availableChnCnt = la->channelCnt;
-    }
-}
 
 _RAM_CODE
 static int adv_event_step_phy_send_advertising(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
@@ -956,33 +1095,65 @@ _RAM_CODE
 static int adv_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
 	ll->phy.stop();
-	advParam->state = ADV_SM_STATE_IDLE;
-    adv_event_process_next_task(ll,advParam->la);
+    if(advParam->la->availableChnCnt)
+    {
+    	advParam->la->availableChnCnt--;
+    }
+    if(advParam->la->availableChnCnt)
+    {
+        advParam->la->sch.anchorPoint += (advParam->la->sch.duration+advParam->la->sch.stopMargin);
+    }
+    else
+    {
+        advParam->la->availableChnCnt = advParam->la->channelCnt;
+        if(advParam->auxiliary)
+        {
+            adv_get_next_event(ll);
+        }
+        else
+        {
+            // advParam->la->sch.anchorPoint += (advParam->la->sch.interval + 30*(random_byte()|0x0f));
+            ll_extended_adv_map_out_task(ll,advParam,ADV_SCH_MAP_PRI);
+        }
+    }
+    adv_sub_node_remap(ll,&currentAdvSet->la->sch);
     return 1;
 }
 
 _RAM_CODE
 static int adv_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
-	_u32 systemTime = system_time();
-	_u32 periodicDiff = (systemTime - ll->sch.timestamp)/ll->sch.period;
-	ll->sch.timestamp+=((periodicDiff+1)*ll->sch.period);
-	advParam->la->sch.anchorPoint = ll->sch.timestamp;
+    if(advParam->auxiliary)
+    {
+        adv_get_next_event(ll);
+    }
+    else
+    {
+        _u32 systemTime = system_time();
+        _u32 periodicDiff = (systemTime - advParam->la->sch.anchorPoint)/advParam->la->sch.interval;
+        advParam->la->sch.anchorPoint += (periodicDiff+1)*advParam->la->sch.interval;
+    }
 	advParam->la->availableChnCnt = advParam->la->channelCnt;
+    adv_sub_node_remap(ll,&currentAdvSet->la->sch);
     return 1;
-    //todo,maybe we can jump to next adv channel
 }
 
 _RAM_CODE
 static int adv_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
-	_u32 systemTime = system_time();
-	_u32 periodicDiff = (systemTime - ll->sch.timestamp)/ll->sch.period;
-	ll->sch.timestamp+=((periodicDiff+1)*ll->sch.period);
-	advParam->la->sch.anchorPoint = ll->sch.timestamp;
+    if(advParam->auxiliary)
+    {
+        adv_get_next_event(ll);
+    }
+    else
+    {
+        _u32 systemTime = system_time();
+        _u32 periodicDiff = (systemTime - advParam->la->sch.anchorPoint)/advParam->la->sch.interval;
+        advParam->la->sch.anchorPoint += (periodicDiff+1)*advParam->la->sch.interval;
+    }
 	advParam->la->availableChnCnt = advParam->la->channelCnt;
+    adv_sub_node_remap(ll,&currentAdvSet->la->sch);
     return 1;
-    //todo,maybe we can jump to next adv channel
 }
 
 _RAM_CODE
@@ -1087,146 +1258,6 @@ int ll_extended_adv_get_current_set_number(void)
         }
     }
     return count;
-}
-
-_RAM_CODE
-int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
-{
-    _u32 refStartTime = system_time()+300;
-    _u32 refEndTime   = refStartTime+advParam->la->sch.interval;
-    _u8  nodeNum    = 0;
-    _u8  nodeCount  = 0;
-    reCal:
-//     #error"should test if node can assign again"
-        nodeCount+=20;
-        nodeNum = 0;
-        if(nodeCount>200)
-        {
-            ASSERT(0);
-        }
-        sch_map_node_t node[nodeCount];//20 node can cover most of the situation,if can't,plus 20 and calculate again.
-        sch_node_t* schNode = sch_get_task_list(SCH_WAITING_LIST);
-        for(_u8 n=0;n<2;n++)
-        {
-            while(POINTER_VALID(schNode))
-            {
-                if(TASK_START_TIME(schNode)<refEndTime)
-                {
-                    node[nodeNum].start = TASK_START_TIME(schNode);
-                    node[nodeNum].end   = TASK_STOP_TIME(schNode);
-                    if(schNode->type == SCH_PERIODIC_TASK)
-                    {
-                        node[nodeNum].type = SCH_PERIODIC_TASK;
-                        node[nodeNum].period = schNode->period;
-                    }
-                    else 
-                    {
-                        node[nodeNum].type = SCH_SPORADIC_TASK;
-                    }
-                    nodeNum++;
-                }
-                schNode = schNode->next;
-                if(nodeNum>nodeCount)
-                {
-                    goto reCal;
-                }               
-            }
-            schNode = sch_get_task_list(SCH_CANCELED_LIST);           
-        }
-
-
-        for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
-        {
-            if(ll->adv->param[i].handle == advParam[i].handle || ll->adv->param[i].handle == 0)
-            {
-                continue;
-            }
-            if((ll->adv->param[i].la->sch.interval!=0)&&txCompareTime(refEndTime,ll->adv->param[i].la->sch.interval))
-            {
-                node[nodeNum].start = ll->adv->param[i].la->sch.anchorPoint - ll->adv->param[i].la->sch.startMargin;
-                node[nodeNum].end   = ll->adv->param[i].la->sch.anchorPoint + ll->adv->param[i].la->sch.startMargin+ll->adv->param[i].la->sch.stopMargin;
-                node[nodeNum].type  = SCH_SPORADIC_TASK;
-                nodeNum++;
-                if(nodeNum>nodeCount)
-                {
-                    goto reCal;
-                }               
-            }
-            if((ll->adv->param[i].ea->sch.anchorPoint!=0)&&txCompareTime(refEndTime,ll->adv->param[i].ea->sch.anchorPoint))
-            {
-                node[nodeNum].start = ll->adv->param[i].ea->sch.anchorPoint - ll->adv->param[i].ea->sch.startMargin;
-                node[nodeNum].end   = ll->adv->param[i].ea->sch.anchorPoint + ll->adv->param[i].ea->sch.duration + ll->adv->param[i].ea->sch.stopMargin;
-                node[nodeNum].type  = SCH_SPORADIC_TASK;
-                nodeNum++;
-                if(nodeNum>nodeCount)
-                {
-                    goto reCal;
-                }   
-            }
-            if((ll->adv->param[i].ea->chainCnt>0))
-            {
-                for(int j=0;j<ll->adv->param[i].ea->chainCnt;j++)
-                {
-                    if((ll->adv->param[i].ea->chain[j].sch.anchorPoint!=0)&&txCompareTime(refEndTime,ll->adv->param[i].ea->chain[j].sch.anchorPoint))
-                    {
-                        node[nodeNum].start = ll->adv->param[i].ea->chain[j].sch.anchorPoint - ll->adv->param[i].ea->chain[j].sch.startMargin;
-                        node[nodeNum].end   = ll->adv->param[i].ea->chain[j].sch.anchorPoint + ll->adv->param[i].ea->chain[j].sch.duration+ ll->adv->param[i].ea->chain[j].sch.stopMargin;
-                        node[nodeNum].type   = SCH_SPORADIC_TASK;
-                        nodeNum++;
-                        if(nodeNum>nodeCount)
-                        {
-                            goto reCal;
-                        }   
-                    }
-                }
-            }
-        }
-    _u32 freeBlockCount = 0;
-    sch_map_free_slot_t* freeBlock = NULL;
-    sch_map_calculate_free_space_by_time(refStartTime,refEndTime,node,nodeNum,&freeBlock,&freeBlockCount);
-
-    int blockIndex = 0;
-    _u32 primarySpace = 3*(advParam->la->sch.startMargin + advParam->la->sch.stopMargin + advParam->la->sch.duration);
-    for(blockIndex=0;blockIndex<freeBlockCount;blockIndex++)
-    {
-        if((freeBlock[blockIndex].end - freeBlock[blockIndex].start)>primarySpace)
-        {
-            advParam->la->sch.anchorPoint = freeBlock[blockIndex].start+advParam->la->sch.startMargin;
-            freeBlock[blockIndex].start +=(primarySpace+PACKET_T_MAFS_TIME);//todo,check need space how much
-            break;
-        }
-    }
-    if(advParam->auxiliary!=0)
-    {
-        _u32 secondarySpace = advParam->ea->sch.startMargin + advParam->ea->sch.duration + advParam->la->sch.stopMargin;
-        for(;blockIndex<freeBlockCount;blockIndex++)
-        {
-            if((freeBlock[blockIndex].end - freeBlock[blockIndex].start)>secondarySpace)
-            {
-                advParam->ea->sch.anchorPoint = freeBlock[blockIndex].start+advParam->ea->sch.startMargin;
-                freeBlock[blockIndex].start +=(secondarySpace+PACKET_T_MAFS_TIME);//todo,check need space how much
-                break;
-            }
-        }
-    }
-    if(advParam->ea->chainCnt!=0)
-    {
-        for(int i=0;i<advParam->ea->chainCnt;i++)
-        {
-            _u32 chainSpace = advParam->ea->chain[i].sch.startMargin+advParam->ea->chain[i].sch.duration+advParam->ea->chain[i].sch.stopMargin;
-            for(;blockIndex<freeBlockCount;blockIndex++)
-            {
-                if((freeBlock[blockIndex].end - freeBlock[blockIndex].start)>chainSpace)
-                {
-                    advParam->ea->chain[i].sch.anchorPoint = freeBlock[blockIndex].start+advParam->ea->chain[i].sch.startMargin;
-                    freeBlock[blockIndex].start +=(chainSpace+PACKET_T_MAFS_TIME);//todo,check need space how much
-                    break;
-                }
-            }
-        }
-    }
-    tx_free((_u8*)freeBlock);
-    while(1);
 }
 
 static int adv_extended_event_step_phy_send_aux_advertising(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
@@ -1498,6 +1529,7 @@ static void adv_sch_callback(_u8 type)
     adv_sequence_process(SM_SCH_EVENT,type);
 }
 
+
 int ble_ll_enter_advertising_state(ble_ll_event_e event)
 {
     if(event == BLE_LL_EVENT_START_ADVERTISING)
@@ -1545,7 +1577,7 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
                 //sm init
                 advParam->state = ADV_SM_STATE_IDLE;
 			    DEBUG_GPIO_HIGH(GPIO_12);
-                ll_extended_adv_map_out_task(ll,&ll->adv->param[i]);
+                ll_extended_adv_map_out_task(ll,&ll->adv->param[i],ADV_SCH_MAP_ALL);
 			    DEBUG_GPIO_LOW(GPIO_12);
             }
         }
