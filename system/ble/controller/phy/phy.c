@@ -20,8 +20,6 @@ void phy_obj_cast(phy_obj_t* phy)
     }
 }
 
-
-
 _RAM_CODE
 static void phy_start(void)
 {
@@ -84,7 +82,7 @@ static _u32 phy_hw_get_hw_prepare_time(void)
 _RAM_CODE
 static void phy_hw_irq_callback(_u8 type)
 {
-    if(phyCtrl)
+    if(POINTER_VALID(phyCtrl->hw_irq_cb))
     {
         phyCtrl->hw_irq_cb(type);
     }

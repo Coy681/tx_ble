@@ -16,7 +16,7 @@
 #include"format/scanPacket.h"
 #include"format/syncPacket.h"
 #define PACKET_DEFAULT_TIFS_TIME     150
-#define PACKET_T_MAFS_TIME           300
+#define PACKET_T_MAFS_TIME           300 //minimum aux frame space
 /**************************Advertising physical channel PDU******************************/
 typedef union 
 {

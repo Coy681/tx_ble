@@ -165,6 +165,7 @@ void hal_rf_stop(void)
 }
 
 /******************hal rf tx setting***************/
+
 _RAM_CODE
 void hal_rf_tx(_u8* address,_u32 time)
 {
@@ -380,6 +381,15 @@ void blc_ll_initFastSettle(_u8 tx_fast_en, _u8 rx_fast_en)
          * because  "rf_set ble_channel" internal will judge if fast settle prepared OK */
     fast_settle_1M.tx_fast_en = tx_fast_en;
     fast_settle_1M.rx_fast_en = rx_fast_en;
+
+    fast_settle_2M.tx_fast_en = tx_fast_en;
+    fast_settle_2M.rx_fast_en = rx_fast_en;
+
+    fast_settle_S2.tx_fast_en = tx_fast_en;
+    fast_settle_S2.rx_fast_en = rx_fast_en;
+
+    fast_settle_S8.tx_fast_en = tx_fast_en;
+    fast_settle_S8.rx_fast_en = rx_fast_en;
 
     fence_iorw;
     CLEAR_ALL_RFIRQ_STATUS;
