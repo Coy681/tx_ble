@@ -19,7 +19,8 @@ typedef enum
     // The HCI_Inquiry command will cause the BR/EDR Controller to enter Inquiry Mode. Inquiry Mode is used to discovery other nearby BR/EDR Controllers.
 	HCI_INQUIRY_CANCEL_COMMAND                                       = 0x02,
     // The HCI_Inquiry_Cancel command will cause the BR/EDR Controller to stop the current Inquiry if the BR/EDR Controller is in Inquiry Mode.
-	HCI_PERIODIC_INQUIRY_MODE_COMMAND                                = 0x03,  
+	HCI_PERIODIC_INQUIRY_MODE_COMMAND                                = 0x03, 
+    // The HCI_Periodic_Inquiry_Mode command is used to configure the BR/EDR Controller to perform an automatic Inquiry based on a specified period range.
 	HCI_EXIT_PERIODIC_INQUIRY_MODE_COMMAND                           = 0x04,
     // The HCI_Exit_Periodic_Inquiry_Mode command is used to end the Periodic Inquiry mode when the local device is in Periodic Inquiry Mode.   
 	HCI_CREATE_CONNECTION_COMMAND                                    = 0x05,  
@@ -31,28 +32,44 @@ typedef enum
 	HCI_ACCEPT_CONNECTION_REQUEST_COMMAND                            = 0x09,
     // The HCI_Accept_Connection_Request command is used to accept a new incoming BR/EDR connection request.   
 	HCI_REJECT_CONNECTION_REQUEST_COMMAND                            = 0x0A,   
-	HCI_LINK_KEY_REQUEST_REPLY_COMMAND                               = 0x0B,   
+    // The HCI_Reject_Connection_Request command is used to decline a new incoming BR/EDR connection request.
+	HCI_LINK_KEY_REQUEST_REPLY_COMMAND                               = 0x0B,  
+    // The HCI_Link_Key_Request_Reply command is used to reply to an HCI_Link_Key_Request event from the BR/EDR Controller, and specifies the Link Key stored on the Host to be used as the link key for the connection with the other BR/EDR Controller specified by BD_ADDR. 
 	HCI_LINK_KEY_REQUEST_NEGATIVE_REPLY_COMMAND                      = 0x0C,   
-	HCI_PIN_CODE_REQUEST_REPLY_COMMAND                               = 0x0D,   
+    // The HCI_Link_Key_Request_Negative_Reply command is used to reply to an HCI_Link_Key_Request event from the BR/EDR Controller if the Host does not have a stored Link Key for the connection with the other BR/EDR Controller specified by BD_ADDR.
+	HCI_PIN_CODE_REQUEST_REPLY_COMMAND                               = 0x0D, 
+    // The HCI_PIN_Code_Request_Reply command is used to reply to an HCI_PIN_Code_Request event from the Controller and specifies the PIN code to use for a connection.  
 	HCI_PIN_CODE_REQUEST_NEGATIVE_REPLY_COMMAND                      = 0x0E,  
+    // The HCI_PIN_Code_Request_Negative_Reply command is used to reply to an HCI_PIN_Code_Request event from the Controller when the Host cannot specify a PIN code to use for a connection.
 	HCI_CHANGE_CONNECTION_PACKET_TYPE_COMMAND                        = 0x0F, 
      // The HCI_Change_Connection_Packet_Type command is used to change which packet types can be used for a connection that is currently established.  
 	HCI_AUTHENTICATION_REQUESTED_COMMAND                             = 0x11,  
     // The HCI_Authentication_Requested command is used to establish authentication between the two devices associated with the specified Connection_Handle.
-	HCI_SET_CONNECTION_ENCRYPTION_COMMAND                            = 0x13,  
+	HCI_SET_CONNECTION_ENCRYPTION_COMMAND                            = 0x13, 
+    // The HCI_Set_Connection_Encryption command is used to enable and disable the link level encryption. 
 	HCI_CHANGE_CONNECTION_LINK_KEY_COMMAND                           = 0x15,   
     // The HCI_Change_Connection_Link_Key command is used to force both devices of a connection associated to the Connection_Handle, to generate a new link key.
 	HCI_LINK_KEY_SELECTION_COMMAND                                   = 0x17,
+    // The HCI_Link_Key_Selection command is used to force both BR/EDR Controllers of a connection associated to the Connection_Handle to use the temporary link key of the Central or the regular link keys.
 	HCI_REMOTE_NAME_REQUEST_COMMAND                                  = 0x19,
-	HCI_READ_REMOTE_SUPPORTED_FEATURES_COMMAND                       = 0x1A,   
-	HCI_READ_REMOTE_EXTENDED_FEATURES_COMMAND                        = 0x1C,   
+    // The HCI_Remote_Name_Request command is used to obtain the user-friendly name of another BR/EDR Controller.
+    HCI_REMOTE_NAME_REQUEST_CANCEL_COMMAND                           = 0x1A,
+    // The HCI_Remote_Name_Request_Cancel command is used to cancel an ongoing Remote Name Request.
+	HCI_READ_REMOTE_SUPPORTED_FEATURES_COMMAND                       = 0x1B,   
+    // The HCI_Read_Remote_Supported_Features command requests a list of the supported features of a remote device.
+	HCI_READ_REMOTE_EXTENDED_FEATURES_COMMAND                        = 0x1C,  
+    // The HCI_Read_Remote_Extended_Features command requests a list of the supported extended features of a remote device. 
 	HCI_READ_REMOTE_VERSION_INFORMATION_COMMAND                      = 0x1D, 
-	HCI_READ_CLOCK_OFFSET_COMMAND                                    = 0x1F,   
+    // The HCI_Read_Remote_Version_Information command will read the values for the version information for the remote device associated with the Connection_Handle.
+	HCI_READ_CLOCK_OFFSET_COMMAND                                    = 0x1F,  
+    // The HCI_Read_Clock_Offset command allows the Host to read the clock offset of remote BR/EDR Controllers. 
 	HCI_READ_LMP_HANDLE_COMMAND                                      = 0x20,   
+    // The HCI_Read_LMP_Handle command will read the current LMP Handle associated with the Connection_Handle.
 	HCI_SETUP_SYNCHRONOUS_CONNECTION_COMMAND                         = 0x28,   
 	HCI_ACCEPT_SYNCHRONOUS_CONNECTION_REQUEST_COMMAND                = 0x29,
     // The HCI_Accept_Synchronous_Connection_Request command is used to accept an incoming request for a synchronous connection and to inform the local Link Manager about the acceptable parameter values for the synchronous connection.
 	HCI_REJECT_SYNCHRONOUS_CONNECTION_REQUEST_COMMAND                = 0x2A, 
+    // The HCI_Reject_Synchronous_Connection_Request command is used to decline an incoming request for a synchronous link.
 	HCI_IO_CAPABILITY_REQUEST_REPLY_COMMAND                          = 0x2B,   
     // The HCI_IO_Capability_Request_Reply command is used to reply to an HCI_IO_Capability_Request event from the Controller, and specifies the current IO capabilities of the Host.
 	HCI_USER_CONFIRMATION_REQUEST_REPLY_COMMAND                      = 0x2C,   
@@ -60,7 +77,9 @@ typedef enum
 	HCI_USER_PASSKEY_REQUEST_REPLY_COMMAND                           = 0x2E,   
 	HCI_USER_PASSKEY_REQUEST_NEGATIVE_REPLY_COMMAND                  = 0x2F, 
 	HCI_REMOTE_OOB_DATA_REQUEST_REPLY_COMMAND                        = 0x30,   
+    // The HCI_Remote_OOB_Data_Request_Reply command is used to reply to an HCI_Remote_OOB_Data_Request event with the C and R values received via an OOB transfer from a remote BR/EDR Controller identified by BD_ADDR.
 	HCI_REMOTE_OOB_DATA_REQUEST_NEGATIVE_REPLY_COMMAND               = 0x33, 
+    // The HCI_Remote_OOB_Data_Request_Negative_Reply command is used to reply to an HCI_Remote_OOB_Data_Request event that the Host does not have the C and R.
 	HCI_IO_CAPABILITY_REQUEST_NEGATIVE_REPLY_COMMAND                 = 0x34, 
     // The HCI_IO_Capability_Request_Negative_Reply command is used to reject a pairing attempt after an HCI_IO_Capability_Request event has been received by the Host.
     HCI_ENHANCED_SETUP_SYNCHRONOUS_CONNECTION_COMMAND                = 0x3D,
@@ -70,10 +89,14 @@ typedef enum
     HCI_TRUNCATED_PAGE_COMMAND                                       = 0x3F,   
     HCI_TRUNCATED_PAGE_CANCEL_COMMAND                                = 0x40,   
     HCI_SET_CONNECTIONLESS_PERIPHERAL_BROADCAST_COMMAND              = 0x41,
+    // The HCI_Set_Connectionless_Peripheral_Broadcast command controls Connectionless Peripheral Broadcast functionality (for transmission) in the BR/EDR Controller including enabling and disabling the broadcast.
 	HCI_SET_CONNECTIONLESS_PERIPHERAL_BROADCAST_RECEIVE_COMMAND      = 0x42,
+    // The HCI_Set_Connectionless_Peripheral_Broadcast_Receive command enables and disables Connectionless Peripheral Broadcast reception in the BR/EDR Controller.
     HCI_START_SYNCHRONIZATION_TRAIN_COMMAND                          = 0x43,   
     HCI_RECEIVE_SYNCHRONIZATION_TRAIN_COMMAND                        = 0x44,   
-    HCI_REMOTE_OOB_EXTENSION_DATA_REQUEST_REPLY_COMMAND              = 0x45,   
+    // The HCI_Receive_Synchronization_Train command requests synchronization with the specified Connectionless Peripheral Broadcast transmitter.
+    HCI_REMOTE_OOB_EXTENDED_DATA_REQUEST_REPLY_COMMAND              = 0x45,   
+    // The HCI_Remote_OOB_Extended_Data_Request_Reply command is used to reply to an HCI_Remote_OOB_Data_Request event with the C and R values received via an OOB transfer from a remote BR/EDR Controller identified by the BD_ADDR.
 }hci_command_link_control_e;
 
 typedef enum
@@ -84,11 +107,15 @@ typedef enum
 	HCI_EXIT_SNIFF_MODE_COMMAND                                      = 0x04,
     // The HCI_Exit_Sniff_Mode command is used to end Sniff mode for a Connection_Handle which is currently in Sniff mode.
 	HCI_QOS_SETUP_COMMAND                                            = 0x07,
+    // The HCI_QoS_Setup command is used to specify Quality of Service parameters for a Connection_Handle.
 	HCI_ROLE_DISCOVERY_COMMAND                                       = 0x09,
+    // The HCI_Role_Discovery command is used for a BR/EDR Controller to determine which role the device is performing for a particular Connection_Handle.
 	HCI_SWITCH_ROLE_COMMAND                                          = 0x0b,
 	HCI_READ_LINK_POLICY_SETTINGS_COMMAND                            = 0x0c,
+    // The HCI_Read_Link_Policy_Settings command will read the Link Policy configuration parameter for the specified Connection_Handle. The Link Policy settings allow the Host to specify which Link Modes the Link Manager can use for the specified Connection_Handle.
 	HCI_WRITE_LINK_POLICY_SETTINGS_COMMAND                           = 0x0d,
 	HCI_READ_DEFAULT_LINK_POLICY_SETTINGS_COMMAND                    = 0x0e,
+    // The HCI_Read_Default_Link_Policy_Settings command will read the Default Link Policy configuration parameter for all new connections.
 	HCI_WRITE_DEFAULT_LINK_POLICY_SETTINGS_COMMAND                   = 0x0f,
 	HCI_FLOW_SPECIFICATION_COMMAND                                   = 0x10,
     // The HCI_Flow_Specification command is used to specify the flow parameters for the traffic carried over the ACL connection identified by the Connection_Handle.
@@ -98,81 +125,120 @@ typedef enum
 typedef enum
 {
     HCI_SET_EVENT_MASK_COMMAND                                       = 0x01,
+    // The HCI_Set_Event_Mask command is used to control which events are generated by the HCI for the Host.
     HCI_RESET_COMMAND                                                = 0x03,
+    // For a BR/EDR Controller, the HCI_Reset command resets HCI, the Link Manager, and the Bluetooth radio. For an LE Controller, the HCI_Reset command resets HCI, the Link Layer, and LE PHY.
     HCI_SET_EVENT_FILTER_COMMAND                                     = 0x05,
+    // The HCI_Set_Event_Filter command is used by the Host to specify different event filters. The Host may issue this command multiple times to request various conditions for the same type of event filter and for different types of event filters.
     HCI_FLUSH_COMMAND                                                = 0x08,
     // The HCI_Flush command is used to discard all data that is currently pending for transmission in the Controller for the specified Connection_Handle.
     HCI_READ_PIN_TYPE_COMMAND                                        = 0x09,
+    // The HCI_Read_PIN_Type command is used for the Host to read the value that is specified to indicate whether the Host supports variable PINs or only fixed PINs.
     HCI_WRITE_PIN_TYPE_COMMAND                                       = 0x0a,
     HCI_READ_STORED_LINK_KEY_COMMAND                                 = 0x0d,
+    // The HCI_Read_Stored_Link_Key command provides the ability to read whether one or more link keys are stored in the Controller.
     HCI_WRITE_STORED_LINK_KEY_COMMAND                                = 0x11,
     HCI_DELETE_STORED_LINK_KEY_COMMAND                               = 0x12,
     // The HCI_Delete_Stored_Link_Key command provides the ability to remove one or more of the link keys stored in the Controller.
     HCI_WRITE_LOCAL_NAME_COMMAND                                     = 0x13,
     HCI_READ_LOCAL_NAME_COMMAND                                      = 0x14,
+    // The HCI_Read_Local_Name command provides the ability to read the stored user-friendly name for the BR/EDR Controller.
     HCI_READ_CONNECTION_ACCEPT_TIMEOUT_COMMAND                       = 0x15,
+    // The HCI_Read_Connection_Accept_Timeout command will read the value for the Connection Accept Timeout configuration parameter, which allows the Controller to automatically deny a connection request after a specified period has occurred, and to refuse a new connection.
     HCI_WRITE_CONNECTION_ACCEPT_TIMEOUT_COMMAND                      = 0x16,
     HCI_READ_PAGE_TIMEOUT_COMMAND                                    = 0x17,
+    // The HCI_Read_Page_Timeout command will read the value for the Page Reply Timeout configuration parameter, which determines the time the BR/EDR Controller will wait for the remote device to respond to a connection request before the local device returns a connection failure.
     HCI_WRITE_PAGE_TIMEOUT_COMMAND                                   = 0x18,
     HCI_READ_SCAN_ENABLE_COMMAND                                     = 0x19,
+    // The HCI_Read_Scan_Enable command will read the value for the Scan Enable configuration parameter, which controls whether or not the BR/EDR Controller will periodically scan for page attempts and/or inquiry requests from other BR/EDR Controllers.
     HCI_WRITE_SCAN_ENABLE_COMMAND                                    = 0x1a,
     HCI_READ_PAGE_SCAN_ACTIVITY_COMMAND                              = 0x1b,
+    // The HCI_Read_Page_Scan_Activity command will read the values for the Page Scan Interval and Page Scan Window configuration parameters. Page Scan Interval defines the amount of time between consecutive page scans. Page Scan Window defines the duration of the page scan.
     HCI_WRITE_PAGE_SCAN_ACTIVITY_COMMAND                             = 0x1c,
     HCI_READ_INQUIRY_SCAN_ACTIVITY_COMMAND                           = 0x1d,
+    // The HCI_Read_Inquiry_Scan_Activity command will read the value for Inquiry Scan Interval and Inquiry Scan Window configuration parameters. Inquiry Scan Interval defines the amount of time between consecutive inquiry scans. Inquiry Scan Window defines the amount of time for the duration of the inquiry scan.
     HCI_WRITE_INQUIRY_SCAN_ACTIVITY_COMMAND                          = 0x1e,
     HCI_READ_AUTHENTICATION_ENABLE_COMMAND                           = 0x1f,
+    // The HCI_Read_Authentication_Enable command will read the value for the Authentication Enable parameter, which controls whether the Bluetooth device will require authentication for each connection with other Bluetooth devices.
     HCI_WRITE_AUTHENTICATION_ENABLE_COMMAND                          = 0x20,
     HCI_READ_CLASS_OF_DEVICE_COMMAND                                 = 0x23,
+    // The HCI_Read_Class_of_Device command will read the value for the Class of Device configuration parameter, which is used to indicate its capabilities to other devices.
     HCI_WRITE_CLASS_OF_DEVICE_COMMAND                                = 0x24,
     HCI_READ_VOICE_SETTING_COMMAND                                   = 0x25,
+    // The HCI_Read_Voice_Setting command will read the values for the Voice Setting configuration parameter, which controls all the various settings for the voice connections.
     HCI_WRITE_VOICE_SETTING_COMMAND                                  = 0x26,
     HCI_READ_AUTOMATIC_FLUSH_TIMEOUT_COMMAND                         = 0x27,
+    // The HCI_Read_Automatic_Flush_Timeout command will read the value for the Flush Timeout configuration parameter for the specified Connection_Handle. The Flush Timeout parameter is only used for ACL connections.
     HCI_WRITE_AUTOMATIC_FLUSH_TIMEOUT_COMMAND                        = 0x28,
     HCI_READ_NUM_BROADCAST_RETRANSMISSIONS_COMMAND                   = 0x29,
+    // The HCI_Read_Num_Broadcast_Retransmissions command will read the parameter value for the Number of Broadcast Retransmissions for the BR/EDR Controller.
     HCI_WRITE_NUM_BROADCAST_RETRANSMISSIONS_COMMAND                  = 0x2a,
     HCI_READ_HOLD_MODE_ACTIVITY_COMMAND                              = 0x2b,
+    // The HCI_Read_Hold_Mode_Activity command is used to read which activities should be suspended when the BR/EDR Controller is in Hold mode.
     HCI_WRITE_HOLD_MODE_ACTIVITY_COMMAND                             = 0x2c,
     HCI_READ_TRANSMIT_POWER_LEVEL_COMMAND                            = 0x2d,
+    // The HCI_Read_Transmit_Power_Level command will read the values for the Transmit Power Level parameter for the specified Connection_Handle.
     HCI_READ_SYNCHRONOUS_FLOW_CONTROL_ENABLE_COMMAND                 = 0x2e,
+    // The HCI_Read_Synchronous_Flow_Control_Enable command provides the ability to read the Synchronous Flow Control Enable setting. By using this setting, the Host can decide if the Controller will send HCI_Number_Of_Completed_Packets events for synchronous Connection_Handles.
     HCI_WRITE_SYNCHRONOUS_FLOW_CONTROL_ENABLE_COMMAND                = 0x2f,
     HCI_SET_CONTROLLER_TO_HOST_FLOW_CONTROL_COMMAND                  = 0x31,
+    // The HCI_Set_Controller_To_Host_Flow_Control command is used by the Host to turn flow control on or off in the direction from the Controller to the Host.
     HCI_HOST_BUFFER_SIZE_COMMAND                                     = 0x33,
     // The HCI_Host_Buffer_Size command is used by the Host to notify the Controller about its buffer sizes for ACL and synchronous data. 
     // The Controller will fragment the data to be transmitted from the Controller to the Host, so that data contained in HCI Data packets will not exceed these sizes.
     HCI_HOST_NUMBER_OF_COMPLETED_PACKETS_COMMAND                     = 0x35,
     // The HCI_Host_Number_Of_Completed_Packets command is used by the Host to indicate to the Controller when the Host is ready to receive more HCI packets for any Connection_Handle.
     HCI_READ_LINK_SUPERVISION_TIMEOUT_COMMAND                        = 0x36,
+    // The HCI_Read_Link_Supervision_Timeout command will read the value for the Link Supervision Timeout configuration parameter for the device. This parameter is used by the Controller to determine link loss.
     HCI_WRITE_LINK_SUPERVISION_TIMEOUT_COMMAND                       = 0x37,
     HCI_READ_NUMBER_OF_SUPPORTED_IAC_COMMAND                         = 0x38,
+    // The HCI_Read_Number_Of_Supported_IAC command will read the value for the number of Inquiry Access Codes (IAC) that the local BR/EDR Controller can simultaneously listen for during an Inquiry Scan.
     HCI_READ_CURRENT_IAC_LAP_COMMAND                                 = 0x39,
+    // The HCI_Read_Current_IAC_LAP command will read the LAP(s) used to create the Inquiry Access Codes (IAC) that the local BR/EDR Controller is simultaneously scanning for during Inquiry Scans.
     HCI_WRITE_CURRENT_IAC_LAP_COMMAND                                = 0x3a,
     HCI_SET_AFH_HOST_CHANNEL_CLASSIFICATION_COMMAND                  = 0x3f,
+    // The HCI_Set_AFH_Host_Channel_Classification command allows the Host to specify a channel classification based on its "local information".
     HCI_READ_INQUIRY_SCAN_TYPE_COMMAND                               = 0x42,
+    // The HCI_Read_Inquiry_Scan_Type command is used to read the Inquiry Scan Type configuration parameter of the local BR/EDR Controller. The Inquiry Scan Type configuration parameter can set the inquiry scan to either normal or interlaced scan.
     HCI_WRITE_INQUIRY_SCAN_TYPE_COMMAND                              = 0x43,
     HCI_READ_INQUIRY_MODE_COMMAND                                    = 0x44,
+    // The HCI_Read_Inquiry_Mode command is used to read the Inquiry Mode configuration parameter of the local BR/EDR Controller.
     HCI_WRITE_INQUIRY_MODE_COMMAND                                   = 0x45,
     HCI_READ_PAGE_SCAN_TYPE_COMMAND                                  = 0x46,
+    // The HCI_Read_Page_Scan_Type command is used to read the page scan type of the local BR/EDR Controller. The Page Scan Type configuration parameter can set the page scan to either normal or interlaced scan.
     HCI_WRITE_PAGE_SCAN_TYPE_COMMAND                                 = 0x47,
     HCI_READ_AFH_CHANNEL_ASSESSMENT_MODE_COMMAND                     = 0x48,
+    // The HCI_Read_AFH_Channel_Assessment_Mode command will read the value for the AFH Channel Classification Mode parameter. This value is used to enable or disable the Controller's channel assessment scheme.
     HCI_WRITE_AFH_CHANNEL_ASSESSMENT_MODE_COMMAND                    = 0x49,
     HCI_READ_EXTENDED_INQUIRY_RESPONSE_COMMAND                       = 0x51,
+    // The HCI_Read_Extended_Inquiry_Response command will read the data that the BR/EDR Controller sends in the extended inquiry response packet during inquiry response.
     HCI_WRITE_EXTENDED_INQUIRY_RESPONSE_COMMAND                      = 0x52,
     HCI_REFRESH_ENCRYPTION_KEY_COMMAND                               = 0x53,
+    // The HCI_Refresh_Encryption_Key command is used by the Host to cause the Controller to refresh the encryption key by pausing and resuming encryption.
     HCI_READ_SIMPLE_PAIRING_MODE_COMMAND                             = 0x55,
+    // The HCI_Read_Simple_Pairing_Mode command reads the Secure Simple Pairing mode setting in the BR/EDR Controller.
     HCI_WRITE_SIMPLE_PAIRING_MODE_COMMAND                            = 0x56,
     HCI_READ_LOCAL_OOB_DATA_COMMAND                                  = 0x57,
+    // The HCI_Read_Local_OOB_Data command is used to obtain a Secure Simple Pairing Hash C and Randomizer R which are intended to be transferred to a remote device using an OOB mechanism.
     HCI_READ_INQUIRY_RESPONSE_TRANSMIT_POWER_LEVEL_COMMAND           = 0x58,
+    // The HCI_Read_Inquiry_Response_Transmit_Power_Level command will read the inquiry response Transmit Power level used to transmit the FHS and EIR data packets. This can be used directly in the Tx Power Level EIR data type.
 	HCI_WRITE_INQUIRY_TRANSMIT_POWER_LEVEL_COMMAND                   = 0x59,
 	HCI_SEND_KEYPRESS_NOTIFICATION_COMMAND                           = 0x60,
+    // The HCI_Send_Keypress_Notification command is used during the Passkey Entry protocol by a device with KeyboardOnly IO capabilities. It is used by a Host to inform the remote device when keys have been entered or erased.
 	HCI_READ_DEFAULT_ERRONEOUS_DATA_REPORTING_COMMAND                = 0x5a,
+    // The HCI_Read_Default_Erroneous_Data_Reporting command will read the value for the Erroneous Data Reporting configuration parameter, which controls whether the BR/EDR Controller will provide data for every (e)SCO interval, with the Packet_Status_Flag in HCI Synchronous Data packets set according to HCI Synchronous Data packets.
 	HCI_WRITE_DEFAULT_ERRONEOUS_DATA_REPORTING_COMMAND               = 0x5b,
 	HCI_ENHANCED_FLUSH_COMMAND                                       = 0x5f,
     // The HCI_Enhanced_Flush command is used to discard specific packets currently pending for transmission in the Controller for the specified Handle. This command takes a parameter specifying the type of packets to be flushed.
-    HCI_SET_EVENT_MASK_PAGE2_COMMAND                                 = 0x63,
+    HCI_SET_EVENT_MASK_PAGE_2_COMMAND                                = 0x63,
+    // The HCI_Set_Event_Mask_Page 2 command is used to control which events are generated by the HCI for the Host.
     HCI_READ_FLOW_CONTROL_MODE_COMMAND                               = 0x66,
+    // The HCI_Read_Flow_Control_Mode command returns the value of the Flow_Control_Mode configuration parameter supported by this Controller.
     HCI_WRITE_FLOW_CONTROL_MODE_COMMAND                              = 0x67,
     HCI_READ_ENHANCED_TRANSMIT_POWER_LEVEL_COMMAND                   = 0x68,
+    // The HCI_Read_Enhanced_Transmit_Power_Level command will read the values for the GFSK, π/4-DQPSK and 8DPSK Transmit Power Level parameters for the specified Connection_Handle.
     HCI_READ_LE_HOST_SUPPORT_COMMAND                                 = 0x6c,
+    // The HCI_Read_LE_Host_Support command reads the LE Supported Host setting from the BR/EDR Controller.
     HCI_WRITE_LE_HOST_SUPPORT_COMMAND                                = 0x6d,
     HCI_SET_MWS_CHANNEL_PARAMETERS_COMMAND                           = 0x6e,
     HCI_SET_EXTERNAL_FRAME_CONFIGURATION_COMMAND                     = 0x6f,
@@ -184,18 +250,26 @@ typedef enum
     HCI_DELETE_RESERVED_LT_ADDR_COMMAND                              = 0x75,
     // The HCI_Delete_Reserved_LT_ADDR command requests that the BR/EDR Controller cancel the reservation of a specific LT_ADDR reserved for the purposes of Connectionless Peripheral Broadcast.
     HCI_SET_CONNECTIONLESS_PERIPHERAL_BROADCAST_DATA_COMMAND         = 0x76,
+    // The HCI_Set_Connectionless_Peripheral_Broadcast_Data command is used by the Host to set Connectionless Peripheral Broadcast data in the BR/EDR Controller.
     HCI_READ_SYNCHRONIZATION_TRAIN_PARAMETERS_COMMAND                = 0x77,
+    // The HCI_Read_Synchronization_Train_Parameters command returns the currently configured values for the Synchronization Train functionality in the BR/EDR Controller.
     HCI_WRITE_SYNCHRONIZATION_TRAIN_PARAMETERS_COMMAND               = 0x78,
     HCI_READ_SECURE_CONNECTIONS_HOST_SUPPORT_COMMAND                 = 0x79,
+    // The HCI_Read_Secure_Connections_Host_Support command is used to read the Secure Connections Host Supports parameter from the Controller.
     HCI_WRITE_SECURE_CONNECTIONS_HOST_SUPPORT_COMMAND                = 0x7A,
     HCI_READ_AUTHENTICATED_PAYLOAD_TIMEOUT_COMMAND                   = 0x7B,
+    // The HCI_Read_Authenticated_Payload_Timeout command is used to read the Authenticated Payload Timeout parameter, which is used to set the maximum time between packets being received from the remote device without a valid MIC.
     HCI_WRITE_AUTHENTICATED_PAYLOAD_TIMEOUT_COMMAND                  = 0x7C,
     HCI_READ_LOCAL_OOB_EXTENDED_DATA_COMMAND                         = 0x7D,
+    // The HCI_Read_Local_OOB_Extended_Data command is used to obtain a Secure Simple Pairing Hash C and Randomizer R associated with both P-192 and P-256 public keys, which are intended to be transferred to a remote device using an OOB mechanism.
     HCI_READ_EXTENDED_PAGE_TIMEOUT_COMMAND                           = 0x7E,
+    // The HCI_Read_Extended_Page_Timeout command is used to read the Extended Page Timeout parameter from the Controller.
     HCI_WRITE_EXTENDED_PAGE_TIMEOUT_COMMAND                          = 0x7F,
     HCI_READ_EXTENDED_INQUIRY_LENGTH_COMMAND                         = 0x80,
+    // The HCI_Read_Extended_Inquiry_Length command is used to read the Extended Inquiry Length parameter from the Controller.
     HCI_WRITE_EXTENDED_INQUIRY_LENGTH_COMMAND                        = 0x81,
     HCI_SET_ECOSYSTEM_BASE_INTERVAL_COMMAND                          = 0x82,
+    // The HCI_Set_Ecosystem_Base_Interval command indicates to the Controller the base interval of the ecosystem.
     HCI_CONFIGURE_DATA_PATH_COMMAND                                  = 0x83,
     // The HCI_Configure_Data_Path command is used by a Host to configure a data path to enable codec operation in the Controller.
     HCI_SET_MIN_ENCRYPTION_KEY_SIZE_COMMAND                          = 0x84,
@@ -204,28 +278,46 @@ typedef enum
 typedef enum
 {
 	HCI_READ_LOCAL_VERSION_INFORMATION_COMMAND                       = 0x01,
+    // The HCI_Read_Local_Version_Information command will read the version information for the local Controller.
     HCI_READ_LOCAL_SUPPORTED_COMMANDS_COMMAND                        = 0x02,
+    // The HCI_Read_Local_Supported_Commands command requests a list of the supported HCI commands for the local device.
     HCI_READ_LOCAL_SUPPORTED_FEATURES_COMMAND                        = 0x03,
+    // The HCI_Read_Local_Supported_Features command requests a list of the supported features for the local device.
     HCI_READ_LOCAL_EXTENDED_FEATURES_COMMAND                         = 0x04,
+    // The HCI_Read_Local_Extended_Features command requests a list of the supported extended features for the local device.
     HCI_READ_BUFFER_SIZE_COMMAND                                     = 0x05,
-    HCI_READ_BDADDR_COMMAND                                          = 0x09,
+    // The HCI_Read_Buffer_Size command returns the size of the HCI buffers. These buffers are used by the Controller to buffer data that is to be transmitted.
+    HCI_READ_BD_ADDR_COMMAND                                          = 0x09,
+    // The HCI_Read_BD_ADDR command will read the value for the BD_ADDR parameter.
     HCI_READ_DATA_BLOCK_SIZE_COMMAND                                 = 0x0a,
+    // The HCI_Read_Data_Block_Size command returns the maximum size of the HCI buffers. These buffers are used by the Controller to buffer data that is to be transmitted.
     HCI_READ_LOCAL_SUPPORTED_CODECS_COMMAND                          = 0x0b,
 	HCI_READ_LOCAL_SUPPORTED_CODECS_COMMAND_V2                       = 0x0d,
+    // The HCI_Read_Local_Supported_Codecs command is used by a Host to query a Controller's supported codecs.
     HCI_READ_LOCAL_SIMPLE_PAIRING_OPTIONS_COMMAND                    = 0x0c,
+    // The HCI_Read_Local_Simple_Pairing_Options command is used to read the Secure Simple Pairing options and the maximum encryption key size supported.
     HCI_READ_LOCAL_SUPPORTED_CODEC_CAPABILITIES_COMMAND              = 0x0e,
+    // The HCI_Read_Local_Supported_Codec_Capabilities command is used by a Host to query codec capabilities.
     HCI_READ_LOCAL_SUPPORTED_CONTROLLER_DELAY_COMMAND                = 0x0f,
+    // The HCI_Read_Local_Supported_Controller_Delay command is used by a Host to query a range of supported Controller delays for a given codec configuration.
 }hci_command_informational_parameters_e;
 
 
 typedef enum {
     HCI_READ_FAILED_CONTACT_COUNTER_COMMAND              = 0x01,
+    // The HCI_Read_Failed_Contact_Counter command will read the value for the Failed Contact Counter configuration parameter for a particular connection to another device.
     HCI_RESET_FAILED_CONTACT_COUNTER_COMMAND             = 0x02,
+    // The HCI_Reset_Failed_Contact_Counter command will reset the value for the Failed Contact Counter configuration parameter for a particular connection to another device.
     HCI_READ_LINK_QUALITY_COMMAND                        = 0x03,
+    // The HCI_Read_Link_Quality command will read the value for the Link Quality for the specified Connection_Handle.
     HCI_READ_RSSI_COMMAND                                = 0x05,
+    // The HCI_Read_RSSI command will read the value for the Received Signal Strength Indication (RSSI) for a Connection_Handle to another Controller.
     HCI_READ_AFH_CHANNEL_MAP_COMMAND                     = 0x06,
+    // The HCI_Read_AFH_Channel_Map command will read the current state of the channel map for a connection.
     HCI_READ_CLOCK_COMMAND                               = 0x07,
-    HCI_READ_ENCRYPTION_KE_SIZE_COMMAND                  = 0x08,
+    // The HCI_Read_Clock command will read an estimate of a piconet or the local Bluetooth Clock.
+    HCI_READ_ENCRYPTION_KEY_SIZE_COMMAND                  = 0x08,
+    // The HCI_Read_Encryption_Key_Size command is used to read the encryption key size on a given Connection_Handle.
     HCI_GET_MWS_TRANSPORT_LAYER_CONFIGURATION_COMMAND    = 0x0C,
     // The HCI_Get_MWS_Transport_Layer_Configuration command reads the supported baud rates from the Controller.
     HCI_SET_TRIGGERED_CLOCK_CAPTURE_COMMAND              = 0x0D,
@@ -233,6 +325,7 @@ typedef enum {
 
 typedef enum{
 	HCI_READ_LOOPBACK_MODE_COMMAND                       = 0x01,
+    // The HCI_Read_Loopback_Mode command will read the value for the setting of the BR/EDR Controller's Loopback Mode. The setting of the Loopback Mode will determine the path of information.
 	HCI_WRITE_LOOPBACK_MODE_COMMAND                      = 0x02,
 	HCI_ENABLE_IMPLEMENTATION_UNDER_TEST_MODE_COMMAND    = 0x03,
     // The HCI_Enable_Implementation_Under_Test_Mode command will allow the local Controller to enter test mode via LMP test commands. 
@@ -561,15 +654,20 @@ typedef enum
     HCI_AUTHENTICATION_COMPLETE_EVENT                   = 0x06,
     // The HCI_Authentication_Complete event occurs when authentication has been completed for the specified connection.
     HCI_REMOTE_NAME_REQUEST_COMPLETE_EVENT              = 0x07,
+    // The HCI_Remote_Name_Request_Complete event is used to indicate a remote name request has been completed.
     HCI_ENCRYPTION_CHANGE_EVENT                         = 0x08,
     HCI_ENCRYPTION_CHANGE_EVENT_V2                      = 0x59,
     // The HCI_Encryption_Change event is used to indicate that the change in encryption has been completed for the specified Connection_Handle.
     HCI_CHANGE_CONNECTION_LINK_KEY_COMPLETE_EVENT       = 0x09,
     // The HCI_Change_Connection_Link_Key_Complete event is used to indicate that the change in the Link Key for the Connection_Handle specified by the Connection_Handle parameter had been completed.
     HCI_LINK_KEY_TYPE_CHANGED_EVENT                     = 0x0a,
+    // The HCI_Link_Key_Type_Changed event is used to indicate that the change in the temporary Link Key or in the semi-permanent link keys on the Bluetooth Central side has been completed.
     HCI_READ_REMOTE_SUPPORTED_FEATURES_COMPLETE_EVENT   = 0x0b,
+    // The HCI_Read_Remote_Supported_Features_Complete event is used to indicate the completion of the process of the Link Manager obtaining the supported features of the remote BR/EDR Controller specified by the Connection_Handle parameter.
     HCI_READ_REMOTE_VERSION_INFORMATION_COMPLETE_EVENT  = 0x0c,
+    // The HCI_Read_Remote_Version_Information_Complete event is used to indicate the completion of the process of the Link Manager obtaining the version information of the remote device associated with the Connection_Handle parameter.
     HCI_QOS_SETUP_COMPLETE_EVENT                        = 0x0d,
+    // The HCI_QoS_Setup_Complete event is used to indicate that QoS is set up.
     HCI_COMMAND_COMPLETE_EVENT                          = 0x0e,
     // The HCI_Command_Complete event is used by the Controller to pass the return status of a command and the other parameters for each HCI command.
     HCI_COMMAND_STATUS_EVENT                            = 0x0f,
@@ -579,26 +677,39 @@ typedef enum
     HCI_FLUSH_OCCURRED_EVENT                            = 0x11,
     // The HCI_Flush_Occurred event is used to indicate that, for the specified Handle, the data to be transmitted has been discarded.
     HCI_ROLE_CHANGE_EVENT                               = 0x12,
+    // The HCI_Role_Change event is used to indicate that the current BR/EDR Controller role related to the particular connection has been changed.
     HCI_NUMBER_OF_COMPLETED_PACKETS_EVENT               = 0x13,
+    // The HCI_Number_Of_Completed_Packets event is used by the Controller to indicate to the Host how many HCI Data packets have been completed for each Connection_Handle since the previous HCI_Number_Of_Completed_Packets event was sent.
     HCI_MODE_CHANGE_EVENT                               = 0x14,
+    // The HCI_Mode_Change event is used to indicate that the current mode has changed.
     HCI_RETURN_LINK_KEYS_EVENT                          = 0x15,
+    // The HCI_Return_Link_Keys event is used to return stored link keys after an HCI_Read_Stored_Link_Key command is used.
     HCI_PIN_CODE_REQUEST_EVENT                          = 0x16,
+    // The HCI_PIN_Code_Request event is used to indicate that a PIN code is required to create a new link key for a connection.
     HCI_LINK_KEY_REQUEST_EVENT                          = 0x17,
+    // The HCI_Link_Key_Request event is used to indicate that a Link Key is required for the connection with the device specified in BD_ADDR.
     HCI_LINK_KEY_NOTIFICATION_EVENT                     = 0x18,
+    // The HCI_Link_Key_Notification event is used to indicate to the Host that a new Link Key has been created for the connection with the BR/EDR Controller specified in BD_ADDR.
     HCI_LOOPBACK_COMMAND_EVENT                          = 0x19,
+    // The HCI_Loopback_Command event is used to loop back all commands that the Host sends to the BR/EDR Controller with some exceptions.
     HCI_DATA_BUFFER_OVERFLOW_EVENT                      = 0x1a,
     // The HCI_Data_Buffer_Overflow event is used to indicate that the Controller's data buffers have overflowed, because the Host has sent more packets than allowed.
     HCI_MAX_SLOTS_CHANGE_EVENT                          = 0x1b,
+    // The HCI_Max_Slots_Change event is used to indicate a change in the max slots by the LM.
     HCI_READ_CLOCK_OFFSET_COMPLETE_EVENT                = 0x1c,
+    // The HCI_Read_Clock_Offset_Complete event is used to indicate the completion of the process of the LM obtaining the Clock offset information.
     HCI_CONNECTION_PACKET_TYPE_CHANGED_EVENT            = 0x1d,
     // The HCI_Connection_Packet_Type_Changed event is used to indicate the completion of the process of the Link Manager changing the packet type mask used for the specified Connection_Handle.
     HCI_QOS_VIOLATION_EVENT                             = 0x1e,
+    // The HCI_QoS_Violation event is used to indicate the Controller's Link Manager is unable to provide the current QoS requirement for the Handle.
     HCI_PAGE_SCAN_REPETITION_MODE_CHANGE_EVENT          = 0x20,
+    // The HCI_Page_Scan_Repetition_Mode_Change event indicates that the connected remote BR/EDR Controller with the specified Connection_Handle has successfully changed the Page Scan Repetition Mode (SR).
     HCI_FLOW_SPECIFICATION_COMPLETE_EVENT               = 0x21,
     // The HCI_Flow_Specification_Complete event is used to inform the Host about the Quality of Service for the ACL connection the Controller is able to support.
     HCI_INQUIRY_RESULT_WITH_RSSI_EVENT                  = 0x22,
      // The HCI_Inquiry_Result_with_RSSI event indicates that a BR/EDR Controller or multiple BR/EDR Controllers have responded so far during the current Inquiry process.
     HCI_READ_REMOTE_EXTENDED_FEATURES_COMPLETE_EVENT    = 0x23,
+    // The HCI_Read_Remote_Extended_Features_Complete event is used to indicate the completion of the process of the Link Manager obtaining the supported Extended features of the remote BR/EDR Controller specified by the Connection_Handle parameter.
     HCI_SYNCHRONOUS_CONNECTION_COMPLETE_EVENT           = 0x2c,
     HCI_SYNCHRONOUS_CONNECTION_CHANGED_EVENT            = 0x2d,
     HCI_SNIFF_SUBRATING_EVENT                           = 0x2e,
@@ -613,16 +724,20 @@ typedef enum
     HCI_USER_CONFIRMATION_REQUEST_EVENT                 = 0x33,
     HCI_USER_PASSKEY_REQUEST_EVENT                      = 0x34,
     HCI_REMOTE_OOB_DATA_REQUEST_EVENT                   = 0x35,
+    // The HCI_Remote_OOB_Data_Request event is used to indicate that the Secure Simple Pairing Hash C and Randomizer R is required for the Secure Simple Pairing process involving the device identified by BD_ADDR.
     HCI_SIMPLE_PAIRING_COMPLETE_EVENT                   = 0x36,
     HCI_LINK_SUPERVISION_TIMEOUT_CHANGED_EVENT          = 0x38,
+    // The HCI_Link_Supervision_Timeout_Changed event indicates that the remote device changed the Link Supervision Timeout.
     HCI_ENHANCED_FLUSH_COMPLETE_EVENT                   = 0x39,
     // The HCI_Enhanced_Flush_Complete event is used to indicate that an Enhanced Flush is complete.
     HCI_USER_PASSKEY_NOTIFICATION_EVENT                 = 0x3b,
     HCI_KEYPRESS_NOTIFICATION_EVENT                     = 0x3c,
     // The HCI_Keypress_Notification event is sent to the Host after a passkey notification has been received by the Link Manager on the given BD_ADDR.
-    HCI_REMOTE_HOST_SUPPORTED_FEATURES_EVENT            = 0x3d,
+    HCI_REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION_EVENT = 0x3d,
+    // The HCI_Remote_Host_Supported_Features_Notification event is used to return the LMP extended features page containing the Host features.
     HCI_LE_META_EVENT                                   = 0x3e,
     HCI_NUMBER_OF_COMPLETED_DATA_BLOCKS_EVENT           = 0x48,
+    // The HCI_Number_Of_Completed_Data_Blocks event is used by the Controller to indicate to the Host how many HCI ACL Data packets have been completed and how many data block buffers have been freed for each Handle since the previous HCI_Number_Of_Completed_Data_Blocks event was sent.
     HCI_TRIGGERED_CLOCK_CAPTURE_EVENT                   = 0x4e,
     HCI_SYNCHRONIZATION_TRAIN_COMPLETE_EVENT            = 0x4f,
     HCI_SYNCHRONIZATION_TRAIN_RECEIVED_EVENT            = 0x50,
@@ -633,6 +748,7 @@ typedef enum
     // the BR/EDR Controller has lost synchronization with the Connectionless Peripheral Broadcast Transmitter. On the Connectionless Peripheral Broadcast Transmitter, it indicates that the BR/EDR Controller has been unable to transmit a Connectionless Peripheral Broadcast packet for the timeout interval specified in the HCI_Set_Connectionless_Peripheral_Broadcast command.
     HCI_TRUNCATED_PAGE_COMPLETE_EVENT                   = 0x53,
     HCI_PERIPHERAL_PAGE_RESPONSE_TIMEOUT_EVENT          = 0x54,
+    // The HCI_Peripheral_Page_Response_Timeout event indicates to the Host that the pagerespTO has been exceeded on the BR/EDR Controller after the Controller responded to an ID packet.
     HCI_CONNECTIONLESS_PERIPHERAL_BROADCAST_CHANNEL_MAP_CHANGE_EVENT = 0x55,
     // The HCI_Connectionless_Peripheral_Broadcast_Channel_Map_Change event indicates to the Host that the BR/EDR Controller has moved to a new AFH channel map for the PBD logical link.
     HCI_INQUIRY_RESPONSE_NOTIFICATION_EVENT             = 0x56,
@@ -640,6 +756,7 @@ typedef enum
     HCI_AUTHENTICATED_PAYLOAD_TIMEOUT_EXPIRED_EVENT     = 0x57,
     // The HCI_Authenticated_Payload_Timeout_Expired event is used to indicate that a packet containing a valid MIC on the Handle was not received within the authenticatedPayloadTO.
     HCI_SAM_STATUS_CHANGE_EVENT                         = 0x58
+    // The HCI_SAM_Status_Change event is used to indicate that either the local or remote SAM slot map on a particular connection has been changed.
 }hci_eventCode_e;
 
 typedef enum
