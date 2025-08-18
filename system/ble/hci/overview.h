@@ -462,50 +462,71 @@ typedef struct
 
 bt_ov_cmd_evts_t bt_commands_events_overview[] = 
 {
-    /**name**/                                                                /**version**/ /**BR/EDR**/         /**LE**/
-    {Accept_Connection_Request_command,                                       v1_1,         "M",                 "E"},
-    {Authentication_Complete_event,                                           v1_1,         "C.101",             "E"}, 
+    /**name**/                                                                /**version**/  /**BR/EDR**/        /**LE**/
+    /****************************************************BT VERSION 1.1*************************************************************/
+    {Reset_command,                                                           v1_1,          "M",                "M"},
+    {Command_Complete_event,                                                  v1_1,          "M",                "M"},
+    {Command_Status_event,                                                    v1_1,          "M",                "M"},
+    {Read_BD_ADDR_command,                                                    v1_1,          "M",                "M"},
+    {Read_Local_Supported_Features_command,                                   v1_1,          "M",                "M"},
+    {Read_Local_Version_Information_command,                                  v1_1,          "M",                "M"},
+    {Read_Local_Supported_Commands_command,                                   v1_2,          "M",                "M"},
+    {Set_Event_Mask_command,                                                  v1_1,          "M",                "M"},
+    {Disconnect_command,                                                      v1_1,          "M",                "C.3"}, 
+    {Disconnection_Complete_event,                                            v1_1,          "M",                "C.3"}, 
+    {Number_Of_Completed_Packets_event,                                       v1_1,          "M",                "C.3"}, 
+    {Read_Remote_Version_Information_command,                                 v1_1,          "O",                "C.3"}, 
+    {Read_RSSI_command,                                                       v1_1,          "O",                "C.3"}, 
+    // C.3: Mandatory if the LE Controller supports Connection State, otherwise excluded
+    {Read_Remote_Version_Information_Complete_event,                          v1_1,          "C.105",            "C.3"}, 
+    // C.105: Mandatory if the Read Remote Version Information command is supported; 
+    {Read_Transmit_Power_Level_command,                                       v1_1,          "C.152",            "C.3"}, 
+    // C.152: Mandatory if Power Control is supported; C.3: Mandatory if the LE Controller supports Connection State
+    {Data_Buffer_Overflow_event,                                              v1_1,          "O",                "O"},
+    {Hardware_Error_event,                                                    v1_1,          "O",                "O"},
+    {Host_Buffer_Size_command,                                                v1_1,          "C.107",            "C.107"}, 
+    {Host_Number_Of_Completed_Packets_command,                                v1_1,          "C.107",            "C.107"}, 
+    // C.107: Mandatory if the Set Controller To Host Flow Control command is supported, otherwise excluded
+    {Read_Connection_Accept_Timeout_command,                                  v1_1,          "M",                "C.40"}, 
+    {Write_Connection_Accept_Timeout_command,                                 v1_1,          "M",                "C.40"}, 
+    // C.40: Mandatory if LE Feature (Connected Isochronous Stream - Peripheral) is supported, otherwise excluded
+    {Set_Controller_To_Host_Flow_Control_command,                             v1_1,          "O",                "C.96"}, 
+    // C.96: Optional if the LE Controller supports Connection State, otherwise excluded
+    {Read_AFH_Channel_Assessment_Mode_command,                                v1_2,          "C.140",            "C.58"}, 
+    // C.140: Mandatory if the Controller supports AFH classification in either role or is an AFH capable Central; 
+    // C.58: Mandatory if LE Feature (Channel Classification) is supported
+    {Encryption_Change_event,                                                 v1_1,          "[v1] M [v2] C.158", "[v1] C.4 [v2] C.56"}, 
+    // C.158:Mandatory if the Set Min Encryption Key Size command is supported,otherwise optional.
+    // C.4: Mandatory if LE Feature (LE Encryption) is supported;
+    // C.56: Mandatory if LE Feature (LL Extended Feature Set) is supported
+
+
+    {Accept_Connection_Request_command,                                       v1_1,          "M",                "E"},
+    {Authentication_Complete_event,                                           v1_1,          "C.101",            "E"}, 
     // C.101: Mandatory if the Authentication Requested command is supported, otherwise excluded
-    {Authentication_Requested_command,                                        v1_1,         "O",                 "E"},
-    {Change_Connection_Link_Key_command,                                      v1_1,         "O",                 "E"},
-    {Change_Connection_Link_Key_Complete_event,                               v1_1,         "C.102",             "E"}, 
+    {Authentication_Requested_command,                                        v1_1,          "O",                "E"},
+    {Change_Connection_Link_Key_command,                                      v1_1,          "O",                "E"},
+    {Change_Connection_Link_Key_Complete_event,                               v1_1,          "C.102",            "E"}, 
     // C.102: Mandatory if the Change Connection Link Key command is supported, otherwise excluded
     {Change_Connection_Packet_Type_command,                                   v1_1,          "C.133",            "E"}, 
     // C.133: Mandatory if HV2, HV3, or multi-slot or EDR ACL packets are supported, otherwise excluded
-    {Command_Complete_event,                                                  v1_1,          "M",                "M"},
-    {Command_Status_event,                                                    v1_1,          "M",                "M"},
-    // C.156: Mandatory if the Read Local Supported Codecs command [v2] is supported, otherwise excluded
     {Connection_Complete_event,                                               v1_1,          "M",                "E"},
     {Connection_Packet_Type_Changed_event,                                    v1_1,          "C.133",            "E"},
      // C.133: Mandatory if HV2, HV3, or multi-slot or EDR ACL packets are supported, otherwise excluded
     {Connection_Request_event,                                                v1_1,          "M",                "E"},
     {Create_Connection_command,                                               v1_1,          "M",                "E"},
-    {Data_Buffer_Overflow_event,                                              v1_1,          "O",                "O"},
     {Delete_Stored_Link_Key_command,                                          v1_1,          "C.121",            "E"}, 
     // C.121: Mandatory if the Write Stored Link Key command is supported, otherwise excluded
-    {Disconnect_command,                                                      v1_1,          "M",                "C.3"}, 
-    // C.3: Mandatory if the LE Controller supports Connection State, otherwise excluded
-    {Disconnection_Complete_event,                                            v1_1,          "M",                "C.3"}, 
-    // C.3: Mandatory if the LE Controller supports Connection State, otherwise excluded
     {Enable_Implementation_Under_Test_Mode_command,                           v1_1,          "C.123",            "E"}, 
     // C.123: Mandatory if BR/EDR test mode is supported, otherwise excluded
-    {Encryption_Change_event,                                                 v1_1,          "[v1] M [v2] C.158", "[v1] C.4 [v2] C.56"}, 
-    // C.158:Mandatory if the Set Min Encryption Key Size command is supported,otherwise optional.
-    // C.4: Mandatory if LE Feature (LE Encryption) is supported;
-    // C.56: Mandatory if LE Feature (LL Extended Feature Set) is supported
     {Exit_Periodic_Inquiry_Mode_command,                                      v1_1,          "C.103",            "E"},
     // C.103: Mandatory if the Periodic Inquiry Mode command is supported, otherwise excluded
     {Exit_Sniff_Mode_command,                                                 v1_1,          "C.214",            "E"}, 
     // C.214: Mandatory if Sniff mode is supported, otherwise excluded
     {Flush_command,                                                           v1_1,          "M",                "E"},
     {Flush_Occurred_event,                                                    v1_1,          "M",                "E"},
-    {Hardware_Error_event,                                                    v1_1,          "O",                "O"},
     {Hold_Mode_command,                                                       v1_1,          "C.213",            "E"}, 
     // C.213: Mandatory if Hold mode is supported, otherwise excluded
-    {Host_Buffer_Size_command,                                                v1_1,          "C.107",            "C.107"}, 
-    // C.107: Mandatory if the Set Controller To Host Flow Control command is supported, otherwise excluded
-    {Host_Number_Of_Completed_Packets_command,                                v1_1,          "C.107",            "C.107"}, 
-    // C.107: Mandatory if the Set Controller To Host Flow Control command is supported, otherwise excluded
     {Inquiry_Cancel_command,                                                  v1_1,          "C.127",            "E"}, 
     // C.127: Mandatory if Inquiry is supported, otherwise excluded
     {Inquiry_command,                                                         v1_1,          "C.127",            "E"}, 
@@ -528,22 +549,17 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
     // C.132: Mandatory if multi-slot ACL packets are supported, otherwise excluded
     {Mode_Change_event,                                                       v1_1,          "C.144",            "E"}, 
     // C.144: Mandatory if Hold Mode or Sniff Mode is supported, otherwise excluded
-    {Number_Of_Completed_Packets_event,                                       v1_1,          "M",                "C.3"}, 
-    // C.3: Mandatory if the LE Controller supports Connection State, otherwise excluded
     {Page_Scan_Repetition_Mode_Change_event,                                  v1_1,          "O",                "E"},
     {Periodic_Inquiry_Mode_command,                                           v1_1,          "C.128",            "E"}, 
     // C.128: Optional if Inquiry is supported, otherwise excluded
     {Read_Authentication_Enable_command,                                      v1_1,          "C.111",            "E"}, 
     // C.111: Mandatory if the Write Authentication Enable command is supported, otherwise excluded
     {Read_Automatic_Flush_Timeout_command,                                    v1_1,          "M",                "E"},
-    {Read_BD_ADDR_command,                                                    v1_1,          "M",                "M"},
     {Read_Buffer_Size_command,                                                v1_1,          "M",                "E"},
     {Read_Class_of_Device_command,                                            v1_1,          "M",                "E"},
     {Read_Clock_Offset_command,                                               v1_1,          "O",                "E"},
     {Read_Clock_Offset_Complete_event,                                        v1_1,          "C.104",            "E"}, 
     // C.104: Mandatory if the Read Clock Offset command is supported, otherwise excluded
-    {Read_Connection_Accept_Timeout_command,                                  v1_1,          "M",                "C.40"}, 
-    // C.40: Mandatory if LE Feature (Connected Isochronous Stream - Peripheral) is supported, otherwise excluded
     {Read_Current_IAC_LAP_command,                                            v1_1,          "C.125",            "E"}, 
     // C.125: Mandatory if Inquiry Scan is supported, otherwise excluded
     {PIN_Code_Request_event,                                                  v1_1,          "M",                "E"},
@@ -563,8 +579,6 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
     {Read_Link_Supervision_Timeout_command,                                   v1_1,          "C.117",            "E"}, 
     // C.117: Mandatory if the Write Link Supervision Timeout command is supported, otherwise excluded
     {Read_Local_Name_command,                                                 v1_1,          "M",                "E"},
-    {Read_Local_Supported_Features_command,                                   v1_1,          "M",                "M"},
-    {Read_Local_Version_Information_command,                                  v1_1,          "M",                "M"},
     {Read_Loopback_Mode_command,                                              v1_1,          "C.123",            "E"}, 
     // C.123: Mandatory if BR/EDR test mode is supported, otherwise excluded
     {Read_Num_Broadcast_Retransmissions_command,                              v1_1,          "C.118",            "E"}, 
@@ -577,12 +591,6 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
     // C.120: Mandatory if the Write PIN Type command is supported, otherwise excluded
     {Read_Remote_Supported_Features_command,                                  v1_1,          "M",                "E"},
     {Read_Remote_Supported_Features_Complete_event,                           v1_1,          "M",                "E"},
-    {Read_Remote_Version_Information_command,                                 v1_1,          "O",                "C.3"}, 
-    // C.3: Mandatory if the LE Controller supports Connection State, otherwise excluded
-    {Read_Remote_Version_Information_Complete_event,                          v1_1,          "C.105",            "C.3"}, 
-    // C.105: Mandatory if the Read Remote Version Information command is supported; C.3: Mandatory if the LE Controller supports Connection State
-    {Read_RSSI_command,                                                       v1_1,          "O",                "C.3"}, 
-    // C.3: Mandatory if the LE Controller supports Connection State, otherwise excluded
     {Read_Scan_Enable_command,                                                v1_1,          "M",                "E"},
     {Read_Stored_Link_Key_command,                                            v1_1,          "C.121",            "E"}, 
     // C.121: Mandatory if the Write Stored Link Key command is supported, otherwise excluded
@@ -590,7 +598,6 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
     {Remote_Name_Request_command,                                             v1_1,          "O",                "E"},
     {Remote_Name_Request_Complete_event,                                      v1_1,          "C.106",            "E"}, 
     // C.106: Mandatory if the Remote Name Request command is supported, otherwise excluded
-    {Reset_command,                                                           v1_1,          "M",                "M"},
     {Reset_Failed_Contact_Counter_command,                                    v1_1,          "M",                "E"},
     {Return_Link_Keys_event,                                                  v1_1,          "C.121",            "E"}, 
     // C.121: Mandatory if the Write Stored Link Key command is supported, otherwise excluded
@@ -599,23 +606,16 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
     {Role_Discovery_command,                                                  v1_1,          "O",                "E"},
     {Read_Synchronous_Flow_Control_Enable_command,                            v1_1,          "C.122",            "E"}, 
     // C.122: Mandatory if the Write Synchronous Flow Control Enable command is supported, otherwise excluded
-    {Read_Transmit_Power_Level_command,                                       v1_1,          "C.152",            "C.3"}, 
-    // C.152: Mandatory if Power Control is supported; C.3: Mandatory if the LE Controller supports Connection State
     {Read_Voice_Setting_command,                                              v1_1,          "C.134",            "E"}, 
     // C.134: Mandatory if SCO or eSCO is supported, otherwise excluded
     {Set_Connection_Encryption_command,                                       v1_1,          "M",                "E"},
-    {Set_Controller_To_Host_Flow_Control_command,                             v1_1,          "O",                "C.96"}, 
-    // C.96: Optional if the LE Controller supports Connection State, otherwise excluded
     {Set_Event_Filter_command,                                                v1_1,          "C.148",            "E"}, 
     // C.148: Optional if any of the specified events is supported, otherwise excluded
-    {Set_Event_Mask_command,                                                  v1_1,          "M",                "M"},
     {Sniff_Mode_command,                                                      v1_1,          "C.214",            "E"}, 
     // C.214: Mandatory if Sniff mode is supported, otherwise excluded
     {Write_Authentication_Enable_command,                                     v1_1,          "O",                "E"},
     {Write_Automatic_Flush_Timeout_command,                                   v1_1,          "M",                "E"},
     {Write_Class_of_Device_command,                                           v1_1,          "M",                "E"},
-    {Write_Connection_Accept_Timeout_command,                                 v1_1,          "M",                "C.40"}, 
-    // C.40: Mandatory if LE Feature (Connected Isochronous Stream - Peripheral) is supported, otherwise excluded
     {Write_Current_IAC_LAP_command,                                           v1_1,          "C.125",            "E"}, 
     // C.125: Mandatory if Inquiry Scan is supported, otherwise excluded
     {Switch_Role_command,                                                     v1_1,          "C.212",            "E"}, 
@@ -641,6 +641,11 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
     {Write_Voice_Setting_command,                                             v1_1,          "C.134",            "E"}, 
     // C.134: Mandatory if SCO or eSCO is supported, otherwise excluded
 
+
+    /****************************************************BT VERSION 1.2*************************************************************/
+    {Write_AFH_Channel_Assessment_Mode_command,                               v1_2,          "C.140",            "C.58"}, 
+    // C.140: Mandatory if the Controller supports AFH classification in either role or is an AFH capable Central; 
+    // C.58: Mandatory if LE Feature (Channel Classification) is supported
     {Read_Clock_command,                                                      v1_2,          "O",                "E"},
     {Accept_Synchronous_Connection_Request_command,                           v1_2,         "C.134",             "E"}, 
     // C.134: Mandatory if SCO or eSCO is supported, otherwise excluded  
@@ -649,8 +654,6 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
     {Flow_Specification_Complete_event,                                       v1_2,          "M",                "E"},
     {Inquiry_Result_with_RSSI_event,                                          v1_2,          "C.128",            "E"}, 
     // C.128: Optional if Inquiry is supported, otherwise excluded
-    {Read_AFH_Channel_Assessment_Mode_command,                                v1_2,          "C.140",            "C.58"}, 
-    // C.140: Mandatory if the Controller supports AFH classification in either role or is an AFH capable Central; C.58: Mandatory if LE Feature (Channel Classification) is supported
     {Read_AFH_Channel_Map_command,                                            v1_2,          "C.139",            "E"}, 
     // C.139: Mandatory if the Controller is AFH capable in either role, otherwise excluded
     {Read_Default_Link_Policy_Settings_command,                               v1_2,          "C.141",            "E"}, 
@@ -662,15 +665,12 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
     // C.134: Mandatory if SCO or eSCO is supported, otherwise excluded
     {Read_Local_Extended_Features_command,                                    v1_2,          "C.220",            "E"}, 
     // C.220: Mandatory if LMP Extended Features mask is supported, otherwise excluded
-    {Read_Local_Supported_Commands_command,                                   v1_2,          "M",                "M"},
     {Read_Page_Scan_Type_command,                                             v1_2,          "C.119",            "E"}, 
     // C.119: Mandatory if the Write Page Scan Type command is supported, otherwise excluded
-
     {Read_Remote_Extended_Features_command,                                   v1_2,          "C.220",            "E"}, 
     // C.220: Mandatory if LMP Extended Features mask is supported, otherwise excluded
     {Read_Remote_Extended_Features_Complete_event,                            v1_2,          "C.220",            "E"}, 
     // C.220: Mandatory if LMP Extended Features mask is supported, otherwise excluded
-
     {Reject_Synchronous_Connection_Request_command,                           v1_2,          "C.134",            "E"}, 
     // C.134: Mandatory if SCO or eSCO is supported, otherwise excluded
     {Remote_Name_Request_Cancel_command,                                      v1_2,          "C.106",            "E"}, 
@@ -683,8 +683,6 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
     // C.134: Mandatory if SCO or eSCO is supported, otherwise excluded
     {Synchronous_Connection_Complete_event,                                   v1_2,          "C.134",            "E"}, 
     // C.134: Mandatory if SCO or eSCO is supported, otherwise excluded
-    {Write_AFH_Channel_Assessment_Mode_command,                               v1_2,          "C.140",            "C.58"}, 
-    // C.140: Mandatory if the Controller supports AFH classification in either role or is an AFH capable Central; C.58: Mandatory if LE Feature (Channel Classification) is supported
     {Write_Default_Link_Policy_Settings_command,                              v1_2,          "C.141",            "E"}, 
     // C.141: Mandatory if Role Switch, Hold mode, or Sniff mode is supported, otherwise excluded
     {Write_Inquiry_Mode_command,                                              v1_2,          "C.146",            "E"}, 
@@ -694,6 +692,7 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
     {Write_Page_Scan_Type_command,                                            v1_2,          "C.154",            "E"}, 
     // C.154: Mandatory if Interlaced Page Scan is supported, otherwise optional
 
+        /****************************************************BT VERSION 2.1*************************************************************/
     {Encryption_Key_Refresh_Complete_event,                                   v2_1_EDR,      "M",                "C.4"}, 
     // C.4: Mandatory if LE Feature (LE Encryption) is supported
     {Enhanced_Flush_command,                                                  v2_1_EDR,      "M",                "E"},
@@ -741,6 +740,9 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
     {Write_Simple_Pairing_Debug_Mode_command,                                 v2_1_EDR,      "M",                "E"},
     {Write_Simple_Pairing_Mode_command,                                       v2_1_EDR,      "M",                "E"},
 
+    /****************************************************BT VERSION 3.0*************************************************************/
+    {Set_Event_Mask_Page_2_command,                                           v3_0_HS,       "C.145",            "C.145"}, 
+    // C.145: Mandatory if any event in event mask page 2 is supported, otherwise optional
     {Number_Of_Completed_Data_Blocks_event,                                   v3_0_HS,       "C.124",            "E"}, 
     // C.124: Mandatory if Data block based flow control is supported, otherwise excluded
     {Read_Data_Block_Size_command,                                            v3_0_HS,       "C.124",            "E"}, 
@@ -752,17 +754,21 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
     // C.217: Mandatory if BR/EDR Enhanced Power Control is supported, otherwise excluded
     {Read_Flow_Control_Mode_command,                                          v3_0_HS,       "C.124",            "E"}, 
     // C.124: Mandatory if Data block based flow control is supported, otherwise excluded
-    {Set_Event_Mask_Page_2_command,                                           v3_0_HS,       "C.145",            "C.145"}, 
-    // C.145: Mandatory if any event in event mask page 2 is supported, otherwise optional
+
     {Write_Flow_Control_Mode_command,                                         v3_0_HS,       "C.124",            "E"}, 
     // C.124: Mandatory if Data block based flow control is supported, otherwise excluded
 
+
+    /****************************************************BT VERSION CSA2*************************************************************/
     {Read_Local_Supported_Codecs_command,                                     CSA2,          "[v1] C.157 [v2] O","[v1] E [v2] O"}, 
     // C.157: Mandatory if the Read Local Supported Codecs command [v2] is supported, otherwise optional
     {Enhanced_Accept_Synchronous_Connection_Request_command,                  CSA2,          "C.135",            "E"}, 
     // C.135: Optional if SCO or eSCO is supported, otherwise excluded
     {Enhanced_Setup_Synchronous_Connection_command,                           CSA2,          "C.135",            "E"}, 
     // C.135: Optional if SCO or eSCO is supported, otherwise excluded
+
+    /****************************************************BT VERSION CSA3*************************************************************/
+    {Set_MWS_Transport_Layer_command,                                         CSA3,          "C.109",            "C.109"},
     {Get_MWS_Transport_Layer_Configuration_command,                           CSA3,          "C.109",            "C.109"}, 
     // C.109: Mandatory if the Set MWS Signaling command is supported, otherwise excluded
     {Set_External_Frame_Configuration_command,                                CSA3,          "C.108",            "O"}, 
@@ -770,16 +776,15 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
     {Set_MWS_Channel_Parameters_command,                                      CSA3,          "O",                "O"},
     {Set_MWS_Scan_Frequency_Table_command,                                    CSA3,          "O",                "O"},
     {Set_MWS_Signaling_command,                                               CSA3,          "O",                "O"},
-    {Set_MWS_Transport_Layer_command,                                         CSA3,          "C.109",            "C.109"},
-     // C.109: Mandatory if the Set MWS Signaling command is supported, otherwise excluded
     {Set_MWS_PATTERN_Configuration_command,                                   CSA3,          "C.136",            "E"}, 
     // C.136: Optional if Slot Availability Mask is supported, otherwise excluded
-    
+
+    /****************************************************BT VERSION CSA4*************************************************************/
     {Connectionless_Peripheral_Broadcast_Channel_Map_Change_event,            CSA4,          "C.201",            "E"}, 
     // C.201: Mandatory if Connectionless Peripheral Broadcast - Transmitter is supported, otherwise excluded
     {Connectionless_Peripheral_Broadcast_Receive_event,                       CSA4,          "C.202",            "E"}, 
     // C.202: Mandatory if Connectionless Peripheral Broadcast - Receiver is supported, otherwise excluded
-    {Connectionless_Peripheral_Broadcast_Timeout_event,                       CSA4, "C.202", "E"},
+    {Connectionless_Peripheral_Broadcast_Timeout_event,                       CSA4,          "C.202",            "E"},
     // C.202: Mandatory if Connectionless Peripheral Broadcast - Receiver is supported, otherwise excluded
     {Delete_Reserved_LT_ADDR_command,                                         CSA4,          "C.201",            "E"}, 
     // C.201: Mandatory if Connectionless Peripheral Broadcast - Transmitter is supported, otherwise excluded
@@ -818,17 +823,35 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
 
     // {Read_Local_Simple_Pairing_Options_command,                              Erratum_10734,  "O",                "E"},
 
-
+    /****************************************************BT VERSION 4.0*************************************************************/
     {LE_Add_Device_To_Filter_Accept_List_command,                             v4_0,          "E",                "M"},
+    {LE_Clear_Filter_Accept_List_command,                                     v4_0,          "E",                "M"},
+    {LE_Read_Filter_Accept_List_Size_command,                                 v4_0,          "E",                "M"},
+    {LE_Read_Local_Supported_Features_Page_0_command,                         v4_0,          "E",                "M"},
+    {LE_Read_Supported_States_command,                                        v4_0,          "E",                "M"},
+    {LE_Remove_Device_From_Filter_Accept_List_command,                        v4_0,          "E",                "M"},
+    {LE_Set_Event_Mask_command,                                               v4_0,          "E",                "M"},
+    {LE_Test_End_command,                                                     v4_0,          "E",                "M"},
+    
     {LE_Connection_Update_command,                                            v4_0,          "E",                "C.62"}, 
     // C.62: Mandatory if the LE Controller supports Central role or supports both Peripheral role and LE Feature (Connection Parameters Request Procedure), otherwise excluded
+    {LE_Set_Advertising_Data_command,                                         v4_0,          "E",                "C.97"}, 
+    {LE_Set_Advertising_Enable_command,                                       v4_0,          "E",                "C.97"}, 
+    {LE_Set_Advertising_Parameters_command,                                   v4_0,          "E",                "C.97"},
+    {LE_Read_Advertising_Physical_Channel_Tx_Power_command,                   v4_0,          "E",                "C.97"}, 
+    // C.97: Mandatory if Advertising State is supported, otherwise excluded
+    {LE_Set_Scan_Response_Data_command,                                       v4_0,          "E",                "C.15"}, 
+    // C.15: Mandatory if LE Controller supports transmitting scannable advertisements, otherwise excluded
+    {LE_Set_Scan_Enable_command,                                              v4_0,          "E",                "C.98"}, 
+    {LE_Set_Scan_Parameters_command,                                          v4_0,          "E",                "C.98"}, 
     {LE_Advertising_Report_event,                                             v4_0,          "E",                "C.98"},
     // C.98: Mandatory if Scanning State is supported, otherwise excluded
-    {LE_Clear_Filter_Accept_List_command,                                     v4_0,          "E",                "M"},
     {LE_Connection_Complete_event,                                            v4_0,          "E",                "C.3"},
-     // C.3: Mandatory if the LE Controller supports Connection State, otherwise excluded
     {LE_Connection_Update_Complete_event,                                     v4_0,          "E",                "C.3"},
-     // C.3: Mandatory if the LE Controller supports Connection State, otherwise excluded
+    {LE_Read_Channel_Map_command,                                             v4_0,          "E",                "C.3"}, 
+    {LE_Read_Remote_Features_Page_0_command,                                  v4_0,          "E",                "C.3"}, 
+    {LE_Read_Remote_Features_Page_0_Complete_event,                           v4_0,          "E",                "C.3"}, 
+    // C.3: Mandatory if the LE Controller supports Connection State, otherwise excluded
     {LE_Create_Connection_Cancel_command,                                     v4_0,          "E",                "C.94"}, 
     // C.94: Mandatory if the LE Create Connection or LE Extended Create Connection command is supported, otherwise excluded
     {LE_Create_Connection_command,                                            v4_0,          "E",                "C.59"}, 
@@ -836,245 +859,182 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
     {LE_Enable_Encryption_command,                                            v4_0,          "E",                "C.60"},
      // C.60: Mandatory if the LE Controller supports Central role and LE Feature (LE Encryption), otherwise excluded
     {LE_Encrypt_command,                                                      v4_0,          "E",                "C.4"},
+    {LE_Rand_command,                                                         v4_0,          "E",                "C.4"}, 
      // C.4: Mandatory if LE Feature (LE Encryption) is supported, otherwise excluded
     {LE_Long_Term_Key_Request_Negative_Reply_command,                         v4_0,          "E",                "C.61"}, 
-    // C.61: Mandatory if the LE Controller supports Peripheral role and LE Feature (LE Encryption), otherwise excluded
     {LE_Long_Term_Key_Request_Reply_command,                                  v4_0,          "E",                "C.61"}, 
+    {LE_Long_Term_Key_Request_event,                                          v4_0,          "E",                "C.61"}, 
     // C.61: Mandatory if the LE Controller supports Peripheral role and LE Feature (LE Encryption), otherwise excluded
-    {LE_Rand_command,                                                         v4_0,          "E",                "C.4"}, 
-    // C.4: Mandatory if LE Feature (LE Encryption) is supported, otherwise excluded
-    {LE_Read_Advertising_Physical_Channel_Tx_Power_command,                   v4_0,          "E",                "C.97"}, 
-    // C.97: Mandatory if Advertising State is supported, otherwise excluded
     {LE_Read_Buffer_Size_command,                                             v4_0,          "E",                "[v1] C.3 [v2] C.55"}, 
     // C.3: Mandatory if the LE Controller supports Connection State; C.55: Optional if LE Feature (Connected Isochronous Stream - Central), or LE Feature (Connected Isochronous Stream - Peripheral), or LE Feature (Synchronized Receiver role) is supported
-    {LE_Read_Channel_Map_command,                                             v4_0,          "E",                "C.3"}, 
-    // C.3: Mandatory if the LE Controller supports Connection State, otherwise excluded
-    {LE_Read_Filter_Accept_List_Size_command,                                 v4_0,          "E",                "M"},
-    {LE_Read_Local_Supported_Features_Page_0_command,                         v4_0,          "E",                "M"},
-    {LE_Read_Remote_Features_Page_0_command,                                  v4_0,          "E",                "C.3"}, 
-    // C.3: Mandatory if the LE Controller supports Connection State, otherwise excluded
-    {LE_Read_Remote_Features_Page_0_Complete_event,                           v4_0,          "E",                "C.3"}, 
-    // C.3: Mandatory if the LE Controller supports Connection State, otherwise excluded
-    {LE_Read_Supported_States_command,                                        v4_0,          "E",                "M"},
     {LE_Receiver_Test_command,                                                v4_0,          "E",                "[v1] C.2 [v2] C.13 [v3] C.30"}, 
     // C.2: Mandatory if the LE Controller supports receiving packets;
     // C.13: Mandatory if LE Feature (LE 2M PHY) or LE Feature (LE Coded PHY) or LE Feature (Stable Modulation Index - Receiver) is supported;
     // C.30: Mandatory if LE Feature (Connection CTE Request) or LE Feature (Connectionless CTE Receiver) is supported
-    {LE_Remove_Device_From_Filter_Accept_List_command,                        v4_0,          "E",                "M"},
-    {LE_Set_Advertising_Data_command,                                         v4_0,          "E",                "C.97"}, 
-    // C.97: Mandatory if Advertising State is supported, otherwise excluded
-    {LE_Set_Advertising_Enable_command,                                       v4_0,          "E",                "C.97"}, 
-    // C.97: Mandatory if Advertising State is supported, otherwise excluded
-    {LE_Set_Advertising_Parameters_command,                                   v4_0,          "E",                "C.97"}, 
-    // C.97: Mandatory if Advertising State is supported, otherwise excluded
-    {LE_Set_Event_Mask_command,                                               v4_0,          "E",                "M"},
     {LE_Set_Host_Channel_Classification_command,                              v4_0,          "E",                "C.36"}, 
     // C.36: Mandatory if the LE Controller supports Central role or supports both Peripheral role and LE Feature (Channel Classification), otherwise optional
     {LE_Set_Random_Address_command,                                           v4_0,          "E",                "C.1"}, 
     // C.1: Mandatory if the LE Controller supports transmitting packets, otherwise excluded
-    {LE_Set_Scan_Enable_command,                                              v4_0,          "E",                "C.98"}, 
-    // C.98: Mandatory if Scanning State is supported, otherwise excluded
-    {LE_Set_Scan_Parameters_command,                                          v4_0,          "E",                "C.98"}, 
-    // C.98: Mandatory if Scanning State is supported, otherwise excluded
-    {LE_Set_Scan_Response_Data_command,                                       v4_0,          "E",                "C.15"}, 
-    // C.15: Mandatory if LE Controller supports transmitting scannable advertisements, otherwise excluded
-    {Write_LE_Host_Support_command,                                           v4_0,          "C.153",            "E"}, 
-    // C.153: Mandatory if LE supported in the Controller, otherwise optional
-    {LE_Long_Term_Key_Request_event,                                          v4_0,          "E",                "C.61"}, 
-    // C.61: Mandatory if the LE Controller supports Peripheral role and LE Feature (LE Encryption), otherwise excluded
-    {LE_Test_End_command,                                                     v4_0,          "E",                "M"},
+
     {LE_Transmitter_Test_command,                                             v4_0,          "E",                "[v1] C.1 [v2] C.12 [v3] C.29 [v4] C.53"}, 
     // C.1: Mandatory if the LE Controller supports transmitting packets; 
     // C.12: Mandatory if LE 2M PHY/Coded PHY/Stable Modulation Index (Transmitter) is supported;
     // C.29: Similar to C.12; C.53: Related to specific transmitter test features
     {Read_LE_Host_Support_command,                                            v4_0,          "C.116",            "E"}, 
     // C.116: Mandatory if the Write LE Host Support command is supported, otherwise excluded
+    {Write_LE_Host_Support_command,                                           v4_0,          "C.153",            "E"}, 
+    // C.153: Mandatory if LE supported in the Controller, otherwise optional
 
-    {Read_Local_OOB_Extended_Data_command,                                    v4_1,          "C.142",            "E"}, 
-    // C.142: Mandatory if Secure Connections (Controller) or Secure Simple Pairing (Controller) is supported, otherwise excluded    
-    {Authenticated_Payload_Timeout_Expired_event,                             v4_1,         "C.155",             "C.155"}, 
-    // C.155: Mandatory if the Write Authenticated Payload Timeout command is supported, otherwise excluded
+    /****************************************************BT VERSION 4.1*************************************************************/
     {LE_Remote_Connection_Parameter_Request_event,                            v4_1,          "E",                "C.6"}, 
-    // C.6: Mandatory if LE Feature (Connection Parameters Request procedure) is supported, otherwise excluded
     {LE_Remote_Connection_Parameter_Request_Negative_Reply_command,           v4_1,          "E",                "C.6"}, 
-    // C.6: Mandatory if LE Feature (Connection Parameters Request procedure) is supported, otherwise excluded
     {LE_Remote_Connection_Parameter_Request_Reply_command,                    v4_1,          "E",                "C.6"}, 
     // C.6: Mandatory if LE Feature (Connection Parameters Request procedure) is supported, otherwise excluded
+    {Authenticated_Payload_Timeout_Expired_event,                             v4_1,          "C.155",            "C.155"}, 
     {Read_Authenticated_Payload_Timeout_command,                              v4_1,          "C.155",            "C.155"}, 
     // C.155: Mandatory if the Write Authenticated Payload Timeout command is supported, otherwise excluded
+    {Write_Authenticated_Payload_Timeout_command,                             v4_1,          "C.151",            "C.7"}, 
+    // C.151: Mandatory if Secure Connections (Controller) and Ping are supported; 
+    // C.7: Mandatory if LE Feature (LE Encryption) and LE Feature (LE Ping) are supported
+    {Read_Local_OOB_Extended_Data_command,                                    v4_1,          "C.142",            "E"}, 
+    {Remote_OOB_Extended_Data_Request_Reply_command,                          v4_1,          "C.142",            "E"}, 
+    // C.142: Mandatory if Secure Connections (Controller) or Secure Simple Pairing (Controller) is supported, otherwise excluded
     {Read_Extended_Inquiry_Length_command,                                    v4_1,          "C.113",            "E"}, 
     // C.113: Mandatory if the Write Extended Inquiry Length command is supported, otherwise excluded
     {Read_Extended_Page_Timeout_command,                                      v4_1,          "C.114",            "E"}, 
     // C.114: Mandatory if the Write Extended Page Timeout command is supported, otherwise excluded
     {Read_Secure_Connections_Host_Support_command,                            v4_1,          "C.218",            "E"}, 
+    {Write_Secure_Connections_Host_Support_command,                           v4_1,          "C.218",            "E"}, 
     // C.218: Mandatory if Secure Connections (Controller) is supported, otherwise excluded
-    {Remote_OOB_Extended_Data_Request_Reply_command,                          v4_1,          "C.142",            "E"}, 
-    // C.142: Mandatory if Secure Connections (Controller) or Secure Simple Pairing (Controller) is supported, otherwise excluded
-    {Write_Authenticated_Payload_Timeout_command,                             v4_1,          "C.151",            "C.7"}, 
-    // C.151: Mandatory if Secure Connections (Controller) and Ping are supported; C.7: Mandatory if LE Feature (LE Encryption) and LE Feature (LE Ping) are supported
     {Write_Extended_Inquiry_Length_command,                                   v4_1,          "C.128",            "E"}, 
     // C.128: Optional if Inquiry is supported, otherwise excluded
     {Write_Extended_Page_Timeout_command,                                     v4_1,          "O",                "E"},
-    {Write_Secure_Connections_Host_Support_command,                           v4_1,          "C.218",            "E"}, 
-    // C.218: Mandatory if Secure Connections (Controller) is supported, otherwise excluded
     {Write_Secure_Connections_Test_Mode_command,                              v4_1,          "C.138",            "E"}, 
     // C.138: Mandatory if Secure Connections (Controller) is supported, otherwise optional if eSCO is supported
 
-    {LE_Add_Device_To_Resolving_List_command,                                 v4_2,          "E",                "C.9"}, 
-    // C.9: Mandatory if LE Feature (LL Privacy) is supported, otherwise excluded
-    {LE_Clear_Resolving_List_command,                                         v4_2,          "E",                "C.9"}, 
-    // C.9: Mandatory if LE Feature (LL Privacy) is supported, otherwise excluded
+    /****************************************************BT VERSION 4.2*************************************************************/
+    {LE_Read_Suggested_Default_Data_Length_command,                           v4_2,          "E",                "C.8"}, 
+    {LE_Set_Data_Length_command,                                              v4_2,          "E",                "C.8"}, 
+    {LE_Write_Suggested_Default_Data_Length_command,                          v4_2,          "E",                "C.8"}, 
     {LE_Data_Length_Change_event,                                             v4_2,          "E",                "C.8"}, 
+    {LE_Read_Maximum_Data_Length_command,                                     v4_2,          "E",                "C.8"}, 
     // C.8: Mandatory if LE Feature (LE Data Packet Length Extension) is supported, otherwise optional
+    {LE_Add_Device_To_Resolving_List_command,                                 v4_2,          "E",                "C.9"}, 
+    {LE_Clear_Resolving_List_command,                                         v4_2,          "E",                "C.9"}, 
+    {LE_Read_Resolving_List_Size_command,                                     v4_2,          "E",                "C.9"}, 
+    {LE_Remove_Device_From_Resolving_List_command,                            v4_2,          "E",                "C.9"}, 
+    {LE_Set_Address_Resolution_Enable_command,                                v4_2,          "E",                "C.9"}, 
+    {LE_Set_Resolvable_Private_Address_Timeout_command,                       v4_2,          "E",                "C.9"}, 
+    // C.9: Mandatory if LE Feature (LL Privacy) is supported, otherwise excluded
+    {LE_Read_Local_Resolvable_Address_command,                                v4_2,          "E",                "C.10"}, 
+    {LE_Read_Peer_Resolvable_Address_command,                                 v4_2,          "E",                "C.10"}, 
+    // C.10: Optional if LE Feature (LL Privacy) is supported, otherwise excluded
     {LE_Directed_Advertising_Report_event,                                    v4_2,          "E",                "C.63"}, 
     // C.63: Mandatory if the LE Controller supports Scanning state and LE Feature (LL Privacy), otherwise excluded
+    {LE_Generate_DHKey_Complete_event,                                        v4_2,          "E",                "O"},    
+    {LE_Read_Local_P_256_Public_Key_command,                                  v4_2,          "E",                "O"},
+    {LE_Read_Local_P_256_Public_Key_Complete_event,                           v4_2,          "E",                "O"},
     {LE_Enhanced_Connection_Complete_event,                                   v4_2,          "E",                "[v1] C.24 [v2] C.69"}, 
     // C.24: Mandatory if the LE Controller supports Connection State and either LE Feature (LL Privacy) or LE Feature (Extended Advertising) is supported;
     // C.69: Mandatory if the LE Controller supports LE Feature (LL Extended Feature Set)
     {LE_Generate_DHKey_command,                                               v4_2,          "E",                "[v1] C.99 [v2] O"}, 
     // C.99: Mandatory if LE Generate DHKey command [v2] is supported, otherwise optional
-    {LE_Generate_DHKey_Complete_event,                                        v4_2,          "E",                "O"},    
-    {LE_Read_Local_P_256_Public_Key_command,                                  v4_2,          "E",                "O"},
-    {LE_Read_Local_P_256_Public_Key_Complete_event,                           v4_2,          "E",                "O"},
-    {LE_Read_Local_Resolvable_Address_command,                                v4_2,          "E",                "C.10"}, 
-    // C.10: Optional if LE Feature (LL Privacy) is supported, otherwise excluded
-    {LE_Read_Maximum_Data_Length_command,                                     v4_2,          "E",                "C.8"}, 
-    // C.8: Mandatory if LE Feature (LE Data Packet Length Extension) is supported, otherwise optional
-    {LE_Read_Peer_Resolvable_Address_command,                                 v4_2,          "E",                "C.10"}, 
-    // C.10: Optional if LE Feature (LL Privacy) is supported, otherwise excluded
-    {LE_Read_Resolving_List_Size_command,                                     v4_2,          "E",                "C.9"}, 
-    // C.9: Mandatory if LE Feature (LL Privacy) is supported, otherwise excluded
-    {LE_Read_Suggested_Default_Data_Length_command,                           v4_2,          "E",                "C.8"}, 
-    // C.8: Mandatory if LE Feature (LE Data Packet Length Extension) is supported, otherwise optional
-    {LE_Remove_Device_From_Resolving_List_command,                            v4_2,          "E",                "C.9"}, 
-    // C.9: Mandatory if LE Feature (LL Privacy) is supported, otherwise excluded   
-    {LE_Set_Address_Resolution_Enable_command,                                v4_2,          "E",                "C.9"}, 
-    // C.9: Mandatory if LE Feature (LL Privacy) is supported, otherwise excluded    
-    {LE_Set_Data_Length_command,                                              v4_2,          "E",                "C.8"}, 
-    // C.8: Mandatory if LE Feature (LE Data Packet Length Extension) is supported, otherwise optional
-    {LE_Set_Resolvable_Private_Address_Timeout_command,                       v4_2,          "E",                "C.9"}, 
-    // C.9: Mandatory if LE Feature (LL Privacy) is supported, otherwise excluded
-    {LE_Write_Suggested_Default_Data_Length_command,                          v4_2,          "E",                "C.8"}, 
-    // C.8: Mandatory if LE Feature (LE Data Packet Length Extension) is supported, otherwise optional
 
-    {LE_Add_Device_To_Periodic_Advertiser_List_command,                       v5_0,          "E",                "C.21"}, 
-    // C.21: Mandatory if LE Feature (Periodic Advertising) is supported and the LE Controller supports Synchronization State, otherwise excluded
+
+    /****************************************************BT VERSION 5.0*************************************************************/
+    {LE_PHY_Update_Complete_event,                                            v5_0,          "E",                "C.11"}, 
+    {LE_Read_PHY_command,                                                     v5_0,          "E",                "C.11"}, 
+    {LE_Set_Default_PHY_command,                                              v5_0,          "E",                "C.11"}, 
+    {LE_Set_PHY_command,                                                      v5_0,          "E",                "C.11"}, 
+    // C.11: Mandatory if LE Feature (LE 2M PHY) or LE Feature (LE Coded PHY) is supported, otherwise optional
+    {LE_Periodic_Advertising_Create_Sync_Cancel_command,                      v5_0,          "E",                "C.16"}, 
+    {LE_Periodic_Advertising_Create_Sync_command,                             v5_0,          "E",                "C.16"},
+    {LE_Periodic_Advertising_Sync_Established_event,                          v5_0,          "E",                "[v1] C.16 [v2] C.68"}, 
+    // C.68: Mandatory if LE Feature (Periodic Advertising with Responses - Scanner) is supported
+    // C.16: Mandatory if LE Feature (Periodic Advertising) is supported and the LE Controller supports both Scanning State and Synchronization State; 
     {LE_Advertising_Set_Terminated_event,                                     v5_0,          "E",                "C.17"}, 
+    {LE_Clear_Advertising_Sets_command,                                       v5_0,          "E",                "C.17"}, 
+    {LE_Scan_Request_Received_event,                                          v5_0,          "E",                "C.17"}, 
+    {LE_Remove_Advertising_Set_command,                                       v5_0,          "E",                "C.17"}, 
+    {LE_Set_Advertising_Set_Random_Address_command,                           v5_0,          "E",                "C.17"}, 
+    {LE_Read_Maximum_Advertising_Data_Length_command,                         v5_0,          "E",                "C.17"},
+    {LE_Read_Number_of_Supported_Advertising_Sets_command,                    v5_0,          "E",                "C.17"}, 
+    {LE_Set_Extended_Advertising_Data_command,                                v5_0,          "E",                "C.17"}, 
+    {LE_Set_Extended_Scan_Response_Data_command,                              v5_0,          "E",                "C.17"}, 
+    {LE_Set_Extended_Advertising_Enable_command,                              v5_0,          "E",                "C.17"}, 
     // C.17: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Advertising State, otherwise excluded
+    {LE_Set_Periodic_Advertising_Data_command,                                v5_0,          "E",                "C.18"}, 
+    {LE_Set_Periodic_Advertising_Enable_command,                              v5_0,          "E",                "C.18"}, 
+    {LE_Set_Periodic_Advertising_Parameters_command,                          v5_0,          "E",                "[v1] C.18 [v2] C.67"}, 
+    // C.18: Mandatory if LE Feature (Periodic Advertising) is supported and the LE Controller supports Advertising State; 
+    // C.67: Mandatory if LE Feature (Periodic Advertising with Responses - Advertiser) is supported
+    {LE_Set_Extended_Scan_Enable_command,                                     v5_0,          "E",                "C.19"}, 
+    {LE_Set_Extended_Scan_Parameters_command,                                 v5_0,          "E",                "C.19"}, 
+    {LE_Extended_Advertising_Report_event,                                    v5_0,          "E",                "C.19"}, 
+    {LE_Scan_Timeout_event,                                                   v5_0,          "E",                "C.19"}, 
+    // C.19: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Scanning State, otherwise excluded
+    {LE_Add_Device_To_Periodic_Advertiser_List_command,                       v5_0,          "E",                "C.21"}, 
+    {LE_Periodic_Advertising_Sync_Lost_event,                                 v5_0,          "E",                "C.21"}, 
+    {LE_Periodic_Advertising_Terminate_Sync_command,                          v5_0,          "E",                "C.21"}, 
+    {LE_Read_Periodic_Advertiser_List_Size_command,                           v5_0,          "E",                "C.21"}, 
+    {LE_Remove_Device_From_Periodic_Advertiser_List_command,                  v5_0,          "E",                "C.21"}, 
+    {LE_Clear_Periodic_Advertiser_List_command,                               v5_0,          "E",                "C.21"}, 
+    // C.21: Mandatory if LE Feature (Periodic Advertising) is supported and the LE Controller supports Synchronization State, otherwise excluded
+    {LE_Periodic_Advertising_Report_event,                                    v5_0,          "E",                "[v1] C.21 [v2] C.68"}, 
+    // C.21: Mandatory if LE Feature (Periodic Advertising) is supported and the LE Controller supports Synchronization State; 
+    // C.68: Mandatory if LE Feature (Periodic Advertising with Responses - Scanner) is supported
     {LE_Channel_Selection_Algorithm_event,                                    v5_0,          "E",                "C.23"}, 
     // C.23: Mandatory if LE Feature (LE Channel Selection Algorithm #2) is supported, otherwise excluded
-    {LE_Clear_Advertising_Sets_command,                                       v5_0,          "E",                "C.17"}, 
-    {LE_Extended_Advertising_Report_event,                                    v5_0,          "E",                "C.19"}, 
-    // C.19: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Scanning State, otherwise excluded
     {LE_Extended_Create_Connection_command,                                   v5_0,          "E",                "[v1] C.20 [v2] C.67"}, 
-    // C.20: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Initiating State; C.67: Mandatory if LE Feature (Periodic Advertising with Responses - Scanner) is supported
-    {LE_Periodic_Advertising_Create_Sync_Cancel_command,                      v5_0,          "E",                "C.16"}, 
-    // C.16: Mandatory if LE Feature (Periodic Advertising) is supported and the LE Controller supports both Scanning State and Synchronization State, otherwise excluded
-    {LE_Periodic_Advertising_Create_Sync_command,                             v5_0,          "E",                "C.16"},
-     // C.16: Mandatory if LE Feature (Periodic Advertising) is supported and the LE Controller supports both Scanning State and Synchronization State, otherwise excluded
-    {LE_Periodic_Advertising_Report_event,                                    v5_0,          "E",                "[v1] C.21 [v2] C.68"}, 
-    // C.21: Mandatory if LE Feature (Periodic Advertising) is supported and the LE Controller supports Synchronization State; C.68: Mandatory if LE Feature (Periodic Advertising with Responses - Scanner) is supported
-    {LE_Periodic_Advertising_Sync_Established_event,                          v5_0,          "E",                "[v1] C.16 [v2] C.68"}, 
-    // C.16: Mandatory if LE Feature (Periodic Advertising) is supported and the LE Controller supports both Scanning State and Synchronization State; C.68: Mandatory if LE Feature (Periodic Advertising with Responses - Scanner) is supported
-    {LE_Periodic_Advertising_Sync_Lost_event,                                 v5_0,          "E",                "C.21"}, 
-    // C.21: Mandatory if LE Feature (Periodic Advertising) is supported and the LE Controller supports Synchronization State, otherwise excluded
-    {LE_Periodic_Advertising_Terminate_Sync_command,                          v5_0,          "E",                "C.21"}, 
-    // C.21: Mandatory if LE Feature (Periodic Advertising) is supported and the LE Controller supports Synchronization State, otherwise excluded
-    {LE_PHY_Update_Complete_event,                                            v5_0,          "E",                "C.11"}, 
-    // C.11: Mandatory if LE Feature (LE 2M PHY) or LE Feature (LE Coded PHY) is supported, otherwise optional
-    {LE_Read_Maximum_Advertising_Data_Length_command,                         v5_0,          "E",                "C.17"}, 
-    // C.17: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Advertising State, otherwise excluded
-    {LE_Read_Number_of_Supported_Advertising_Sets_command,                    v5_0,          "E",                "C.17"}, 
-    // C.17: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Advertising State, otherwise excluded
-    {LE_Read_Periodic_Advertiser_List_Size_command,                           v5_0,          "E",                "C.21"}, 
-    // C.21: Mandatory if LE Feature (Periodic Advertising) is supported and the LE Controller supports Synchronization State, otherwise excluded
-    {LE_Read_PHY_command,                                                     v5_0,          "E",                "C.11"}, 
-    // C.11: Mandatory if LE Feature (LE 2M PHY) or LE Feature (LE Coded PHY) is supported, otherwise optional
+    // C.20: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Initiating State;
+    // C.67: Mandatory if LE Feature (Periodic Advertising with Responses - Scanner) is supported
     {LE_Read_RF_Path_Compensation_command,                                    v5_0,          "E",                "C.22"}, 
     // C.22: Mandatory if the LE Controller supports sending Transmit Power in advertisements or if LE Feature (LE Power Control Request) is supported, otherwise optional
     {LE_Read_Transmit_Power_command,                                          v5_0,          "E",                "C.64"}, 
     // C.64: Optional if the Controller supports transmitting packets, otherwise excluded
-    {LE_Remove_Advertising_Set_command,                                       v5_0,          "E",                "C.17"}, 
-    // C.17: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Advertising State, otherwise excluded
-    {LE_Remove_Device_From_Periodic_Advertiser_List_command,                  v5_0,          "E",                "C.21"}, 
-    // C.21: Mandatory if LE Feature (Periodic Advertising) is supported and the LE Controller supports Synchronization State, otherwise excluded
-    {LE_Scan_Request_Received_event,                                          v5_0,          "E",                "C.17"}, 
-    // C.17: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Advertising State, otherwise excluded
-    {LE_Scan_Timeout_event,                                                   v5_0,          "E",                "C.19"}, 
-    // C.19: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Scanning State, otherwise excluded
-    {LE_Set_Advertising_Set_Random_Address_command,                           v5_0,          "E",                "C.17"}, 
-    // C.17: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Advertising State, otherwise excluded
-    {LE_Set_Default_PHY_command,                                              v5_0,          "E",                "C.11"}, 
-    // C.11: Mandatory if LE Feature (LE 2M PHY) or LE Feature (LE Coded PHY) is supported, otherwise optional
-    {LE_Set_Extended_Advertising_Data_command,                                v5_0,          "E",                "C.17"}, 
-    // C.17: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Advertising State, otherwise excluded
-    {LE_Set_Extended_Advertising_Enable_command,                              v5_0,          "E",                "C.17"}, 
-    // C.17: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Advertising State, otherwise excluded
-    {LE_Set_Extended_Advertising_Parameters_command,                          v5_0,          "E",                "[v1] C.65 [v2] C.66"}, // C.65: Mandatory if LE Set Extended Advertising Parameters command [v2] is supported; C.66: Mandatory if LE Feature (Advertising Coding Selection) is supported
-    {LE_Set_Extended_Scan_Enable_command,                                     v5_0,          "E",                "C.19"}, 
-    // C.19: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Scanning State, otherwise excluded
-    {LE_Set_Extended_Scan_Parameters_command,                                 v5_0,          "E",                "C.19"}, 
-    // C.19: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Scanning State, otherwise excluded
-    {LE_Set_Extended_Scan_Response_Data_command,                              v5_0,          "E",                "C.17"}, 
-    // C.17: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Advertising State, otherwise excluded
-    {LE_Set_Periodic_Advertising_Data_command,                                v5_0,          "E",                "C.18"}, 
-    // C.18: Mandatory if LE Feature (Periodic Advertising) is supported and the LE Controller supports Advertising State, otherwise excluded
-    {LE_Set_Periodic_Advertising_Enable_command,                              v5_0,          "E",                "C.18"}, 
-    // C.18: Mandatory if LE Feature (Periodic Advertising) is supported and the LE Controller supports Advertising State, otherwise excluded
-    {LE_Set_Periodic_Advertising_Parameters_command,                          v5_0,          "E",                "[v1] C.18 [v2] C.67"}, 
-    // C.18: Mandatory if LE Feature (Periodic Advertising) is supported and the LE Controller supports Advertising State; 
-    // C.67: Mandatory if LE Feature (Periodic Advertising with Responses - Advertiser) is supported
-    {LE_Set_PHY_command,                                                      v5_0,          "E",                "C.11"}, 
-    // C.11: Mandatory if LE Feature (LE 2M PHY) or LE Feature (LE Coded PHY) is supported, otherwise optional
+    {LE_Set_Extended_Advertising_Parameters_command,                          v5_0,          "E",                "[v1] C.65 [v2] C.66"}, 
+    // C.65: Mandatory if LE Set Extended Advertising Parameters command [v2] is supported; 
+    // C.66: Mandatory if LE Feature (Advertising Coding Selection) is supported
     {LE_Set_Privacy_Mode_command,                                             v5_0,          "E",                "C.9"}, 
     // C.9: Mandatory if LE Feature (LL Privacy) is supported, otherwise excluded
-    {SAM_Status_Change_event,                                                 v5_0,          "C.219",            "E"}, 
-    // C.219: Mandatory if Slot Availability Mask is supported, otherwise excluded
     {LE_Write_RF_Path_Compensation_command,                                   v5_0,          "E",                "C.22"}, 
     // C.22: Mandatory if the LE Controller supports sending Transmit Power in advertisements or LE Power Control Request, otherwise optional
-    {LE_Clear_Periodic_Advertiser_List_command,                               v5_0,          "E",                "C.21"}, 
-    // C.21: Mandatory if LE Feature (Periodic Advertising) is supported and the LE Controller supports Synchronization State, otherwise excluded
+    {SAM_Status_Change_event,                                                 v5_0,          "C.219",            "E"}, 
+    // C.219: Mandatory if Slot Availability Mask is supported, otherwise excluded
 
 
+    /****************************************************BT VERSION 5.1*************************************************************/
     {LE_Connection_CTE_Request_Enable_command,                                v5_1,          "E",                "C.25"},
-     // C.25: Mandatory if LE Feature (Connection CTE Request) is supported, otherwise excluded
-    {LE_Connection_CTE_Response_Enable_command,                               v5_1,          "E",                "C.26"}, 
-    // C.26: Mandatory if LE Feature (Connection CTE Response) is supported, otherwise excluded
     {LE_Connection_IQ_Report_event,                                           v5_1,          "E",                "C.25"}, 
-    // C.25: Mandatory if LE Feature (Connection CTE Request) is supported, otherwise excluded
-    {LE_Connectionless_IQ_Report_event,                                       v5_1,          "E",                "C.28"},
-     // C.28: Mandatory if LE Feature (Connectionless CTE Receiver) is supported, otherwise excluded
     {LE_CTE_Request_Failed_event,                                             v5_1,          "E",                "C.25"}, 
+    {LE_Set_Connection_CTE_Receive_Parameters_command,                        v5_1,          "E",                "C.25"}, 
     // C.25: Mandatory if LE Feature (Connection CTE Request) is supported, otherwise excluded
-    {LE_Modify_Sleep_Clock_Accuracy_command,                                  v5_1,          "E",                "C.37"}, 
-    // C.37: Mandatory if the LE Controller can change its sleep clock accuracy, otherwise excluded
-    {LE_Periodic_Advertising_Set_Info_Transfer_command,                       v5_1,          "E",                "C.34"}, 
-    // C.34: Mandatory if LE Feature (Periodic Advertising Sync Transfer – Sender) is supported and the LE Controller supports Advertising State, otherwise excluded
-    {LE_Periodic_Advertising_Sync_Transfer_command,                           v5_1,          "E",                "C.33"}, 
-    // C.33: Mandatory if LE Feature (Periodic Advertising Sync Transfer – Sender) is supported and the LE Controller supports Scanning State, otherwise excluded
-    {LE_Periodic_Advertising_Sync_Transfer_Received_event,                    v5_1,          "E",                "[v1] C.35 [v2] C.68"}, 
-    // C.35: Mandatory if LE Feature (Periodic Advertising Sync Transfer – Recipient) is supported; 
-    // C.68: Mandatory if LE Feature (Periodic Advertising with Responses - Scanner) is supported
-    {LE_Read_Antenna_Information_command,                                     v5_1,          "E",                "C.31"},
-    // C.31: Mandatory if LE Feature (Connection CTE Request) or LE Feature (Connection CTE Response) or LE Feature (Connectionless CTE Transmitter) or LE Feature (Connectionless CTE Receiver) is supported, otherwise excluded
-   {LE_Set_Connection_CTE_Receive_Parameters_command,                         v5_1,          "E",                "C.25"}, 
-    // C.25: Mandatory if LE Feature (Connection CTE Request) is supported, otherwise excluded
+    {LE_Connection_CTE_Response_Enable_command,                               v5_1,          "E",                "C.26"}, 
     {LE_Set_Connection_CTE_Transmit_Parameters_command,                       v5_1,          "E",                "C.26"}, 
     // C.26: Mandatory if LE Feature (Connection CTE Response) is supported, otherwise excluded
     {LE_Set_Connectionless_CTE_Transmit_Enable_command,                       v5_1,          "E",                "C.27"}, 
-    // C.27: Mandatory if LE Feature (Connectionless CTE Transmitter) is supported, otherwise excluded
     {LE_Set_Connectionless_CTE_Transmit_Parameters_command,                   v5_1,          "E",                "C.27"}, 
     // C.27: Mandatory if LE Feature (Connectionless CTE Transmitter) is supported, otherwise excluded
+    {LE_Connectionless_IQ_Report_event,                                       v5_1,          "E",                "C.28"},
     {LE_Set_Connectionless_IQ_Sampling_Enable_command,                        v5_1,          "E",                "C.28"}, 
     // C.28: Mandatory if LE Feature (Connectionless CTE Receiver) is supported, otherwise excluded
-    {LE_Set_Default_Periodic_Advertising_Sync_Transfer_Parameters_command,    v5_1,          "E",                "C.35"}, 
-    // C.35: Mandatory if LE Feature (Periodic Advertising Sync Transfer – Recipient) is supported, otherwise optional if LE Feature (Periodic Advertising) is supported
+    {LE_Read_Antenna_Information_command,                                     v5_1,          "E",                "C.31"},
+    // C.31: Mandatory if LE Feature (Connection CTE Request) or LE Feature (Connection CTE Response) or LE Feature (Connectionless CTE Transmitter) or LE Feature (Connectionless CTE Receiver) is supported, otherwise excluded
     {LE_Set_Periodic_Advertising_Receive_Enable_command,                      v5_1,          "E",                "C.32"}, 
     // C.32: Mandatory if LE Feature (Periodic Advertising Sync Transfer – Recipient) is supported, otherwise optional if LE Feature (Periodic Advertising) is supported
+    {LE_Periodic_Advertising_Sync_Transfer_command,                           v5_1,          "E",                "C.33"}, 
+    // C.33: Mandatory if LE Feature (Periodic Advertising Sync Transfer – Sender) is supported and the LE Controller supports Scanning State, otherwise excluded
+    {LE_Periodic_Advertising_Set_Info_Transfer_command,                       v5_1,          "E",                "C.34"}, 
+    // C.34: Mandatory if LE Feature (Periodic Advertising Sync Transfer – Sender) is supported and the LE Controller supports Advertising State, otherwise excluded
+    {LE_Set_Default_Periodic_Advertising_Sync_Transfer_Parameters_command,    v5_1,          "E",                "C.35"}, 
     {LE_Set_Periodic_Advertising_Sync_Transfer_Parameters_command,            v5_1,          "E",                "C.35"}, 
+    {LE_Periodic_Advertising_Sync_Transfer_Received_event,                    v5_1,          "E",                "[v1] C.35 [v2] C.68"}, 
     // C.35: Mandatory if LE Feature (Periodic Advertising Sync Transfer – Recipient) is supported, otherwise optional if LE Feature (Periodic Advertising) is supported
+    // C.68: Mandatory if LE Feature (Periodic Advertising with Responses - Scanner) is supported
+    {LE_Modify_Sleep_Clock_Accuracy_command,                                  v5_1,          "E",                "C.37"}, 
+    // C.37: Mandatory if the LE Controller can change its sleep clock accuracy, otherwise excluded
 
-
+    /****************************************************BT VERSION 5.2*************************************************************/
     {Configure_Data_Path_command,                                             v5_2,          "C.156",            "C.156"}, 
     // C.156: Mandatory if the Read Local Supported Codecs command [v2] is supported, otherwise excluded
     {LE_Accept_CIS_Request_command,                                           v5_2,          "E",                "C.40"},
@@ -1153,7 +1113,7 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
     // C.156: Mandatory if the Read Local Supported Codecs command [v2] is supported, otherwise excluded    
     {Set_Ecosystem_Base_Interval_command,                                     v5_2,          "O",                "O"},
 
-
+    /****************************************************BT VERSION 5.3*************************************************************/
     {LE_Set_Data_Related_Address_Changes_command,                             v5_3,          "E",                "C.10"}, 
     // C.10: Optional if LE Feature (LL Privacy) is supported, otherwise excluded
     {LE_Set_Default_Subrate_command,                                          v5_3,          "E",                "C.57"}, 
@@ -1165,6 +1125,7 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
     {Set_Min_Encryption_Key_Size_command,                                     v5_3,          "O",                "E"},
 
 
+    /****************************************************BT VERSION 5.4*************************************************************/
     {LE_Periodic_Advertising_Response_Report_event,                           v5_4,          "E",                "C.67"}, 
     // C.67: Mandatory if LE Feature (Periodic Advertising with Responses - Scanner) is supported, otherwise excluded
     {LE_Periodic_Advertising_Subevent_Data_Request_event,                     v5_4,          "E",                "C.67"}, 
@@ -1176,7 +1137,7 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
     {LE_Set_Periodic_Sync_Subevent_command,                                   v5_4,          "E",                "C.68"}, 
     // C.68: Mandatory if LE Feature (Periodic Advertising with Responses - Scanner) is supported, otherwise excluded
 
-
+    /****************************************************BT VERSION 6.0*************************************************************/
     {LE_Add_Device_To_Monitored_Advertisers_List_command,                     v6_0,          "E",                "C.78"}, 
     // C.78: Mandatory if LE Feature (Monitoring Advertisers) is supported, otherwise excluded
     // C.17: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Advertising State, otherwise excluded
@@ -1248,31 +1209,6 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
     // C.73: Mandatory if LE Feature (Decision-Based Advertising Filtering) is supported and the LE Controller supports Advertising State, otherwise excluded
     {LE_Set_Decision_Instructions_command,                                    v6_0,          "E",                "C.74"}, 
     // C.74: Mandatory if LE Feature (Decision-Based Advertising Filtering) is supported and the LE Controller supports Scanning State, otherwise excluded
-    
-
 };      
 
-
-bt_ov_cmd_evts_t bt_commands_events_overview1[] = 
-{
-
-
-
-
-
-
-
-
-
- 
-
-
-
-
-
-
-
-
-
-};
 
