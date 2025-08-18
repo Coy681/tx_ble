@@ -1035,91 +1035,69 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
     // C.37: Mandatory if the LE Controller can change its sleep clock accuracy, otherwise excluded
 
     /****************************************************BT VERSION 5.2*************************************************************/
-    {Configure_Data_Path_command,                                             v5_2,          "C.156",            "C.156"}, 
-    // C.156: Mandatory if the Read Local Supported Codecs command [v2] is supported, otherwise excluded
-    {LE_Accept_CIS_Request_command,                                           v5_2,          "E",                "C.40"},
-    // C.40: Mandatory if LE Feature (Connected Isochronous Stream - Peripheral) is supported, otherwise excluded
-    {LE_BIG_Create_Sync_command,                                              v5_2,          "E",                "C.42"}, 
-    // C.42: Mandatory if LE Feature (Synchronized Receiver role) is supported, otherwise excluded
-    {LE_BIG_Sync_Established_event,                                           v5_2,          "E",                "C.42"}, 
-    // C.42: Mandatory if LE Feature (Synchronized Receiver role) is supported, otherwise excluded
-    {LE_BIG_Sync_Lost_event,                                                  v5_2,          "E",                "C.42"}, 
-    // C.42: Mandatory if LE Feature (Synchronized Receiver role) is supported, otherwise excluded
-    {LE_BIG_Terminate_Sync_command,                                           v5_2,          "E",                "C.42"},
-     // C.42: Mandatory if LE Feature (Synchronized Receiver role) is supported, otherwise excluded
-    {LE_BIGInfo_Advertising_Report_event,                                     v5_2,          "E",                "C.54"}, 
-    // C.54: Mandatory if LE Feature (Synchronized Receiver) is supported, otherwise optional
     {LE_CIS_Established_event,                                                v5_2,          "E",                "[v1] C.38 [v2] C.159"}, 
     // C.38: Mandatory if LE Feature (Connected Isochronous Stream - Peripheral) is supported;
     // C.159: Optional if the LE CIS Established event [v1] is supported
-    {LE_CIS_Request_event,                                                    v5_2,          "E",                "C.40"}, 
-    // C.40: Mandatory if LE Feature (Connected Isochronous Stream - Peripheral) is supported, otherwise excluded
-    {LE_Create_BIG_command,                                                   v5_2,          "E",                "C.41"}, 
-    // C.41: Mandatory if LE Feature (Isochronous Broadcaster) is supported, otherwise excluded
-    {LE_Create_BIG_Complete_event,                                            v5_2,          "E",                "C.41"},
-     // C.41: Mandatory if LE Feature (Isochronous Broadcaster) is supported, otherwise excluded
-    {LE_Create_BIG_Test_command,                                              v5_2,          "E",                "C.41"}, 
-    // C.41: Mandatory if LE Feature (Isochronous Broadcaster) is supported, otherwise excluded
-    {LE_Create_CIS_command,                                                   v5_2,          "E",                "C.39"}, 
-    // C.39: Mandatory if LE Feature (Connected Isochronous Stream - Central) is supported, otherwise excluded
-    {LE_Read_Remote_Transmit_Power_Level_command,                             v5_2,          "E",                "C.51"}, 
-    // C.51: Mandatory if LE Feature (LE Power Control Request) is supported, otherwise excluded
-    {LE_Remove_ISO_Data_Path_command,                                         v5_2,          "E",                "C.47"}, 
-    // C.47: Mandatory if LE Feature (Connected Isochronous Stream - Central), or LE Feature (Connected Isochronous Stream - Peripheral), or LE Feature (Isochronous Broadcaster), or LE Feature (Synchronized Receiver role) is supported, otherwise excluded
-    {LE_Request_Peer_SCA_command,                                             v5_2,          "E",                "C.44"}, 
-    // C.44: Mandatory if LE Feature (Sleep Clock Accuracy Updates) and either LE Feature (Connected Isochronous Stream - Central) or LE Feature (Connected Isochronous Stream - Peripheral) are supported
-    {LE_Request_Peer_SCA_Complete_event,                                      v5_2,          "E",                "C.95"}, 
-    // C.95: Mandatory if the LE Request Peer SCA command is supported, otherwise excluded
     {LE_Set_CIG_Parameters_command,                                           v5_2,          "E",                "C.39"}, 
-    // C.39: Mandatory if LE Feature (Connected Isochronous Stream - Central) is supported, otherwise excluded
     {LE_Set_CIG_Parameters_Test_command,                                      v5_2,          "E",                "C.39"}, 
+    {LE_Create_CIS_command,                                                   v5_2,          "E",                "C.39"}, 
+    {LE_Remove_CIG_command,                                                   v5_2,          "E",                "C.39"}, 
     // C.39: Mandatory if LE Feature (Connected Isochronous Stream - Central) is supported, otherwise excluded
-    {LE_Set_Host_Feature_command,                                             v5_2,          "E",                "[v1] C.49 [v2] C.77"}, // C.49: Mandatory if LE Feature (Connected Isochronous Stream - Central), or LE Feature (Connected Isochronous Stream - Peripheral), or LE Feature (Connection Subrating), or LE Feature (Advertising Coding Selection), or LE Feature (Channel Sounding) is supported; C.77: Optional if the LE Set Host Feature command [v1] is supported
-    {LE_Set_Path_Loss_Reporting_Enable_command,                               v5_2,          "E",                "C.52"}, 
-    // C.52: Mandatory if LE Feature (LE Path Loss Monitoring) is supported, otherwise excluded
-    {LE_Set_Path_Loss_Reporting_Parameters_command,                           v5_2,          "E",                "C.52"}, 
-    // C.52: Mandatory if LE Feature (LE Path Loss Monitoring) is supported, otherwise excluded
-    {LE_Set_Transmit_Power_Reporting_Enable_command,                          v5_2,          "E",                "C.51"}, 
-    // C.51: Mandatory if LE Feature (LE Power Control Request) is supported, otherwise excluded
-    {LE_Setup_ISO_Data_Path_command,                                          v5_2,          "E",                "C.47"}, 
-    // C.47: Mandatory if LE Feature (Connected Isochronous Stream - Central), or LE Feature (Connected Isochronous Stream - Peripheral), or LE Feature (Isochronous Broadcaster), or LE Feature (Synchronized Receiver role) is supported, otherwise excluded
-    {LE_Enhanced_Read_Transmit_Power_Level_command,                           v5_2,          "E",                "C.51"}, 
-    // C.51: Mandatory if LE Feature (LE Power Control Request) is supported, otherwise excluded
-    {LE_ISO_Read_Test_Counters_command,                                       v5_2,          "E",                "C.46"}, 
-    // C.46: Mandatory if LE Feature (Connected Isochronous Stream - Central), or LE Feature (Connected Isochronous Stream - Peripheral), or LE Feature (Synchronized Receiver role) is supported, otherwise excluded
-    {LE_ISO_Receive_Test_command,                                             v5_2,          "E",                "C.46"}, 
-    // C.46: Mandatory if LE Feature (Connected Isochronous Stream - Central), or LE Feature (Connected Isochronous Stream - Peripheral), or LE Feature (Synchronized Receiver role) is supported, otherwise excluded
-    {LE_ISO_Test_End_command,                                                 v5_2,          "E",                "C.47"}, 
-    // C.47: Mandatory if LE Feature (Connected Isochronous Stream - Central), or LE Feature (Connected Isochronous Stream - Peripheral), or LE Feature (Isochronous Broadcaster), or LE Feature (Synchronized Receiver role) is supported, otherwise excluded
-    {LE_ISO_Transmit_Test_command,                                            v5_2,          "E",                "C.45"}, 
-    // C.45: Mandatory if LE Feature (Connected Isochronous Stream - Central), or LE Feature (Connected Isochronous Stream - Peripheral), or LE Feature (Isochronous Broadcaster) is supported, otherwise excluded     
-    {LE_Path_Loss_Threshold_event,                                            v5_2,          "E",                "C.52"}, 
-    // C.52: Mandatory if LE Feature (LE Path Loss Monitoring) is supported, otherwise excluded
-    {LE_Read_ISO_Link_Quality_command,                                        v5_2,          "E",                "C.50"}, 
-    // C.50: Optional if LE Feature (Connected Isochronous Stream - Central), or LE Feature (Connected Isochronous Stream - Peripheral), or LE Feature (Synchronized Receiver role) is supported, otherwise excluded
-    {LE_Read_ISO_TX_Sync_command,                                             v5_2,          "E",                "C.45"}, 
-    // C.45: Mandatory if LE Feature (Connected Isochronous Stream - Central), or LE Feature (Connected Isochronous Stream - Peripheral), or LE Feature (Isochronous Broadcaster) is supported, otherwise excluded
+    {LE_Accept_CIS_Request_command,                                           v5_2,          "E",                "C.40"},
+    {LE_CIS_Request_event,                                                    v5_2,          "E",                "C.40"}, 
     {LE_Reject_CIS_Request_command,                                           v5_2,          "E",                "C.40"}, 
     // C.40: Mandatory if LE Feature (Connected Isochronous Stream - Peripheral) is supported, otherwise excluded
-    {LE_Remove_CIG_command,                                                   v5_2,          "E",                "C.39"}, 
-    // C.39: Mandatory if LE Feature (Connected Isochronous Stream - Central) is supported, otherwise excluded    
     {LE_Terminate_BIG_command,                                                v5_2,          "E",                "C.41"}, 
-    // C.41: Mandatory if LE Feature (Isochronous Broadcaster) is supported, otherwise excluded
     {LE_Terminate_BIG_Complete_event,                                         v5_2,          "E",                "C.41"}, 
+    {LE_Create_BIG_command,                                                   v5_2,          "E",                "C.41"}, 
+    {LE_Create_BIG_Complete_event,                                            v5_2,          "E",                "C.41"},
+    {LE_Create_BIG_Test_command,                                              v5_2,          "E",                "C.41"}, 
     // C.41: Mandatory if LE Feature (Isochronous Broadcaster) is supported, otherwise excluded
+    {LE_BIG_Create_Sync_command,                                              v5_2,          "E",                "C.42"}, 
+    {LE_BIG_Sync_Established_event,                                           v5_2,          "E",                "C.42"}, 
+    {LE_BIG_Sync_Lost_event,                                                  v5_2,          "E",                "C.42"}, 
+    {LE_BIG_Terminate_Sync_command,                                           v5_2,          "E",                "C.42"},
+    // C.42: Mandatory if LE Feature (Synchronized Receiver role) is supported, otherwise excluded
+    {LE_Request_Peer_SCA_command,                                             v5_2,          "E",                "C.44"}, 
+    // C.44: Mandatory if LE Feature (Sleep Clock Accuracy Updates) and either LE Feature (Connected Isochronous Stream - Central) or LE Feature (Connected Isochronous Stream - Peripheral) are supported
+    {LE_ISO_Transmit_Test_command,                                            v5_2,          "E",                "C.45"}, 
+    {LE_Read_ISO_TX_Sync_command,                                             v5_2,          "E",                "C.45"}, 
+    // C.45: Mandatory if LE Feature (Connected Isochronous Stream - Central), or LE Feature (Connected Isochronous Stream - Peripheral), or LE Feature (Isochronous Broadcaster) is supported, otherwise excluded     
+    {LE_ISO_Read_Test_Counters_command,                                       v5_2,          "E",                "C.46"}, 
+    {LE_ISO_Receive_Test_command,                                             v5_2,          "E",                "C.46"}, 
+    // C.46: Mandatory if LE Feature (Connected Isochronous Stream - Central), or LE Feature (Connected Isochronous Stream - Peripheral), or LE Feature (Synchronized Receiver role) is supported, otherwise excluded    
+    {LE_Remove_ISO_Data_Path_command,                                         v5_2,          "E",                "C.47"}, 
+    {LE_Setup_ISO_Data_Path_command,                                          v5_2,          "E",                "C.47"}, 
+    {LE_ISO_Test_End_command,                                                 v5_2,          "E",                "C.47"}, 
+    // C.47: Mandatory if LE Feature (Connected Isochronous Stream - Central), or LE Feature (Connected Isochronous Stream - Peripheral), or LE Feature (Isochronous Broadcaster), or LE Feature (Synchronized Receiver role) is supported, otherwise excluded
+    {LE_Set_Host_Feature_command,                                             v5_2,          "E",                "[v1] C.49 [v2] C.77"}, 
+    // C.49: Mandatory if LE Feature (Connected Isochronous Stream - Central), or LE Feature (Connected Isochronous Stream - Peripheral), or LE Feature (Connection Subrating), or LE Feature (Advertising Coding Selection), or LE Feature (Channel Sounding) is supported;
+    // C.77: Optional if the LE Set Host Feature command [v1] is supported    
+    {LE_Read_ISO_Link_Quality_command,                                        v5_2,          "E",                "C.50"}, 
+    // C.50: Optional if LE Feature (Connected Isochronous Stream - Central), or LE Feature (Connected Isochronous Stream - Peripheral), or LE Feature (Synchronized Receiver role) is supported, otherwise excluded    
+    {LE_Read_Remote_Transmit_Power_Level_command,                             v5_2,          "E",                "C.51"}, 
+    {LE_Set_Transmit_Power_Reporting_Enable_command,                          v5_2,          "E",                "C.51"}, 
+    {LE_Enhanced_Read_Transmit_Power_Level_command,                           v5_2,          "E",                "C.51"}, 
+    // C.51: Mandatory if LE Feature (LE Power Control Request) is supported, otherwise excluded
+    {LE_Set_Path_Loss_Reporting_Enable_command,                               v5_2,          "E",                "C.52"}, 
+    {LE_Set_Path_Loss_Reporting_Parameters_command,                           v5_2,          "E",                "C.52"}, 
+    {LE_Path_Loss_Threshold_event,                                            v5_2,          "E",                "C.52"}, 
+    // C.52: Mandatory if LE Feature (LE Path Loss Monitoring) is supported, otherwise excluded
+    {LE_BIGInfo_Advertising_Report_event,                                     v5_2,          "E",                "C.54"}, 
+    // C.54: Mandatory if LE Feature (Synchronized Receiver) is supported, otherwise optional
+    {LE_Request_Peer_SCA_Complete_event,                                      v5_2,          "E",                "C.95"}, 
+    // C.95: Mandatory if the LE Request Peer SCA command is supported, otherwise excluded
     {Read_Local_Supported_Codec_Capabilities_command,                         v5_2,          "C.156",            "C.156"}, 
-    // C.156: Mandatory if the Read Local Supported Codecs command [v2] is supported, otherwise excluded    
-    {Read_Local_Supported_Controller_Delay_command,                           v5_2,          "C.156",            "C.156"}, 
-    // C.156: Mandatory if the Read Local Supported Codecs command [v2] is supported, otherwise excluded    
+    {Read_Local_Supported_Controller_Delay_command,                           v5_2,          "C.156",            "C.156"},  
+    {Configure_Data_Path_command,                                             v5_2,          "C.156",            "C.156"}, 
+    // C.156: Mandatory if the Read Local Supported Codecs command [v2] is supported, otherwise excluded
     {Set_Ecosystem_Base_Interval_command,                                     v5_2,          "O",                "O"},
 
     /****************************************************BT VERSION 5.3*************************************************************/
     {LE_Set_Data_Related_Address_Changes_command,                             v5_3,          "E",                "C.10"}, 
     // C.10: Optional if LE Feature (LL Privacy) is supported, otherwise excluded
     {LE_Set_Default_Subrate_command,                                          v5_3,          "E",                "C.57"}, 
-    // C.57: Mandatory if LE Feature (Connection Subrating) is supported, otherwise excluded
     {LE_Subrate_Change_event,                                                 v5_3,          "E",                "C.57"}, 
-    // C.57: Mandatory if LE Feature (Connection Subrating) is supported, otherwise excluded
     {LE_Subrate_Request_command,                                              v5_3,          "E",                "C.57"}, 
     // C.57: Mandatory if LE Feature (Connection Subrating) is supported, otherwise excluded    
     {Set_Min_Encryption_Key_Size_command,                                     v5_3,          "O",                "E"},
@@ -1127,88 +1105,61 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
 
     /****************************************************BT VERSION 5.4*************************************************************/
     {LE_Periodic_Advertising_Response_Report_event,                           v5_4,          "E",                "C.67"}, 
-    // C.67: Mandatory if LE Feature (Periodic Advertising with Responses - Scanner) is supported, otherwise excluded
     {LE_Periodic_Advertising_Subevent_Data_Request_event,                     v5_4,          "E",                "C.67"}, 
-    // C.67: Mandatory if LE Feature (Periodic Advertising with Responses - Scanner) is supported, otherwise excluded
-    {LE_Set_Periodic_Advertising_Response_Data_command,                       v5_4,          "E",                "C.68"}, 
-    // C.68: Mandatory if LE Feature (Periodic Advertising with Responses - Advertiser) is supported, otherwise excluded
     {LE_Set_Periodic_Advertising_Subevent_Data_command,                       v5_4,          "E",                "C.67"}, 
     // C.67: Mandatory if LE Feature (Periodic Advertising with Responses - Advertiser) is supported, otherwise excluded
+    {LE_Set_Periodic_Advertising_Response_Data_command,                       v5_4,          "E",                "C.68"}, 
     {LE_Set_Periodic_Sync_Subevent_command,                                   v5_4,          "E",                "C.68"}, 
     // C.68: Mandatory if LE Feature (Periodic Advertising with Responses - Scanner) is supported, otherwise excluded
 
     /****************************************************BT VERSION 6.0*************************************************************/
-    {LE_Add_Device_To_Monitored_Advertisers_List_command,                     v6_0,          "E",                "C.78"}, 
-    // C.78: Mandatory if LE Feature (Monitoring Advertisers) is supported, otherwise excluded
-    // C.17: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Advertising State, otherwise excluded
-    {LE_Clear_Monitored_Advertisers_List_command,                             v6_0,          "E",                "C.78"}, 
-    // C.78: Mandatory if LE Feature (Monitoring Advertisers) is supported, otherwise excluded
     {LE_CS_Config_Complete_event,                                             v6_0,          "E",                "C.75"},
-     // C.75: Mandatory if LE Feature (Channel Sounding) is supported, otherwise excluded
     {LE_CS_Create_Config_command,                                             v6_0,          "E",                "C.75"}, 
-    // C.75: Mandatory if LE Feature (Channel Sounding) is supported, otherwise excluded
     {LE_CS_Procedure_Enable_command,                                          v6_0,          "E",                "C.75"}, 
-    // C.75: Mandatory if LE Feature (Channel Sounding) is supported, otherwise excluded
     {LE_CS_Procedure_Enable_Complete_event,                                   v6_0,          "E",                "C.75"}, 
-    // C.75: Mandatory if LE Feature (Channel Sounding) is supported, otherwise excluded
     {LE_CS_Read_Local_Supported_Capabilities_command,                         v6_0,          "E",                "C.75"}, 
-    // C.75: Mandatory if LE Feature (Channel Sounding) is supported, otherwise excluded
     {LE_CS_Read_Remote_FAE_Table_command,                                     v6_0,          "E",                "C.75"}, 
-    // C.75: Mandatory if LE Feature (Channel Sounding) is supported, otherwise excluded
     {LE_CS_Read_Remote_FAE_Table_Complete_event,                              v6_0,          "E",                "C.75"}, 
-    // C.75: Mandatory if LE Feature (Channel Sounding) is supported, otherwise excluded
     {LE_CS_Read_Remote_Supported_Capabilities_command,                        v6_0,          "E",                "C.75"}, 
-    // C.75: Mandatory if LE Feature (Channel Sounding) is supported, otherwise excluded
     {LE_CS_Read_Remote_Supported_Capabilities_Complete_event,                 v6_0,          "E",                "C.75"}, 
-    // C.75: Mandatory if LE Feature (Channel Sounding) is supported, otherwise excluded
     {LE_CS_Remove_Config_command,                                             v6_0,          "E",                "C.75"}, 
-    // C.75: Mandatory if LE Feature (Channel Sounding) is supported, otherwise excluded
     {LE_CS_Security_Enable_command,                                           v6_0,          "E",                "C.75"}, 
-    // C.75: Mandatory if LE Feature (Channel Sounding) is supported, otherwise excluded
     {LE_CS_Security_Enable_Complete_event,                                    v6_0,          "E",                "C.75"},
-     // C.75: Mandatory if LE Feature (Channel Sounding) is supported, otherwise excluded
     {LE_CS_Set_Channel_Classification_command,                                v6_0,          "E",                "C.75"}, 
-    // C.75: Mandatory if LE Feature (Channel Sounding) is supported, otherwise excluded
     {LE_CS_Set_Default_Settings_command,                                      v6_0,          "E",                "C.75"}, 
-    // C.75: Mandatory if LE Feature (Channel Sounding) is supported, otherwise excluded
     {LE_CS_Set_Procedure_Parameters_command,                                  v6_0,          "E",                "C.75"}, 
-    // C.75: Mandatory if LE Feature (Channel Sounding) is supported, otherwise excluded
     {LE_CS_Subevent_Result_Continue_event,                                    v6_0,          "E",                "C.75"}, 
-    // C.75: Mandatory if LE Feature (Channel Sounding) is supported, otherwise excluded
     {LE_CS_Subevent_Result_event,                                             v6_0,          "E",                "C.75"}, 
-    // C.75: Mandatory if LE Feature (Channel Sounding) is supported, otherwise excluded
     {LE_CS_Test_command,                                                      v6_0,          "E",                "C.75"}, 
-    // C.75: Mandatory if LE Feature (Channel Sounding) is supported, otherwise excluded
     {LE_CS_Test_End_command,                                                  v6_0,          "E",                "C.75"}, 
-    // C.75: Mandatory if LE Feature (Channel Sounding) is supported, otherwise excluded
     {LE_CS_Test_End_Complete_event,                                           v6_0,          "E",                "C.75"},
-     // C.75: Mandatory if LE Feature (Channel Sounding) is supported, otherwise excluded
-    {LE_CS_Write_Cached_Remote_FAE_Table_command,                             v6_0,          "E",                "C.76"},
-     // C.76: Mandatory if LE Feature (Channel Sounding) and initiator role are supported, otherwise excluded
     {LE_CS_Write_Cached_Remote_Supported_Capabilities_command,                v6_0,          "E",                "C.75"}, 
     // C.75: Mandatory if LE Feature (Channel Sounding) is supported, otherwise excluded
+
+    {LE_Add_Device_To_Monitored_Advertisers_List_command,                     v6_0,          "E",                "C.78"}, 
+    {LE_Clear_Monitored_Advertisers_List_command,                             v6_0,          "E",                "C.78"}, 
+    {LE_Read_Monitored_Advertisers_List_Size_command,                         v6_0,          "E",                "C.78"}, 
+    {LE_Remove_Device_From_Monitored_Advertisers_List_command,                v6_0,          "E",                "C.78"}, 
     {LE_Enable_Monitoring_Advertisers_Command,                                v6_0,          "E",                "C.78"}, 
-    // C.78: Mandatory if LE Feature (Monitoring Advertisers) is supported, otherwise excluded
-    {LE_Frame_Space_Update_command,                                           v6_0,          "E",                "C.79"}, 
-    // C.79: Mandatory if LE Feature (Frame Space Update) is supported, otherwise excluded
-    {LE_Frame_Space_Update_Complete_event,                                    v6_0,          "E",                "C.79"}, 
-    // C.79: Mandatory if LE Feature (Frame Space Update) is supported, otherwise excluded
     {LE_Monitored_Advertisers_Report_event,                                   v6_0,          "E",                "C.78"},
     // C.78: Mandatory if LE Feature (Monitoring Advertisers) is supported, otherwise excluded
+
+    {LE_Frame_Space_Update_command,                                           v6_0,          "E",                "C.79"}, 
+    {LE_Frame_Space_Update_Complete_event,                                    v6_0,          "E",                "C.79"}, 
+    // C.79: Mandatory if LE Feature (Frame Space Update) is supported, otherwise excluded
+
     {LE_Read_All_Local_Supported_Features_command,                            v6_0,          "E",                "C.70"}, 
     // C.70: Mandatory if the LE Controller supports LE Feature (LL Extended Feature Set), otherwise optional
     {LE_Read_All_Remote_Features_command,                                     v6_0,          "E",                "C.71"}, 
     // C.71: Mandatory if the LE Controller supports Connection State and LE Feature (LL Extended Feature Set), otherwise optional if the LE Controller supports Connection State, otherwise excluded
     {LE_Read_All_Remote_Features_Complete_event,                              v6_0,          "E",                "C.72"}, 
     // C.72: Mandatory if the LE Controller supports the LE Read All Remote Features command, otherwise excluded
-    {LE_Read_Monitored_Advertisers_List_Size_command,                         v6_0,          "E",                "C.78"}, 
-    // C.78: Mandatory if LE Feature (Monitoring Advertisers) is supported, otherwise excluded
-    {LE_Remove_Device_From_Monitored_Advertisers_List_command,                v6_0,          "E",                "C.78"}, 
-    // C.78: Mandatory if LE Feature (Monitoring Advertisers) is supported, otherwise excluded
     {LE_Set_Decision_Data_command,                                            v6_0,          "E",                "C.73"}, 
     // C.73: Mandatory if LE Feature (Decision-Based Advertising Filtering) is supported and the LE Controller supports Advertising State, otherwise excluded
     {LE_Set_Decision_Instructions_command,                                    v6_0,          "E",                "C.74"}, 
     // C.74: Mandatory if LE Feature (Decision-Based Advertising Filtering) is supported and the LE Controller supports Scanning State, otherwise excluded
+    {LE_CS_Write_Cached_Remote_FAE_Table_command,                             v6_0,          "E",                "C.76"},
+     // C.76: Mandatory if LE Feature (Channel Sounding) and initiator role are supported, otherwise excluded
 };      
 
 
