@@ -286,6 +286,12 @@ typedef struct _PACKED
     _u8      rsvd[2];
     _u64     eventMask;
     _u64     leEventMask;
+    struct 
+    {
+        _u8 valid;
+        _u8 addrType;
+        _u8 addr[6];
+    }filterAcceptList[BLE_FILTER_ACCEPT_LIST_SIZE];
     ll_sm_t* sm;
 }ll_t;
 

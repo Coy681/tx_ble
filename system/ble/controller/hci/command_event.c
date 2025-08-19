@@ -1,7 +1,7 @@
 #include"data.h"
 #include"command_event.h"
 #include"hci.h"
-#include"../config.h"
+#include"../info.h"
 /******************************************hci event**********************************************/
 static _u8  hci_event_buffer[256];
 static _u16 hciCommandOpcode; 
@@ -174,6 +174,18 @@ controller_error_code_e read_local_supported_commands_process(_u8* data,_u8 leng
 /****************************************hci testing command*******************************************/
 
 /****************************************hci le controller command*************************************/
+struct _PACKED read_filter_accept_list_size_retParam_t
+{
+    _u8 status;
+    _u8 size;
+};
+controller_error_code_e read_filter_accept_list_size_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+
+}
+
+
+
 struct _PACKED hci_command_read_local_supported_features_retParam_t
 {
 	_u8  status;
@@ -230,7 +242,7 @@ controller_error_code_e hci_le_set_event_mask(_u8* data,_u8 length,bt_hci_event_
 #define READ_LOCAL_SUPPORTED_FEATURES_PROCESS                                read_local_supported_features_process//v1_1
 #define READ_LOCAL_VERSION_INFORMATION_PROCESS                               read_local_version_information_process//v1_1
 #define SET_EVENT_MASK_PROCESS                                               set_event_mask_process//v1_1
-#define READ_LOCAL_SUPPORTED_COMMANDS_PROCESS                                NULL//v1_2
+#define READ_LOCAL_SUPPORTED_COMMANDS_PROCESS                                read_local_supported_commands_process//v1_2
 
 #define LE_READ_FILTER_ACCEPT_LIST_SIZE_PROCESS                              NULL//v4_0
 #define LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST_PROCESS                          NULL//v4_0

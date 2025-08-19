@@ -174,6 +174,24 @@ void ll_feature_reset(void)
 {
 	ll_host_support_feature = 0;
 }
+/******************************ll filter accept list operation*****************************/
+_u8 ll_read_filter_accept_list_size()
+{
+
+}
+controller_error_code_e ll_add_device_to_filter_accept_list()
+{
+
+}
+controller_error_code_e ll_remove_device_from_filter_accept_list()
+{
+
+}
+controller_error_code_e ll_clear_filter_accept_list()
+{
+	
+}
+
 /******************************************ll reset*******************************************/
 controller_error_code_e ll_reset(void)
 {

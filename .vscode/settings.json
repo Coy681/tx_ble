@@ -42,6 +42,7 @@
         "txheap.h": "c",
         "schmap.h": "c",
         "sch_map.h": "c",
-        "advpacket.h": "c"
+        "advpacket.h": "c",
+        "config.h": "c"
     }
 }
