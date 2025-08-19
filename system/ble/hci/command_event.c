@@ -1,7 +1,7 @@
 #include"data.h"
 #include"command_event.h"
 #include"hci.h"
-/********************************hci event define*****************************/
+/******************************************hci event**********************************************/
 static _u8  hci_event_buffer[256];
 static _u16 hciCommandOpcode; 
 #define HCI_NUMBER_OF_COMMAND_PACKETS               1
@@ -49,7 +49,7 @@ static void* hci_command_complete_event(_u16 opcode,_u8 len,bt_hci_event_t **eve
     return command->data;
 }
 
-/********************************hci command define*****************************/
+/******************************************hci  command**********************************************/
 typedef controller_error_code_e(*hci_command_f)(_u8* data,_u8 length,bt_hci_event_t** event);
 
 typedef struct 
@@ -60,6 +60,121 @@ typedef struct
 
 #define HCI_COMMAND_LIST_LENGTH(hci_command_list)      (sizeof(hci_command_list)/sizeof(hci_command_list[0]))
 #define HCI_COMMAND_LENGTH(hci_command_array)          (sizeof(hci_command_array)/sizeof(hci_command_array[0]))
+
+typedef struct
+{
+    hci_command_e        command;
+	hci_command_t const *pArray;
+	_u32                 conut;
+}hci_command_array_t;
+
+/****************************************hci link control command***********************************/
+
+/****************************************hci link policy command***********************************/
+
+/****************************************hci controller baseband command***************************/
+struct hci_command_reset_retParam_t
+{
+    _u8 status;
+};
+controller_error_code_e hci_reset_command(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    controller_error_code_e status = ll_reset();
+    struct hci_command_reset_retParam_t* param = (struct hci_command_reset_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_reset_retParam_t),event);
+    param->status = (_u8)status;
+    return status;
+}
+
+struct _PACKED hci_command_set_event_mask_retParam_t
+{
+	_u8 status;
+};
+
+controller_error_code_e hci_set_event_mask(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+	_u64 eventMask = ((_u64)data[0])|((_u64)data[1]<<8)|((_u64)data[2]<<16)|((_u64)data[3]<<24)|(((_u64)data[4]<<32))|((_u64)data[5]<<40)|((_u64)data[6]<<48)|((_u64)data[7]<<56);
+	controller_error_code_e status = ll_set_event_mask(eventMask);
+	struct hci_command_set_event_mask_retParam_t* param = (struct hci_command_set_event_mask_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_set_event_mask_retParam_t),event);
+	param->status = status;
+	return status;
+}
+
+
+
+struct _PACKED hci_command_read_brAddr_retParam_t
+{
+	_u8 status;
+    _u8 addr[6];
+};
+
+//ll_get_current_state_machine
+controller_error_code_e hci_le_read_bdAddr(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+	ll_sm_t* ll = ll_get_current_state_machine();
+	struct hci_command_read_brAddr_retParam_t* param = \
+	hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_read_brAddr_retParam_t),event);
+	param->status = (_u8)SUCCESS;
+	txMemcpy(param->addr,ll_get_device_address(),6);
+	return SUCCESS;
+}
+
+/****************************************hci informational parameters command**************************/
+
+/****************************************hci status parameters command*********************************/
+
+/****************************************hci testing command*******************************************/
+
+/****************************************hci le controller command*************************************/
+struct _PACKED hci_command_read_local_supported_features_retParam_t
+{
+	_u8  status;
+    _u64 feature;
+};
+controller_error_code_e hci_le_read_local_supported_features(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+	struct hci_command_read_local_supported_features_retParam_t *param = \
+    hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_read_local_supported_features_retParam_t),event);
+	param->status  = (_u8)SUCCESS;;
+	param->feature = ll_get_feature();
+	return SUCCESS;
+}
+
+
+controller_error_code_e hci_le_set_advertising_parameters(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    
+}
+controller_error_code_e hci_le_set_advertising_data(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    
+}
+controller_error_code_e hci_le_set_scan_response_data(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    
+}
+controller_error_code_e hci_le_set_advertising_enable(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    
+}
+
+struct _PACKED hci_command_le_set_event_mask_retParam_t
+{
+	_u8  status;
+};
+
+controller_error_code_e hci_le_set_event_mask(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+	_u64 eventMask = ((_u64)data[0])|((_u64)data[1]<<8)|((_u64)data[2]<<16)|((_u64)data[3]<<24)|(((_u64)data[4]<<32))|((_u64)data[5]<<40)|((_u64)data[6]<<48)|((_u64)data[7]<<56);
+	controller_error_code_e status = ll_set_le_event_mask(eventMask);
+	struct hci_command_le_set_event_mask_retParam_t* param =\
+	(struct hci_command_le_set_event_mask_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_le_set_event_mask_retParam_t),event);
+	param->status = status;
+	return status;
+}
+
+
+/***************************************************************************************************/
+
 
 static const hci_command_t  hci_command_link_control_list[] =
 {
@@ -125,32 +240,6 @@ static const hci_command_t hci_command_link_policy_list[] =
     {HCI_FLOW_SPECIFICATION_COMMAND, NULL},
     {HCI_SNIFF_SUBRATING_COMMAND, NULL}
 };
-
-struct hci_command_reset_retParam_t
-{
-    _u8 status;
-};
-controller_error_code_e hci_reset_command(_u8* data,_u8 length,bt_hci_event_t** event)
-{
-    controller_error_code_e status = ll_reset();
-    struct hci_command_reset_retParam_t* param = (struct hci_command_reset_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_reset_retParam_t),event);
-    param->status = (_u8)status;
-    return status;
-}
-
-struct _PACKED hci_command_set_event_mask_retParam_t
-{
-	_u8 status;
-};
-
-controller_error_code_e hci_set_event_mask(_u8* data,_u8 length,bt_hci_event_t** event)
-{
-	_u64 eventMask = ((_u64)data[0])|((_u64)data[1]<<8)|((_u64)data[2]<<16)|((_u64)data[3]<<24)|(((_u64)data[4]<<32))|((_u64)data[5]<<40)|((_u64)data[6]<<48)|((_u64)data[7]<<56);
-	controller_error_code_e status = ll_set_event_mask(eventMask);
-	struct hci_command_set_event_mask_retParam_t* param = (struct hci_command_set_event_mask_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_set_event_mask_retParam_t),event);
-	param->status = status;
-	return status;
-}
 
 static const hci_command_t hci_command_controller_baseband_list[] =
 {
@@ -250,24 +339,6 @@ static const hci_command_t hci_command_controller_baseband_list[] =
     {HCI_SET_MIN_ENCRYPTION_KEY_SIZE_COMMAND, NULL}
 };
 
-struct _PACKED hci_command_read_brAddr_retParam_t
-{
-	_u8 status;
-    _u8 addr[6];
-};
-
-//ll_get_current_state_machine
-controller_error_code_e hci_le_read_bdAddr(_u8* data,_u8 length,bt_hci_event_t** event)
-{
-	ll_sm_t* ll = ll_get_current_state_machine();
-	struct hci_command_read_brAddr_retParam_t* param = \
-	hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_read_brAddr_retParam_t),event);
-	param->status = (_u8)SUCCESS;
-	txMemcpy(param->addr,ll_get_device_address(),6);
-	return SUCCESS;
-}
-
-
 static const hci_command_t hci_command_informational_parameters_list[] =
 {
     {HCI_READ_LOCAL_VERSION_INFORMATION_COMMAND, NULL},
@@ -305,53 +376,6 @@ static const hci_command_t hci_command_testing_list[] =
     {HCI_WRITE_SIMPLE_PAIRING_DEBUG_MODE_COMMAND, NULL},
     {HCI_WRITE_SECURE_CONNECTIONS_TEST_MODE_COMMAND, NULL}
 };
-
-struct _PACKED hci_command_read_local_supported_features_retParam_t
-{
-	_u8  status;
-    _u64 feature;
-};
-controller_error_code_e hci_le_read_local_supported_features(_u8* data,_u8 length,bt_hci_event_t** event)
-{
-	struct hci_command_read_local_supported_features_retParam_t *param = \
-    hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_read_local_supported_features_retParam_t),event);
-	param->status  = (_u8)SUCCESS;;
-	param->feature = ll_get_feature();
-	return SUCCESS;
-}
-
-
-controller_error_code_e hci_le_set_advertising_parameters(_u8* data,_u8 length,bt_hci_event_t** event)
-{
-    
-}
-controller_error_code_e hci_le_set_advertising_data(_u8* data,_u8 length,bt_hci_event_t** event)
-{
-    
-}
-controller_error_code_e hci_le_set_scan_response_data(_u8* data,_u8 length,bt_hci_event_t** event)
-{
-    
-}
-controller_error_code_e hci_le_set_advertising_enable(_u8* data,_u8 length,bt_hci_event_t** event)
-{
-    
-}
-
-struct _PACKED hci_command_le_set_event_mask_retParam_t
-{
-	_u8  status;
-};
-
-controller_error_code_e hci_le_set_event_mask(_u8* data,_u8 length,bt_hci_event_t** event)
-{
-	_u64 eventMask = ((_u64)data[0])|((_u64)data[1]<<8)|((_u64)data[2]<<16)|((_u64)data[3]<<24)|(((_u64)data[4]<<32))|((_u64)data[5]<<40)|((_u64)data[6]<<48)|((_u64)data[7]<<56);
-	controller_error_code_e status = ll_set_le_event_mask(eventMask);
-	struct hci_command_le_set_event_mask_retParam_t* param =\
-	(struct hci_command_le_set_event_mask_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_le_set_event_mask_retParam_t),event);
-	param->status = status;
-	return status;
-}
 
 static const hci_command_t hci_command_le_controller_list[] =
 {
@@ -518,15 +542,6 @@ static const hci_command_t hci_command_vendor_specific_list[] =
     {0, NULL},
 };
 
-
-
-typedef struct
-{
-    hci_command_e        command;
-	hci_command_t const *pArray;
-	_u32                 conut;
-}hci_command_array_t;
-
 static const hci_command_array_t hci_cmd_handlers[] =
 {
 	{HCI_COMMAND_LINK_CONTROL,             hci_command_link_control_list,            HCI_COMMAND_LIST_LENGTH(hci_command_link_control_list)},
@@ -536,7 +551,7 @@ static const hci_command_array_t hci_cmd_handlers[] =
 	{HCI_COMMAND_STATUS_PARAMETERS,        hci_command_status_parameters_list,       HCI_COMMAND_LIST_LENGTH(hci_command_status_parameters_list)},
 	{HCI_COMMAND_TESTING,                  hci_command_testing_list,                 HCI_COMMAND_LIST_LENGTH(hci_command_testing_list)},
 	{HCI_COMMAND_LE_CONTROLLER,            hci_command_le_controller_list,           HCI_COMMAND_LIST_LENGTH(hci_command_le_controller_list)},
-    {HCI_COMMAND_VENDOR_SPECIFIC,          NULL,                                     0},
+    {HCI_COMMAND_VENDOR_SPECIFIC,          hci_command_vendor_specific_list,         HCI_COMMAND_LIST_LENGTH(hci_command_vendor_specific_list)},
 };
 
 volatile _u8 AAA_COMMAND_BUFFER[16];
