@@ -153,7 +153,8 @@ typedef struct
     _u8  scanReqNotifyEnable:2;
     _u8  advDatafragPerf:1;//fragment preference
     _u8  scanRspDatafragPerf:1;//fragment preference
-    _u8  chainInx:4;
+    _u8  auxFix;
+    _u8  chainInx:3;
     _u8  chainCnt;
     _u8  dataLen;
 
