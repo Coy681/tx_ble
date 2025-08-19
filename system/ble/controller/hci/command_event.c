@@ -164,6 +164,7 @@ controller_error_code_e read_local_supported_commands_process(_u8* data,_u8 leng
     struct read_local_supported_commands_retParam_t* param = \
     (struct read_local_supported_commands_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct read_local_supported_commands_retParam_t),event);
     param->status = (_u8)SUCCESS;
+    param->commands[0]|=(hci_command_controller_baseband_list[1].process?BIT(0):0);
     return SUCCESS;
 }
 
