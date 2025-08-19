@@ -1,8 +1,8 @@
 #ifndef HCI_H_
 #define HCI_H_
 
-#include"../controller/ll/ll.h"
-#include"../controller/ll/ll_internal.h"
+#include"../ll/ll.h"
+#include"../ll/ll_internal.h"
 #include"data.h"
 #include"command_event.h"
 

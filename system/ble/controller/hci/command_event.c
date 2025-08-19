@@ -1,6 +1,7 @@
 #include"data.h"
 #include"command_event.h"
 #include"hci.h"
+#include"../config.h"
 /******************************************hci event**********************************************/
 static _u8  hci_event_buffer[256];
 static _u16 hciCommandOpcode; 
@@ -46,6 +47,7 @@ static void* hci_command_complete_event(_u16 opcode,_u8 len,bt_hci_event_t **eve
     hci_event_command_complete_t * command =  (hci_event_command_complete_t*)hci_event((_s32)HCI_COMMAND_COMPLETE_EVENT,len+3,event);
     command->numOfCmd = HCI_NUMBER_OF_COMMAND_PACKETS;
     command->opcode   = opcode;
+    txMemsetByte(command->data,0,len);
     return command->data;
 }
 
@@ -73,52 +75,98 @@ typedef struct
 /****************************************hci link policy command***********************************/
 
 /****************************************hci controller baseband command***************************/
-struct hci_command_reset_retParam_t
+struct reset_retParam_t
 {
     _u8 status;
 };
-controller_error_code_e hci_reset_command(_u8* data,_u8 length,bt_hci_event_t** event)
+controller_error_code_e reset_process(_u8* data,_u8 length,bt_hci_event_t** event)
 {
     controller_error_code_e status = ll_reset();
-    struct hci_command_reset_retParam_t* param = (struct hci_command_reset_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_reset_retParam_t),event);
+    struct reset_retParam_t* param = (struct reset_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct reset_retParam_t),event);
     param->status = (_u8)status;
     return status;
 }
 
-struct _PACKED hci_command_set_event_mask_retParam_t
+
+struct _PACKED set_event_mask_retParam_t
 {
 	_u8 status;
 };
-
-controller_error_code_e hci_set_event_mask(_u8* data,_u8 length,bt_hci_event_t** event)
+controller_error_code_e set_event_mask_process(_u8* data,_u8 length,bt_hci_event_t** event)
 {
 	_u64 eventMask = ((_u64)data[0])|((_u64)data[1]<<8)|((_u64)data[2]<<16)|((_u64)data[3]<<24)|(((_u64)data[4]<<32))|((_u64)data[5]<<40)|((_u64)data[6]<<48)|((_u64)data[7]<<56);
 	controller_error_code_e status = ll_set_event_mask(eventMask);
-	struct hci_command_set_event_mask_retParam_t* param = (struct hci_command_set_event_mask_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_set_event_mask_retParam_t),event);
+	struct set_event_mask_retParam_t* param = \
+    (struct set_event_mask_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct set_event_mask_retParam_t),event);
 	param->status = status;
 	return status;
 }
-
-
-
-struct _PACKED hci_command_read_brAddr_retParam_t
+/****************************************hci informational parameters command**************************/
+struct _PACKED read_br_addr_retParam_t
 {
 	_u8 status;
     _u8 addr[6];
 };
-
-//ll_get_current_state_machine
-controller_error_code_e hci_le_read_bdAddr(_u8* data,_u8 length,bt_hci_event_t** event)
+controller_error_code_e read_bd_addr_process(_u8* data,_u8 length,bt_hci_event_t** event)
 {
 	ll_sm_t* ll = ll_get_current_state_machine();
-	struct hci_command_read_brAddr_retParam_t* param = \
-	hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_read_brAddr_retParam_t),event);
+	struct read_br_addr_retParam_t* param = \
+	(struct read_br_addr_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct read_br_addr_retParam_t),event);
 	param->status = (_u8)SUCCESS;
 	txMemcpy(param->addr,ll_get_device_address(),6);
 	return SUCCESS;
 }
 
-/****************************************hci informational parameters command**************************/
+struct _PACKED read_local_supported_features_retParam_t
+{
+    _u8 status;
+    _u8 lmpFeatures[8];
+};
+controller_error_code_e read_local_supported_features_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    struct read_local_supported_features_retParam_t* param = \
+	(struct read_local_supported_features_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct read_local_supported_features_retParam_t),event);
+    param->status = (_u8)SUCCESS;
+    //LE Supported
+    param->lmpFeatures[4] = (BIT(5)|BIT(6));
+    return SUCCESS;
+}
+
+struct _PACKED read_local_version_information_retParam_t
+{
+    _u8  status;
+    _u8  hciVersion;
+    _u16 hciSubVesion;
+    _u8  lmpVersion;
+    _u16 commanyIdentifier;
+    _u16 lmpSubVersion;
+};
+controller_error_code_e read_local_version_information_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    struct read_local_version_information_retParam_t* param = \
+    (struct read_local_version_information_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct read_local_version_information_retParam_t),event);
+    param->status            = (_u8)SUCCESS;
+    param->hciVersion        = BT_VERSION;
+    param->hciSubVesion      = HCI_SUB_VERSION;
+    param->lmpVersion        = BT_VERSION;
+    param->commanyIdentifier = COMPANY_IDENTIFIER;
+    param->lmpSubVersion     = LMP_SUB_VERSION;
+    return SUCCESS;
+}
+
+struct _PACKED read_local_supported_commands_retParam_t
+{
+    _u8 status;
+    _u8 commands[64];
+};
+controller_error_code_e read_local_supported_commands_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    struct read_local_supported_commands_retParam_t* param = \
+    (struct read_local_supported_commands_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct read_local_supported_commands_retParam_t),event);
+    param->status = (_u8)SUCCESS;
+    return SUCCESS;
+}
+
 
 /****************************************hci status parameters command*********************************/
 
@@ -133,7 +181,7 @@ struct _PACKED hci_command_read_local_supported_features_retParam_t
 controller_error_code_e hci_le_read_local_supported_features(_u8* data,_u8 length,bt_hci_event_t** event)
 {
 	struct hci_command_read_local_supported_features_retParam_t *param = \
-    hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_read_local_supported_features_retParam_t),event);
+    (struct hci_command_read_local_supported_features_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_read_local_supported_features_retParam_t),event);
 	param->status  = (_u8)SUCCESS;;
 	param->feature = ll_get_feature();
 	return SUCCESS;
@@ -175,6 +223,24 @@ controller_error_code_e hci_le_set_event_mask(_u8* data,_u8 length,bt_hci_event_
 
 /************************************hci feature adapt layer****************************************/
 
+/************* mandory supported hci cmd process **************/
+#define RESET_PROCESS                                                        reset_process//v1_1
+#define READ_BD_ADDR_PROCESS                                                 read_bd_addr_process//v1_1
+#define READ_LOCAL_SUPPORTED_FEATURES_PROCESS                                read_local_supported_features_process//v1_1
+#define READ_LOCAL_VERSION_INFORMATION_PROCESS                               read_local_version_information_process//v1_1
+#define SET_EVENT_MASK_PROCESS                                               set_event_mask_process//v1_1
+#define READ_LOCAL_SUPPORTED_COMMANDS_PROCESS                                NULL//v1_2
+
+#define LE_READ_FILTER_ACCEPT_LIST_SIZE_PROCESS                              NULL//v4_0
+#define LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST_PROCESS                          NULL//v4_0
+#define LE_REMOVE_DEVICE_FROM_FILTER_ACCEPT_LIST_PROCESS                     NULL//v4_0
+#define LE_CLEAR_FILTER_ACCEPT_LIST_PROCESS                                  NULL//v4_0
+#define LE_READ_LOCAL_SUPPORTED_FEATURES_PAGE_0_PROCESS                      NULL//v4_0
+#define LE_READ_SUPPORTED_STATES_PROCESS                                     NULL//v4_0
+#define LE_SET_EVENT_MASK_PROCESS                                            NULL//v4_0
+#define LE_TEST_END_PROCESS                                                  NULL//v4_0
+
+/******************** feature ***********************/
 
 #define INQUIRY_PROCESS                                                      NULL
 #define INQUIRY_CANCEL_PROCESS                                               NULL
@@ -236,8 +302,8 @@ controller_error_code_e hci_le_set_event_mask(_u8* data,_u8 length,bt_hci_event_
 #define FLOW_SPECIFICATION_PROCESS                                           NULL
 #define SNIFF_SUBRATING_PROCESS                                              NULL
 
-#define SET_EVENT_MASK_PROCESS                                               NULL
-#define RESET_PROCESS                                                        NULL
+
+
 #define SET_EVENT_FILTER_PROCESS                                             NULL
 #define FLUSH_PROCESS                                                        NULL
 #define READ_PIN_TYPE_PROCESS                                                NULL
@@ -332,12 +398,12 @@ controller_error_code_e hci_le_set_event_mask(_u8* data,_u8 length,bt_hci_event_
 #define SET_MIN_ENCRYPTION_KEY_SIZE_PROCESS                                  NULL
 
 
-#define READ_LOCAL_VERSION_INFORMATION_PROCESS                               NULL
-#define READ_LOCAL_SUPPORTED_COMMANDS_PROCESS                                NULL
-#define READ_LOCAL_SUPPORTED_FEATURES_PROCESS                                NULL
+
+
+
 #define READ_LOCAL_EXTENDED_FEATURES_PROCESS                                 NULL
 #define READ_BUFFER_SIZE_PROCESS                                             NULL
-#define READ_BD_ADDR_PROCESS                                                 NULL
+
 #define READ_DATA_BLOCK_SIZE_PROCESS                                         NULL
 #define READ_LOCAL_SUPPORTED_CODECS_PROCESS                                  NULL
 #define READ_LOCAL_SIMPLE_PAIRING_OPTIONS_PROCESS                            NULL
@@ -363,10 +429,10 @@ controller_error_code_e hci_le_set_event_mask(_u8* data,_u8 length,bt_hci_event_
 #define WRITE_SECURE_CONNECTIONS_TEST_MODE_PROCESS                           NULL
 
 
-#define LE_SET_EVENT_MASK_PROCESS                                            NULL
+
 #define LE_READ_BUFFER_SIZE_PROCESS                                          NULL
 #define LE_READ_BUFFER_SIZE_V2_PROCESS                                       NULL
-#define LE_READ_LOCAL_SUPPORTED_FEATURES_PAGE_0_PROCESS                      NULL
+
 #define LE_SET_RANDOM_ADDRESS_PROCESS                                        NULL
 #define LE_SET_ADVERTISING_PARAMETERS_PROCESS                                NULL
 #define LE_READ_ADVERTISING_PHYSICAL_CHANNEL_TX_POWER_PROCESS                NULL
@@ -377,10 +443,10 @@ controller_error_code_e hci_le_set_event_mask(_u8* data,_u8 length,bt_hci_event_
 #define LE_SET_SCAN_ENABLE_PROCESS                                           NULL
 #define LE_CREATE_CONNECTION_PROCESS                                         NULL
 #define LE_CREATE_CONNECTION_CANCEL_PROCESS                                  NULL
-#define LE_READ_FILTER_ACCEPT_LIST_SIZE_PROCESS                              NULL
-#define LE_CLEAR_FILTER_ACCEPT_LIST_PROCESS                                  NULL
-#define LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST_PROCESS                          NULL
-#define LE_REMOVE_DEVICE_FROM_FILTER_ACCEPT_LIST_PROCESS                     NULL
+
+
+
+
 #define LE_CONNECTION_UPDATE_PROCESS                                         NULL
 #define LE_SET_HOST_CHANNEL_CLASSIFICATION_PROCESS                           NULL
 #define LE_READ_CHANNEL_MAP_PROCESS                                          NULL
@@ -390,7 +456,7 @@ controller_error_code_e hci_le_set_event_mask(_u8* data,_u8 length,bt_hci_event_
 #define LE_ENABLE_ENCRYPTION_PROCESS                                         NULL
 #define LE_LONG_TERM_KEY_REQUEST_REPLY_PROCESS                               NULL
 #define LE_LONG_TERM_KEY_REQUEST_NEGATIVE_REPLY_PROCESS                      NULL
-#define LE_READ_SUPPORTED_STATES_PROCESS                                     NULL
+
 #define LE_RECEIVER_TEST_PROCESS                                             NULL
 #define LE_RECEIVER_TEST_V2_PROCESS                                          NULL
 #define LE_RECEIVER_TEST_V3_PROCESS                                          NULL
@@ -398,7 +464,7 @@ controller_error_code_e hci_le_set_event_mask(_u8* data,_u8 length,bt_hci_event_
 #define LE_TRANSMITTER_TEST_V2_PROCESS                                       NULL
 #define LE_TRANSMITTER_TEST_V3_PROCESS                                       NULL
 #define LE_TRANSMITTER_TEST_V4_PROCESS                                       NULL
-#define LE_TEST_END_PROCESS                                                  NULL
+
 #define LE_REMOTE_CONNECTION_PARAMETER_REQUEST_REPLY_PROCESS                 NULL
 #define LE_REMOTE_CONNECTION_PARAMETER_REQUEST_NEGATIVE_REPLY_PROCESS        NULL
 #define LE_SET_DATA_LENGTH_PROCESS                                           NULL

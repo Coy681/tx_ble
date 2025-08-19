@@ -38,7 +38,6 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
     {HCI_READ_BD_ADDR_COMMAND,                                                    v1_1,          "M",                "M"},
     {HCI_READ_LOCAL_SUPPORTED_FEATURES_COMMAND,                                   v1_1,          "M",                "M"},
     {HCI_READ_LOCAL_VERSION_INFORMATION_COMMAND,                                  v1_1,          "M",                "M"},
-    {HCI_READ_LOCAL_SUPPORTED_COMMANDS_COMMAND,                                   v1_2,          "M",                "M"},
     {HCI_SET_EVENT_MASK_COMMAND,                                                  v1_1,          "M",                "M"},
     {HCI_DISCONNECT_COMMAND,                                                      v1_1,          "M",                "C.3"}, 
     {HCI_DISCONNECTION_COMPLETE_EVENT,                                            v1_1,          "M",                "C.3"}, 
@@ -206,6 +205,7 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
 
 
     /****************************************************BT VERSION 1.2*************************************************************/
+    {HCI_READ_LOCAL_SUPPORTED_COMMANDS_COMMAND,                                   v1_2,          "M",                "M"},
     {HCI_WRITE_AFH_CHANNEL_ASSESSMENT_MODE_COMMAND,                               v1_2,          "C.140",            "C.58"}, 
     {HCI_READ_AFH_CHANNEL_ASSESSMENT_MODE_COMMAND,                                v1_2,          "C.140",            "C.58"}, 
     // C.140: Mandatory if the Controller supports AFH classification in either role or is an AFH capable Central; 
