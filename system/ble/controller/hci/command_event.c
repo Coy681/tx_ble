@@ -18,7 +18,7 @@
 #define LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST_PROCESS                          le_add_device_to_filter_accept_list_process//v4_0
 #define LE_REMOVE_DEVICE_FROM_FILTER_ACCEPT_LIST_PROCESS                     le_remove_device_from_filter_accept_list_process//v4_0
 #define LE_CLEAR_FILTER_ACCEPT_LIST_PROCESS                                  le_clear_filter_accept_list_process//v4_0
-#define LE_READ_LOCAL_SUPPORTED_FEATURES_PAGE_0_PROCESS                      NULL//v4_0
+#define LE_READ_LOCAL_SUPPORTED_FEATURES_PAGE_0_PROCESS                      le_read_local_supported_features_page_0_process//v4_0
 #define LE_READ_SUPPORTED_STATES_PROCESS                                     NULL//v4_0
 #define LE_SET_EVENT_MASK_PROCESS                                            NULL//v4_0
 #define LE_TEST_END_PROCESS                                                  NULL//v4_0
@@ -490,7 +490,7 @@ controller_error_code_e le_read_filter_accept_list_size_process(_u8* data,_u8 le
 
 struct _PACKED le_add_device_to_filter_accept_list_retParam_t
 {
-    _u8 status
+    _u8 status;
 };
 struct _PACKED le_add_device_to_filter_accept_list_param_t
 {
@@ -509,7 +509,7 @@ controller_error_code_e le_add_device_to_filter_accept_list_process(_u8* data,_u
 
 struct _PACKED le_remove_device_from_filter_accept_list_retParam_t
 {
-    _u8 status
+    _u8 status;
 };
 struct _PACKED le_remove_device_from_filter_accept_list_param_t
 {
@@ -528,7 +528,7 @@ controller_error_code_e le_remove_device_from_filter_accept_list_process(_u8* da
 
 struct _PACKED le_clear_filter_accept_list_retParam_t
 {
-    _u8 status
+    _u8 status;
 };
 controller_error_code_e le_clear_filter_accept_list_process(_u8* data,_u8 length,bt_hci_event_t** event)
 {
@@ -540,18 +540,17 @@ controller_error_code_e le_clear_filter_accept_list_process(_u8* data,_u8 length
 }
 
 
-
-struct _PACKED hci_command_read_local_supported_features_retParam_t
+struct _PACKED le_read_local_supported_features_page_0_retParam_t
 {
 	_u8  status;
-    _u64 feature;
+    _u8  feature[8];
 };
-controller_error_code_e hci_le_read_local_supported_features(_u8* data,_u8 length,bt_hci_event_t** event)
+controller_error_code_e le_read_local_supported_features_page_0_process(_u8* data,_u8 length,bt_hci_event_t** event)
 {
-	struct hci_command_read_local_supported_features_retParam_t *retParam = \
-    (struct hci_command_read_local_supported_features_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_read_local_supported_features_retParam_t),event);
-	retParam->status  = (_u8)SUCCESS;;
-	retParam->feature = ll_get_feature();
+	struct le_read_local_supported_features_page_0_retParam_t *retParam = \
+    (struct le_read_local_supported_features_page_0_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct le_read_local_supported_features_page_0_retParam_t),event);
+	retParam->status  = (_u8)SUCCESS;
+	ll_get_feature(retParam->feature,8);
 	return SUCCESS;
 }
 
@@ -651,7 +650,7 @@ controller_error_code_e read_local_supported_commands_process(_u8* data,_u8 leng
     struct read_local_supported_commands_retParam_t* retParam = \
     (struct read_local_supported_commands_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct read_local_supported_commands_retParam_t),event);
     retParam->status = (_u8)SUCCESS;
-// Octet 0
+    // Octet 0
     retParam->commands[0] |= (INQUIRY_PROCESS ? BIT(0) : 0);
     retParam->commands[0] |= (INQUIRY_CANCEL_PROCESS ? BIT(1) : 0);
     retParam->commands[0] |= (PERIODIC_INQUIRY_MODE_PROCESS ? BIT(2) : 0);
@@ -818,8 +817,8 @@ controller_error_code_e read_local_supported_commands_process(_u8* data,_u8 leng
     retParam->commands[17] |= (READ_SIMPLE_PAIRING_MODE_PROCESS ? BIT(5) : 0);
     retParam->commands[17] |= (WRITE_SIMPLE_PAIRING_MODE_PROCESS ? BIT(6) : 0);
     retParam->commands[17] |= (READ_LOCAL_OOB_DATA_PROCESS ? BIT(7) : 0);
-
-// Octet 18
+  
+    // Octet 18
     retParam->commands[18] |= (READ_INQUIRY_RESPONSE_TRANSMIT_POWER_LEVEL_PROCESS ? BIT(0) : 0);
     retParam->commands[18] |= (WRITE_INQUIRY_TRANSMIT_POWER_LEVEL_PROCESS ? BIT(1) : 0);
     retParam->commands[18] |= (READ_DEFAULT_ERRONEOUS_DATA_REPORTING_PROCESS ? BIT(2) : 0);
@@ -970,7 +969,7 @@ controller_error_code_e read_local_supported_commands_process(_u8* data,_u8 leng
     retParam->commands[35] |= (LE_SET_PHY_PROCESS ? BIT(6) : 0);
     retParam->commands[35] |= (LE_RECEIVER_TEST_PROCESS ? BIT(7) : 0);
 
-// Octet 36
+    // Octet 36
     retParam->commands[36] |= (LE_TRANSMITTER_TEST_V2_PROCESS ? BIT(0) : 0);
     retParam->commands[36] |= (LE_SET_ADVERTISING_SET_RANDOM_ADDRESS_PROCESS ? BIT(1) : 0);
     retParam->commands[36] |= (LE_SET_EXTENDED_ADVERTISING_PARAMETERS_PROCESS ? BIT(2) : 0);

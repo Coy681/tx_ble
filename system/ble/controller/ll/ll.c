@@ -165,9 +165,24 @@ ble_ll_state_status_e ble_ll_process_event(ll_sm_t* sm,ble_ll_event_e event)
 /*********************************ll feature implementation**********************************/
 static _u64 ll_host_support_feature;
 
-_u64 ll_get_feature(void)
+void ll_get_feature(_u8* feature,_u8 len)
 {
-	return (LL_FEATURE_SUPPORT|ll_host_support_feature);
+	_u8 suppFea[]=
+	{
+		LL_FEATURE_SUPPORT_BYTE_0,
+		LL_FEATURE_SUPPORT_BYTE_1,
+		LL_FEATURE_SUPPORT_BYTE_2,
+		LL_FEATURE_SUPPORT_BYTE_3,
+		LL_FEATURE_SUPPORT_BYTE_4,
+		LL_FEATURE_SUPPORT_BYTE_5,
+		LL_FEATURE_SUPPORT_BYTE_6,
+		LL_FEATURE_SUPPORT_BYTE_7,
+		LL_FEATURE_SUPPORT_BYTE_8,
+	};
+	for(int i=0;i<len;i++)
+	{
+		feature[i] = suppFea[i];
+	}
 }
 
 void ll_feature_reset(void)
