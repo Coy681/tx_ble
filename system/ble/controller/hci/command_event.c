@@ -2,6 +2,7 @@
 #include"command_event.h"
 #include"hci.h"
 #include"../info.h"
+#include"../ll/ll_config.h"
 /******************************************hci event**********************************************/
 static _u8  hci_event_buffer[256];
 static _u16 hciCommandOpcode; 
@@ -82,8 +83,8 @@ struct reset_retParam_t
 controller_error_code_e reset_process(_u8* data,_u8 length,bt_hci_event_t** event)
 {
     controller_error_code_e status = ll_reset();
-    struct reset_retParam_t* param = (struct reset_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct reset_retParam_t),event);
-    param->status = (_u8)status;
+    struct reset_retParam_t* retParam = (struct reset_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct reset_retParam_t),event);
+    retParam->status = (_u8)status;
     return status;
 }
 
@@ -96,9 +97,9 @@ controller_error_code_e set_event_mask_process(_u8* data,_u8 length,bt_hci_event
 {
 	_u64 eventMask = ((_u64)data[0])|((_u64)data[1]<<8)|((_u64)data[2]<<16)|((_u64)data[3]<<24)|(((_u64)data[4]<<32))|((_u64)data[5]<<40)|((_u64)data[6]<<48)|((_u64)data[7]<<56);
 	controller_error_code_e status = ll_set_event_mask(eventMask);
-	struct set_event_mask_retParam_t* param = \
+	struct set_event_mask_retParam_t* retParam = \
     (struct set_event_mask_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct set_event_mask_retParam_t),event);
-	param->status = status;
+	retParam->status = status;
 	return status;
 }
 /****************************************hci informational parameters command**************************/
@@ -110,9 +111,9 @@ struct _PACKED read_br_addr_retParam_t
 controller_error_code_e read_bd_addr_process(_u8* data,_u8 length,bt_hci_event_t** event)
 {
 	ll_sm_t* ll = ll_get_current_state_machine();
-	struct read_br_addr_retParam_t* param = \
+	struct read_br_addr_retParam_t* retParam = \
 	(struct read_br_addr_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct read_br_addr_retParam_t),event);
-	param->status = (_u8)SUCCESS;
+	retParam->status = (_u8)SUCCESS;
 	txMemcpy(param->addr,ll_get_device_address(),6);
 	return SUCCESS;
 }
@@ -124,11 +125,11 @@ struct _PACKED read_local_supported_features_retParam_t
 };
 controller_error_code_e read_local_supported_features_process(_u8* data,_u8 length,bt_hci_event_t** event)
 {
-    struct read_local_supported_features_retParam_t* param = \
+    struct read_local_supported_features_retParam_t* retParam = \
 	(struct read_local_supported_features_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct read_local_supported_features_retParam_t),event);
-    param->status = (_u8)SUCCESS;
+    retParam->status = (_u8)SUCCESS;
     //LE Supported
-    param->lmpFeatures[4] = (BIT(5)|BIT(6));
+    retParam->lmpFeatures[4] = (BIT(5)|BIT(6));
     return SUCCESS;
 }
 
@@ -143,14 +144,14 @@ struct _PACKED read_local_version_information_retParam_t
 };
 controller_error_code_e read_local_version_information_process(_u8* data,_u8 length,bt_hci_event_t** event)
 {
-    struct read_local_version_information_retParam_t* param = \
+    struct read_local_version_information_retParam_t* retParam = \
     (struct read_local_version_information_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct read_local_version_information_retParam_t),event);
-    param->status            = (_u8)SUCCESS;
-    param->hciVersion        = BT_VERSION;
-    param->hciSubVesion      = HCI_SUB_VERSION;
-    param->lmpVersion        = BT_VERSION;
-    param->commanyIdentifier = COMPANY_IDENTIFIER;
-    param->lmpSubVersion     = LMP_SUB_VERSION;
+    retParam->status            = (_u8)SUCCESS;
+    retParam->hciVersion        = BT_VERSION;
+    retParam->hciSubVesion      = HCI_SUB_VERSION;
+    retParam->lmpVersion        = BT_VERSION;
+    retParam->commanyIdentifier = COMPANY_IDENTIFIER;
+    retParam->lmpSubVersion     = LMP_SUB_VERSION;
     return SUCCESS;
 }
 
@@ -161,10 +162,10 @@ struct _PACKED read_local_supported_commands_retParam_t
 };
 controller_error_code_e read_local_supported_commands_process(_u8* data,_u8 length,bt_hci_event_t** event)
 {
-    struct read_local_supported_commands_retParam_t* param = \
+    struct read_local_supported_commands_retParam_t* retParam = \
     (struct read_local_supported_commands_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct read_local_supported_commands_retParam_t),event);
-    param->status = (_u8)SUCCESS;
-    param->commands[0]|=(hci_command_controller_baseband_list[1].process?BIT(0):0);
+    retParam->status = (_u8)SUCCESS;
+    retParam->commands[0]|=(hci_command_controller_baseband_list[1].process?BIT(0):0);
     return SUCCESS;
 }
 
@@ -179,9 +180,65 @@ struct _PACKED read_filter_accept_list_size_retParam_t
     _u8 status;
     _u8 size;
 };
-controller_error_code_e read_filter_accept_list_size_process(_u8* data,_u8 length,bt_hci_event_t** event)
+controller_error_code_e le_read_filter_accept_list_size_process(_u8* data,_u8 length,bt_hci_event_t** event)
 {
+    struct read_filter_accept_list_size_retParam_t* retParam = \
+    (struct read_filter_accept_list_size_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct read_filter_accept_list_size_retParam_t),event);
+    retParam->status = (_u8)SUCCESS;
+    retParam->size   = BLE_FILTER_ACCEPT_LIST_SIZE;
+    return SUCCESS;
+}
 
+
+struct _PACKED le_add_device_to_filter_accept_list_retParam_t
+{
+    _u8 status
+};
+struct _PACKED le_add_device_to_filter_accept_list_param_t
+{
+    _u8 addrType;
+    _u8 addr[6];
+};
+controller_error_code_e le_add_device_to_filter_accept_list_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    struct le_add_device_to_filter_accept_list_param_t* param  = (le_add_device_to_filter_accept_list_param_t*)data;
+    int status = ll_add_device_to_filter_accept_list(param->addrType,param->addr);
+    struct le_add_device_to_filter_accept_list_retParam_t* retParam = \
+    (struct le_add_device_to_filter_accept_list_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct le_add_device_to_filter_accept_list_retParam_t),event);
+    retParam->status = SUCCESS;
+    return status;
+}
+
+struct _PACKED le_remove_device_from_filter_accept_list_retParam_t
+{
+    _u8 status
+};
+struct _PACKED le_remove_device_from_filter_accept_list_param_t
+{
+    _u8 addrType;
+    _u8 addr[6];
+};
+controller_error_code_e le_remove_device_from_filter_accept_list_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    struct le_remove_device_from_filter_accept_list_param_t* param  = (le_remove_device_from_filter_accept_list_param_t*)data;
+    int status = ll_remove_device_from_filter_accept_list(param->addrType,param->addr);
+    struct le_remove_device_from_filter_accept_list_retParam_t* retParam = \
+    (struct le_remove_device_from_filter_accept_list_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct le_remove_device_from_filter_accept_list_retParam_t),event);
+    retParam->status = status;
+    return status;
+}
+
+struct _PACKED le_clear_filter_accept_list_retParam_t
+{
+    _u8 status
+};
+controller_error_code_e le_clear_filter_accept_list_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    int status = ll_clear_filter_accept_list();
+    struct le_clear_filter_accept_list_retParam_t* param = \
+    (struct le_clear_filter_accept_list_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct le_clear_filter_accept_list_retParam_t),event);
+    param->status = status;
+    return status;
 }
 
 
@@ -193,10 +250,10 @@ struct _PACKED hci_command_read_local_supported_features_retParam_t
 };
 controller_error_code_e hci_le_read_local_supported_features(_u8* data,_u8 length,bt_hci_event_t** event)
 {
-	struct hci_command_read_local_supported_features_retParam_t *param = \
+	struct hci_command_read_local_supported_features_retParam_t *retParam = \
     (struct hci_command_read_local_supported_features_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_read_local_supported_features_retParam_t),event);
-	param->status  = (_u8)SUCCESS;;
-	param->feature = ll_get_feature();
+	retParam->status  = (_u8)SUCCESS;;
+	retParam->feature = ll_get_feature();
 	return SUCCESS;
 }
 
@@ -227,9 +284,9 @@ controller_error_code_e hci_le_set_event_mask(_u8* data,_u8 length,bt_hci_event_
 {
 	_u64 eventMask = ((_u64)data[0])|((_u64)data[1]<<8)|((_u64)data[2]<<16)|((_u64)data[3]<<24)|(((_u64)data[4]<<32))|((_u64)data[5]<<40)|((_u64)data[6]<<48)|((_u64)data[7]<<56);
 	controller_error_code_e status = ll_set_le_event_mask(eventMask);
-	struct hci_command_le_set_event_mask_retParam_t* param =\
+	struct hci_command_le_set_event_mask_retParam_t* retParam =\
 	(struct hci_command_le_set_event_mask_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_le_set_event_mask_retParam_t),event);
-	param->status = status;
+	retParam->status = status;
 	return status;
 }
 
@@ -244,10 +301,10 @@ controller_error_code_e hci_le_set_event_mask(_u8* data,_u8 length,bt_hci_event_
 #define SET_EVENT_MASK_PROCESS                                               set_event_mask_process//v1_1
 #define READ_LOCAL_SUPPORTED_COMMANDS_PROCESS                                read_local_supported_commands_process//v1_2
 
-#define LE_READ_FILTER_ACCEPT_LIST_SIZE_PROCESS                              NULL//v4_0
-#define LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST_PROCESS                          NULL//v4_0
-#define LE_REMOVE_DEVICE_FROM_FILTER_ACCEPT_LIST_PROCESS                     NULL//v4_0
-#define LE_CLEAR_FILTER_ACCEPT_LIST_PROCESS                                  NULL//v4_0
+#define LE_READ_FILTER_ACCEPT_LIST_SIZE_PROCESS                              le_read_filter_accept_list_size_process//v4_0
+#define LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST_PROCESS                          le_add_device_to_filter_accept_list_process//v4_0
+#define LE_REMOVE_DEVICE_FROM_FILTER_ACCEPT_LIST_PROCESS                     le_remove_device_from_filter_accept_list_process//v4_0
+#define LE_CLEAR_FILTER_ACCEPT_LIST_PROCESS                                  le_clear_filter_accept_list_process//v4_0
 #define LE_READ_LOCAL_SUPPORTED_FEATURES_PAGE_0_PROCESS                      NULL//v4_0
 #define LE_READ_SUPPORTED_STATES_PROCESS                                     NULL//v4_0
 #define LE_SET_EVENT_MASK_PROCESS                                            NULL//v4_0

@@ -175,21 +175,76 @@ void ll_feature_reset(void)
 	ll_host_support_feature = 0;
 }
 /******************************ll filter accept list operation*****************************/
-_u8 ll_read_filter_accept_list_size()
+controller_error_code_e ll_add_device_to_filter_accept_list(_u8 addrType,_u8* addr)
 {
-
+	ll_sm_t* llSm = ll_get_current_state_machine();
+	if(POINTER_VALID(llSm->adv)&&\
+	  (llSm->adv->enable)&&\
+	  (llSm->adv->filterPolicy!=LL_FILTER_LIST_NOT_USE))
+	{
+		return COMMAND_DISALLOWED;
+	}
+	//todo,process initing and scanning
+	for(_u8 i=0;i<BLE_FILTER_ACCEPT_LIST_SIZE;i++)
+	{
+		if((ll->filterAcceptList[i].occupy)&&\
+		   (ll->filterAcceptList[i].addrType == addrType)&&\
+		   (!txMemcmp(ll->filterAcceptList[i].addr,addr)))
+		{
+			return SUCCESS;
+		}
+	}
+	for(_u8 i=0;i<BLE_FILTER_ACCEPT_LIST_SIZE;i++)
+	{
+		if(!(ll->filterAcceptList[i].occupy))
+		{
+			ll->filterAcceptList[i].addrType = addrType;
+			txMemcpy(ll->filterAcceptList[i].addr,addr,6);
+			return SUCCESS;
+		}
+	}
+	return MEMORY_CAPACITY_EXCEEDED;
 }
-controller_error_code_e ll_add_device_to_filter_accept_list()
+controller_error_code_e ll_remove_device_from_filter_accept_list(_u8 addrType,_u8* addr)
 {
-
+	ll_sm_t* llSm = ll_get_current_state_machine();
+	if(POINTER_VALID(llSm->adv)&&\
+	  (llSm->adv->enable)&&\
+	  (llSm->adv->filterPolicy!=LL_FILTER_LIST_NOT_USE))
+	{
+		return COMMAND_DISALLOWED;
+	}
+	//todo,process initing and scanning
+	for(_u8 i=0;i<BLE_FILTER_ACCEPT_LIST_SIZE;i++)
+	{
+		if((ll->filterAcceptList[i].occupy)&&\
+		   (ll->filterAcceptList[i].addrType == addrType)&&\
+		   (!txMemcmp(ll->filterAcceptList[i].addr,addr)))
+		{
+			ll->filterAcceptList[i].occupy = 0;
+			return SUCCESS;
+		}
+	}
+	return MEMORY_CAPACITY_EXCEEDED;
 }
-controller_error_code_e ll_remove_device_from_filter_accept_list()
+controller_error_code_e ll_clear_filter_accept_list(void)
 {
-
-}
-controller_error_code_e ll_clear_filter_accept_list()
-{
-	
+	ll_sm_t* llSm = ll_get_current_state_machine();
+	if(POINTER_VALID(llSm->adv)&&\
+	  (llSm->adv->enable)&&\
+	  (llSm->adv->filterPolicy!=LL_FILTER_LIST_NOT_USE))
+	{
+		return COMMAND_DISALLOWED;
+	}
+	//todo,process initing and scanning
+	for(_u8 i=0;i<BLE_FILTER_ACCEPT_LIST_SIZE;i++)
+	{
+		if(ll->filterAcceptList[i].occupy)
+		{
+			ll->filterAcceptList[i].occupy = 0;
+		}	
+	}
+	return SUCCESS;
 }
 
 /******************************************ll reset*******************************************/
