@@ -178,18 +178,23 @@ void ll_feature_reset(void)
 controller_error_code_e ll_add_device_to_filter_accept_list(_u8 addrType,_u8* addr)
 {
 	ll_sm_t* llSm = ll_get_current_state_machine();
-	if(POINTER_VALID(llSm->adv)&&\
-	  (llSm->adv->enable)&&\
-	  (llSm->adv->filterPolicy!=LL_FILTER_LIST_NOT_USE))
+	if(POINTER_VALID(llSm->adv))
 	{
-		return COMMAND_DISALLOWED;
+		for(_u8 i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+		{
+			if((llSm->adv->param[i].enable)&&\
+	          (llSm->adv->param[i].filterPolicy!=LL_FILTER_LIST_NOT_USE))
+			{
+				return COMMAND_DISALLOWED;
+			}
+		}
 	}
 	//todo,process initing and scanning
 	for(_u8 i=0;i<BLE_FILTER_ACCEPT_LIST_SIZE;i++)
 	{
 		if((ll->filterAcceptList[i].occupy)&&\
 		   (ll->filterAcceptList[i].addrType == addrType)&&\
-		   (!txMemcmp(ll->filterAcceptList[i].addr,addr)))
+		   (!txMemcmp(ll->filterAcceptList[i].addr,addr,6)))
 		{
 			return SUCCESS;
 		}
@@ -208,18 +213,23 @@ controller_error_code_e ll_add_device_to_filter_accept_list(_u8 addrType,_u8* ad
 controller_error_code_e ll_remove_device_from_filter_accept_list(_u8 addrType,_u8* addr)
 {
 	ll_sm_t* llSm = ll_get_current_state_machine();
-	if(POINTER_VALID(llSm->adv)&&\
-	  (llSm->adv->enable)&&\
-	  (llSm->adv->filterPolicy!=LL_FILTER_LIST_NOT_USE))
+	if(POINTER_VALID(llSm->adv))
 	{
-		return COMMAND_DISALLOWED;
+		for(_u8 i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+		{
+			if((llSm->adv->param[i].enable)&&\
+	          (llSm->adv->param[i].filterPolicy!=LL_FILTER_LIST_NOT_USE))
+			{
+				return COMMAND_DISALLOWED;
+			}
+		}
 	}
 	//todo,process initing and scanning
 	for(_u8 i=0;i<BLE_FILTER_ACCEPT_LIST_SIZE;i++)
 	{
 		if((ll->filterAcceptList[i].occupy)&&\
 		   (ll->filterAcceptList[i].addrType == addrType)&&\
-		   (!txMemcmp(ll->filterAcceptList[i].addr,addr)))
+		   (!txMemcmp(ll->filterAcceptList[i].addr,addr,6)))
 		{
 			ll->filterAcceptList[i].occupy = 0;
 			return SUCCESS;
@@ -230,13 +240,18 @@ controller_error_code_e ll_remove_device_from_filter_accept_list(_u8 addrType,_u
 controller_error_code_e ll_clear_filter_accept_list(void)
 {
 	ll_sm_t* llSm = ll_get_current_state_machine();
-	if(POINTER_VALID(llSm->adv)&&\
-	  (llSm->adv->enable)&&\
-	  (llSm->adv->filterPolicy!=LL_FILTER_LIST_NOT_USE))
+	if(POINTER_VALID(llSm->adv))
 	{
-		return COMMAND_DISALLOWED;
+		for(_u8 i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+		{
+			if((llSm->adv->param[i].enable)&&\
+	          (llSm->adv->param[i].filterPolicy!=LL_FILTER_LIST_NOT_USE))
+			{
+				return COMMAND_DISALLOWED;
+			}
+		}
 	}
-	//todo,process initing and scanning
+	//todo,process initing and scanning 
 	for(_u8 i=0;i<BLE_FILTER_ACCEPT_LIST_SIZE;i++)
 	{
 		if(ll->filterAcceptList[i].occupy)
