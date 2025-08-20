@@ -11,7 +11,7 @@
 #include"txType.h"
 
 #define BIT(n)                          ( 1<<(n))
-
+#define BIT64(n)                        (1ULL<<(n))
 
 #define BYTE_TO_U16(n,p)                {n = ((_u16)p[0] + ((_u16)p[1]<<8));}
 

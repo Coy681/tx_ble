@@ -19,9 +19,9 @@
 #define LE_REMOVE_DEVICE_FROM_FILTER_ACCEPT_LIST_PROCESS                     le_remove_device_from_filter_accept_list_process//v4_0
 #define LE_CLEAR_FILTER_ACCEPT_LIST_PROCESS                                  le_clear_filter_accept_list_process//v4_0
 #define LE_READ_LOCAL_SUPPORTED_FEATURES_PAGE_0_PROCESS                      le_read_local_supported_features_page_0_process//v4_0
-#define LE_READ_SUPPORTED_STATES_PROCESS                                     NULL//v4_0
-#define LE_SET_EVENT_MASK_PROCESS                                            NULL//v4_0
-#define LE_TEST_END_PROCESS                                                  NULL//v4_0
+#define LE_READ_SUPPORTED_STATES_PROCESS                                     le_read_supported_states_process//v4_0
+#define LE_SET_EVENT_MASK_PROCESS                                            le_set_event_mask_process//v4_0
+#define LE_TEST_END_PROCESS                                                  le_test_end_process//v4_0
 
 /******************** feature ***********************/
 
@@ -554,6 +554,47 @@ controller_error_code_e le_read_local_supported_features_page_0_process(_u8* dat
 	return SUCCESS;
 }
 
+struct _PACKED le_read_supported_states_retParam_t
+{
+	_u8  status;
+    _u64 states;
+};
+controller_error_code_e le_read_supported_states_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    struct le_read_supported_states_retParam_t* retParam = \
+    (struct le_read_supported_states_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct le_read_supported_states_retParam_t),event);
+    retParam->status = (_u8)SUCCESS;
+
+    #if(BLE_SUPPORTED_BROADCAST)
+    retParam->states|=(BIT64(0)  | BIT64(1)  | BIT64(8)  | BIT64(9)  | BIT64(12) | \
+		BIT64(13) | BIT64(16) | BIT64(17) | BIT64(18) | BIT64(19) | \
+		BIT64(20) | BIT64(21));
+    #endif
+
+    #if(BLE_SUPPORTED_OBSERVER)
+    retParam->states|=(BIT64(4)  | BIT64(5)  | BIT64(8)  | BIT64(9)  | BIT64(10) | \
+		BIT64(11) | BIT64(12) | BIT64(13) | BIT64(14) | BIT64(15) | \
+		BIT64(22) | BIT64(23) | BIT64(24) | BIT64(25) | BIT64(26) | \
+		BIT64(27) | BIT64(30) | BIT64(31));
+    #endif
+
+    #if(BLE_SUPPORTED_CENTRAL)
+    retParam->states|=(BIT64(6)  | BIT64(16) | BIT64(17) | BIT64(18) | BIT64(19) | \
+		BIT64(22) | BIT64(23) | BIT64(24) | BIT64(25) | BIT64(28) | \
+		BIT64(32) | BIT64(33) | BIT64(34) | BIT64(35) | BIT64(36) | \
+		BIT64(37) | BIT64(41));
+    #endif
+
+    #if(BLE_SUPPORTED_PERIPHERAL)
+    retParam->states|=(BIT64(2)  | BIT64(3)  | BIT64(7)  | BIT64(10) | BIT64(11) | \
+		BIT64(14) | BIT64(15) | BIT64(20) | BIT64(21) | BIT64(26) | \
+		BIT64(27) | BIT64(29) | BIT64(30) | BIT64(31) | BIT64(32) | \
+		BIT64(33) | BIT64(34) | BIT64(35) | BIT64(36) | BIT64(37) | \
+		BIT64(38) | BIT64(39) | BIT64(40) | BIT64(41));
+    #endif
+
+    return SUCCESS;
+}
 
 controller_error_code_e hci_le_set_advertising_parameters(_u8* data,_u8 length,bt_hci_event_t** event)
 {
@@ -572,20 +613,35 @@ controller_error_code_e hci_le_set_advertising_enable(_u8* data,_u8 length,bt_hc
     
 }
 
-struct _PACKED hci_command_le_set_event_mask_retParam_t
+
+struct _PACKED le_set_event_mask_retParam_t
 {
 	_u8  status;
 };
-
-controller_error_code_e hci_le_set_event_mask(_u8* data,_u8 length,bt_hci_event_t** event)
+controller_error_code_e le_set_event_mask_process(_u8* data,_u8 length,bt_hci_event_t** event)
 {
 	_u64 eventMask = ((_u64)data[0])|((_u64)data[1]<<8)|((_u64)data[2]<<16)|((_u64)data[3]<<24)|(((_u64)data[4]<<32))|((_u64)data[5]<<40)|((_u64)data[6]<<48)|((_u64)data[7]<<56);
 	controller_error_code_e status = ll_set_le_event_mask(eventMask);
-	struct hci_command_le_set_event_mask_retParam_t* retParam =\
-	(struct hci_command_le_set_event_mask_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct hci_command_le_set_event_mask_retParam_t),event);
+	struct le_set_event_mask_retParam_t* retParam =\
+	(struct le_set_event_mask_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct le_set_event_mask_retParam_t),event);
 	retParam->status = status;
 	return status;
 }
+
+struct _PACKED le_test_end_retParam_t
+{
+    _u8  status;
+    _u16 numPackets;
+};
+controller_error_code_e le_test_end_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    struct le_test_end_retParam_t* param = \
+    (struct le_test_end_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct le_test_end_retParam_t),event);
+    param->status = (_u8)SUCCESS;
+    param->numPackets = 0;
+    return SUCCESS;
+}
+
 //special,should put it last
 /****************************************hci informational parameters command**************************/
 struct _PACKED read_br_addr_retParam_t

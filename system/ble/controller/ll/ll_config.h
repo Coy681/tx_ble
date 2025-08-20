@@ -1,6 +1,23 @@
 #include"ll_feature.h"
 #include"../config.h"
 
+/************************* BLE ROLE CONFIGURE *****************************/
+#ifndef BLE_SUPPORTED_BROADCAST
+#define BLE_SUPPORTED_BROADCAST                        1
+#endif 
+
+#ifndef BLE_SUPPORTED_OBSERVER
+#define BLE_SUPPORTED_OBSERVER                         1
+#endif
+
+#ifndef BLE_SUPPORTED_CENTRAL
+#define BLE_SUPPORTED_CENTRAL                          1
+#endif
+
+#ifndef BLE_SUPPORTED_PERIPHERAL
+#define BLE_SUPPORTED_PERIPHERAL                       1
+#endif
+/*********************** BLE PROPERTY CONFIGURE ***************************/
 #ifndef BLE_FILTER_ACCEPT_LIST_SIZE
 #define BLE_FILTER_ACCEPT_LIST_SIZE                    4
 #endif
