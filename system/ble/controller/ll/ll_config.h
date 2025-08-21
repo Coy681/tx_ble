@@ -18,6 +18,19 @@
 #define BLE_SUPPORT_PERIPHERAL                         1
 #endif
 
+#if(BLE_SUPPORT_CENTRAL&&(!BLE_SUPPORT_OBSERVER))
+#undef  BLE_SUPPORT_OBSERVER
+#define BLE_SUPPORT_OBSERVER                           1
+#endif
+
+#if(BLE_SUPPORT_PERIPHERAL&&(!BLE_SUPPORT_BROADCAST))
+#undef  BLE_SUPPORT_BROADCAST
+#define BLE_SUPPORT_BROADCAST                           1
+#endif
+
+#if(BLE_SUPPORT_PERIPHERAL)
+#endif
+
 #define BLE_SUPPORT_CONN_STATE                         (BLE_SUPPORT_CENTRAL|BLE_SUPPORT_PERIPHERAL)
 
 /*********************** BLE PROPERTY CONFIGURE ***************************/

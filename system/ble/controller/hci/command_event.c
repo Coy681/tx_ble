@@ -5,7 +5,7 @@
 #include"../ll/ll_config.h"
 
 /************************************hci feature adapt layer****************************************/
-
+#define HCI_DEFAULT_PROCESS_ADDRESS                                          0
 /************* mandory supported hci cmd process **************/
 #define RESET_PROCESS                                                        reset_process//v1_1
 #define READ_BD_ADDR_PROCESS                                                 read_bd_addr_process//v1_1
@@ -23,81 +23,86 @@
 #define LE_SET_EVENT_MASK_PROCESS                                            le_set_event_mask_process//v4_0
 #define LE_TEST_END_PROCESS                                                  le_test_end_process//v4_0
 
-/************* optional supported hci cmd process **************/
-#define READ_LOCAL_SUPPORTED_CODECS_V2_PROCESS                               NULL
-#define SET_EXTERNAL_FRAME_CONFIGURATION_PROCESS                             NULL
-#define SET_MWS_CHANNEL_PARAMETERS_PROCESS                                   NULL
-#define SET_MWS_SCAN_FREQUENCY_TABLE_PROCESS                                 NULL
-#define SET_MWS_SIGNALING_PROCESS                                            NULL
-#define LE_READ_LOCAL_P_256_PUBLIC_KEY_PROCESS                               NULL
-#define LE_GENERATE_DHKEY_V2_PROCESS                                         NULL
-#define SET_ECOSYSTEM_BASE_INTERVAL_PROCESS                                  NULL
+/**************************************** optional supported hci cmd process *************************************************************/
+#define READ_LOCAL_SUPPORTED_CODECS_V2_PROCESS                               HCI_DEFAULT_PROCESS_ADDRESS
+#define SET_EXTERNAL_FRAME_CONFIGURATION_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
+#define SET_MWS_CHANNEL_PARAMETERS_PROCESS                                   HCI_DEFAULT_PROCESS_ADDRESS
+#define SET_MWS_SCAN_FREQUENCY_TABLE_PROCESS                                 HCI_DEFAULT_PROCESS_ADDRESS
+#define SET_MWS_SIGNALING_PROCESS                                            HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_LOCAL_P_256_PUBLIC_KEY_PROCESS                               HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_GENERATE_DHKEY_V2_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
+#define SET_ECOSYSTEM_BASE_INTERVAL_PROCESS                                  HCI_DEFAULT_PROCESS_ADDRESS
 // C.145: Mandatory if any event in event mask page 2 is supported, otherwise optional
-#define SET_EVENT_MASK_PAGE_2_PROCESS                                        NULL
+#define SET_EVENT_MASK_PAGE_2_PROCESS                                        HCI_DEFAULT_PROCESS_ADDRESS
 
 #if(SET_MWS_SIGNALING_PROCESS)
 // C.109: Mandatory if the Set MWS Signaling command is supported, otherwise excluded
-#define SET_MWS_TRANSPORT_LAYER_PROCESS                                      NULL
-#define GET_MWS_TRANSPORT_LAYER_CONFIGURATION_PROCESS                        NULL
+#define SET_MWS_TRANSPORT_LAYER_PROCESS                                      HCI_DEFAULT_PROCESS_ADDRESS
+#define GET_MWS_TRANSPORT_LAYER_CONFIGURATION_PROCESS                        HCI_DEFAULT_PROCESS_ADDRESS
 #else
-#define SET_MWS_TRANSPORT_LAYER_PROCESS                                      NULL
-#define GET_MWS_TRANSPORT_LAYER_CONFIGURATION_PROCESS                        NULL
+#define SET_MWS_TRANSPORT_LAYER_PROCESS                                      HCI_DEFAULT_PROCESS_ADDRESS
+#define GET_MWS_TRANSPORT_LAYER_CONFIGURATION_PROCESS                        HCI_DEFAULT_PROCESS_ADDRESS
 #endif
 
 
 /************************ state combination *****************************/
 #if(BLE_SUPPORT_CONN_STATE)
 // C.3: Mandatory if the LE Controller supports Connection State; 
-#define DISCONNECT_PROCESS                                                   1
-#define READ_REMOTE_VERSION_INFORMATION_PROCESS                              1
-#define READ_RSSI_PROCESS                                                    1
-#define READ_TRANSMIT_POWER_LEVEL_PROCESS                                    1
-#define LE_READ_CHANNEL_MAP_PROCESS                                          1
-#define LE_READ_REMOTE_FEATURES_PAGE_0_PROCESS                               1
-#define LE_READ_BUFFER_SIZE_PROCESS                                          1
+#define DISCONNECT_PROCESS                                                   HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_REMOTE_VERSION_INFORMATION_PROCESS                              HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_RSSI_PROCESS                                                    HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_TRANSMIT_POWER_LEVEL_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_CHANNEL_MAP_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_REMOTE_FEATURES_PAGE_0_PROCESS                               HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_BUFFER_SIZE_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
 // C.96: Optional if the LE Controller supports Connection State, otherwise excluded
-#define SET_CONTROLLER_TO_HOST_FLOW_CONTROL_PROCESS                          1
+#define SET_CONTROLLER_TO_HOST_FLOW_CONTROL_PROCESS                          HCI_DEFAULT_PROCESS_ADDRESS
 
 #if(SET_CONTROLLER_TO_HOST_FLOW_CONTROL_PROCESS)
 // C.107: Mandatory if the Set Controller To Host Flow Control command is supported, otherwise excluded
-#define HOST_BUFFER_SIZE_PROCESS                                             1
-#define HOST_NUMBER_OF_COMPLETED_PACKETS_PROCESS                             1
+#define HOST_BUFFER_SIZE_PROCESS                                             HCI_DEFAULT_PROCESS_ADDRESS
+#define HOST_NUMBER_OF_COMPLETED_PACKETS_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
 #else
-#define HOST_BUFFER_SIZE_PROCESS                                             NULL
-#define HOST_NUMBER_OF_COMPLETED_PACKETS_PROCESS                             NULL
+#define HOST_BUFFER_SIZE_PROCESS                                             HCI_DEFAULT_PROCESS_ADDRESS
+#define HOST_NUMBER_OF_COMPLETED_PACKETS_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
 #endif
 
 #else
-#define DISCONNECT_PROCESS                                                   NULL
-#define READ_REMOTE_VERSION_INFORMATION_PROCESS                              NULL
-#define READ_RSSI_PROCESS                                                    NULL
-#define READ_TRANSMIT_POWER_LEVEL_PROCESS                                    NULL
-#define LE_READ_CHANNEL_MAP_PROCESS                                          NULL
-#define LE_READ_REMOTE_FEATURES_PAGE_0_PROCESS                               NULL
-#define LE_READ_BUFFER_SIZE_PROCESS                                          NULL
-#define SET_CONTROLLER_TO_HOST_FLOW_CONTROL_PROCESS                          NULL
-#define HOST_BUFFER_SIZE_PROCESS                                             NULL
-#define HOST_NUMBER_OF_COMPLETED_PACKETS_PROCESS                             NULL
+#define DISCONNECT_PROCESS                                                   HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_REMOTE_VERSION_INFORMATION_PROCESS                              HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_RSSI_PROCESS                                                    HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_TRANSMIT_POWER_LEVEL_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_CHANNEL_MAP_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_REMOTE_FEATURES_PAGE_0_PROCESS                               HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_BUFFER_SIZE_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
+#define SET_CONTROLLER_TO_HOST_FLOW_CONTROL_PROCESS                          HCI_DEFAULT_PROCESS_ADDRESS
+#define HOST_BUFFER_SIZE_PROCESS                                             HCI_DEFAULT_PROCESS_ADDRESS
+#define HOST_NUMBER_OF_COMPLETED_PACKETS_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
 #endif
 
 #if(BLE_SUPPORT_BROADCAST)
 // C.97: Mandatory if Advertising State is supported, otherwise excluded
-#define LE_SET_ADVERTISING_DATA_PROCESS                                      1
-#define LE_SET_ADVERTISING_ENABLE_PROCESS                                    1
-#define LE_SET_ADVERTISING_PARAMETERS_PROCESS                                1
-#define LE_READ_ADVERTISING_PHYSICAL_CHANNEL_TX_POWER_PROCESS                1
+#define LE_SET_ADVERTISING_DATA_PROCESS                                      HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_ADVERTISING_ENABLE_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_ADVERTISING_PARAMETERS_PROCESS                                HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_ADVERTISING_PHYSICAL_CHANNEL_TX_POWER_PROCESS                HCI_DEFAULT_PROCESS_ADDRESS
 // C.15: Mandatory if LE Controller supports transmitting scannable advertisements, otherwise excluded
-#define LE_SET_SCAN_RESPONSE_DATA_PROCESS                                    1
+#define LE_SET_SCAN_RESPONSE_DATA_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
 #else
-#define LE_SET_ADVERTISING_DATA_PROCESS                                      NULL
-#define LE_SET_ADVERTISING_ENABLE_PROCESS                                    NULL
-#define LE_SET_ADVERTISING_PARAMETERS_PROCESS                                NULL
-#define LE_READ_ADVERTISING_PHYSICAL_CHANNEL_TX_POWER_PROCESS                NULL
-#define LE_SET_SCAN_RESPONSE_DATA_PROCESS                                    NULL
+#define LE_SET_ADVERTISING_DATA_PROCESS                                      HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_ADVERTISING_ENABLE_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_ADVERTISING_PARAMETERS_PROCESS                                HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_ADVERTISING_PHYSICAL_CHANNEL_TX_POWER_PROCESS                HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_SCAN_RESPONSE_DATA_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
 #endif
 
 #if(BLE_SUPPORT_OBSERVER)
+// C.98: Mandatory if Scanning State is supported, otherwise excluded
+#define LE_SET_SCAN_ENABLE_PROCESS                                           HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_SCAN_PARAMETERS_PROCESS                                       HCI_DEFAULT_PROCESS_ADDRESS
 #else
+#define LE_SET_SCAN_ENABLE_PROCESS                                           HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_SCAN_PARAMETERS_PROCESS                                       HCI_DEFAULT_PROCESS_ADDRESS
 #endif
 
 #if(BLE_SUPPORT_CENTRAL)
@@ -229,11 +234,11 @@
 
 #if(LL_SUPPORT_CONNECTED_ISOCHRONOUS_STREAM_PERIPHERAL)
 // C.40: Mandatory if LE Feature (Connected Isochronous Stream - Peripheral) is supported, otherwise excluded
-#define READ_CONNECTION_ACCEPT_TIMEOUT_PROCESS                               NULL
-#define WRITE_CONNECTION_ACCEPT_TIMEOUT_PROCESS                              NULL
+#define READ_CONNECTION_ACCEPT_TIMEOUT_PROCESS                               HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_CONNECTION_ACCEPT_TIMEOUT_PROCESS                              HCI_DEFAULT_PROCESS_ADDRESS
 #else
-#define READ_CONNECTION_ACCEPT_TIMEOUT_PROCESS                               NULL
-#define WRITE_CONNECTION_ACCEPT_TIMEOUT_PROCESS                              NULL
+#define READ_CONNECTION_ACCEPT_TIMEOUT_PROCESS                               HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_CONNECTION_ACCEPT_TIMEOUT_PROCESS                              HCI_DEFAULT_PROCESS_ADDRESS
 #endif
 
 #if(LL_SUPPORT_ISOCHRONOUS_BROADCASTER)
@@ -274,11 +279,11 @@
 
 #if(LL_SUPPORT_CHANNEL_CLASSIFICATION)
 // C.58: Mandatory if LE Feature (Channel Classification) is supported
-#define WRITE_AFH_CHANNEL_ASSESSMENT_MODE_PROCESS                            NULL
-#define READ_AFH_CHANNEL_ASSESSMENT_MODE_PROCESS                             NULL
+#define WRITE_AFH_CHANNEL_ASSESSMENT_MODE_PROCESS                            HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_AFH_CHANNEL_ASSESSMENT_MODE_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
 #else
-#define WRITE_AFH_CHANNEL_ASSESSMENT_MODE_PROCESS                            NULL
-#define READ_AFH_CHANNEL_ASSESSMENT_MODE_PROCESS                             NULL
+#define WRITE_AFH_CHANNEL_ASSESSMENT_MODE_PROCESS                            HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_AFH_CHANNEL_ASSESSMENT_MODE_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
 #endif
 
 #if(LL_SUPPORT_ADVERTISING_CODING_SELECTION)
@@ -331,352 +336,352 @@
 
 #if(BLE_SUPPORT_CENTRAL||(BLE_SUPPORT_PERIPHERAL&&LL_SUPPORT_CONNECTION_PARAMETERS_REQUEST))
 // C.62: Mandatory if the LE Controller supports Central role or supports both Peripheral role and LE Feature (Connection Parameters Request Procedure), otherwise excluded
-#define LE_CONNECTION_UPDATE_PROCESS                                         NULL
+#define LE_CONNECTION_UPDATE_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
 #endif
 
 
-#define INQUIRY_PROCESS                                                      NULL
-#define INQUIRY_CANCEL_PROCESS                                               NULL
-#define PERIODIC_INQUIRY_MODE_PROCESS                                        NULL
-#define EXIT_PERIODIC_INQUIRY_MODE_PROCESS                                   NULL
-#define CREATE_CONNECTION_PROCESS                                            NULL
+#define INQUIRY_PROCESS                                                      HCI_DEFAULT_PROCESS_ADDRESS
+#define INQUIRY_CANCEL_PROCESS                                               HCI_DEFAULT_PROCESS_ADDRESS
+#define PERIODIC_INQUIRY_MODE_PROCESS                                        HCI_DEFAULT_PROCESS_ADDRESS
+#define EXIT_PERIODIC_INQUIRY_MODE_PROCESS                                   HCI_DEFAULT_PROCESS_ADDRESS
+#define CREATE_CONNECTION_PROCESS                                            HCI_DEFAULT_PROCESS_ADDRESS
 
-#define CREATE_CONNECTION_CANCEL_PROCESS                                     NULL
-#define ACCEPT_CONNECTION_REQUEST_PROCESS                                    NULL
-#define REJECT_CONNECTION_REQUEST_PROCESS                                    NULL
-#define LINK_KEY_REQUEST_REPLY_PROCESS                                       NULL
-#define LINK_KEY_REQUEST_NEGATIVE_REPLY_PROCESS                              NULL
-#define PIN_CODE_REQUEST_REPLY_PROCESS                                       NULL
-#define PIN_CODE_REQUEST_NEGATIVE_REPLY_PROCESS                              NULL
-#define CHANGE_CONNECTION_PACKET_TYPE_PROCESS                                NULL
-#define AUTHENTICATION_REQUESTED_PROCESS                                     NULL
-#define SET_CONNECTION_ENCRYPTION_PROCESS                                    NULL
-#define CHANGE_CONNECTION_LINK_KEY_PROCESS                                   NULL
-#define LINK_KEY_SELECTION_PROCESS                                           NULL
-#define REMOTE_NAME_REQUEST_PROCESS                                          NULL
-#define REMOTE_NAME_REQUEST_CANCEL_PROCESS                                   NULL
-#define READ_REMOTE_SUPPORTED_FEATURES_PROCESS                               NULL
-#define READ_REMOTE_EXTENDED_FEATURES_PROCESS                                NULL
+#define CREATE_CONNECTION_CANCEL_PROCESS                                     HCI_DEFAULT_PROCESS_ADDRESS
+#define ACCEPT_CONNECTION_REQUEST_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
+#define REJECT_CONNECTION_REQUEST_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
+#define LINK_KEY_REQUEST_REPLY_PROCESS                                       HCI_DEFAULT_PROCESS_ADDRESS
+#define LINK_KEY_REQUEST_NEGATIVE_REPLY_PROCESS                              HCI_DEFAULT_PROCESS_ADDRESS
+#define PIN_CODE_REQUEST_REPLY_PROCESS                                       HCI_DEFAULT_PROCESS_ADDRESS
+#define PIN_CODE_REQUEST_NEGATIVE_REPLY_PROCESS                              HCI_DEFAULT_PROCESS_ADDRESS
+#define CHANGE_CONNECTION_PACKET_TYPE_PROCESS                                HCI_DEFAULT_PROCESS_ADDRESS
+#define AUTHENTICATION_REQUESTED_PROCESS                                     HCI_DEFAULT_PROCESS_ADDRESS
+#define SET_CONNECTION_ENCRYPTION_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
+#define CHANGE_CONNECTION_LINK_KEY_PROCESS                                   HCI_DEFAULT_PROCESS_ADDRESS
+#define LINK_KEY_SELECTION_PROCESS                                           HCI_DEFAULT_PROCESS_ADDRESS
+#define REMOTE_NAME_REQUEST_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
+#define REMOTE_NAME_REQUEST_CANCEL_PROCESS                                   HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_REMOTE_SUPPORTED_FEATURES_PROCESS                               HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_REMOTE_EXTENDED_FEATURES_PROCESS                                HCI_DEFAULT_PROCESS_ADDRESS
 
-#define READ_CLOCK_OFFSET_PROCESS                                            NULL
-#define READ_LMP_HANDLE_PROCESS                                              NULL
-#define SETUP_SYNCHRONOUS_CONNECTION_PROCESS                                 NULL
-#define ACCEPT_SYNCHRONOUS_CONNECTION_REQUEST_PROCESS                        NULL
-#define REJECT_SYNCHRONOUS_CONNECTION_REQUEST_PROCESS                        NULL
-#define IO_CAPABILITY_REQUEST_REPLY_PROCESS                                  NULL
-#define USER_CONFIRMATION_REQUEST_REPLY_PROCESS                              NULL
-#define USER_CONFIRMATION_REQUEST_NEGATIVE_REPLY_PROCESS                     NULL
-#define USER_PASSKEY_REQUEST_REPLY_PROCESS                                   NULL
-#define USER_PASSKEY_REQUEST_NEGATIVE_REPLY_PROCESS                          NULL
-#define REMOTE_OOB_DATA_REQUEST_REPLY_PROCESS                                NULL
-#define REMOTE_OOB_DATA_REQUEST_NEGATIVE_REPLY_PROCESS                       NULL
-#define IO_CAPABILITY_REQUEST_NEGATIVE_REPLY_PROCESS                         NULL
-#define ENHANCED_SETUP_SYNCHRONOUS_CONNECTION_PROCESS                        NULL
-#define ENHANCED_ACCEPT_SYNCHRONOUS_CONNECTION_REQUEST_PROCESS               NULL
-#define TRUNCATED_PAGE_PROCESS                                               NULL
-#define TRUNCATED_PAGE_CANCEL_PROCESS                                        NULL
-#define SET_CONNECTIONLESS_PERIPHERAL_BROADCAST_PROCESS                      NULL
-#define SET_CONNECTIONLESS_PERIPHERAL_BROADCAST_RECEIVE_PROCESS              NULL
-#define START_SYNCHRONIZATION_TRAIN_PROCESS                                  NULL
-#define RECEIVE_SYNCHRONIZATION_TRAIN_PROCESS                                NULL
-#define REMOTE_OOB_EXTENDED_DATA_REQUEST_REPLY_PROCESS                       NULL
-
-
-#define HOLD_MODE_PROCESS                                                    NULL
-#define SNIFF_MODE_PROCESS                                                   NULL
-#define EXIT_SNIFF_MODE_PROCESS                                              NULL
-#define QOS_SETUP_PROCESS                                                    NULL
-#define ROLE_DISCOVERY_PROCESS                                               NULL
-#define SWITCH_ROLE_PROCESS                                                  NULL
-#define READ_LINK_POLICY_SETTINGS_PROCESS                                    NULL
-#define WRITE_LINK_POLICY_SETTINGS_PROCESS                                   NULL
-#define READ_DEFAULT_LINK_POLICY_SETTINGS_PROCESS                            NULL
-#define WRITE_DEFAULT_LINK_POLICY_SETTINGS_PROCESS                           NULL
-#define FLOW_SPECIFICATION_PROCESS                                           NULL
-#define SNIFF_SUBRATING_PROCESS                                              NULL
+#define READ_CLOCK_OFFSET_PROCESS                                            HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_LMP_HANDLE_PROCESS                                              HCI_DEFAULT_PROCESS_ADDRESS
+#define SETUP_SYNCHRONOUS_CONNECTION_PROCESS                                 HCI_DEFAULT_PROCESS_ADDRESS
+#define ACCEPT_SYNCHRONOUS_CONNECTION_REQUEST_PROCESS                        HCI_DEFAULT_PROCESS_ADDRESS
+#define REJECT_SYNCHRONOUS_CONNECTION_REQUEST_PROCESS                        HCI_DEFAULT_PROCESS_ADDRESS
+#define IO_CAPABILITY_REQUEST_REPLY_PROCESS                                  HCI_DEFAULT_PROCESS_ADDRESS
+#define USER_CONFIRMATION_REQUEST_REPLY_PROCESS                              HCI_DEFAULT_PROCESS_ADDRESS
+#define USER_CONFIRMATION_REQUEST_NEGATIVE_REPLY_PROCESS                     HCI_DEFAULT_PROCESS_ADDRESS
+#define USER_PASSKEY_REQUEST_REPLY_PROCESS                                   HCI_DEFAULT_PROCESS_ADDRESS
+#define USER_PASSKEY_REQUEST_NEGATIVE_REPLY_PROCESS                          HCI_DEFAULT_PROCESS_ADDRESS
+#define REMOTE_OOB_DATA_REQUEST_REPLY_PROCESS                                HCI_DEFAULT_PROCESS_ADDRESS
+#define REMOTE_OOB_DATA_REQUEST_NEGATIVE_REPLY_PROCESS                       HCI_DEFAULT_PROCESS_ADDRESS
+#define IO_CAPABILITY_REQUEST_NEGATIVE_REPLY_PROCESS                         HCI_DEFAULT_PROCESS_ADDRESS
+#define ENHANCED_SETUP_SYNCHRONOUS_CONNECTION_PROCESS                        HCI_DEFAULT_PROCESS_ADDRESS
+#define ENHANCED_ACCEPT_SYNCHRONOUS_CONNECTION_REQUEST_PROCESS               HCI_DEFAULT_PROCESS_ADDRESS
+#define TRUNCATED_PAGE_PROCESS                                               HCI_DEFAULT_PROCESS_ADDRESS
+#define TRUNCATED_PAGE_CANCEL_PROCESS                                        HCI_DEFAULT_PROCESS_ADDRESS
+#define SET_CONNECTIONLESS_PERIPHERAL_BROADCAST_PROCESS                      HCI_DEFAULT_PROCESS_ADDRESS
+#define SET_CONNECTIONLESS_PERIPHERAL_BROADCAST_RECEIVE_PROCESS              HCI_DEFAULT_PROCESS_ADDRESS
+#define START_SYNCHRONIZATION_TRAIN_PROCESS                                  HCI_DEFAULT_PROCESS_ADDRESS
+#define RECEIVE_SYNCHRONIZATION_TRAIN_PROCESS                                HCI_DEFAULT_PROCESS_ADDRESS
+#define REMOTE_OOB_EXTENDED_DATA_REQUEST_REPLY_PROCESS                       HCI_DEFAULT_PROCESS_ADDRESS
 
 
-
-#define SET_EVENT_FILTER_PROCESS                                             NULL
-#define FLUSH_PROCESS                                                        NULL
-#define READ_PIN_TYPE_PROCESS                                                NULL
-#define WRITE_PIN_TYPE_PROCESS                                               NULL
-#define READ_STORED_LINK_KEY_PROCESS                                         NULL
-#define WRITE_STORED_LINK_KEY_PROCESS                                        NULL
-#define DELETE_STORED_LINK_KEY_PROCESS                                       NULL
-#define WRITE_LOCAL_NAME_PROCESS                                             NULL
-#define READ_LOCAL_NAME_PROCESS                                              NULL
-
-
-#define READ_PAGE_TIMEOUT_PROCESS                                            NULL
-#define WRITE_PAGE_TIMEOUT_PROCESS                                           NULL
-#define READ_SCAN_ENABLE_PROCESS                                             NULL
-#define WRITE_SCAN_ENABLE_PROCESS                                            NULL
-#define READ_PAGE_SCAN_ACTIVITY_PROCESS                                      NULL
-#define WRITE_PAGE_SCAN_ACTIVITY_PROCESS                                     NULL
-#define READ_INQUIRY_SCAN_ACTIVITY_PROCESS                                   NULL
-#define WRITE_INQUIRY_SCAN_ACTIVITY_PROCESS                                  NULL
-#define READ_AUTHENTICATION_ENABLE_PROCESS                                   NULL
-#define WRITE_AUTHENTICATION_ENABLE_PROCESS                                  NULL
-#define READ_CLASS_OF_DEVICE_PROCESS                                         NULL
-#define WRITE_CLASS_OF_DEVICE_PROCESS                                        NULL
-#define READ_VOICE_SETTING_PROCESS                                           NULL
-#define WRITE_VOICE_SETTING_PROCESS                                          NULL
-#define READ_AUTOMATIC_FLUSH_TIMEOUT_PROCESS                                 NULL
-#define WRITE_AUTOMATIC_FLUSH_TIMEOUT_PROCESS                                NULL
-#define READ_NUM_BROADCAST_RETRANSMISSIONS_PROCESS                           NULL
-#define WRITE_NUM_BROADCAST_RETRANSMISSIONS_PROCESS                          NULL
-#define READ_HOLD_MODE_ACTIVITY_PROCESS                                      NULL
-#define WRITE_HOLD_MODE_ACTIVITY_PROCESS                                     NULL
-
-#define READ_SYNCHRONOUS_FLOW_CONTROL_ENABLE_PROCESS                         NULL
-#define WRITE_SYNCHRONOUS_FLOW_CONTROL_ENABLE_PROCESS                        NULL
+#define HOLD_MODE_PROCESS                                                    HCI_DEFAULT_PROCESS_ADDRESS
+#define SNIFF_MODE_PROCESS                                                   HCI_DEFAULT_PROCESS_ADDRESS
+#define EXIT_SNIFF_MODE_PROCESS                                              HCI_DEFAULT_PROCESS_ADDRESS
+#define QOS_SETUP_PROCESS                                                    HCI_DEFAULT_PROCESS_ADDRESS
+#define ROLE_DISCOVERY_PROCESS                                               HCI_DEFAULT_PROCESS_ADDRESS
+#define SWITCH_ROLE_PROCESS                                                  HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_LINK_POLICY_SETTINGS_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_LINK_POLICY_SETTINGS_PROCESS                                   HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_DEFAULT_LINK_POLICY_SETTINGS_PROCESS                            HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_DEFAULT_LINK_POLICY_SETTINGS_PROCESS                           HCI_DEFAULT_PROCESS_ADDRESS
+#define FLOW_SPECIFICATION_PROCESS                                           HCI_DEFAULT_PROCESS_ADDRESS
+#define SNIFF_SUBRATING_PROCESS                                              HCI_DEFAULT_PROCESS_ADDRESS
 
 
 
-#define READ_LINK_SUPERVISION_TIMEOUT_PROCESS                                NULL
-#define WRITE_LINK_SUPERVISION_TIMEOUT_PROCESS                               NULL
-#define READ_NUMBER_OF_SUPPORTED_IAC_PROCESS                                 NULL
-#define READ_CURRENT_IAC_LAP_PROCESS                                         NULL
-#define WRITE_CURRENT_IAC_LAP_PROCESS                                        NULL
-#define SET_AFH_HOST_CHANNEL_CLASSIFICATION_PROCESS                          NULL
-#define READ_INQUIRY_SCAN_TYPE_PROCESS                                       NULL
-#define WRITE_INQUIRY_SCAN_TYPE_PROCESS                                      NULL
-#define READ_INQUIRY_MODE_PROCESS                                            NULL
-#define WRITE_INQUIRY_MODE_PROCESS                                           NULL
-#define READ_PAGE_SCAN_TYPE_PROCESS                                          NULL
-#define WRITE_PAGE_SCAN_TYPE_PROCESS                                         NULL
+#define SET_EVENT_FILTER_PROCESS                                             HCI_DEFAULT_PROCESS_ADDRESS
+#define FLUSH_PROCESS                                                        HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_PIN_TYPE_PROCESS                                                HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_PIN_TYPE_PROCESS                                               HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_STORED_LINK_KEY_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_STORED_LINK_KEY_PROCESS                                        HCI_DEFAULT_PROCESS_ADDRESS
+#define DELETE_STORED_LINK_KEY_PROCESS                                       HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_LOCAL_NAME_PROCESS                                             HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_LOCAL_NAME_PROCESS                                              HCI_DEFAULT_PROCESS_ADDRESS
 
 
-#define READ_EXTENDED_INQUIRY_RESPONSE_PROCESS                               NULL
-#define WRITE_EXTENDED_INQUIRY_RESPONSE_PROCESS                              NULL
-#define REFRESH_ENCRYPTION_KEY_PROCESS                                       NULL
-#define READ_SIMPLE_PAIRING_MODE_PROCESS                                     NULL
-#define WRITE_SIMPLE_PAIRING_MODE_PROCESS                                    NULL
-#define READ_LOCAL_OOB_DATA_PROCESS                                          NULL
-#define READ_INQUIRY_RESPONSE_TRANSMIT_POWER_LEVEL_PROCESS                   NULL
-#define WRITE_INQUIRY_TRANSMIT_POWER_LEVEL_PROCESS                           NULL
-#define SEND_KEYPRESS_NOTIFICATION_PROCESS                                   NULL
-#define READ_DEFAULT_ERRONEOUS_DATA_REPORTING_PROCESS                        NULL
-#define WRITE_DEFAULT_ERRONEOUS_DATA_REPORTING_PROCESS                       NULL
-#define ENHANCED_FLUSH_PROCESS                                               NULL
+#define READ_PAGE_TIMEOUT_PROCESS                                            HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_PAGE_TIMEOUT_PROCESS                                           HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_SCAN_ENABLE_PROCESS                                             HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_SCAN_ENABLE_PROCESS                                            HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_PAGE_SCAN_ACTIVITY_PROCESS                                      HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_PAGE_SCAN_ACTIVITY_PROCESS                                     HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_INQUIRY_SCAN_ACTIVITY_PROCESS                                   HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_INQUIRY_SCAN_ACTIVITY_PROCESS                                  HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_AUTHENTICATION_ENABLE_PROCESS                                   HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_AUTHENTICATION_ENABLE_PROCESS                                  HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_CLASS_OF_DEVICE_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_CLASS_OF_DEVICE_PROCESS                                        HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_VOICE_SETTING_PROCESS                                           HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_VOICE_SETTING_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_AUTOMATIC_FLUSH_TIMEOUT_PROCESS                                 HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_AUTOMATIC_FLUSH_TIMEOUT_PROCESS                                HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_NUM_BROADCAST_RETRANSMISSIONS_PROCESS                           HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_NUM_BROADCAST_RETRANSMISSIONS_PROCESS                          HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_HOLD_MODE_ACTIVITY_PROCESS                                      HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_HOLD_MODE_ACTIVITY_PROCESS                                     HCI_DEFAULT_PROCESS_ADDRESS
 
-#define READ_FLOW_CONTROL_MODE_PROCESS                                       NULL
-#define WRITE_FLOW_CONTROL_MODE_PROCESS                                      NULL
-#define READ_ENHANCED_TRANSMIT_POWER_LEVEL_PROCESS                           NULL
-#define READ_LE_HOST_SUPPORT_PROCESS                                         NULL
-#define WRITE_LE_HOST_SUPPORT_PROCESS                                        NULL
+#define READ_SYNCHRONOUS_FLOW_CONTROL_ENABLE_PROCESS                         HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_SYNCHRONOUS_FLOW_CONTROL_ENABLE_PROCESS                        HCI_DEFAULT_PROCESS_ADDRESS
 
 
 
+#define READ_LINK_SUPERVISION_TIMEOUT_PROCESS                                HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_LINK_SUPERVISION_TIMEOUT_PROCESS                               HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_NUMBER_OF_SUPPORTED_IAC_PROCESS                                 HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_CURRENT_IAC_LAP_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_CURRENT_IAC_LAP_PROCESS                                        HCI_DEFAULT_PROCESS_ADDRESS
+#define SET_AFH_HOST_CHANNEL_CLASSIFICATION_PROCESS                          HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_INQUIRY_SCAN_TYPE_PROCESS                                       HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_INQUIRY_SCAN_TYPE_PROCESS                                      HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_INQUIRY_MODE_PROCESS                                            HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_INQUIRY_MODE_PROCESS                                           HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_PAGE_SCAN_TYPE_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_PAGE_SCAN_TYPE_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
 
-#define SET_MWS_PATTERN_CONFIGURATION_PROCESS                                NULL
-#define SET_RESERVED_LT_ADDR_PROCESS                                         NULL
-#define DELETE_RESERVED_LT_ADDR_PROCESS                                      NULL
-#define SET_CONNECTIONLESS_PERIPHERAL_BROADCAST_DATA_PROCESS                 NULL
-#define READ_SYNCHRONIZATION_TRAIN_PARAMETERS_PROCESS                        NULL
-#define WRITE_SYNCHRONIZATION_TRAIN_PARAMETERS_PROCESS                       NULL
-#define READ_SECURE_CONNECTIONS_HOST_SUPPORT_PROCESS                         NULL
-#define WRITE_SECURE_CONNECTIONS_HOST_SUPPORT_PROCESS                        NULL
-#define READ_AUTHENTICATED_PAYLOAD_TIMEOUT_PROCESS                           NULL
-#define WRITE_AUTHENTICATED_PAYLOAD_TIMEOUT_PROCESS                          NULL
-#define READ_LOCAL_OOB_EXTENDED_DATA_PROCESS                                 NULL
-#define READ_EXTENDED_PAGE_TIMEOUT_PROCESS                                   NULL
-#define WRITE_EXTENDED_PAGE_TIMEOUT_PROCESS                                  NULL
-#define READ_EXTENDED_INQUIRY_LENGTH_PROCESS                                 NULL
-#define WRITE_EXTENDED_INQUIRY_LENGTH_PROCESS                                NULL
 
-#define CONFIGURE_DATA_PATH_PROCESS                                          NULL
-#define SET_MIN_ENCRYPTION_KEY_SIZE_PROCESS                                  NULL
+#define READ_EXTENDED_INQUIRY_RESPONSE_PROCESS                               HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_EXTENDED_INQUIRY_RESPONSE_PROCESS                              HCI_DEFAULT_PROCESS_ADDRESS
+#define REFRESH_ENCRYPTION_KEY_PROCESS                                       HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_SIMPLE_PAIRING_MODE_PROCESS                                     HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_SIMPLE_PAIRING_MODE_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_LOCAL_OOB_DATA_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_INQUIRY_RESPONSE_TRANSMIT_POWER_LEVEL_PROCESS                   HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_INQUIRY_TRANSMIT_POWER_LEVEL_PROCESS                           HCI_DEFAULT_PROCESS_ADDRESS
+#define SEND_KEYPRESS_NOTIFICATION_PROCESS                                   HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_DEFAULT_ERRONEOUS_DATA_REPORTING_PROCESS                        HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_DEFAULT_ERRONEOUS_DATA_REPORTING_PROCESS                       HCI_DEFAULT_PROCESS_ADDRESS
+#define ENHANCED_FLUSH_PROCESS                                               HCI_DEFAULT_PROCESS_ADDRESS
+
+#define READ_FLOW_CONTROL_MODE_PROCESS                                       HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_FLOW_CONTROL_MODE_PROCESS                                      HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_ENHANCED_TRANSMIT_POWER_LEVEL_PROCESS                           HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_LE_HOST_SUPPORT_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_LE_HOST_SUPPORT_PROCESS                                        HCI_DEFAULT_PROCESS_ADDRESS
 
 
 
 
+#define SET_MWS_PATTERN_CONFIGURATION_PROCESS                                HCI_DEFAULT_PROCESS_ADDRESS
+#define SET_RESERVED_LT_ADDR_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
+#define DELETE_RESERVED_LT_ADDR_PROCESS                                      HCI_DEFAULT_PROCESS_ADDRESS
+#define SET_CONNECTIONLESS_PERIPHERAL_BROADCAST_DATA_PROCESS                 HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_SYNCHRONIZATION_TRAIN_PARAMETERS_PROCESS                        HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_SYNCHRONIZATION_TRAIN_PARAMETERS_PROCESS                       HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_SECURE_CONNECTIONS_HOST_SUPPORT_PROCESS                         HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_SECURE_CONNECTIONS_HOST_SUPPORT_PROCESS                        HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_AUTHENTICATED_PAYLOAD_TIMEOUT_PROCESS                           HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_AUTHENTICATED_PAYLOAD_TIMEOUT_PROCESS                          HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_LOCAL_OOB_EXTENDED_DATA_PROCESS                                 HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_EXTENDED_PAGE_TIMEOUT_PROCESS                                   HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_EXTENDED_PAGE_TIMEOUT_PROCESS                                  HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_EXTENDED_INQUIRY_LENGTH_PROCESS                                 HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_EXTENDED_INQUIRY_LENGTH_PROCESS                                HCI_DEFAULT_PROCESS_ADDRESS
 
-#define READ_LOCAL_EXTENDED_FEATURES_PROCESS                                 NULL
-#define READ_BUFFER_SIZE_PROCESS                                             NULL
-
-#define READ_DATA_BLOCK_SIZE_PROCESS                                         NULL
-#define READ_LOCAL_SUPPORTED_CODECS_PROCESS                                  NULL
-#define READ_LOCAL_SIMPLE_PAIRING_OPTIONS_PROCESS                            NULL
-
-#define READ_LOCAL_SUPPORTED_CODEC_CAPABILITIES_PROCESS                      NULL
-#define READ_LOCAL_SUPPORTED_CONTROLLER_DELAY_PROCESS                        NULL
-
-
-#define READ_FAILED_CONTACT_COUNTER_PROCESS                                  NULL
-#define RESET_FAILED_CONTACT_COUNTER_PROCESS                                 NULL
-#define READ_LINK_QUALITY_PROCESS                                            NULL
-
-#define READ_AFH_CHANNEL_MAP_PROCESS                                         NULL
-#define READ_CLOCK_PROCESS                                                   NULL
-#define READ_ENCRYPTION_KEY_SIZE_PROCESS                                     NULL
-
-#define SET_TRIGGERED_CLOCK_CAPTURE_PROCESS                                  NULL
-
-#define READ_LOOPBACK_MODE_PROCESS                                           NULL
-#define WRITE_LOOPBACK_MODE_PROCESS                                          NULL
-#define ENABLE_IMPLEMENTATION_UNDER_TEST_MODE_PROCESS                        NULL
-#define WRITE_SIMPLE_PAIRING_DEBUG_MODE_PROCESS                              NULL
-#define WRITE_SECURE_CONNECTIONS_TEST_MODE_PROCESS                           NULL
-
-
-
-
-#define LE_READ_BUFFER_SIZE_V2_PROCESS                                       NULL
-
-#define LE_SET_RANDOM_ADDRESS_PROCESS                                        NULL
+#define CONFIGURE_DATA_PATH_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
+#define SET_MIN_ENCRYPTION_KEY_SIZE_PROCESS                                  HCI_DEFAULT_PROCESS_ADDRESS
 
 
 
 
 
-#define LE_SET_SCAN_PARAMETERS_PROCESS                                       NULL
-#define LE_SET_SCAN_ENABLE_PROCESS                                           NULL
-#define LE_CREATE_CONNECTION_PROCESS                                         NULL
-#define LE_CREATE_CONNECTION_CANCEL_PROCESS                                  NULL
+#define READ_LOCAL_EXTENDED_FEATURES_PROCESS                                 HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_BUFFER_SIZE_PROCESS                                             HCI_DEFAULT_PROCESS_ADDRESS
+
+#define READ_DATA_BLOCK_SIZE_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_LOCAL_SUPPORTED_CODECS_PROCESS                                  HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_LOCAL_SIMPLE_PAIRING_OPTIONS_PROCESS                            HCI_DEFAULT_PROCESS_ADDRESS
+
+#define READ_LOCAL_SUPPORTED_CODEC_CAPABILITIES_PROCESS                      HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_LOCAL_SUPPORTED_CONTROLLER_DELAY_PROCESS                        HCI_DEFAULT_PROCESS_ADDRESS
+
+
+#define READ_FAILED_CONTACT_COUNTER_PROCESS                                  HCI_DEFAULT_PROCESS_ADDRESS
+#define RESET_FAILED_CONTACT_COUNTER_PROCESS                                 HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_LINK_QUALITY_PROCESS                                            HCI_DEFAULT_PROCESS_ADDRESS
+
+#define READ_AFH_CHANNEL_MAP_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_CLOCK_PROCESS                                                   HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_ENCRYPTION_KEY_SIZE_PROCESS                                     HCI_DEFAULT_PROCESS_ADDRESS
+
+#define SET_TRIGGERED_CLOCK_CAPTURE_PROCESS                                  HCI_DEFAULT_PROCESS_ADDRESS
+
+#define READ_LOOPBACK_MODE_PROCESS                                           HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_LOOPBACK_MODE_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
+#define ENABLE_IMPLEMENTATION_UNDER_TEST_MODE_PROCESS                        HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_SIMPLE_PAIRING_DEBUG_MODE_PROCESS                              HCI_DEFAULT_PROCESS_ADDRESS
+#define WRITE_SECURE_CONNECTIONS_TEST_MODE_PROCESS                           HCI_DEFAULT_PROCESS_ADDRESS
+
+
+
+
+#define LE_READ_BUFFER_SIZE_V2_PROCESS                                       HCI_DEFAULT_PROCESS_ADDRESS
+
+#define LE_SET_RANDOM_ADDRESS_PROCESS                                        HCI_DEFAULT_PROCESS_ADDRESS
 
 
 
 
 
-#define LE_SET_HOST_CHANNEL_CLASSIFICATION_PROCESS                           NULL
 
 
-#define LE_ENCRYPT_PROCESS                                                   NULL
-#define LE_RAND_PROCESS                                                      NULL
-#define LE_ENABLE_ENCRYPTION_PROCESS                                         NULL
-#define LE_LONG_TERM_KEY_REQUEST_REPLY_PROCESS                               NULL
-#define LE_LONG_TERM_KEY_REQUEST_NEGATIVE_REPLY_PROCESS                      NULL
+#define LE_CREATE_CONNECTION_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_CREATE_CONNECTION_CANCEL_PROCESS                                  HCI_DEFAULT_PROCESS_ADDRESS
 
-#define LE_RECEIVER_TEST_PROCESS                                             NULL
-#define LE_RECEIVER_TEST_V2_PROCESS                                          NULL
-#define LE_RECEIVER_TEST_V3_PROCESS                                          NULL
-#define LE_TRANSMITTER_TEST_PROCESS                                          NULL
-#define LE_TRANSMITTER_TEST_V2_PROCESS                                       NULL
-#define LE_TRANSMITTER_TEST_V3_PROCESS                                       NULL
-#define LE_TRANSMITTER_TEST_V4_PROCESS                                       NULL
 
-#define LE_REMOTE_CONNECTION_PARAMETER_REQUEST_REPLY_PROCESS                 NULL
-#define LE_REMOTE_CONNECTION_PARAMETER_REQUEST_NEGATIVE_REPLY_PROCESS        NULL
-#define LE_SET_DATA_LENGTH_PROCESS                                           NULL
-#define LE_READ_SUGGESTED_DEFAULT_DATA_LENGTH_PROCESS                        NULL
-#define LE_WRITE_SUGGESTED_DEFAULT_DATA_LENGTH_PROCESS                       NULL
 
-#define LE_GENERATE_DHKEY_PROCESS                                            NULL
 
-#define LE_ADD_DEVICE_TO_RESOLVING_LIST_PROCESS                              NULL
-#define LE_REMOVE_DEVICE_FROM_RESOLVING_LIST_PROCESS                         NULL
-#define LE_CLEAR_RESOLVING_LIST_PROCESS                                      NULL
-#define LE_READ_RESOLVING_LIST_SIZE_PROCESS                                  NULL
-#define LE_READ_PEER_RESOLVABLE_ADDRESS_PROCESS                              NULL
-#define LE_READ_LOCAL_RESOLVABLE_ADDRESS_PROCESS                             NULL
-#define LE_SET_ADDRESS_RESOLUTION_ENABLE_PROCESS                             NULL
-#define LE_SET_RESOLVABLE_PRIVATE_ADDRESS_TIMEOUT_PROCESS                    NULL
-#define LE_READ_MAXIMUM_DATA_LENGTH_PROCESS                                  NULL
-#define LE_READ_PHY_PROCESS                                                  NULL
-#define LE_SET_DEFAULT_PHY_PROCESS                                           NULL
-#define LE_SET_PHY_PROCESS                                                   NULL
-#define LE_SET_ADVERTISING_SET_RANDOM_ADDRESS_PROCESS                        NULL
-#define LE_SET_EXTENDED_ADVERTISING_PARAMETERS_PROCESS                       NULL
-#define LE_SET_EXTENDED_ADVERTISING_PARAMETERS_V2_PROCESS                    NULL
-#define LE_SET_EXTENDED_ADVERTISING_DATA_PROCESS                             NULL
-#define LE_SET_EXTENDED_SCAN_RESPONSE_DATA_PROCESS                           NULL
-#define LE_SET_EXTENDED_ADVERTISING_ENABLE_PROCESS                           NULL
-#define LE_READ_MAXIMUM_ADVERTISING_DATA_LENGTH_PROCESS                      NULL
-#define LE_READ_NUMBER_OF_SUPPORTED_ADVERTISING_SETS_PROCESS                 NULL
-#define LE_REMOVE_ADVERTISING_SET_PROCESS                                    NULL
-#define LE_CLEAR_ADVERTISING_SETS_PROCESS                                    NULL
-#define LE_SET_PERIODIC_ADVERTISING_PARAMETERS_PROCESS                       NULL
-#define LE_SET_PERIODIC_ADVERTISING_PARAMETERS_V2_PROCESS                    NULL
-#define LE_SET_PERIODIC_ADVERTISING_DATA_PROCESS                             NULL
-#define LE_SET_PERIODIC_ADVERTISING_ENABLE_PROCESS                           NULL
-#define LE_SET_EXTENDED_SCAN_PARAMETERS_PROCESS                              NULL
-#define LE_SET_EXTENDED_SCAN_ENABLE_PROCESS                                  NULL
-#define LE_EXTENDED_CREATE_CONNECTION_PROCESS                                NULL
-#define LE_EXTENDED_CREATE_CONNECTION_V2_PROCESS                             NULL
-#define LE_PERIODIC_ADVERTISING_CREATE_SYNC_PROCESS                          NULL
-#define LE_PERIODIC_ADVERTISING_CREATE_SYNC_CANCEL_PROCESS                   NULL
-#define LE_PERIODIC_ADVERTISING_TERMINATE_SYNC_PROCESS                       NULL
-#define LE_ADD_DEVICE_TO_PERIODIC_ADVERTISER_LIST_PROCESS                    NULL
-#define LE_REMOVE_DEVICE_FROM_PERIODIC_ADVERTISER_LIST_PROCESS               NULL
-#define LE_CLEAR_PERIODIC_ADVERTISER_LIST_PROCESS                            NULL
-#define LE_READ_PERIODIC_ADVERTISER_LIST_SIZE_PROCESS                        NULL
-#define LE_READ_TRANSMIT_POWER_PROCESS                                       NULL
-#define LE_READ_RF_PATH_COMPENSATION_PROCESS                                 NULL
-#define LE_WRITE_RF_PATH_COMPENSATION_PROCESS                                NULL
-#define LE_SET_PRIVACY_MODE_PROCESS                                          NULL
-#define LE_SET_CONNECTIONLESS_CTE_TRANSMIT_PARAMETERS_PROCESS                NULL
-#define LE_SET_CONNECTIONLESS_CTE_TRANSMIT_ENABLE_PROCESS                    NULL
-#define LE_SET_CONNECTIONLESS_IQ_SAMPLING_ENABLE_PROCESS                     NULL
-#define LE_SET_CONNECTION_CTE_RECEIVE_PARAMETERS_PROCESS                     NULL
-#define LE_SET_CONNECTION_CTE_TRANSMIT_PARAMETERS_PROCESS                    NULL
-#define LE_CONNECTION_CTE_REQUEST_ENABLE_PROCESS                             NULL
-#define LE_CONNECTION_CTE_RESPONSE_ENABLE_PROCESS                            NULL
-#define LE_READ_ANTENNA_INFORMATION_PROCESS                                  NULL
-#define LE_SET_PERIODIC_ADVERTISING_RECEIVE_ENABLE_PROCESS                   NULL
-#define LE_PERIODIC_ADVERTISING_SYNC_TRANSFER_PROCESS                        NULL
-#define LE_PERIODIC_ADVERTISING_SET_INFO_TRANSFER_PROCESS                    NULL
-#define LE_SET_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMETERS_PROCESS         NULL
-#define LE_SET_DEFAULT_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMETERS_PROCESS NULL
-#define LE_MODIFY_SLEEP_CLOCK_ACCURACY_PROCESS                               NULL
-#define LE_READ_ISO_TX_SYNC_PROCESS                                          NULL
-#define LE_SET_CIG_PARAMETERS_PROCESS                                        NULL
-#define LE_SET_CIG_PARAMETERS_TEST_PROCESS                                   NULL
-#define LE_CREATE_CIS_PROCESS                                                NULL
-#define LE_REMOVE_CIG_PROCESS                                                NULL
-#define LE_ACCEPT_CIS_REQUEST_PROCESS                                        NULL
-#define LE_REJECT_CIS_REQUEST_PROCESS                                        NULL
-#define LE_CREATE_BIG_PROCESS                                                NULL
-#define LE_CREATE_BIG_TEST_PROCESS                                           NULL
-#define LE_TERMINATE_BIG_PROCESS                                             NULL
-#define LE_BIG_CREATE_SYNC_PROCESS                                           NULL
-#define LE_BIG_TERMINATE_SYNC_PROCESS                                        NULL
-#define LE_REQUEST_PEER_SCA_PROCESS                                          NULL
-#define LE_SETUP_ISO_DATA_PATH_PROCESS                                       NULL
-#define LE_REMOVE_ISO_DATA_PATH_PROCESS                                      NULL
-#define LE_ISO_TRANSMIT_TEST_PROCESS                                         NULL
-#define LE_ISO_RECEIVE_TEST_PROCESS                                          NULL
-#define LE_ISO_READ_TEST_COUNTERS_PROCESS                                    NULL
-#define LE_ISO_TEST_END_PROCESS                                              NULL
-#define LE_SET_HOST_FEATURE_PROCESS                                          NULL
-#define LE_SET_HOST_FEATURE_V2_PROCESS                                       NULL
-#define LE_READ_ISO_LINK_QUALITY_PROCESS                                     NULL
-#define LE_ENHANCED_READ_TRANSMIT_POWER_LEVEL_PROCESS                        NULL
-#define LE_READ_REMOTE_TRANSMIT_POWER_LEVEL_PROCESS                          NULL
-#define LE_SET_PATH_LOSS_REPORTING_PARAMETERS_PROCESS                        NULL
-#define LE_SET_PATH_LOSS_REPORTING_ENABLE_PROCESS                            NULL
-#define LE_SET_TRANSMIT_POWER_REPORTING_ENABLE_PROCESS                       NULL
-#define LE_SET_DATA_RELATED_ADDRESS_CHANGES_PROCESS                          NULL
-#define LE_SET_DEFAULT_SUBRATE_PROCESS                                       NULL
-#define LE_SUBRATE_REQUEST_PROCESS                                           NULL
-#define LE_SET_PERIODIC_ADVERTISING_SUBEVENT_DATA_PROCESS                    NULL
-#define LE_SET_PERIODIC_ADVERTISING_RESPONSE_DATA_PROCESS                    NULL
-#define LE_SET_PERIODIC_SYNC_SUBEVENT_PROCESS                                NULL
-#define LE_READ_ALL_LOCAL_SUPPORTED_FEATURES_PROCESS                         NULL
-#define LE_READ_ALL_REMOTE_FEATURES_PROCESS                                  NULL
-#define LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES_PROCESS                      NULL
-#define LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_PROCESS                     NULL
-#define LE_CS_WRITE_CACHED_REMOTE_SUPPORTED_CAPABILITIES_PROCESS             NULL
-#define LE_CS_SECURITY_ENABLE_PROCESS                                        NULL
-#define LE_CS_SET_DEFAULT_SETTINGS_PROCESS                                   NULL
-#define LE_CS_READ_REMOTE_FAE_TABLE_PROCESS                                  NULL
-#define LE_CS_WRITE_CACHED_REMOTE_FAE_TABLE_PROCESS                          NULL
-#define LE_CS_CREATE_CONFIG_PROCESS                                          NULL
-#define LE_CS_REMOVE_CONFIG_PROCESS                                          NULL
-#define LE_CS_SET_CHANNEL_CLASSIFICATION_PROCESS                             NULL
-#define LE_CS_SET_PROCEDURE_PARAMETERS_PROCESS                               NULL
-#define LE_CS_PROCEDURE_ENABLE_PROCESS                                       NULL
-#define LE_CS_TEST_PROCESS                                                   NULL
-#define LE_CS_TEST_END_PROCESS                                               NULL
-#define LE_SET_DECISION_DATA_PROCESS                                         NULL
-#define LE_SET_DECISION_INSTRUCTIONS_PROCESS                                 NULL
-#define LE_ADD_DEVICE_TO_MONITORED_ADVERTISERS_LIST_PROCESS                  NULL
-#define LE_REMOVE_DEVICE_FROM_MONITORED_ADVERTISERS_LIST_PROCESS             NULL
-#define LE_CLEAR_MONITORED_ADVERTISERS_LIST_PROCESS                          NULL
-#define LE_ENABLE_MONITORING_ADVERTISERS_PROCESS                             NULL
-#define LE_READ_MONITORED_ADVERTISERS_LIST_SIZE_PROCESS                      NULL
-#define LE_FRAME_SPACE_UPDATE_PROCESS                                        NULL
+
+#define LE_SET_HOST_CHANNEL_CLASSIFICATION_PROCESS                           HCI_DEFAULT_PROCESS_ADDRESS
+
+
+#define LE_ENCRYPT_PROCESS                                                   HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_RAND_PROCESS                                                      HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_ENABLE_ENCRYPTION_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_LONG_TERM_KEY_REQUEST_REPLY_PROCESS                               HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_LONG_TERM_KEY_REQUEST_NEGATIVE_REPLY_PROCESS                      HCI_DEFAULT_PROCESS_ADDRESS
+
+#define LE_RECEIVER_TEST_PROCESS                                             HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_RECEIVER_TEST_V2_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_RECEIVER_TEST_V3_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_TRANSMITTER_TEST_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_TRANSMITTER_TEST_V2_PROCESS                                       HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_TRANSMITTER_TEST_V3_PROCESS                                       HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_TRANSMITTER_TEST_V4_PROCESS                                       HCI_DEFAULT_PROCESS_ADDRESS
+
+#define LE_REMOTE_CONNECTION_PARAMETER_REQUEST_REPLY_PROCESS                 HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_REMOTE_CONNECTION_PARAMETER_REQUEST_NEGATIVE_REPLY_PROCESS        HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_DATA_LENGTH_PROCESS                                           HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_SUGGESTED_DEFAULT_DATA_LENGTH_PROCESS                        HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_WRITE_SUGGESTED_DEFAULT_DATA_LENGTH_PROCESS                       HCI_DEFAULT_PROCESS_ADDRESS
+
+#define LE_GENERATE_DHKEY_PROCESS                                            HCI_DEFAULT_PROCESS_ADDRESS
+
+#define LE_ADD_DEVICE_TO_RESOLVING_LIST_PROCESS                              HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_REMOVE_DEVICE_FROM_RESOLVING_LIST_PROCESS                         HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_CLEAR_RESOLVING_LIST_PROCESS                                      HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_RESOLVING_LIST_SIZE_PROCESS                                  HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_PEER_RESOLVABLE_ADDRESS_PROCESS                              HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_LOCAL_RESOLVABLE_ADDRESS_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_ADDRESS_RESOLUTION_ENABLE_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_RESOLVABLE_PRIVATE_ADDRESS_TIMEOUT_PROCESS                    HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_MAXIMUM_DATA_LENGTH_PROCESS                                  HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_PHY_PROCESS                                                  HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_DEFAULT_PHY_PROCESS                                           HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_PHY_PROCESS                                                   HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_ADVERTISING_SET_RANDOM_ADDRESS_PROCESS                        HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_EXTENDED_ADVERTISING_PARAMETERS_PROCESS                       HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_EXTENDED_ADVERTISING_PARAMETERS_V2_PROCESS                    HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_EXTENDED_ADVERTISING_DATA_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_EXTENDED_SCAN_RESPONSE_DATA_PROCESS                           HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_EXTENDED_ADVERTISING_ENABLE_PROCESS                           HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_MAXIMUM_ADVERTISING_DATA_LENGTH_PROCESS                      HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_NUMBER_OF_SUPPORTED_ADVERTISING_SETS_PROCESS                 HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_REMOVE_ADVERTISING_SET_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_CLEAR_ADVERTISING_SETS_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_PERIODIC_ADVERTISING_PARAMETERS_PROCESS                       HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_PERIODIC_ADVERTISING_PARAMETERS_V2_PROCESS                    HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_PERIODIC_ADVERTISING_DATA_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_PERIODIC_ADVERTISING_ENABLE_PROCESS                           HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_EXTENDED_SCAN_PARAMETERS_PROCESS                              HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_EXTENDED_SCAN_ENABLE_PROCESS                                  HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_EXTENDED_CREATE_CONNECTION_PROCESS                                HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_EXTENDED_CREATE_CONNECTION_V2_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_PERIODIC_ADVERTISING_CREATE_SYNC_PROCESS                          HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_PERIODIC_ADVERTISING_CREATE_SYNC_CANCEL_PROCESS                   HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_PERIODIC_ADVERTISING_TERMINATE_SYNC_PROCESS                       HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_ADD_DEVICE_TO_PERIODIC_ADVERTISER_LIST_PROCESS                    HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_REMOVE_DEVICE_FROM_PERIODIC_ADVERTISER_LIST_PROCESS               HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_CLEAR_PERIODIC_ADVERTISER_LIST_PROCESS                            HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_PERIODIC_ADVERTISER_LIST_SIZE_PROCESS                        HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_TRANSMIT_POWER_PROCESS                                       HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_RF_PATH_COMPENSATION_PROCESS                                 HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_WRITE_RF_PATH_COMPENSATION_PROCESS                                HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_PRIVACY_MODE_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_CONNECTIONLESS_CTE_TRANSMIT_PARAMETERS_PROCESS                HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_CONNECTIONLESS_CTE_TRANSMIT_ENABLE_PROCESS                    HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_CONNECTIONLESS_IQ_SAMPLING_ENABLE_PROCESS                     HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_CONNECTION_CTE_RECEIVE_PARAMETERS_PROCESS                     HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_CONNECTION_CTE_TRANSMIT_PARAMETERS_PROCESS                    HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_CONNECTION_CTE_REQUEST_ENABLE_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_CONNECTION_CTE_RESPONSE_ENABLE_PROCESS                            HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_ANTENNA_INFORMATION_PROCESS                                  HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_PERIODIC_ADVERTISING_RECEIVE_ENABLE_PROCESS                   HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_PERIODIC_ADVERTISING_SYNC_TRANSFER_PROCESS                        HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_PERIODIC_ADVERTISING_SET_INFO_TRANSFER_PROCESS                    HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMETERS_PROCESS         HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_DEFAULT_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMETERS_PROCESS HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_MODIFY_SLEEP_CLOCK_ACCURACY_PROCESS                               HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_ISO_TX_SYNC_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_CIG_PARAMETERS_PROCESS                                        HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_CIG_PARAMETERS_TEST_PROCESS                                   HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_CREATE_CIS_PROCESS                                                HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_REMOVE_CIG_PROCESS                                                HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_ACCEPT_CIS_REQUEST_PROCESS                                        HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_REJECT_CIS_REQUEST_PROCESS                                        HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_CREATE_BIG_PROCESS                                                HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_CREATE_BIG_TEST_PROCESS                                           HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_TERMINATE_BIG_PROCESS                                             HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_BIG_CREATE_SYNC_PROCESS                                           HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_BIG_TERMINATE_SYNC_PROCESS                                        HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_REQUEST_PEER_SCA_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SETUP_ISO_DATA_PATH_PROCESS                                       HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_REMOVE_ISO_DATA_PATH_PROCESS                                      HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_ISO_TRANSMIT_TEST_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_ISO_RECEIVE_TEST_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_ISO_READ_TEST_COUNTERS_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_ISO_TEST_END_PROCESS                                              HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_HOST_FEATURE_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_HOST_FEATURE_V2_PROCESS                                       HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_ISO_LINK_QUALITY_PROCESS                                     HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_ENHANCED_READ_TRANSMIT_POWER_LEVEL_PROCESS                        HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_REMOTE_TRANSMIT_POWER_LEVEL_PROCESS                          HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_PATH_LOSS_REPORTING_PARAMETERS_PROCESS                        HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_PATH_LOSS_REPORTING_ENABLE_PROCESS                            HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_TRANSMIT_POWER_REPORTING_ENABLE_PROCESS                       HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_DATA_RELATED_ADDRESS_CHANGES_PROCESS                          HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_DEFAULT_SUBRATE_PROCESS                                       HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SUBRATE_REQUEST_PROCESS                                           HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_PERIODIC_ADVERTISING_SUBEVENT_DATA_PROCESS                    HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_PERIODIC_ADVERTISING_RESPONSE_DATA_PROCESS                    HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_PERIODIC_SYNC_SUBEVENT_PROCESS                                HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_ALL_LOCAL_SUPPORTED_FEATURES_PROCESS                         HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_ALL_REMOTE_FEATURES_PROCESS                                  HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES_PROCESS                      HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_PROCESS                     HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_CS_WRITE_CACHED_REMOTE_SUPPORTED_CAPABILITIES_PROCESS             HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_CS_SECURITY_ENABLE_PROCESS                                        HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_CS_SET_DEFAULT_SETTINGS_PROCESS                                   HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_CS_READ_REMOTE_FAE_TABLE_PROCESS                                  HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_CS_WRITE_CACHED_REMOTE_FAE_TABLE_PROCESS                          HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_CS_CREATE_CONFIG_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_CS_REMOVE_CONFIG_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_CS_SET_CHANNEL_CLASSIFICATION_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_CS_SET_PROCEDURE_PARAMETERS_PROCESS                               HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_CS_PROCEDURE_ENABLE_PROCESS                                       HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_CS_TEST_PROCESS                                                   HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_CS_TEST_END_PROCESS                                               HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_DECISION_DATA_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_DECISION_INSTRUCTIONS_PROCESS                                 HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_ADD_DEVICE_TO_MONITORED_ADVERTISERS_LIST_PROCESS                  HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_REMOVE_DEVICE_FROM_MONITORED_ADVERTISERS_LIST_PROCESS             HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_CLEAR_MONITORED_ADVERTISERS_LIST_PROCESS                          HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_ENABLE_MONITORING_ADVERTISERS_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_MONITORED_ADVERTISERS_LIST_SIZE_PROCESS                      HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_FRAME_SPACE_UPDATE_PROCESS                                        HCI_DEFAULT_PROCESS_ADDRESS
 /******************************************hci event**********************************************/
 static _u8  hci_event_buffer[256];
 static _u16 hciCommandOpcode; 
