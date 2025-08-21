@@ -51,14 +51,14 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
     // C.152: Mandatory if Power Control is supported; C.3: Mandatory if the LE Controller supports Connection State
     {HCI_DATA_BUFFER_OVERFLOW_EVENT,                                              v1_1,          "O",                "O"},
     {HCI_HARDWARE_ERROR_EVENT,                                                    v1_1,          "O",                "O"},
+    {HCI_SET_CONTROLLER_TO_HOST_FLOW_CONTROL_COMMAND,                             v1_1,          "O",                "C.96"}, 
+    // C.96: Optional if the LE Controller supports Connection State, otherwise excluded
     {HCI_HOST_BUFFER_SIZE_COMMAND,                                                v1_1,          "C.107",            "C.107"}, 
     {HCI_HOST_NUMBER_OF_COMPLETED_PACKETS_COMMAND,                                v1_1,          "C.107",            "C.107"}, 
     // C.107: Mandatory if the Set Controller To Host Flow Control command is supported, otherwise excluded
     {HCI_READ_CONNECTION_ACCEPT_TIMEOUT_COMMAND,                                  v1_1,          "M",                "C.40"}, 
     {HCI_WRITE_CONNECTION_ACCEPT_TIMEOUT_COMMAND,                                 v1_1,          "M",                "C.40"}, 
     // C.40: Mandatory if LE Feature (Connected Isochronous Stream - Peripheral) is supported, otherwise excluded
-    {HCI_SET_CONTROLLER_TO_HOST_FLOW_CONTROL_COMMAND,                             v1_1,          "O",                "C.96"}, 
-    // C.96: Optional if the LE Controller supports Connection State, otherwise excluded
     {HCI_ENCRYPTION_CHANGE_EVENT,                                                 v1_1,          "[v1] M [v2] C.158", "[v1] C.4 [v2] C.56"}, 
     // C.158:Mandatory if the Set Min Encryption Key Size command is supported,otherwise optional.
     // C.4: Mandatory if LE Feature (LE Encryption) is supported;

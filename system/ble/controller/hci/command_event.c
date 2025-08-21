@@ -23,7 +23,7 @@
 #define LE_SET_EVENT_MASK_PROCESS                                            le_set_event_mask_process//v4_0
 #define LE_TEST_END_PROCESS                                                  le_test_end_process//v4_0
 
-/************* absolutely optional supported hci cmd process **************/
+/************* optional supported hci cmd process **************/
 #define READ_LOCAL_SUPPORTED_CODECS_V2_PROCESS                               NULL
 #define SET_EXTERNAL_FRAME_CONFIGURATION_PROCESS                             NULL
 #define SET_MWS_CHANNEL_PARAMETERS_PROCESS                                   NULL
@@ -32,6 +32,18 @@
 #define LE_READ_LOCAL_P_256_PUBLIC_KEY_PROCESS                               NULL
 #define LE_GENERATE_DHKEY_V2_PROCESS                                         NULL
 #define SET_ECOSYSTEM_BASE_INTERVAL_PROCESS                                  NULL
+// C.145: Mandatory if any event in event mask page 2 is supported, otherwise optional
+#define SET_EVENT_MASK_PAGE_2_PROCESS                                        NULL
+
+#if(SET_MWS_SIGNALING_PROCESS)
+// C.109: Mandatory if the Set MWS Signaling command is supported, otherwise excluded
+#define SET_MWS_TRANSPORT_LAYER_PROCESS                                      NULL
+#define GET_MWS_TRANSPORT_LAYER_CONFIGURATION_PROCESS                        NULL
+#else
+#define SET_MWS_TRANSPORT_LAYER_PROCESS                                      NULL
+#define GET_MWS_TRANSPORT_LAYER_CONFIGURATION_PROCESS                        NULL
+#endif
+
 
 /************************ state combination *****************************/
 #if(BLE_SUPPORT_CONN_STATE)
@@ -43,6 +55,18 @@
 #define LE_READ_CHANNEL_MAP_PROCESS                                          NULL
 #define LE_READ_REMOTE_FEATURES_PAGE_0_PROCESS                               NULL
 #define LE_READ_BUFFER_SIZE_PROCESS                                          NULL
+// C.96: Optional if the LE Controller supports Connection State, otherwise excluded
+#define SET_CONTROLLER_TO_HOST_FLOW_CONTROL_PROCESS                          NULL
+
+#if(SET_CONTROLLER_TO_HOST_FLOW_CONTROL_PROCESS)
+// C.107: Mandatory if the Set Controller To Host Flow Control command is supported, otherwise excluded
+#define HOST_BUFFER_SIZE_PROCESS                                             NULL
+#define HOST_NUMBER_OF_COMPLETED_PACKETS_PROCESS                             NULL
+#else
+#define HOST_BUFFER_SIZE_PROCESS                                             NULL
+#define HOST_NUMBER_OF_COMPLETED_PACKETS_PROCESS                             NULL
+#endif
+
 #else
 #define DISCONNECT_PROCESS                                                   NULL
 #define READ_REMOTE_VERSION_INFORMATION_PROCESS                              NULL
@@ -51,6 +75,9 @@
 #define LE_READ_CHANNEL_MAP_PROCESS                                          NULL
 #define LE_READ_REMOTE_FEATURES_PAGE_0_PROCESS                               NULL
 #define LE_READ_BUFFER_SIZE_PROCESS                                          NULL
+#define SET_CONTROLLER_TO_HOST_FLOW_CONTROL_PROCESS                          NULL
+#define HOST_BUFFER_SIZE_PROCESS                                             NULL
+#define HOST_NUMBER_OF_COMPLETED_PACKETS_PROCESS                             NULL
 #endif
 
 #if(BLE_SUPPORT_BROADCAST)
@@ -72,6 +99,7 @@
 /************************ feature ***************************************/
 
 #if(LL_SUPPORT_LE_ENCRYPTION)
+
 #else
 #endif
 
@@ -188,7 +216,12 @@
 #endif
 
 #if(LL_SUPPORT_CONNECTED_ISOCHRONOUS_STREAM_PERIPHERAL)
+// C.40: Mandatory if LE Feature (Connected Isochronous Stream - Peripheral) is supported, otherwise excluded
+#define READ_CONNECTION_ACCEPT_TIMEOUT_PROCESS                               NULL
+#define WRITE_CONNECTION_ACCEPT_TIMEOUT_PROCESS                              NULL
 #else
+#define READ_CONNECTION_ACCEPT_TIMEOUT_PROCESS                               NULL
+#define WRITE_CONNECTION_ACCEPT_TIMEOUT_PROCESS                              NULL
 #endif
 
 #if(LL_SUPPORT_ISOCHRONOUS_BROADCASTER)
@@ -228,7 +261,12 @@
 #endif
 
 #if(LL_SUPPORT_CHANNEL_CLASSIFICATION)
+// C.58: Mandatory if LE Feature (Channel Classification) is supported
+#define WRITE_AFH_CHANNEL_ASSESSMENT_MODE_PROCESS                            NULL
+#define READ_AFH_CHANNEL_ASSESSMENT_MODE_PROCESS                             NULL
 #else
+#define WRITE_AFH_CHANNEL_ASSESSMENT_MODE_PROCESS                            NULL
+#define READ_AFH_CHANNEL_ASSESSMENT_MODE_PROCESS                             NULL
 #endif
 
 #if(LL_SUPPORT_ADVERTISING_CODING_SELECTION)
@@ -353,8 +391,8 @@
 #define DELETE_STORED_LINK_KEY_PROCESS                                       NULL
 #define WRITE_LOCAL_NAME_PROCESS                                             NULL
 #define READ_LOCAL_NAME_PROCESS                                              NULL
-#define READ_CONNECTION_ACCEPT_TIMEOUT_PROCESS                               NULL
-#define WRITE_CONNECTION_ACCEPT_TIMEOUT_PROCESS                              NULL
+
+
 #define READ_PAGE_TIMEOUT_PROCESS                                            NULL
 #define WRITE_PAGE_TIMEOUT_PROCESS                                           NULL
 #define READ_SCAN_ENABLE_PROCESS                                             NULL
@@ -378,9 +416,9 @@
 
 #define READ_SYNCHRONOUS_FLOW_CONTROL_ENABLE_PROCESS                         NULL
 #define WRITE_SYNCHRONOUS_FLOW_CONTROL_ENABLE_PROCESS                        NULL
-#define SET_CONTROLLER_TO_HOST_FLOW_CONTROL_PROCESS                          NULL
-#define HOST_BUFFER_SIZE_PROCESS                                             NULL
-#define HOST_NUMBER_OF_COMPLETED_PACKETS_PROCESS                             NULL
+
+
+
 #define READ_LINK_SUPERVISION_TIMEOUT_PROCESS                                NULL
 #define WRITE_LINK_SUPERVISION_TIMEOUT_PROCESS                               NULL
 #define READ_NUMBER_OF_SUPPORTED_IAC_PROCESS                                 NULL
@@ -393,8 +431,8 @@
 #define WRITE_INQUIRY_MODE_PROCESS                                           NULL
 #define READ_PAGE_SCAN_TYPE_PROCESS                                          NULL
 #define WRITE_PAGE_SCAN_TYPE_PROCESS                                         NULL
-#define READ_AFH_CHANNEL_ASSESSMENT_MODE_PROCESS                             NULL
-#define WRITE_AFH_CHANNEL_ASSESSMENT_MODE_PROCESS                            NULL
+
+
 #define READ_EXTENDED_INQUIRY_RESPONSE_PROCESS                               NULL
 #define WRITE_EXTENDED_INQUIRY_RESPONSE_PROCESS                              NULL
 #define REFRESH_ENCRYPTION_KEY_PROCESS                                       NULL
@@ -407,7 +445,7 @@
 #define READ_DEFAULT_ERRONEOUS_DATA_REPORTING_PROCESS                        NULL
 #define WRITE_DEFAULT_ERRONEOUS_DATA_REPORTING_PROCESS                       NULL
 #define ENHANCED_FLUSH_PROCESS                                               NULL
-#define SET_EVENT_MASK_PAGE_2_PROCESS                                        NULL
+
 #define READ_FLOW_CONTROL_MODE_PROCESS                                       NULL
 #define WRITE_FLOW_CONTROL_MODE_PROCESS                                      NULL
 #define READ_ENHANCED_TRANSMIT_POWER_LEVEL_PROCESS                           NULL
@@ -415,7 +453,7 @@
 #define WRITE_LE_HOST_SUPPORT_PROCESS                                        NULL
 
 
-#define SET_MWS_TRANSPORT_LAYER_PROCESS                                      NULL
+
 
 #define SET_MWS_PATTERN_CONFIGURATION_PROCESS                                NULL
 #define SET_RESERVED_LT_ADDR_PROCESS                                         NULL
@@ -458,7 +496,7 @@
 #define READ_AFH_CHANNEL_MAP_PROCESS                                         NULL
 #define READ_CLOCK_PROCESS                                                   NULL
 #define READ_ENCRYPTION_KEY_SIZE_PROCESS                                     NULL
-#define GET_MWS_TRANSPORT_LAYER_CONFIGURATION_PROCESS                        NULL
+
 #define SET_TRIGGERED_CLOCK_CAPTURE_PROCESS                                  NULL
 
 #define READ_LOOPBACK_MODE_PROCESS                                           NULL
