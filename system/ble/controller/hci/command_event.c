@@ -48,20 +48,20 @@
 /************************ state combination *****************************/
 #if(BLE_SUPPORT_CONN_STATE)
 // C.3: Mandatory if the LE Controller supports Connection State; 
-#define DISCONNECT_PROCESS                                                   NULL
-#define READ_REMOTE_VERSION_INFORMATION_PROCESS                              NULL
-#define READ_RSSI_PROCESS                                                    NULL
-#define READ_TRANSMIT_POWER_LEVEL_PROCESS                                    NULL
-#define LE_READ_CHANNEL_MAP_PROCESS                                          NULL
-#define LE_READ_REMOTE_FEATURES_PAGE_0_PROCESS                               NULL
-#define LE_READ_BUFFER_SIZE_PROCESS                                          NULL
+#define DISCONNECT_PROCESS                                                   1
+#define READ_REMOTE_VERSION_INFORMATION_PROCESS                              1
+#define READ_RSSI_PROCESS                                                    1
+#define READ_TRANSMIT_POWER_LEVEL_PROCESS                                    1
+#define LE_READ_CHANNEL_MAP_PROCESS                                          1
+#define LE_READ_REMOTE_FEATURES_PAGE_0_PROCESS                               1
+#define LE_READ_BUFFER_SIZE_PROCESS                                          1
 // C.96: Optional if the LE Controller supports Connection State, otherwise excluded
-#define SET_CONTROLLER_TO_HOST_FLOW_CONTROL_PROCESS                          NULL
+#define SET_CONTROLLER_TO_HOST_FLOW_CONTROL_PROCESS                          1
 
 #if(SET_CONTROLLER_TO_HOST_FLOW_CONTROL_PROCESS)
 // C.107: Mandatory if the Set Controller To Host Flow Control command is supported, otherwise excluded
-#define HOST_BUFFER_SIZE_PROCESS                                             NULL
-#define HOST_NUMBER_OF_COMPLETED_PACKETS_PROCESS                             NULL
+#define HOST_BUFFER_SIZE_PROCESS                                             1
+#define HOST_NUMBER_OF_COMPLETED_PACKETS_PROCESS                             1
 #else
 #define HOST_BUFFER_SIZE_PROCESS                                             NULL
 #define HOST_NUMBER_OF_COMPLETED_PACKETS_PROCESS                             NULL
@@ -81,7 +81,19 @@
 #endif
 
 #if(BLE_SUPPORT_BROADCAST)
+// C.97: Mandatory if Advertising State is supported, otherwise excluded
+#define LE_SET_ADVERTISING_DATA_PROCESS                                      1
+#define LE_SET_ADVERTISING_ENABLE_PROCESS                                    1
+#define LE_SET_ADVERTISING_PARAMETERS_PROCESS                                1
+#define LE_READ_ADVERTISING_PHYSICAL_CHANNEL_TX_POWER_PROCESS                1
+// C.15: Mandatory if LE Controller supports transmitting scannable advertisements, otherwise excluded
+#define LE_SET_SCAN_RESPONSE_DATA_PROCESS                                    1
 #else
+#define LE_SET_ADVERTISING_DATA_PROCESS                                      NULL
+#define LE_SET_ADVERTISING_ENABLE_PROCESS                                    NULL
+#define LE_SET_ADVERTISING_PARAMETERS_PROCESS                                NULL
+#define LE_READ_ADVERTISING_PHYSICAL_CHANNEL_TX_POWER_PROCESS                NULL
+#define LE_SET_SCAN_RESPONSE_DATA_PROCESS                                    NULL
 #endif
 
 #if(BLE_SUPPORT_OBSERVER)
@@ -317,7 +329,10 @@
 #else
 #endif
 
-
+#if(BLE_SUPPORT_CENTRAL||(BLE_SUPPORT_PERIPHERAL&&LL_SUPPORT_CONNECTION_PARAMETERS_REQUEST))
+// C.62: Mandatory if the LE Controller supports Central role or supports both Peripheral role and LE Feature (Connection Parameters Request Procedure), otherwise excluded
+#define LE_CONNECTION_UPDATE_PROCESS                                         NULL
+#endif
 
 
 #define INQUIRY_PROCESS                                                      NULL
@@ -511,11 +526,11 @@
 #define LE_READ_BUFFER_SIZE_V2_PROCESS                                       NULL
 
 #define LE_SET_RANDOM_ADDRESS_PROCESS                                        NULL
-#define LE_SET_ADVERTISING_PARAMETERS_PROCESS                                NULL
-#define LE_READ_ADVERTISING_PHYSICAL_CHANNEL_TX_POWER_PROCESS                NULL
-#define LE_SET_ADVERTISING_DATA_PROCESS                                      NULL
-#define LE_SET_SCAN_RESPONSE_DATA_PROCESS                                    NULL
-#define LE_SET_ADVERTISING_ENABLE_PROCESS                                    NULL
+
+
+
+
+
 #define LE_SET_SCAN_PARAMETERS_PROCESS                                       NULL
 #define LE_SET_SCAN_ENABLE_PROCESS                                           NULL
 #define LE_CREATE_CONNECTION_PROCESS                                         NULL
@@ -524,7 +539,7 @@
 
 
 
-#define LE_CONNECTION_UPDATE_PROCESS                                         NULL
+
 #define LE_SET_HOST_CHANNEL_CLASSIFICATION_PROCESS                           NULL
 
 
