@@ -23,14 +23,271 @@
 #define LE_SET_EVENT_MASK_PROCESS                                            le_set_event_mask_process//v4_0
 #define LE_TEST_END_PROCESS                                                  le_test_end_process//v4_0
 
-/******************** feature ***********************/
+/************* absolutely optional supported hci cmd process **************/
+#define READ_LOCAL_SUPPORTED_CODECS_V2_PROCESS                               NULL
+#define SET_EXTERNAL_FRAME_CONFIGURATION_PROCESS                             NULL
+#define SET_MWS_CHANNEL_PARAMETERS_PROCESS                                   NULL
+#define SET_MWS_SCAN_FREQUENCY_TABLE_PROCESS                                 NULL
+#define SET_MWS_SIGNALING_PROCESS                                            NULL
+#define LE_READ_LOCAL_P_256_PUBLIC_KEY_PROCESS                               NULL
+#define LE_GENERATE_DHKEY_V2_PROCESS                                         NULL
+#define SET_ECOSYSTEM_BASE_INTERVAL_PROCESS                                  NULL
+
+/************************ state combination *****************************/
+#if(BLE_SUPPORT_CONN_STATE)
+// C.3: Mandatory if the LE Controller supports Connection State; 
+#define DISCONNECT_PROCESS                                                   NULL
+#define READ_REMOTE_VERSION_INFORMATION_PROCESS                              NULL
+#define READ_RSSI_PROCESS                                                    NULL
+#define READ_TRANSMIT_POWER_LEVEL_PROCESS                                    NULL
+#define LE_READ_CHANNEL_MAP_PROCESS                                          NULL
+#define LE_READ_REMOTE_FEATURES_PAGE_0_PROCESS                               NULL
+#define LE_READ_BUFFER_SIZE_PROCESS                                          NULL
+#else
+#define DISCONNECT_PROCESS                                                   NULL
+#define READ_REMOTE_VERSION_INFORMATION_PROCESS                              NULL
+#define READ_RSSI_PROCESS                                                    NULL
+#define READ_TRANSMIT_POWER_LEVEL_PROCESS                                    NULL
+#define LE_READ_CHANNEL_MAP_PROCESS                                          NULL
+#define LE_READ_REMOTE_FEATURES_PAGE_0_PROCESS                               NULL
+#define LE_READ_BUFFER_SIZE_PROCESS                                          NULL
+#endif
+
+#if(BLE_SUPPORT_BROADCAST)
+#else
+#endif
+
+#if(BLE_SUPPORT_OBSERVER)
+#else
+#endif
+
+#if(BLE_SUPPORT_CENTRAL)
+#else
+#endif
+
+#if(BLE_SUPPORT_PERIPHERAL)
+#else
+#endif
+
+/************************ feature ***************************************/
+
+#if(LL_SUPPORT_LE_ENCRYPTION)
+#else
+#endif
+
+#if(LL_SUPPORT_CONNECTION_PARAMETERS_REQUEST)
+#else
+#endif
+
+#if(LL_SUPPORT_EXTENDED_REJECT)
+#else
+#endif
+
+#if(LL_SUPPORT_PERIPHERAL_INITIATED_FEATURES_EXCHANGE)
+#else
+#endif
+
+#if(LL_SUPPORT_LE_PING)
+#else
+#endif
+
+#if(LL_SUPPORT_LE_DATA_PACKET_LENGTH_EXTENSION)
+#else
+#endif
+
+#if(LL_SUPPORT_LL_PRIVACY)
+#else
+#endif
+
+#if(LL_SUPPORT_EXTENDED_SCANNING_FILTER_POLICIES)
+#else
+#endif
+
+#if(LL_SUPPORT_LE_2M_PHY)
+#else
+#endif
+
+#if(LL_SUPPORT_STABLE_MODULATION_INDEX_TX)
+#else
+#endif
+
+#if(LL_SUPPORT_STABLE_MODULATION_INDEX_RX)
+#else
+#endif
+
+#if(LL_SUPPORT_LE_CODED_PHY)
+#else
+#endif
+
+#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
+#else
+#endif
+
+#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
+#else
+#endif
+
+#if(LL_SUPPORT_CHANNEL_SELECTION_ALGORITHM_2)
+#else
+#endif
+
+#if(LL_SUPPORT_LE_POWER_CLASS_1)
+#else
+#endif
+
+#if(LL_SUPPORT_MINIMUM_NUMBER_OF_USED_CHANNELS_PROCEDURE)
+#else
+#endif
+
+#if(LL_SUPPORT_CONNECTION_CTE_REQUEST)
+#else
+#endif
+
+#if(LL_SUPPORT_CONNECTION_CTE_RESPONSE)
+#else
+#endif
+
+#if(LL_SUPPORT_CONNECTIONLESS_CTE_TRANSMITTER)
+#else
+#endif
+
+#if(LL_SUPPORT_CONNECTIONLESS_CTE_RECEIVER)
+#else
+#endif
+
+#if(LL_SUPPORT_ANTENNA_SWITCHING_DURING_CTE_TRANSMISSION)
+#else
+#endif
+
+#if(LL_SUPPORT_ANTENNA_SWITCHING_DURING_CTE_RECEPTION)
+#else
+#endif
+
+#if(LL_SUPPORT_RECEIVING_CONSTANT_TONE_EXTENSIONS)
+#else
+#endif
+
+#if(LL_SUPPORT_PERIODIC_ADVERTISING_SYNC_TRANSFER_SENDER)
+#else
+#endif
+
+#if(LL_SUPPORT_PERIODIC_ADVERTISING_SYNC_TRANSFER_RECIPIENT)
+#else
+#endif
+
+#if(LL_SUPPORT_SLEEP_CLOCK_ACCURACY_UPDATES)
+#else
+#endif
+
+#if(LL_SUPPORT_REMOTE_PUBLIC_KEY_VALIDATION)
+#else
+#endif
+
+#if(LL_SUPPORT_CONNECTED_ISOCHRONOUS_STREAM_CENTRAL)
+#else
+#endif
+
+#if(LL_SUPPORT_CONNECTED_ISOCHRONOUS_STREAM_PERIPHERAL)
+#else
+#endif
+
+#if(LL_SUPPORT_ISOCHRONOUS_BROADCASTER)
+#else
+#endif
+
+#if(LL_SUPPORT_SYNCHRONIZED_RECEIVER)
+#else
+#endif
+
+#if(LL_SUPPORT_CONNECTED_ISOCHRONOUS_STREAM_HOST_SUPPORT)
+#else
+#endif
+
+#if(LL_SUPPORT_LE_POWER_CONTROL_REQUEST)
+#else
+#endif
+
+#if(LL_SUPPORT_LE_POWER_CONTROL_REQUEST1)
+#else
+#endif
+
+#if(LL_SUPPORT_LE_PATH_LOSS_MONITORING)
+#else
+#endif
+
+#if(LL_SUPPORT_PERIODIC_ADVERTISING_ADI_SUPPORT)
+#else
+#endif
+
+#if(LL_SUPPORT_CONNECTION_SUBRATING)
+#else
+#endif
+
+#if(LL_SUPPORT_CONNECTION_SUBRATING_HOST_SUPPORT)
+#else
+#endif
+
+#if(LL_SUPPORT_CHANNEL_CLASSIFICATION)
+#else
+#endif
+
+#if(LL_SUPPORT_ADVERTISING_CODING_SELECTION)
+#else
+#endif
+
+#if(LL_SUPPORT_ADVERTISING_CODING_SELECTION_HOST_SUPPORT)
+#else
+#endif
+
+#if(LL_SUPPORT_DECISION_BASED_ADVERTISING_FILTERING)
+#else
+#endif
+
+#if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
+#else
+#endif
+
+#if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_SCANNER)
+#else
+#endif
+
+#if(LL_SUPPORT_UNSEGMENTED_FRAMED_MODE)
+#else
+#endif
+
+#if(LL_SUPPORT_CHANNEL_SOUNDING)
+#else
+#endif
+
+#if(LL_SUPPORT_CHANNEL_SOUNDING_HOST_SUPPORT)
+#else
+#endif
+
+#if(LL_SUPPORT_CHANNEL_SOUNDING_TONE_QUALITY_INDICATION)
+#else
+#endif
+
+#if(LL_SUPPORT_LE_EXTENDED_FEATURE_SET)
+#else
+#endif
+
+#if(LL_SUPPORT_MONITORING_ADVERTISERS)
+#else
+#endif
+
+#if(LL_SUPPORT_FRAME_SPACE_UPDATE)
+#else
+#endif
+
+
+
 
 #define INQUIRY_PROCESS                                                      NULL
 #define INQUIRY_CANCEL_PROCESS                                               NULL
 #define PERIODIC_INQUIRY_MODE_PROCESS                                        NULL
 #define EXIT_PERIODIC_INQUIRY_MODE_PROCESS                                   NULL
 #define CREATE_CONNECTION_PROCESS                                            NULL
-#define DISCONNECT_PROCESS                                                   NULL
+
 #define CREATE_CONNECTION_CANCEL_PROCESS                                     NULL
 #define ACCEPT_CONNECTION_REQUEST_PROCESS                                    NULL
 #define REJECT_CONNECTION_REQUEST_PROCESS                                    NULL
@@ -47,7 +304,7 @@
 #define REMOTE_NAME_REQUEST_CANCEL_PROCESS                                   NULL
 #define READ_REMOTE_SUPPORTED_FEATURES_PROCESS                               NULL
 #define READ_REMOTE_EXTENDED_FEATURES_PROCESS                                NULL
-#define READ_REMOTE_VERSION_INFORMATION_PROCESS                              NULL
+
 #define READ_CLOCK_OFFSET_PROCESS                                            NULL
 #define READ_LMP_HANDLE_PROCESS                                              NULL
 #define SETUP_SYNCHRONOUS_CONNECTION_PROCESS                                 NULL
@@ -118,7 +375,7 @@
 #define WRITE_NUM_BROADCAST_RETRANSMISSIONS_PROCESS                          NULL
 #define READ_HOLD_MODE_ACTIVITY_PROCESS                                      NULL
 #define WRITE_HOLD_MODE_ACTIVITY_PROCESS                                     NULL
-#define READ_TRANSMIT_POWER_LEVEL_PROCESS                                    NULL
+
 #define READ_SYNCHRONOUS_FLOW_CONTROL_ENABLE_PROCESS                         NULL
 #define WRITE_SYNCHRONOUS_FLOW_CONTROL_ENABLE_PROCESS                        NULL
 #define SET_CONTROLLER_TO_HOST_FLOW_CONTROL_PROCESS                          NULL
@@ -156,11 +413,10 @@
 #define READ_ENHANCED_TRANSMIT_POWER_LEVEL_PROCESS                           NULL
 #define READ_LE_HOST_SUPPORT_PROCESS                                         NULL
 #define WRITE_LE_HOST_SUPPORT_PROCESS                                        NULL
-#define SET_MWS_CHANNEL_PARAMETERS_PROCESS                                   NULL
-#define SET_EXTERNAL_FRAME_CONFIGURATION_PROCESS                             NULL
-#define SET_MWS_SIGNALING_PROCESS                                            NULL
+
+
 #define SET_MWS_TRANSPORT_LAYER_PROCESS                                      NULL
-#define SET_MWS_SCAN_FREQUENCY_TABLE_PROCESS                                 NULL
+
 #define SET_MWS_PATTERN_CONFIGURATION_PROCESS                                NULL
 #define SET_RESERVED_LT_ADDR_PROCESS                                         NULL
 #define DELETE_RESERVED_LT_ADDR_PROCESS                                      NULL
@@ -176,7 +432,7 @@
 #define WRITE_EXTENDED_PAGE_TIMEOUT_PROCESS                                  NULL
 #define READ_EXTENDED_INQUIRY_LENGTH_PROCESS                                 NULL
 #define WRITE_EXTENDED_INQUIRY_LENGTH_PROCESS                                NULL
-#define SET_ECOSYSTEM_BASE_INTERVAL_PROCESS                                  NULL
+
 #define CONFIGURE_DATA_PATH_PROCESS                                          NULL
 #define SET_MIN_ENCRYPTION_KEY_SIZE_PROCESS                                  NULL
 
@@ -190,7 +446,7 @@
 #define READ_DATA_BLOCK_SIZE_PROCESS                                         NULL
 #define READ_LOCAL_SUPPORTED_CODECS_PROCESS                                  NULL
 #define READ_LOCAL_SIMPLE_PAIRING_OPTIONS_PROCESS                            NULL
-#define READ_LOCAL_SUPPORTED_CODECS_V2_PROCESS                               NULL
+
 #define READ_LOCAL_SUPPORTED_CODEC_CAPABILITIES_PROCESS                      NULL
 #define READ_LOCAL_SUPPORTED_CONTROLLER_DELAY_PROCESS                        NULL
 
@@ -198,7 +454,7 @@
 #define READ_FAILED_CONTACT_COUNTER_PROCESS                                  NULL
 #define RESET_FAILED_CONTACT_COUNTER_PROCESS                                 NULL
 #define READ_LINK_QUALITY_PROCESS                                            NULL
-#define READ_RSSI_PROCESS                                                    NULL
+
 #define READ_AFH_CHANNEL_MAP_PROCESS                                         NULL
 #define READ_CLOCK_PROCESS                                                   NULL
 #define READ_ENCRYPTION_KEY_SIZE_PROCESS                                     NULL
@@ -213,7 +469,7 @@
 
 
 
-#define LE_READ_BUFFER_SIZE_PROCESS                                          NULL
+
 #define LE_READ_BUFFER_SIZE_V2_PROCESS                                       NULL
 
 #define LE_SET_RANDOM_ADDRESS_PROCESS                                        NULL
@@ -232,8 +488,8 @@
 
 #define LE_CONNECTION_UPDATE_PROCESS                                         NULL
 #define LE_SET_HOST_CHANNEL_CLASSIFICATION_PROCESS                           NULL
-#define LE_READ_CHANNEL_MAP_PROCESS                                          NULL
-#define LE_READ_REMOTE_FEATURES_PAGE_0_PROCESS                               NULL
+
+
 #define LE_ENCRYPT_PROCESS                                                   NULL
 #define LE_RAND_PROCESS                                                      NULL
 #define LE_ENABLE_ENCRYPTION_PROCESS                                         NULL
@@ -253,9 +509,9 @@
 #define LE_SET_DATA_LENGTH_PROCESS                                           NULL
 #define LE_READ_SUGGESTED_DEFAULT_DATA_LENGTH_PROCESS                        NULL
 #define LE_WRITE_SUGGESTED_DEFAULT_DATA_LENGTH_PROCESS                       NULL
-#define LE_READ_LOCAL_P_256_PUBLIC_KEY_PROCESS                               NULL
+
 #define LE_GENERATE_DHKEY_PROCESS                                            NULL
-#define LE_GENERATE_DHKEY_V2_PROCESS                                         NULL
+
 #define LE_ADD_DEVICE_TO_RESOLVING_LIST_PROCESS                              NULL
 #define LE_REMOVE_DEVICE_FROM_RESOLVING_LIST_PROCESS                         NULL
 #define LE_CLEAR_RESOLVING_LIST_PROCESS                                      NULL
@@ -565,27 +821,27 @@ controller_error_code_e le_read_supported_states_process(_u8* data,_u8 length,bt
     (struct le_read_supported_states_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct le_read_supported_states_retParam_t),event);
     retParam->status = (_u8)SUCCESS;
 
-    #if(BLE_SUPPORTED_BROADCAST)
+    #if(BLE_SUPPORT_BROADCAST)
     retParam->states|=(BIT64(0)  | BIT64(1)  | BIT64(8)  | BIT64(9)  | BIT64(12) | \
 		BIT64(13) | BIT64(16) | BIT64(17) | BIT64(18) | BIT64(19) | \
 		BIT64(20) | BIT64(21));
     #endif
 
-    #if(BLE_SUPPORTED_OBSERVER)
+    #if(BLE_SUPPORT_OBSERVER)
     retParam->states|=(BIT64(4)  | BIT64(5)  | BIT64(8)  | BIT64(9)  | BIT64(10) | \
 		BIT64(11) | BIT64(12) | BIT64(13) | BIT64(14) | BIT64(15) | \
 		BIT64(22) | BIT64(23) | BIT64(24) | BIT64(25) | BIT64(26) | \
 		BIT64(27) | BIT64(30) | BIT64(31));
     #endif
 
-    #if(BLE_SUPPORTED_CENTRAL)
+    #if(BLE_SUPPORT_CENTRAL)
     retParam->states|=(BIT64(6)  | BIT64(16) | BIT64(17) | BIT64(18) | BIT64(19) | \
 		BIT64(22) | BIT64(23) | BIT64(24) | BIT64(25) | BIT64(28) | \
 		BIT64(32) | BIT64(33) | BIT64(34) | BIT64(35) | BIT64(36) | \
 		BIT64(37) | BIT64(41));
     #endif
 
-    #if(BLE_SUPPORTED_PERIPHERAL)
+    #if(BLE_SUPPORT_PERIPHERAL)
     retParam->states|=(BIT64(2)  | BIT64(3)  | BIT64(7)  | BIT64(10) | BIT64(11) | \
 		BIT64(14) | BIT64(15) | BIT64(20) | BIT64(21) | BIT64(26) | \
 		BIT64(27) | BIT64(29) | BIT64(30) | BIT64(31) | BIT64(32) | \

@@ -2,21 +2,24 @@
 #include"../config.h"
 
 /************************* BLE ROLE CONFIGURE *****************************/
-#ifndef BLE_SUPPORTED_BROADCAST
-#define BLE_SUPPORTED_BROADCAST                        1
+#ifndef BLE_SUPPORT_BROADCAST
+#define BLE_SUPPORT_BROADCAST                          1
 #endif 
 
-#ifndef BLE_SUPPORTED_OBSERVER
-#define BLE_SUPPORTED_OBSERVER                         1
+#ifndef BLE_SUPPORT_OBSERVER
+#define BLE_SUPPORT_OBSERVER                           1
 #endif
 
-#ifndef BLE_SUPPORTED_CENTRAL
-#define BLE_SUPPORTED_CENTRAL                          1
+#ifndef BLE_SUPPORT_CENTRAL
+#define BLE_SUPPORT_CENTRAL                            1
 #endif
 
-#ifndef BLE_SUPPORTED_PERIPHERAL
-#define BLE_SUPPORTED_PERIPHERAL                       1
+#ifndef BLE_SUPPORT_PERIPHERAL
+#define BLE_SUPPORT_PERIPHERAL                         1
 #endif
+
+#define BLE_SUPPORT_CONN_STATE                         (BLE_SUPPORT_CENTRAL|BLE_SUPPORT_PERIPHERAL)
+
 /*********************** BLE PROPERTY CONFIGURE ***************************/
 #ifndef BLE_FILTER_ACCEPT_LIST_SIZE
 #define BLE_FILTER_ACCEPT_LIST_SIZE                    4

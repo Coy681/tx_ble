@@ -429,7 +429,8 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
     {HCI_LE_LONG_TERM_KEY_REQUEST_EVENT,                                          v4_0,          "E",                "C.61"}, 
     // C.61: Mandatory if the LE Controller supports Peripheral role and LE Feature (LE Encryption), otherwise excluded
     {HCI_LE_READ_BUFFER_SIZE_COMMAND,                                             v4_0,          "E",                "[v1] C.3 [v2] C.55"}, 
-    // C.3: Mandatory if the LE Controller supports Connection State; C.55: Optional if LE Feature (Connected Isochronous Stream - Central), or LE Feature (Connected Isochronous Stream - Peripheral), or LE Feature (Synchronized Receiver role) is supported
+    // C.3: Mandatory if the LE Controller supports Connection State; 
+    // C.55: Optional if LE Feature (Connected Isochronous Stream - Central), or LE Feature (Connected Isochronous Stream - Peripheral), or LE Feature (Synchronized Receiver role) is supported
     {HCI_LE_RECEIVER_TEST_COMMAND,                                                v4_0,          "E",                "[v1] C.2 [v2] C.13 [v3] C.30"}, 
     // C.2: Mandatory if the LE Controller supports receiving packets;
     // C.13: Mandatory if LE Feature (LE 2M PHY) or LE Feature (LE Coded PHY) or LE Feature (Stable Modulation Index - Receiver) is supported;
