@@ -58,6 +58,7 @@
 // C.96: Optional if the LE Controller supports Connection State, otherwise excluded
 #define SET_CONTROLLER_TO_HOST_FLOW_CONTROL_PROCESS                          HCI_DEFAULT_PROCESS_ADDRESS
 
+
 #if(SET_CONTROLLER_TO_HOST_FLOW_CONTROL_PROCESS)
 // C.107: Mandatory if the Set Controller To Host Flow Control command is supported, otherwise excluded
 #define HOST_BUFFER_SIZE_PROCESS                                             HCI_DEFAULT_PROCESS_ADDRESS
@@ -106,18 +107,45 @@
 #endif
 
 #if(BLE_SUPPORT_CENTRAL)
+// C.59: Mandatory if the LE Controller supports Central role, otherwise excluded
+#define LE_CREATE_CONNECTION_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
+// C.94: Mandatory if the LE Create Connection or LE Extended Create Connection command is supported, otherwise excluded
+#define LE_CREATE_CONNECTION_CANCEL_PROCESS                                  HCI_DEFAULT_PROCESS_ADDRESS
+#if(LL_SUPPORT_LE_ENCRYPTION)
+// C.60: Mandatory if the LE Controller supports Central role and LE Feature (LE Encryption), otherwise excluded
+#define LE_ENABLE_ENCRYPTION_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
 #else
+#define LE_ENABLE_ENCRYPTION_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
+#endif
+#else
+#define LE_CREATE_CONNECTION_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_CREATE_CONNECTION_CANCEL_PROCESS                                  HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_ENABLE_ENCRYPTION_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
 #endif
 
 #if(BLE_SUPPORT_PERIPHERAL)
+// C.61: Mandatory if the LE Controller supports Peripheral role and LE Feature (LE Encryption), otherwise excluded
+#if(LL_SUPPORT_LE_ENCRYPTION)
+#define LE_LONG_TERM_KEY_REQUEST_NEGATIVE_REPLY_PROCESS                      HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_LONG_TERM_KEY_REQUEST_REPLY_PROCESS                               HCI_DEFAULT_PROCESS_ADDRESS
 #else
+#define LE_LONG_TERM_KEY_REQUEST_NEGATIVE_REPLY_PROCESS                      HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_LONG_TERM_KEY_REQUEST_REPLY_PROCESS                               HCI_DEFAULT_PROCESS_ADDRESS
+#endif
+
+#else
+#define LE_LONG_TERM_KEY_REQUEST_NEGATIVE_REPLY_PROCESS                      HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_LONG_TERM_KEY_REQUEST_REPLY_PROCESS                               HCI_DEFAULT_PROCESS_ADDRESS
 #endif
 
 /************************ feature ***************************************/
 
 #if(LL_SUPPORT_LE_ENCRYPTION)
-
+#define LE_ENCRYPT_PROCESS                                                   HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_RAND_PROCESS                                                      HCI_DEFAULT_PROCESS_ADDRESS
 #else
+#define LE_ENCRYPT_PROCESS                                                   HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_RAND_PROCESS                                                      HCI_DEFAULT_PROCESS_ADDRESS
 #endif
 
 #if(LL_SUPPORT_CONNECTION_PARAMETERS_REQUEST)
@@ -337,6 +365,15 @@
 #if(BLE_SUPPORT_CENTRAL||(BLE_SUPPORT_PERIPHERAL&&LL_SUPPORT_CONNECTION_PARAMETERS_REQUEST))
 // C.62: Mandatory if the LE Controller supports Central role or supports both Peripheral role and LE Feature (Connection Parameters Request Procedure), otherwise excluded
 #define LE_CONNECTION_UPDATE_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
+#else
+#define LE_CONNECTION_UPDATE_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
+#endif
+
+#if(LL_SUPPORT_SYNCHRONIZED_RECEIVER|LL_SUPPORT_CONNECTED_ISOCHRONOUS_STREAM_CENTRAL|LL_SUPPORT_CONNECTED_ISOCHRONOUS_STREAM_PERIPHERAL)
+// C.55: Optional if LE Feature (Connected Isochronous Stream - Central), or LE Feature (Connected Isochronous Stream - Peripheral), or LE Feature (Synchronized Receiver role) is supported
+#define LE_READ_BUFFER_SIZE_V2_PROCESS                                       HCI_DEFAULT_PROCESS_ADDRESS
+#else
+#define LE_READ_BUFFER_SIZE_V2_PROCESS                                       HCI_DEFAULT_PROCESS_ADDRESS
 #endif
 
 
@@ -528,7 +565,7 @@
 
 
 
-#define LE_READ_BUFFER_SIZE_V2_PROCESS                                       HCI_DEFAULT_PROCESS_ADDRESS
+
 
 #define LE_SET_RANDOM_ADDRESS_PROCESS                                        HCI_DEFAULT_PROCESS_ADDRESS
 
@@ -538,8 +575,8 @@
 
 
 
-#define LE_CREATE_CONNECTION_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_CREATE_CONNECTION_CANCEL_PROCESS                                  HCI_DEFAULT_PROCESS_ADDRESS
+
+
 
 
 
@@ -548,11 +585,11 @@
 #define LE_SET_HOST_CHANNEL_CLASSIFICATION_PROCESS                           HCI_DEFAULT_PROCESS_ADDRESS
 
 
-#define LE_ENCRYPT_PROCESS                                                   HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_RAND_PROCESS                                                      HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_ENABLE_ENCRYPTION_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_LONG_TERM_KEY_REQUEST_REPLY_PROCESS                               HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_LONG_TERM_KEY_REQUEST_NEGATIVE_REPLY_PROCESS                      HCI_DEFAULT_PROCESS_ADDRESS
+
+
+
+
+
 
 #define LE_RECEIVER_TEST_PROCESS                                             HCI_DEFAULT_PROCESS_ADDRESS
 #define LE_RECEIVER_TEST_V2_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
