@@ -157,6 +157,11 @@ Bluetooth LL支持多状态机的实现，支持多状态的自由组合，在�
 
 ### LL
 
+
+待处理事项，
+(1)synchronization state的定义
+(2)BLE完整state定义，包括广播，扫描，连接，扩展广播，周期性广播之类的
+(3)传统广播和扩展广播的兼容
 #### BLE Standby
 
 #### BLE Advertising

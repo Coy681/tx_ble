@@ -515,8 +515,9 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
     {HCI_LE_PERIODIC_ADVERTISING_CREATE_SYNC_CANCEL_COMMAND,                      v5_0,          "E",                "C.16"}, 
     {HCI_LE_PERIODIC_ADVERTISING_CREATE_SYNC_COMMAND,                             v5_0,          "E",                "C.16"},
     {HCI_LE_PERIODIC_ADVERTISING_SYNC_ESTABLISHED_EVENT,                          v5_0,          "E",                "[v1] C.16 [v2] C.68"}, 
-    // C.68: Mandatory if LE Feature (Periodic Advertising with Responses - Scanner) is supported
     // C.16: Mandatory if LE Feature (Periodic Advertising) is supported and the LE Controller supports both Scanning State and Synchronization State; 
+    // C.68: Mandatory if LE Feature (Periodic Advertising with Responses - Scanner) is supported
+
     {HCI_LE_ADVERTISING_SET_TERMINATED_EVENT,                                     v5_0,          "E",                "C.17"}, 
     {HCI_LE_CLEAR_ADVERTISING_SETS_COMMAND,                                       v5_0,          "E",                "C.17"}, 
     {HCI_LE_SCAN_REQUEST_RECEIVED_EVENT,                                          v5_0,          "E",                "C.17"}, 
@@ -528,6 +529,9 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
     {HCI_LE_SET_EXTENDED_SCAN_RESPONSE_DATA_COMMAND,                              v5_0,          "E",                "C.17"}, 
     {HCI_LE_SET_EXTENDED_ADVERTISING_ENABLE_COMMAND,                              v5_0,          "E",                "C.17"}, 
     // C.17: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Advertising State, otherwise excluded
+    {HCI_LE_SET_EXTENDED_ADVERTISING_PARAMETERS_COMMAND,                          v5_0,          "E",                "[v1] C.65 [v2] C.66"}, 
+    // C.65: Mandatory if LE Set Extended Advertising Parameters command [v2] is supported, otherwise mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Advertising State, otherwise excluded.
+    // C.66: Mandatory if LE Feature (Advertising Coding Selection) is supported, otherwise optional if LE Feature (Extended Advertising) is supported and the LE Controller supports Advertising state
     {HCI_LE_SET_PERIODIC_ADVERTISING_DATA_COMMAND,                                v5_0,          "E",                "C.18"}, 
     {HCI_LE_SET_PERIODIC_ADVERTISING_ENABLE_COMMAND,                              v5_0,          "E",                "C.18"}, 
     {HCI_LE_SET_PERIODIC_ADVERTISING_PARAMETERS_COMMAND,                          v5_0,          "E",                "[v1] C.18 [v2] C.67"}, 
@@ -557,9 +561,7 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
     // C.22: Mandatory if the LE Controller supports sending Transmit Power in advertisements or if LE Feature (LE Power Control Request) is supported, otherwise optional
     {HCI_LE_READ_TRANSMIT_POWER_COMMAND,                                          v5_0,          "E",                "C.64"}, 
     // C.64: Optional if the Controller supports transmitting packets, otherwise excluded
-    {HCI_LE_SET_EXTENDED_ADVERTISING_PARAMETERS_COMMAND,                          v5_0,          "E",                "[v1] C.65 [v2] C.66"}, 
-    // C.65: Mandatory if LE Set Extended Advertising Parameters command [v2] is supported; 
-    // C.66: Mandatory if LE Feature (Advertising Coding Selection) is supported
+
     {HCI_LE_SET_PRIVACY_MODE_COMMAND,                                             v5_0,          "E",                "C.9"}, 
     // C.9: Mandatory if LE Feature (LL Privacy) is supported, otherwise excluded
     {HCI_LE_WRITE_RF_PATH_COMPENSATION_COMMAND,                                   v5_0,          "E",                "C.22"}, 
@@ -586,7 +588,7 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
     {HCI_LE_READ_ANTENNA_INFORMATION_COMMAND,                                     v5_1,          "E",                "C.31"},
     // C.31: Mandatory if LE Feature (Connection CTE Request) or LE Feature (Connection CTE Response) or LE Feature (Connectionless CTE Transmitter) or LE Feature (Connectionless CTE Receiver) is supported, otherwise excluded
     {HCI_LE_SET_PERIODIC_ADVERTISING_RECEIVE_ENABLE_COMMAND,                      v5_1,          "E",                "C.32"}, 
-    // C.32: Mandatory if LE Feature (Periodic Advertising Sync Transfer – Recipient) is supported, otherwise optional if LE Feature (Periodic Advertising) is supported
+    // C.32:  Mandatory if LE Feature (Periodic Advertising Sync Transfer – Recipient) is supported, otherwise optional if LE Feature (Periodic Advertising) is supported and the LE Controller supports Synchronization State, otherwise excluded.
     {HCI_LE_PERIODIC_ADVERTISING_SYNC_TRANSFER_COMMAND,                           v5_1,          "E",                "C.33"}, 
     // C.33: Mandatory if LE Feature (Periodic Advertising Sync Transfer – Sender) is supported and the LE Controller supports Scanning State, otherwise excluded
     {HCI_LE_PERIODIC_ADVERTISING_SET_INFO_TRANSFER_COMMAND,                       v5_1,          "E",                "C.34"}, 
@@ -594,7 +596,7 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
     {HCI_LE_SET_DEFAULT_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMETERS_COMMAND,    v5_1,          "E",                "C.35"}, 
     {HCI_LE_SET_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMETERS_COMMAND,            v5_1,          "E",                "C.35"}, 
     {HCI_LE_PERIODIC_ADVERTISING_SYNC_TRANSFER_RECEIVED_EVENT,                    v5_1,          "E",                "[v1] C.35 [v2] C.68"}, 
-    // C.35: Mandatory if LE Feature (Periodic Advertising Sync Transfer – Recipient) is supported, otherwise optional if LE Feature (Periodic Advertising) is supported
+    // C.35: Mandatory if LE Feature (Periodic Advertising Sync Transfer – Recipient) is supported, otherwise excluded
     // C.68: Mandatory if LE Feature (Periodic Advertising with Responses - Scanner) is supported
     {HCI_LE_MODIFY_SLEEP_CLOCK_ACCURACY_COMMAND,                                  v5_1,          "E",                "C.37"}, 
     // C.37: Mandatory if the LE Controller can change its sleep clock accuracy, otherwise excluded

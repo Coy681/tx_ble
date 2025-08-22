@@ -28,9 +28,6 @@
 #define BLE_SUPPORT_BROADCAST                           1
 #endif
 
-#if(BLE_SUPPORT_PERIPHERAL)
-#endif
-
 #define BLE_SUPPORT_CONN_STATE                         (BLE_SUPPORT_CENTRAL|BLE_SUPPORT_PERIPHERAL)
 
 /*********************** BLE PROPERTY CONFIGURE ***************************/
