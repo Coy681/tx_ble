@@ -443,7 +443,8 @@ bt_ov_cmd_evts_t bt_commands_events_overview[] =
     {HCI_LE_TRANSMITTER_TEST_COMMAND,                                             v4_0,          "E",                "[v1] C.1 [v2] C.12 [v3] C.29 [v4] C.53"}, 
     // C.1: Mandatory if the LE Controller supports transmitting packets; 
     // C.12: Mandatory if LE 2M PHY/Coded PHY/Stable Modulation Index (Transmitter) is supported;
-    // C.29: Similar to C.12; C.53: Related to specific transmitter test features
+    // C.29: Similar to C.12;
+    // C.53: Related to specific transmitter test features
     {HCI_READ_LE_HOST_SUPPORT_COMMAND,                                            v4_0,          "C.116",            "E"}, 
     // C.116: Mandatory if the Write LE Host Support command is supported, otherwise excluded
     {HCI_WRITE_LE_HOST_SUPPORT_COMMAND,                                           v4_0,          "C.153",            "E"}, 
