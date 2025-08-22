@@ -2,33 +2,48 @@
 #include"../config.h"
 
 /************************* BLE ROLE CONFIGURE *****************************/
-#ifndef BLE_SUPPORT_BROADCAST
-#define BLE_SUPPORT_BROADCAST                          1
+#if(BLE_SUPPORT_ADV) 
+
 #endif 
 
-#ifndef BLE_SUPPORT_OBSERVER
-#define BLE_SUPPORT_OBSERVER                           1
-#endif
+#if(BLE_SUPPORT_SCAN) 
 
-#ifndef BLE_SUPPORT_CENTRAL
-#define BLE_SUPPORT_CENTRAL                            1
-#endif
+#endif 
 
-#ifndef BLE_SUPPORT_PERIPHERAL
-#define BLE_SUPPORT_PERIPHERAL                         1
-#endif
+#if(BLE_SUPPORT_CEN) 
 
-#if(BLE_SUPPORT_CENTRAL&&(!BLE_SUPPORT_OBSERVER))
-#undef  BLE_SUPPORT_OBSERVER
-#define BLE_SUPPORT_OBSERVER                           1
-#endif
+#endif 
 
-#if(BLE_SUPPORT_PERIPHERAL&&(!BLE_SUPPORT_BROADCAST))
-#undef  BLE_SUPPORT_BROADCAST
-#define BLE_SUPPORT_BROADCAST                           1
-#endif
+#if(BLE_SUPPORT_PER) 
 
-#define BLE_SUPPORT_CONN_STATE                         (BLE_SUPPORT_CENTRAL|BLE_SUPPORT_PERIPHERAL)
+#endif 
+
+#if(BLE_SUPPORT_PDA) 
+
+#endif 
+
+#if(BLE_SUPPORT_PDA_SYNC) 
+
+#endif 
+
+#if(BLE_SUPPORT_PAWR) 
+
+#endif 
+
+#if(BLE_SUPPORT_PAWR_SYNC) 
+
+#endif 
+
+#if(BLE_SUPPORT_ISO_CEN) 
+
+#endif 
+
+#if(BLE_SUPPORT_ISO_PER) 
+
+#endif 
+
+#define BLE_SUPPORT_CONN                               (BLE_SUPPORT_CEN|BLE_SUPPORT_PER)
+
 
 /*********************** BLE PROPERTY CONFIGURE ***************************/
 #ifndef BLE_FILTER_ACCEPT_LIST_SIZE

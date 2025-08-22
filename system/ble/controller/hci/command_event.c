@@ -71,7 +71,7 @@
 
 
 /***************************************** state combination ******************************************************************************/
-#if(BLE_SUPPORT_CONN_STATE)
+#if(BLE_SUPPORT_CONN)
 // C.3: Mandatory if the LE Controller supports Connection State; 
 #define DISCONNECT_PROCESS                                                   HCI_MANDORY_PROCESS_ADDRESS
 #define READ_REMOTE_VERSION_INFORMATION_PROCESS                              HCI_MANDORY_PROCESS_ADDRESS
@@ -106,7 +106,7 @@
 #define HOST_NUMBER_OF_COMPLETED_PACKETS_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
 #endif
 
-#if(BLE_SUPPORT_BROADCAST)
+#if(BLE_SUPPORT_ADV)
 // C.97: Mandatory if Advertising State is supported, otherwise excluded
 #define LE_SET_ADVERTISING_DATA_PROCESS                                      HCI_MANDORY_PROCESS_ADDRESS
 #define LE_SET_ADVERTISING_ENABLE_PROCESS                                    HCI_MANDORY_PROCESS_ADDRESS
@@ -122,7 +122,7 @@
 #define LE_SET_SCAN_RESPONSE_DATA_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
 #endif
 
-#if(BLE_SUPPORT_OBSERVER)
+#if(BLE_SUPPORT_SCAN)
 // C.98: Mandatory if Scanning State is supported, otherwise excluded
 #define LE_SET_SCAN_ENABLE_PROCESS                                           HCI_MANDORY_PROCESS_ADDRESS
 #define LE_SET_SCAN_PARAMETERS_PROCESS                                       HCI_MANDORY_PROCESS_ADDRESS
@@ -131,7 +131,7 @@
 #define LE_SET_SCAN_PARAMETERS_PROCESS                                       HCI_DEFAULT_PROCESS_ADDRESS
 #endif
 
-#if(BLE_SUPPORT_CENTRAL)
+#if(BLE_SUPPORT_CEN)
 // C.59: Mandatory if the LE Controller supports Central role, otherwise excluded
 #define LE_CREATE_CONNECTION_PROCESS                                         HCI_MANDORY_PROCESS_ADDRESS
 // C.94: Mandatory if the LE Create Connection or LE Extended Create Connection command is supported, otherwise excluded
@@ -165,7 +165,7 @@
 #define LE_ENABLE_ENCRYPTION_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
 #endif
 
-#if(BLE_SUPPORT_PERIPHERAL)
+#if(BLE_SUPPORT_PER)
 // C.61: Mandatory if the LE Controller supports Peripheral role and LE Feature (LE Encryption), otherwise excluded
 #if(LL_SUPPORT_LE_ENCRYPTION)
 #define LE_LONG_TERM_KEY_REQUEST_NEGATIVE_REPLY_PROCESS                      HCI_MANDORY_PROCESS_ADDRESS
@@ -285,7 +285,7 @@
 #else
 #endif
 
-#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING&&BLE_SUPPORT_BROADCAST)
+#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING&&BLE_SUPPORT_ADV)
 // C.17: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Advertising State, otherwise excluded
 #define LE_CLEAR_ADVERTISING_SETS_PROCESS                                    HCI_MANDORY_PROCESS_ADDRESS
 #define LE_REMOVE_ADVERTISING_SET_PROCESS                                    HCI_MANDORY_PROCESS_ADDRESS
@@ -317,7 +317,7 @@
 #define LE_SET_EXTENDED_ADVERTISING_PARAMETERS_V2_PROCESS                    HCI_DEFAULT_PROCESS_ADDRESS
 #endif
 
-#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING&&BLE_SUPPORT_OBSERVER)
+#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING&&BLE_SUPPORT_SCAN)
 // C.19: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Scanning State, otherwise excluded
 #define LE_SET_EXTENDED_SCAN_ENABLE_PROCESS                                  HCI_MANDORY_PROCESS_ADDRESS
 #define LE_SET_EXTENDED_SCAN_PARAMETERS_PROCESS                              HCI_MANDORY_PROCESS_ADDRESS
@@ -330,7 +330,7 @@
 
 
 
-#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING&&BLE_SUPPORT_BROADCAST)
+#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING&&BLE_SUPPORT_ADV)
 // C.18: Mandatory if LE Feature (Periodic Advertising) is supported and the LE Controller supports Advertising State; 
 #define LE_SET_PERIODIC_ADVERTISING_DATA_PROCESS                             HCI_MANDORY_PROCESS_ADDRESS
 #define LE_SET_PERIODIC_ADVERTISING_ENABLE_PROCESS                           HCI_MANDORY_PROCESS_ADDRESS
@@ -341,7 +341,7 @@
 #define LE_SET_PERIODIC_ADVERTISING_PARAMETERS_PROCESS                       HCI_DEFAULT_PROCESS_ADDRESS
 #endif
 
-#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING&&BLE_SUPPORT_OBSERVER)
+#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING&&BLE_SUPPORT_SCAN)
 // C.21: Mandatory if LE Feature (Periodic Advertising) is supported and the LE Controller supports Synchronization State, otherwise excluded
 #define LE_ADD_DEVICE_TO_PERIODIC_ADVERTISER_LIST_PROCESS                    HCI_MANDORY_PROCESS_ADDRESS
 #define LE_PERIODIC_ADVERTISING_TERMINATE_SYNC_PROCESS                       HCI_MANDORY_PROCESS_ADDRESS
@@ -426,14 +426,14 @@
 #else
 #endif
 
-#if(LL_SUPPORT_PERIODIC_ADVERTISING_SYNC_TRANSFER_SENDER&&BLE_SUPPORT_OBSERVER)
+#if(LL_SUPPORT_PERIODIC_ADVERTISING_SYNC_TRANSFER_SENDER&&BLE_SUPPORT_SCAN)
 // C.33: Mandatory if LE Feature (Periodic Advertising Sync Transfer – Sender) is supported and the LE Controller supports Scanning State, otherwise excluded
 #define LE_PERIODIC_ADVERTISING_SYNC_TRANSFER_PROCESS                        HCI_MANDORY_PROCESS_ADDRESS
 #else
 #define LE_PERIODIC_ADVERTISING_SYNC_TRANSFER_PROCESS                        HCI_DEFAULT_PROCESS_ADDRESS
 #endif
 
-#if(LL_SUPPORT_PERIODIC_ADVERTISING_SYNC_TRANSFER_SENDER&&BLE_SUPPORT_BROADCAST)
+#if(LL_SUPPORT_PERIODIC_ADVERTISING_SYNC_TRANSFER_SENDER&&BLE_SUPPORT_ADV)
 // C.34: Mandatory if LE Feature (Periodic Advertising Sync Transfer – Sender) is supported and the LE Controller supports Advertising State, otherwise excluded
 #define LE_PERIODIC_ADVERTISING_SET_INFO_TRANSFER_PROCESS                    HCI_MANDORY_PROCESS_ADDRESS
 #else
@@ -691,21 +691,21 @@
 #endif
 
 /*********************************************** feature combination command supported ******************************************************************************** */
-#if(BLE_SUPPORT_CENTRAL||(BLE_SUPPORT_PERIPHERAL&&LL_SUPPORT_CONNECTION_PARAMETERS_REQUEST))
+#if(BLE_SUPPORT_CEN||(BLE_SUPPORT_PER&&LL_SUPPORT_CONNECTION_PARAMETERS_REQUEST))
 // C.62: Mandatory if the LE Controller supports Central role or supports both Peripheral role and LE Feature (Connection Parameters Request Procedure), otherwise excluded
 #define LE_CONNECTION_UPDATE_PROCESS                                         HCI_MANDORY_PROCESS_ADDRESS
 #else
 #define LE_CONNECTION_UPDATE_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
 #endif
 
-#if(BLE_SUPPORT_CENTRAL|(BLE_SUPPORT_PERIPHERAL&&LL_SUPPORT_CHANNEL_CLASSIFICATION))
+#if(BLE_SUPPORT_CEN|(BLE_SUPPORT_PER&&LL_SUPPORT_CHANNEL_CLASSIFICATION))
 // C.36: Mandatory if the LE Controller supports Central role or supports both Peripheral role and LE Feature (Channel Classification), otherwise optional
 #define LE_SET_HOST_CHANNEL_CLASSIFICATION_PROCESS                           HCI_MANDORY_PROCESS_ADDRESS
 #else
 #define LE_SET_HOST_CHANNEL_CLASSIFICATION_PROCESS                           HCI_DEFAULT_PROCESS_ADDRESS
 #endif
 
-#if(BLE_SUPPORT_OBSERVER&&LL_SUPPORT_LE_PERIODIC_ADVERTISING)
+#if(BLE_SUPPORT_SCAN&&LL_SUPPORT_LE_PERIODIC_ADVERTISING)
 // C.16: Mandatory if LE Feature (Periodic Advertising) is supported and the LE Controller supports both Scanning State and Synchronization State; 
 #define LE_PERIODIC_ADVERTISING_CREATE_SYNC_CANCEL_PROCESS                   HCI_MANDORY_PROCESS_ADDRESS
 #define LE_PERIODIC_ADVERTISING_CREATE_SYNC_PROCESS                          HCI_MANDORY_PROCESS_ADDRESS
@@ -1274,27 +1274,27 @@ controller_error_code_e le_read_supported_states_process(_u8* data,_u8 length,bt
     (struct le_read_supported_states_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct le_read_supported_states_retParam_t),event);
     retParam->status = (_u8)SUCCESS;
 
-    #if(BLE_SUPPORT_BROADCAST)
+    #if(BLE_SUPPORT_ADV)
     retParam->states|=(BIT64(0)  | BIT64(1)  | BIT64(8)  | BIT64(9)  | BIT64(12) | \
 		BIT64(13) | BIT64(16) | BIT64(17) | BIT64(18) | BIT64(19) | \
 		BIT64(20) | BIT64(21));
     #endif
 
-    #if(BLE_SUPPORT_OBSERVER)
+    #if(BLE_SUPPORT_SCAN)
     retParam->states|=(BIT64(4)  | BIT64(5)  | BIT64(8)  | BIT64(9)  | BIT64(10) | \
 		BIT64(11) | BIT64(12) | BIT64(13) | BIT64(14) | BIT64(15) | \
 		BIT64(22) | BIT64(23) | BIT64(24) | BIT64(25) | BIT64(26) | \
 		BIT64(27) | BIT64(30) | BIT64(31));
     #endif
 
-    #if(BLE_SUPPORT_CENTRAL)
+    #if(BLE_SUPPORT_CEN)
     retParam->states|=(BIT64(6)  | BIT64(16) | BIT64(17) | BIT64(18) | BIT64(19) | \
 		BIT64(22) | BIT64(23) | BIT64(24) | BIT64(25) | BIT64(28) | \
 		BIT64(32) | BIT64(33) | BIT64(34) | BIT64(35) | BIT64(36) | \
 		BIT64(37) | BIT64(41));
     #endif
 
-    #if(BLE_SUPPORT_PERIPHERAL)
+    #if(BLE_SUPPORT_PER)
     retParam->states|=(BIT64(2)  | BIT64(3)  | BIT64(7)  | BIT64(10) | BIT64(11) | \
 		BIT64(14) | BIT64(15) | BIT64(20) | BIT64(21) | BIT64(26) | \
 		BIT64(27) | BIT64(29) | BIT64(30) | BIT64(31) | BIT64(32) | \
