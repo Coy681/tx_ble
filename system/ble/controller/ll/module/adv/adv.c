@@ -22,17 +22,17 @@ typedef enum
     ADV_SM_STATE_SENDING_ADV,
     ADV_SM_STATE_SENDING_RSP,
     ADV_SM_STATE_RECEIVING,
-    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
     ADV_SM_STATE_SENDING_AUX_ADV,
     ADV_SM_STATE_SENDING_AUX_SCAN_RSP,
     ADV_SM_STATE_SENDING_AUX_CONNECT_RSP,
     ADV_SM_STATE_SENDING_AUX_CHAIN_ADV,
     ADV_SM_STATE_RECEIVING_AUX,
     #endif
-    #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
+    #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
     #endif
 
-    #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
+    #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
     #endif
 }adv_sm_state_e;
 
@@ -116,9 +116,9 @@ void adv_get_next_event(ll_sm_t* ll)
             currentEventClass = ADV_EVENT;
         }
     }
-    #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
+    #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
     #endif
-    #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
+    #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
     #endif
 	#endif
 }
@@ -274,7 +274,7 @@ int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_
             }
         }
     }
-	#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+	#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
     if((mapType&ADV_SCH_MAP_AUX)&&advParam->auxiliary)
     {
         _u32 secondarySpace = advParam->ea->sch.startMargin + advParam->ea->sch.duration + advParam->la->sch.stopMargin;
@@ -308,7 +308,7 @@ int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_
     tx_free((_u8*)freeBlock);
 }
 
-#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
 _RAM_CODE 
 
 _u16 adv_calculate_extended_header_length(_u8 flags)
@@ -458,7 +458,7 @@ static void adv_scan_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advPar
     txMemcpy(((adv_type_scan_ind_t*)packet)->advA,ll_get_device_address(),6);
     txMemcpy(((adv_type_scan_ind_t*)packet)->advData,advParam->data.addr,advParam->data.len);
 }
-#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
 //LL_ADV_TYPE_ADV_EXT_IND
 static void adv_ext_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo)
 {
@@ -507,7 +507,7 @@ static void adv_aux_chain_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* a
     }
 }
 #endif
-#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
+#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
 //LL_ADV_TYPE_AUX_SYNC_IND
 static void adv_aux_sync_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
@@ -515,7 +515,7 @@ static void adv_aux_sync_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* ad
 }
 #endif
 
-#if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
+#if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
 //LL_ADV_TYPE_AUX_SYNC_SUBEVENT_IND
 static void adv_aux_sync_subevent_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
@@ -592,7 +592,7 @@ static void adv_event_non_connectable_non_scannable_undirected_packet_prapare(ll
         break;
     }
 }
-#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
 //ADV_EVENT_EXTENDED_CONNECTABLE_DIRECTED
 _RAM_CODE
 static void adv_event_extended_connectable_directed_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
@@ -966,7 +966,7 @@ static void adv_event_extended_non_connectable_non_scannable_undirected_without_
     }
 }
 #endif
-#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
+#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
 //ADV_EVENT_EXTENDED_PERIODIC
 _RAM_CODE
 static void adv_event_extended_periodic_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
@@ -975,7 +975,7 @@ static void adv_event_extended_periodic_packet_prapare(ll_sm_t* ll,ll_internal_a
 }
 #endif
 
-#if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
+#if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
 //ADV_EVENT_EXTENDED_PERIODIC_WITH_RESPONSE
 _RAM_CODE
 static void adv_event_extended_periodic_with_response_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
@@ -990,7 +990,7 @@ void(*adv_prepare_packet[])(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pd
     adv_event_connectable_directed_packet_prapare,
     adv_event_scannable_undirected_packet_prapare,
     adv_event_non_connectable_non_scannable_undirected_packet_prapare,
-    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
     adv_event_extended_connectable_directed_packet_prapare,
     adv_event_extended_connectable_undirected_packet_prapare,
     adv_event_extended_scannable_directed_packet_prapare,
@@ -1000,10 +1000,10 @@ void(*adv_prepare_packet[])(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pd
     adv_event_extended_non_connectable_non_scannable_directed_without_auxiliary_packet_prapare,
     adv_event_extended_non_connectable_non_scannable_undirected_without_auxiliary_packet_prapare,
     #endif
-    #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
+    #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
     adv_event_extended_periodic_packet_prapare,
     #endif
-    #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
+    #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
     adv_event_extended_periodic_with_response_packet_prapare,
     #endif
 };
@@ -1225,7 +1225,7 @@ static adv_procedure_list_t adv_non_con_non_scan_undirected_procedure[]=
 };
 
 /*****************************************ADV Extended Event Process ***********************************************/
-#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
 
 ll_internal_adv_param_t* ll_extended_adv_get_entity(_u8 handle,_u8 allocate)
 {
@@ -1401,7 +1401,7 @@ static adv_procedure_list_t adv_extended_non_con_non_scan_directed_procedure_wit
 };
 #endif
 /*****************************************ADV Periodic Event Process ***********************************************/
-#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
+#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
 typedef enum
 {
     ADV_PERIODIC_EVENT_NONE,
@@ -1418,7 +1418,7 @@ static adv_procedure_list_t adv_extended_periodic_procedure[]=
 };
 #endif
 /*****************************************ADV Periodic With Rsp Process ***********************************************/
-#if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
+#if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
 typedef enum
 {
     ADV_PERIODIC_WITH_RSP_EVENT_NONE,
@@ -1441,7 +1441,7 @@ _DATA static adv_sequence_t advSequence[] =
     {ADV_EVENT_CONNECTABLE_DIRECTED,                                                adv_con_directed_procedure,                                          ADV_PROCEDURE_LIST_LENGTH(adv_con_directed_procedure)},
     {ADV_EVENT_SCANNABLE_UNDIRECTED,                                                adv_scan_undirected_procedure,                                       ADV_PROCEDURE_LIST_LENGTH(adv_scan_undirected_procedure)},
     {ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED,                            adv_non_con_non_scan_undirected_procedure,                           ADV_PROCEDURE_LIST_LENGTH(adv_non_con_non_scan_undirected_procedure)},
-    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
     {ADV_EVENT_EXTENDED_CONNECTABLE_DIRECTED,                                       adv_extended_con_undirected_procedure,                               ADV_PROCEDURE_LIST_LENGTH(adv_extended_con_undirected_procedure)},
     {ADV_EVENT_EXTENDED_CONNECTABLE_UNDIRECTED,                                     adv_extended_con_directed_procedure,                                 ADV_PROCEDURE_LIST_LENGTH(adv_extended_con_directed_procedure)},
     {ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED,                                         adv_extended_scan_undirected_procedure,                              ADV_PROCEDURE_LIST_LENGTH(adv_extended_scan_undirected_procedure)},
@@ -1451,10 +1451,10 @@ _DATA static adv_sequence_t advSequence[] =
     {ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITHOUT_AUXILIARY,   adv_extended_non_con_non_scan_undirected_procedure_without_auxiliary,ADV_PROCEDURE_LIST_LENGTH(adv_extended_non_con_non_scan_undirected_procedure_without_auxiliary)},
     {ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED_WITHOUT_AUXILIARY, adv_extended_non_con_non_scan_directed_procedure_without_auxiliary,  ADV_PROCEDURE_LIST_LENGTH(adv_extended_non_con_non_scan_directed_procedure_without_auxiliary)},
     #endif
-    #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
+    #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
     {ADV_EVENT_EXTENDED_PERIODIC,                                 adv_extended_periodic_procedure,                   ADV_PROCEDURE_LIST_LENGTH(adv_extended_periodic_procedure)},
     #endif
-    #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
+    #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
     {ADV_EVENT_EXTENDED_PERIODIC_WITH_RESPONSE,                   adv_extended_periodic_with_rsp_procedure,          ADV_PROCEDURE_LIST_LENGTH(adv_extended_periodic_with_rsp_procedure)},
     #endif
 };

@@ -123,7 +123,7 @@ typedef struct
    _u16 len;//to be compatible with adv and extended adv,use 2 byte to store data.
    _u8* addr;
 }ll_adv_data_entry_t;
-#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
 typedef struct 
 {
     ll_adv_data_entry_t data; 
@@ -141,7 +141,7 @@ typedef struct
     ll_adv_phy_entry_t  phy;
 }ll_adv_set_t;
 
-#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
 typedef struct 
 {
     _u16 sid:4;
@@ -167,14 +167,14 @@ typedef struct
 
 #endif
 
-#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
+#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
 typedef struct 
 {
 
 }ll_adv_pa_set_t;
 #endif
 
-#if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
+#if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
 typedef struct 
 {
 
@@ -188,7 +188,7 @@ typedef struct
     _u8  state:5;//state machine sate
     _u8  eventType:4;//adv event type,search"adv_event_type_e"
     _u8  processingEvent:4;//to prevent re-retrance
-    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
     _u8  handle;
     _u8  auxiliary:1;
     _u8  chained:1;
@@ -208,13 +208,13 @@ typedef struct
     ll_adv_data_entry_t scanRsp;
 
     ll_adv_set_t*      la;//legacy advertising
-    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
     ll_adv_ea_set_t*   ea;//extended advertising
     #endif
-    #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
+    #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
     ll_adv_pa_set_t*   pa;//periodic advertising
     #endif
-    #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
+    #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
     ll_adv_pawr_set_t* pawr//periodic advertising with response
     #endif
 }ll_internal_adv_param_t;
@@ -224,7 +224,7 @@ typedef struct
     ll_internal_adv_param_t param[BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS];
 }ll_internal_adv_ctrl_t;
 
-#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING==1)
+#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
 ll_internal_adv_param_t* ll_extended_adv_get_entity(_u8 handle,_u8 allocate);
 int                      ll_extended_adv_get_current_active_set_number(void);
 int                      ll_extended_adv_get_current_set_number(void);

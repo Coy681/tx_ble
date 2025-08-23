@@ -300,7 +300,7 @@ controller_error_code_e ll_set_le_event_mask(_u64 eventMask)
 }
 /*************************************Bluetooth LE Advertising ******************************/
 
-#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING!=1)
+
 controller_error_code_e ll_set_advertising_parameters(_u16 interval,\
 	                                                  ll_advertising_type_e type,\
 													  ll_own_address_type_e ownAddressType,\
@@ -424,7 +424,7 @@ controller_error_code_e ll_set_advertising_enable(_u8 enable)
 	return SUCCESS;
 }
 
-#else
+#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
 controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_param_t* pParam)
 {
 	ll_sm_t* ll = ll_get_current_state_machine();
@@ -1206,4 +1206,5 @@ controller_error_code_e ll_clear_advertising_sets(void)
 	ble_ll_process_event(ll,BLE_LL_EVENT_STOP_ADVERTISING);
 	return SUCCESS;
 }
-#endif
+
+#endif/*(LL_SUPPORT_LE_EXTENDED_ADVERTISING!=1)*/

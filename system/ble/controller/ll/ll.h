@@ -139,7 +139,7 @@ typedef enum
     LL_ADV_CHN_39 = BIT(2),
 }ll_advertising_chn_e;
 
-#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING!=1)
+
 controller_error_code_e ll_set_advertising_parameters(_u16 interval,\
                                                      ll_advertising_type_e type,\
                                                      ll_own_address_type_e ownAddressType,\
@@ -153,9 +153,8 @@ controller_error_code_e ll_set_scan_response_data(_u8* data,_u8 length);
 
 controller_error_code_e ll_set_advertising_enable(_u8 enable);
 
-
+#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
 /***********************Bluetooth LE Extended Advertising **************************/
-#else
 typedef enum
 {
     LL_ADV_EVENT_PROPERTY_CONNECTED                 = BIT(0),
@@ -266,11 +265,11 @@ controller_error_code_e ll_clear_advertising_sets(void);
 #endif
 
 /***********************Bluetooth LE Periodic Advertising **************************/
-#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING==1)
+#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
 #endif
 
 /***********************Bluetooth LE Periodic With Response Advertising **************************/
-#if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER==1)
+#if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
 #endif
 
 #endif

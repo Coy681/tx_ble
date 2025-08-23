@@ -4,9 +4,9 @@
 #include"../info.h"
 #include"../ll/ll_config.h"
 
-/************************************hci feature adapt layer****************************************/
+/************************************ hci supported command config ****************************************/
 #define HCI_DEFAULT_PROCESS_ADDRESS                                          0
-/***************************************** mandory supported hci cmd process **************************************************************/
+/***************************************** mandory cmd process start **************************************************************/
 #define RESET_PROCESS                                                        reset_process//v1_1
 #define READ_BD_ADDR_PROCESS                                                 read_bd_addr_process//v1_1
 #define READ_LOCAL_SUPPORTED_FEATURES_PROCESS                                read_local_supported_features_process//v1_1
@@ -23,19 +23,22 @@
 #define LE_SET_EVENT_MASK_PROCESS                                            le_set_event_mask_process//v4_0
 #define LE_TEST_END_PROCESS                                                  le_test_end_process//v4_0
 
+
 // C.1: Mandatory if the LE Controller supports transmitting packets; 
-#define LE_SET_RANDOM_ADDRESS_PROCESS                                        HCI_MANDORY_PROCESS_ADDRESS
-#define LE_TRANSMITTER_TEST_PROCESS                                          HCI_MANDORY_PROCESS_ADDRESS
+#define LE_SET_RANDOM_ADDRESS_PROCESS                                        HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_TRANSMITTER_TEST_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
 // C.64: Optional if the Controller supports transmitting packets, otherwise excluded
 #define LE_READ_TRANSMIT_POWER_PROCESS                                       HCI_DEFAULT_PROCESS_ADDRESS
 
 // C.2: Mandatory if the LE Controller supports receiving packets;
-#define LE_RECEIVER_TEST_PROCESS                                             HCI_MANDORY_PROCESS_ADDRESS
+#define LE_RECEIVER_TEST_PROCESS                                             HCI_DEFAULT_PROCESS_ADDRESS
 
 // C.37: Mandatory if the LE Controller can change its sleep clock accuracy, otherwise excluded
 #define LE_MODIFY_SLEEP_CLOCK_ACCURACY_PROCESS                               HCI_DEFAULT_PROCESS_ADDRESS
 
-/**************************************** optional supported hci cmd process *************************************************************/
+/***************************************** mandory cmd process end ***************************************************************/
+
+/**************************************** optional cmd process start *************************************************************/
 #define READ_LOCAL_SUPPORTED_CODECS_PROCESS                                  HCI_DEFAULT_PROCESS_ADDRESS
 #define READ_LOCAL_SUPPORTED_CODECS_V2_PROCESS                               HCI_DEFAULT_PROCESS_ADDRESS
 #define SET_EXTERNAL_FRAME_CONFIGURATION_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
@@ -69,79 +72,94 @@
 #define CONFIGURE_DATA_PATH_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
 #endif
 
+/**************************************** optional cmd process end *************************************************************/
 
-/***************************************** state combination ******************************************************************************/
-#if(BLE_SUPPORT_CONN)
-// C.3: Mandatory if the LE Controller supports Connection State; 
-#define DISCONNECT_PROCESS                                                   HCI_MANDORY_PROCESS_ADDRESS
-#define READ_REMOTE_VERSION_INFORMATION_PROCESS                              HCI_MANDORY_PROCESS_ADDRESS
-#define READ_RSSI_PROCESS                                                    HCI_MANDORY_PROCESS_ADDRESS
-#define READ_TRANSMIT_POWER_LEVEL_PROCESS                                    HCI_MANDORY_PROCESS_ADDRESS
-#define LE_READ_CHANNEL_MAP_PROCESS                                          HCI_MANDORY_PROCESS_ADDRESS
-#define LE_READ_REMOTE_FEATURES_PAGE_0_PROCESS                               HCI_MANDORY_PROCESS_ADDRESS
-#define LE_READ_BUFFER_SIZE_PROCESS                                          HCI_MANDORY_PROCESS_ADDRESS
-// C.96: Optional if the LE Controller supports Connection State, otherwise excluded
-#define SET_CONTROLLER_TO_HOST_FLOW_CONTROL_PROCESS                          HCI_DEFAULT_PROCESS_ADDRESS
-
-
-#if(SET_CONTROLLER_TO_HOST_FLOW_CONTROL_PROCESS)
-// C.107: Mandatory if the Set Controller To Host Flow Control command is supported, otherwise excluded
-#define HOST_BUFFER_SIZE_PROCESS                                             HCI_DEFAULT_PROCESS_ADDRESS
-#define HOST_NUMBER_OF_COMPLETED_PACKETS_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
-#else
-#define HOST_BUFFER_SIZE_PROCESS                                             HCI_DEFAULT_PROCESS_ADDRESS
-#define HOST_NUMBER_OF_COMPLETED_PACKETS_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
-#endif
-
-#else
-#define DISCONNECT_PROCESS                                                   HCI_DEFAULT_PROCESS_ADDRESS
-#define READ_REMOTE_VERSION_INFORMATION_PROCESS                              HCI_DEFAULT_PROCESS_ADDRESS
-#define READ_RSSI_PROCESS                                                    HCI_DEFAULT_PROCESS_ADDRESS
-#define READ_TRANSMIT_POWER_LEVEL_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_READ_CHANNEL_MAP_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_READ_REMOTE_FEATURES_PAGE_0_PROCESS                               HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_READ_BUFFER_SIZE_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
-#define SET_CONTROLLER_TO_HOST_FLOW_CONTROL_PROCESS                          HCI_DEFAULT_PROCESS_ADDRESS
-#define HOST_BUFFER_SIZE_PROCESS                                             HCI_DEFAULT_PROCESS_ADDRESS
-#define HOST_NUMBER_OF_COMPLETED_PACKETS_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
-#endif
-
-#if(BLE_SUPPORT_ADV)
+/**************************************** scene cmd process start **************************************************************/
+#if defined(BLE_SUPPORT_ADV) 
 // C.97: Mandatory if Advertising State is supported, otherwise excluded
-#define LE_SET_ADVERTISING_DATA_PROCESS                                      HCI_MANDORY_PROCESS_ADDRESS
-#define LE_SET_ADVERTISING_ENABLE_PROCESS                                    HCI_MANDORY_PROCESS_ADDRESS
-#define LE_SET_ADVERTISING_PARAMETERS_PROCESS                                HCI_MANDORY_PROCESS_ADDRESS
-#define LE_READ_ADVERTISING_PHYSICAL_CHANNEL_TX_POWER_PROCESS                HCI_MANDORY_PROCESS_ADDRESS
+#define LE_SET_ADVERTISING_DATA_PROCESS                                      HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_ADVERTISING_ENABLE_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_ADVERTISING_PARAMETERS_PROCESS                                HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_ADVERTISING_PHYSICAL_CHANNEL_TX_POWER_PROCESS                HCI_DEFAULT_PROCESS_ADDRESS
 // C.15: Mandatory if LE Controller supports transmitting scannable advertisements, otherwise excluded
-#define LE_SET_SCAN_RESPONSE_DATA_PROCESS                                    HCI_MANDORY_PROCESS_ADDRESS
-#else
+#define LE_SET_SCAN_RESPONSE_DATA_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
+
+#if defined(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
+// C.17: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Advertising State, otherwise excluded
+#define LE_CLEAR_ADVERTISING_SETS_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_REMOVE_ADVERTISING_SET_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_ADVERTISING_SET_RANDOM_ADDRESS_PROCESS                        HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_MAXIMUM_ADVERTISING_DATA_LENGTH_PROCESS                      HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_NUMBER_OF_SUPPORTED_ADVERTISING_SETS_PROCESS                 HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_EXTENDED_ADVERTISING_DATA_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_EXTENDED_SCAN_RESPONSE_DATA_PROCESS                           HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_EXTENDED_ADVERTISING_ENABLE_PROCESS                           HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_EXTENDED_ADVERTISING_PARAMETERS_PROCESS                       HCI_DEFAULT_PROCESS_ADDRESS
+
+#if(LL_SUPPORT_ADVERTISING_CODING_SELECTION)
+// C.66: Mandatory if LE Feature (Advertising Coding Selection) is supported
+#define LE_SET_EXTENDED_ADVERTISING_PARAMETERS_V2_PROCESS                    HCI_MANDORY_PROCESS_ADDRESS
+#else//(LL_SUPPORT_ADVERTISING_CODING_SELECTION)
+#define LE_SET_EXTENDED_ADVERTISING_PARAMETERS_V2_PROCESS                    HCI_DEFAULT_PROCESS_ADDRESS
+#endif//(LL_SUPPORT_ADVERTISING_CODING_SELECTION)
+
+#else/*(!LL_SUPPORT_LE_EXTENDED_ADVERTISING)*/
+#define LE_CLEAR_ADVERTISING_SETS_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_REMOVE_ADVERTISING_SET_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_ADVERTISING_SET_RANDOM_ADDRESS_PROCESS                        HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_MAXIMUM_ADVERTISING_DATA_LENGTH_PROCESS                      HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_NUMBER_OF_SUPPORTED_ADVERTISING_SETS_PROCESS                 HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_EXTENDED_ADVERTISING_DATA_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_EXTENDED_SCAN_RESPONSE_DATA_PROCESS                           HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_EXTENDED_ADVERTISING_ENABLE_PROCESS                           HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_EXTENDED_ADVERTISING_PARAMETERS_PROCESS                       HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_EXTENDED_ADVERTISING_PARAMETERS_V2_PROCESS                    HCI_DEFAULT_PROCESS_ADDRESS
+#endif//(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
+
+#else//(BLE_SUPPORT_ADV) 
 #define LE_SET_ADVERTISING_DATA_PROCESS                                      HCI_DEFAULT_PROCESS_ADDRESS
 #define LE_SET_ADVERTISING_ENABLE_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
 #define LE_SET_ADVERTISING_PARAMETERS_PROCESS                                HCI_DEFAULT_PROCESS_ADDRESS
 #define LE_READ_ADVERTISING_PHYSICAL_CHANNEL_TX_POWER_PROCESS                HCI_DEFAULT_PROCESS_ADDRESS
 #define LE_SET_SCAN_RESPONSE_DATA_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
-#endif
+#define LE_CLEAR_ADVERTISING_SETS_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_REMOVE_ADVERTISING_SET_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_ADVERTISING_SET_RANDOM_ADDRESS_PROCESS                        HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_MAXIMUM_ADVERTISING_DATA_LENGTH_PROCESS                      HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_NUMBER_OF_SUPPORTED_ADVERTISING_SETS_PROCESS                 HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_EXTENDED_ADVERTISING_DATA_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_EXTENDED_SCAN_RESPONSE_DATA_PROCESS                           HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_EXTENDED_ADVERTISING_ENABLE_PROCESS                           HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_EXTENDED_ADVERTISING_PARAMETERS_PROCESS                       HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_EXTENDED_ADVERTISING_PARAMETERS_V2_PROCESS                    HCI_DEFAULT_PROCESS_ADDRESS
+#endif//(BLE_SUPPORT_ADV)  
 
-#if(BLE_SUPPORT_SCAN)
+#if(BLE_SUPPORT_SCAN) 
 // C.98: Mandatory if Scanning State is supported, otherwise excluded
 #define LE_SET_SCAN_ENABLE_PROCESS                                           HCI_MANDORY_PROCESS_ADDRESS
 #define LE_SET_SCAN_PARAMETERS_PROCESS                                       HCI_MANDORY_PROCESS_ADDRESS
-#else
+
+#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
+// C.19: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Scanning State, otherwise excluded
+#define LE_SET_EXTENDED_SCAN_ENABLE_PROCESS                                  HCI_MANDORY_PROCESS_ADDRESS
+#define LE_SET_EXTENDED_SCAN_PARAMETERS_PROCESS                              HCI_MANDORY_PROCESS_ADDRESS
+#else/*(!LL_SUPPORT_LE_EXTENDED_ADVERTISING)*/
+#define LE_SET_EXTENDED_SCAN_ENABLE_PROCESS                                  HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_EXTENDED_SCAN_PARAMETERS_PROCESS                              HCI_DEFAULT_PROCESS_ADDRESS
+#endif/*(LL_SUPPORT_LE_EXTENDED_ADVERTISING)*/
+
+#else/*(BLE_SUPPORT_SCAN)*/ 
 #define LE_SET_SCAN_ENABLE_PROCESS                                           HCI_DEFAULT_PROCESS_ADDRESS
 #define LE_SET_SCAN_PARAMETERS_PROCESS                                       HCI_DEFAULT_PROCESS_ADDRESS
-#endif
+#define LE_SET_EXTENDED_SCAN_ENABLE_PROCESS                                  HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_EXTENDED_SCAN_PARAMETERS_PROCESS                              HCI_DEFAULT_PROCESS_ADDRESS
+#endif/*(BLE_SUPPORT_SCAN)*/ 
 
-#if(BLE_SUPPORT_CEN)
+#if(BLE_SUPPORT_CEN) 
 // C.59: Mandatory if the LE Controller supports Central role, otherwise excluded
 #define LE_CREATE_CONNECTION_PROCESS                                         HCI_MANDORY_PROCESS_ADDRESS
 // C.94: Mandatory if the LE Create Connection or LE Extended Create Connection command is supported, otherwise excluded
 #define LE_CREATE_CONNECTION_CANCEL_PROCESS                                  HCI_MANDORY_PROCESS_ADDRESS
-#if(LL_SUPPORT_LE_ENCRYPTION)
-// C.60: Mandatory if the LE Controller supports Central role and LE Feature (LE Encryption), otherwise excluded
-#define LE_ENABLE_ENCRYPTION_PROCESS                                         HCI_MANDORY_PROCESS_ADDRESS
-#else
-#define LE_ENABLE_ENCRYPTION_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
-#endif
 
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
 // C.20: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Initiating State;
@@ -157,13 +175,93 @@
 #define LE_EXTENDED_CREATE_CONNECTION_V2_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
 #endif
 
-
-
+#if(LL_SUPPORT_LE_ENCRYPTION)
+// C.60: Mandatory if the LE Controller supports Central role and LE Feature (LE Encryption), otherwise excluded
+#define LE_ENABLE_ENCRYPTION_PROCESS                                         HCI_MANDORY_PROCESS_ADDRESS
 #else
+#define LE_ENABLE_ENCRYPTION_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
+#endif
+
+#else//(BLE_SUPPORT_CEN) 
 #define LE_CREATE_CONNECTION_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
 #define LE_CREATE_CONNECTION_CANCEL_PROCESS                                  HCI_DEFAULT_PROCESS_ADDRESS
 #define LE_ENABLE_ENCRYPTION_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_EXTENDED_CREATE_CONNECTION_PROCESS                                HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_EXTENDED_CREATE_CONNECTION_V2_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
+#endif//(BLE_SUPPORT_CEN)
+
+#if(BLE_SUPPORT_PER) 
+
+#endif 
+
+#if(BLE_SUPPORT_CONN)
+// C.3: Mandatory if the LE Controller supports Connection State; 
+#define DISCONNECT_PROCESS                                                   HCI_MANDORY_PROCESS_ADDRESS
+#define READ_REMOTE_VERSION_INFORMATION_PROCESS                              HCI_MANDORY_PROCESS_ADDRESS
+#define READ_RSSI_PROCESS                                                    HCI_MANDORY_PROCESS_ADDRESS
+#define READ_TRANSMIT_POWER_LEVEL_PROCESS                                    HCI_MANDORY_PROCESS_ADDRESS
+#define LE_READ_CHANNEL_MAP_PROCESS                                          HCI_MANDORY_PROCESS_ADDRESS
+#define LE_READ_REMOTE_FEATURES_PAGE_0_PROCESS                               HCI_MANDORY_PROCESS_ADDRESS
+#define LE_READ_BUFFER_SIZE_PROCESS                                          HCI_MANDORY_PROCESS_ADDRESS
+// C.96: Optional if the LE Controller supports Connection State, otherwise excluded
+#define SET_CONTROLLER_TO_HOST_FLOW_CONTROL_PROCESS                          HCI_DEFAULT_PROCESS_ADDRESS
+#if(SET_CONTROLLER_TO_HOST_FLOW_CONTROL_PROCESS)
+// C.107: Mandatory if the Set Controller To Host Flow Control command is supported, otherwise excluded
+#define HOST_BUFFER_SIZE_PROCESS                                             HCI_DEFAULT_PROCESS_ADDRESS
+#define HOST_NUMBER_OF_COMPLETED_PACKETS_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
+#else
+#define HOST_BUFFER_SIZE_PROCESS                                             HCI_DEFAULT_PROCESS_ADDRESS
+#define HOST_NUMBER_OF_COMPLETED_PACKETS_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
 #endif
+
+#if(LL_SUPPORT_LE_EXTENDED_FEATURE_SET)
+// C.71: Mandatory if the LE Controller supports Connection State and LE Feature (LL Extended Feature Set), otherwise optional if the LE Controller supports Connection State, otherwise excluded
+#define LE_READ_ALL_REMOTE_FEATURES_PROCESS                                  HCI_MANDORY_PROCESS_ADDRESS
+#else
+#define LE_READ_ALL_REMOTE_FEATURES_PROCESS                                  HCI_DEFAULT_PROCESS_ADDRESS
+#endif
+
+#else
+#define DISCONNECT_PROCESS                                                   HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_REMOTE_VERSION_INFORMATION_PROCESS                              HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_RSSI_PROCESS                                                    HCI_DEFAULT_PROCESS_ADDRESS
+#define READ_TRANSMIT_POWER_LEVEL_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_CHANNEL_MAP_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_REMOTE_FEATURES_PAGE_0_PROCESS                               HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_BUFFER_SIZE_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
+#define SET_CONTROLLER_TO_HOST_FLOW_CONTROL_PROCESS                          HCI_DEFAULT_PROCESS_ADDRESS
+#define HOST_BUFFER_SIZE_PROCESS                                             HCI_DEFAULT_PROCESS_ADDRESS
+#define HOST_NUMBER_OF_COMPLETED_PACKETS_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_ALL_REMOTE_FEATURES_PROCESS                                  HCI_DEFAULT_PROCESS_ADDRESS
+#endif
+
+#if(BLE_SUPPORT_PDA) 
+
+#endif 
+
+#if(BLE_SUPPORT_PDA_SYNC) 
+
+#endif 
+
+#if(BLE_SUPPORT_PAWR) 
+
+#endif 
+
+#if(BLE_SUPPORT_PAWR_SYNC) 
+
+#endif 
+
+#if(BLE_SUPPORT_ISO_CEN) 
+
+#endif 
+
+#if(BLE_SUPPORT_ISO_PER) 
+
+#endif 
+
+/**************************************** scene cmd process end *************************************************************/
+/***************************************** state combination ******************************************************************************/
+
 
 #if(BLE_SUPPORT_PER)
 // C.61: Mandatory if the LE Controller supports Peripheral role and LE Feature (LE Encryption), otherwise excluded
@@ -285,42 +383,7 @@
 #else
 #endif
 
-#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING&&BLE_SUPPORT_ADV)
-// C.17: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Advertising State, otherwise excluded
-#define LE_CLEAR_ADVERTISING_SETS_PROCESS                                    HCI_MANDORY_PROCESS_ADDRESS
-#define LE_REMOVE_ADVERTISING_SET_PROCESS                                    HCI_MANDORY_PROCESS_ADDRESS
-#define LE_SET_ADVERTISING_SET_RANDOM_ADDRESS_PROCESS                        HCI_MANDORY_PROCESS_ADDRESS
-#define LE_READ_MAXIMUM_ADVERTISING_DATA_LENGTH_PROCESS                      HCI_MANDORY_PROCESS_ADDRESS
-#define LE_READ_NUMBER_OF_SUPPORTED_ADVERTISING_SETS_PROCESS                 HCI_MANDORY_PROCESS_ADDRESS
-#define LE_SET_EXTENDED_ADVERTISING_DATA_PROCESS                             HCI_MANDORY_PROCESS_ADDRESS
-#define LE_SET_EXTENDED_SCAN_RESPONSE_DATA_PROCESS                           HCI_MANDORY_PROCESS_ADDRESS
-#define LE_SET_EXTENDED_ADVERTISING_ENABLE_PROCESS                           HCI_MANDORY_PROCESS_ADDRESS
-#define LE_SET_EXTENDED_ADVERTISING_PARAMETERS_PROCESS                       HCI_MANDORY_PROCESS_ADDRESS
-
-#if(LL_SUPPORT_ADVERTISING_CODING_SELECTION)
-// C.66: Mandatory if LE Feature (Advertising Coding Selection) is supported
-#define LE_SET_EXTENDED_ADVERTISING_PARAMETERS_V2_PROCESS                    HCI_MANDORY_PROCESS_ADDRESS
-#else
-#define LE_SET_EXTENDED_ADVERTISING_PARAMETERS_V2_PROCESS                    HCI_DEFAULT_PROCESS_ADDRESS
-#endif
-
-#else
-#define LE_CLEAR_ADVERTISING_SETS_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_REMOVE_ADVERTISING_SET_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_SET_ADVERTISING_SET_RANDOM_ADDRESS_PROCESS                        HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_READ_MAXIMUM_ADVERTISING_DATA_LENGTH_PROCESS                      HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_READ_NUMBER_OF_SUPPORTED_ADVERTISING_SETS_PROCESS                 HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_SET_EXTENDED_ADVERTISING_DATA_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_SET_EXTENDED_SCAN_RESPONSE_DATA_PROCESS                           HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_SET_EXTENDED_ADVERTISING_ENABLE_PROCESS                           HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_SET_EXTENDED_ADVERTISING_PARAMETERS_PROCESS                       HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_SET_EXTENDED_ADVERTISING_PARAMETERS_V2_PROCESS                    HCI_DEFAULT_PROCESS_ADDRESS
-#endif
-
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING&&BLE_SUPPORT_SCAN)
-// C.19: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Scanning State, otherwise excluded
-#define LE_SET_EXTENDED_SCAN_ENABLE_PROCESS                                  HCI_MANDORY_PROCESS_ADDRESS
-#define LE_SET_EXTENDED_SCAN_PARAMETERS_PROCESS                              HCI_MANDORY_PROCESS_ADDRESS
 
 #else
 #define LE_SET_EXTENDED_SCAN_ENABLE_PROCESS                                  HCI_DEFAULT_PROCESS_ADDRESS
@@ -605,9 +668,21 @@
 #else
 #endif
 
-#if(LL_SUPPORT_DECISION_BASED_ADVERTISING_FILTERING)
+#if(LL_SUPPORT_DECISION_BASED_ADVERTISING_FILTERING&&BLE_SUPPORT_SCAN)
+// C.74: Mandatory if LE Feature (Decision-Based Advertising Filtering) is supported and the LE Controller supports Scanning State, otherwise excluded
+#define LE_SET_DECISION_INSTRUCTIONS_PROCESS                                 HCI_DEFAULT_PROCESS_ADDRESS
 #else
+#define LE_SET_DECISION_INSTRUCTIONS_PROCESS                                 HCI_DEFAULT_PROCESS_ADDRESS
 #endif
+
+#if(LL_SUPPORT_DECISION_BASED_ADVERTISING_FILTERING&&BLE_SUPPORT_ADV)
+// C.73: Mandatory if LE Feature (Decision-Based Advertising Filtering) is supported and the LE Controller supports Advertising State, otherwise excluded
+#define LE_SET_DECISION_DATA_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
+#else
+#define LE_SET_DECISION_DATA_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
+#endif
+
+
 
 #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
 // C.67: Mandatory if LE Feature (Periodic Advertising with Responses - Advertiser) is supported
@@ -646,6 +721,14 @@
 #define LE_CS_PROCEDURE_ENABLE_PROCESS                                       HCI_MANDORY_PROCESS_ADDRESS
 #define LE_CS_TEST_PROCESS                                                   HCI_MANDORY_PROCESS_ADDRESS
 #define LE_CS_TEST_END_PROCESS                                               HCI_MANDORY_PROCESS_ADDRESS
+
+#if(BLE_SUPPORT_CEN)
+// C.76: Mandatory if LE Feature (Channel Sounding) and initiator role are supported, otherwise excluded
+#define LE_CS_WRITE_CACHED_REMOTE_FAE_TABLE_PROCESS                          HCI_DEFAULT_PROCESS_ADDRESS
+#else
+// C.76: Mandatory if LE Feature (Channel Sounding) and initiator role are supported, otherwise excluded
+#define LE_CS_WRITE_CACHED_REMOTE_FAE_TABLE_PROCESS                          HCI_DEFAULT_PROCESS_ADDRESS
+#endif
 #else
 #define LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES_PROCESS                      HCI_DEFAULT_PROCESS_ADDRESS
 #define LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_PROCESS                     HCI_DEFAULT_PROCESS_ADDRESS
@@ -660,6 +743,7 @@
 #define LE_CS_PROCEDURE_ENABLE_PROCESS                                       HCI_DEFAULT_PROCESS_ADDRESS
 #define LE_CS_TEST_PROCESS                                                   HCI_DEFAULT_PROCESS_ADDRESS
 #define LE_CS_TEST_END_PROCESS                                               HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_CS_WRITE_CACHED_REMOTE_FAE_TABLE_PROCESS                          HCI_DEFAULT_PROCESS_ADDRESS
 #endif
 
 #if(LL_SUPPORT_CHANNEL_SOUNDING_HOST_SUPPORT)
@@ -671,23 +755,32 @@
 #endif
 
 #if(LL_SUPPORT_LE_EXTENDED_FEATURE_SET)
+// C.70: Mandatory if the LE Controller supports LE Feature (LL Extended Feature Set), otherwise optional
+#define LE_READ_ALL_LOCAL_SUPPORTED_FEATURES_PROCESS                         HCI_MANDORY_PROCESS_ADDRESS
 #else
+#define LE_READ_ALL_LOCAL_SUPPORTED_FEATURES_PROCESS                         HCI_DEFAULT_PROCESS_ADDRESS
 #endif
 
 #if(LL_SUPPORT_MONITORING_ADVERTISERS)
 // C.78: Mandatory if LE Feature (Monitoring Advertisers) is supported, otherwise excluded
-{HCI_LE_ADD_DEVICE_TO_MONITORED_ADVERTISERS_LIST_COMMAND,                     v6_0,          "E",                "C.78"}, 
-{HCI_LE_CLEAR_MONITORED_ADVERTISERS_LIST_COMMAND,                             v6_0,          "E",                "C.78"}, 
-{HCI_LE_READ_MONITORED_ADVERTISERS_LIST_SIZE_COMMAND,                         v6_0,          "E",                "C.78"}, 
-{HCI_LE_REMOVE_DEVICE_FROM_MONITORED_ADVERTISERS_LIST_COMMAND,                v6_0,          "E",                "C.78"}, 
-{HCI_LE_ENABLE_MONITORING_ADVERTISERS_COMMAND,                                v6_0,          "E",                "C.78"}, 
-{HCI_LE_MONITORED_ADVERTISERS_REPORT_EVENT,                                   v6_0,          "E",                "C.78"},
-
+#define LE_ADD_DEVICE_TO_MONITORED_ADVERTISERS_LIST_PROCESS                  HCI_MANDORY_PROCESS_ADDRESS
+#define LE_CLEAR_MONITORED_ADVERTISERS_LIST_PROCESS                          HCI_MANDORY_PROCESS_ADDRESS
+#define LE_READ_MONITORED_ADVERTISERS_LIST_SIZE_PROCESS                      HCI_MANDORY_PROCESS_ADDRESS
+#define LE_REMOVE_DEVICE_FROM_MONITORED_ADVERTISERS_LIST_PROCESS             HCI_MANDORY_PROCESS_ADDRESS
+#define LE_ENABLE_MONITORING_ADVERTISERS_PROCESS                             HCI_MANDORY_PROCESS_ADDRESS
 #else
+#define LE_ADD_DEVICE_TO_MONITORED_ADVERTISERS_LIST_PROCESS                  HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_CLEAR_MONITORED_ADVERTISERS_LIST_PROCESS                          HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_READ_MONITORED_ADVERTISERS_LIST_SIZE_PROCESS                      HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_REMOVE_DEVICE_FROM_MONITORED_ADVERTISERS_LIST_PROCESS             HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_ENABLE_MONITORING_ADVERTISERS_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
 #endif
 
 #if(LL_SUPPORT_FRAME_SPACE_UPDATE)
+// C.79: Mandatory if LE Feature (Frame Space Update) is supported, otherwise excluded
+#define LE_FRAME_SPACE_UPDATE_PROCESS                                        HCI_MANDORY_PROCESS_ADDRESS
 #else
+#define LE_FRAME_SPACE_UPDATE_PROCESS                                        HCI_DEFAULT_PROCESS_ADDRESS
 #endif
 
 /*********************************************** feature combination command supported ******************************************************************************** */
@@ -961,122 +1054,6 @@
 #define WRITE_SIMPLE_PAIRING_DEBUG_MODE_PROCESS                              HCI_DEFAULT_PROCESS_ADDRESS
 #define WRITE_SECURE_CONNECTIONS_TEST_MODE_PROCESS                           HCI_DEFAULT_PROCESS_ADDRESS
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define LE_READ_ALL_LOCAL_SUPPORTED_FEATURES_PROCESS                         HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_READ_ALL_REMOTE_FEATURES_PROCESS                                  HCI_DEFAULT_PROCESS_ADDRESS
-
-#define LE_CS_WRITE_CACHED_REMOTE_FAE_TABLE_PROCESS                          HCI_DEFAULT_PROCESS_ADDRESS
-
-#define LE_SET_DECISION_DATA_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_SET_DECISION_INSTRUCTIONS_PROCESS                                 HCI_DEFAULT_PROCESS_ADDRESS
-
-
-
-#define LE_ENABLE_MONITORING_ADVERTISERS_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_READ_MONITORED_ADVERTISERS_LIST_SIZE_PROCESS                      HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_FRAME_SPACE_UPDATE_PROCESS                                        HCI_DEFAULT_PROCESS_ADDRESS
 /******************************************hci event**********************************************/
 static _u8  hci_event_buffer[256];
 static _u16 hciCommandOpcode; 

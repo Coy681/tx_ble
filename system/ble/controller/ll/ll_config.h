@@ -2,47 +2,51 @@
 #include"../config.h"
 
 /************************* BLE ROLE CONFIGURE *****************************/
-#if(BLE_SUPPORT_ADV) 
+#if defined (BLE_SUPPORT_ADV) 
 
 #endif 
 
-#if(BLE_SUPPORT_SCAN) 
+#if defined(BLE_SUPPORT_SCAN) 
 
 #endif 
 
-#if(BLE_SUPPORT_CEN) 
+#if defined(BLE_SUPPORT_CEN) 
 
 #endif 
 
-#if(BLE_SUPPORT_PER) 
+#if defined(BLE_SUPPORT_PER) 
 
 #endif 
 
-#if(BLE_SUPPORT_PDA) 
+#if defined(BLE_SUPPORT_PDA) 
 
 #endif 
 
-#if(BLE_SUPPORT_PDA_SYNC) 
+#if defined(BLE_SUPPORT_PDA_SYNC) 
 
 #endif 
 
-#if(BLE_SUPPORT_PAWR) 
+#if defined(BLE_SUPPORT_PAWR) 
 
 #endif 
 
-#if(BLE_SUPPORT_PAWR_SYNC) 
+#if defined(BLE_SUPPORT_PAWR_SYNC) 
 
 #endif 
 
-#if(BLE_SUPPORT_ISO_CEN) 
+#if defined(BLE_SUPPORT_ISO_CEN) 
 
 #endif 
 
-#if(BLE_SUPPORT_ISO_PER) 
+#if defined(BLE_SUPPORT_ISO_PER) 
 
 #endif 
 
-#define BLE_SUPPORT_CONN                               (BLE_SUPPORT_CEN|BLE_SUPPORT_PER)
+#if defined(BLE_SUPPORT_CEN)||defined(BLE_SUPPORT_PER)
+#define BLE_SUPPORT_CONN             1
+#endif
+
+
 
 
 /*********************** BLE PROPERTY CONFIGURE ***************************/

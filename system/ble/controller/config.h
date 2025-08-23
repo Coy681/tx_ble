@@ -1,1 +1,6 @@
 
+#define BLE_SUPPORT_ADV   1
+
+#define BLE_SUPPORT_SCAN  0
+
+#define BLE_SUPPORT_EXTENDED_ADVERTISING y
