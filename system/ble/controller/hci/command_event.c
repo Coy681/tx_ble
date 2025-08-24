@@ -499,30 +499,6 @@
 #define LE_SET_PERIODIC_ADVERTISING_RECEIVE_ENABLE_PROCESS                   HCI_DEFAULT_PROCESS_ADDRESS
 #endif/*(BLE_SUPPORT_CONN)*/
 
-#if(BLE_SUPPORT_PDA) 
-
-#endif 
-
-#if(BLE_SUPPORT_PDA_SYNC) 
-
-#endif 
-
-#if(BLE_SUPPORT_PAWR) 
-
-#endif 
-
-#if(BLE_SUPPORT_PAWR_SYNC) 
-
-#endif 
-
-#if(BLE_SUPPORT_ISO_CEN) 
-
-#endif 
-
-#if(BLE_SUPPORT_ISO_PER) 
-
-#endif 
-
 #if defined(BLE_SUPPORT_ISO)
 // C.47: Mandatory if LE Feature (Connected Isochronous Stream - Central), or LE Feature (Connected Isochronous Stream - Peripheral), or LE Feature (Isochronous Broadcaster), or LE Feature (Synchronized Receiver role) is supported, otherwise excluded
 #define LE_REMOVE_ISO_DATA_PATH_PROCESS                                      HCI_MANDORY_PROCESS_ADDRESS
@@ -533,11 +509,9 @@
 #define LE_SETUP_ISO_DATA_PATH_PROCESS                                       HCI_DEFAULT_PROCESS_ADDRESS
 #define LE_ISO_TEST_END_PROCESS                                              HCI_DEFAULT_PROCESS_ADDRESS
 #endif/*(!BLE_SUPPORT_ISO)*/
-
-
 /**************************************** scene cmd process end *************************************************************/
 
-/*************************************** supported feature process cmd start*****************************************************************************************/
+/*************************************** supported feature process cmd start*************************************************/
 
 #if defined(BLE_SUPPORT_ENCRYPTION)
 #define LE_ENCRYPT_PROCESS                                                   HCI_MANDORY_PROCESS_ADDRESS
@@ -719,9 +693,6 @@
 #define WRITE_AFH_CHANNEL_ASSESSMENT_MODE_PROCESS                            HCI_DEFAULT_PROCESS_ADDRESS
 #define READ_AFH_CHANNEL_ASSESSMENT_MODE_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
 #endif
-
-
-
 
 #if defined(BLE_SUPPORT_EXTENDED_FEATURE_SET)
 // C.70: Mandatory if the LE Controller supports LE Feature (LL Extended Feature Set), otherwise optional
