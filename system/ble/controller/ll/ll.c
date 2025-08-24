@@ -298,6 +298,21 @@ controller_error_code_e ll_set_le_event_mask(_u64 eventMask)
 	ll->leEventMask = eventMask;
 	return SUCCESS;
 }
+controller_error_code_e ll_set_random_address(_u8* addr)
+{
+	ll_sm_t* llSm = ll_get_current_state_machine();
+	if(POINTER_VALID(llSm->adv))
+	{
+		if(llSm->adv->param[0].enable)
+		{
+			return COMMAND_DISALLOWED;
+		}
+	}
+	//todo,process initing and scanning
+	ll->addrType = 1;
+	txMemcmp(ll->addr,addr,6);
+
+}
 /*************************************Bluetooth LE Advertising ******************************/
 
 

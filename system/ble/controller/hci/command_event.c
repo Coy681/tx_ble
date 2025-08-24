@@ -25,13 +25,13 @@
 
 
 // C.1: Mandatory if the LE Controller supports transmitting packets; 
-#define LE_SET_RANDOM_ADDRESS_PROCESS                                        HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_RANDOM_ADDRESS_PROCESS                                        le_set_random_address_process
 #define LE_TRANSMITTER_TEST_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
 // C.64: Optional if the Controller supports transmitting packets, otherwise excluded
 #define LE_READ_TRANSMIT_POWER_PROCESS                                       HCI_DEFAULT_PROCESS_ADDRESS
 
 // C.2: Mandatory if the LE Controller supports receiving packets;
-#define LE_RECEIVER_TEST_PROCESS                                             HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_RECEIVER_TEST_PROCESS                                             le_receiver_test_process
 
 // C.37: Mandatory if the LE Controller can change its sleep clock accuracy, otherwise excluded
 #define LE_MODIFY_SLEEP_CLOCK_ACCURACY_PROCESS                               HCI_DEFAULT_PROCESS_ADDRESS
@@ -77,12 +77,12 @@
 /**************************************** ble role cmd process start **************************************************************/
 #if defined(BLE_SUPPORT_ADV) 
 // C.97: Mandatory if Advertising State is supported, otherwise excluded
-#define LE_SET_ADVERTISING_DATA_PROCESS                                      HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_SET_ADVERTISING_ENABLE_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_SET_ADVERTISING_PARAMETERS_PROCESS                                HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_READ_ADVERTISING_PHYSICAL_CHANNEL_TX_POWER_PROCESS                HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_ADVERTISING_DATA_PROCESS                                      le_set_advertising_data_process
+#define LE_SET_ADVERTISING_ENABLE_PROCESS                                    le_set_advertising_enable_process
+#define LE_SET_ADVERTISING_PARAMETERS_PROCESS                                le_set_advertising_parameters_process
+#define LE_READ_ADVERTISING_PHYSICAL_CHANNEL_TX_POWER_PROCESS                le_read_advertising_physical_channel_tx_power_process
 // C.15: Mandatory if LE Controller supports transmitting scannable advertisements, otherwise excluded
-#define LE_SET_SCAN_RESPONSE_DATA_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_SCAN_RESPONSE_DATA_PROCESS                                    le_set_scan_response_data_process
 
 #if defined(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
 // C.17: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Advertising State, otherwise excluded
@@ -1195,23 +1195,136 @@ controller_error_code_e le_read_supported_states_process(_u8* data,_u8 length,bt
     return SUCCESS;
 }
 
-controller_error_code_e hci_le_set_advertising_parameters(_u8* data,_u8 length,bt_hci_event_t** event)
+struct _PACKED le_set_random_address_param_t
 {
-    
-}
-controller_error_code_e hci_le_set_advertising_data(_u8* data,_u8 length,bt_hci_event_t** event)
+    _u8 address[6];
+};
+struct _PACKED le_set_random_address_retParam_t
 {
-    
-}
-controller_error_code_e hci_le_set_scan_response_data(_u8* data,_u8 length,bt_hci_event_t** event)
+    _u8 status;
+};
+
+controller_error_code_e le_set_random_address_process(_u8* data,_u8 length,bt_hci_event_t** event)
 {
-    
-}
-controller_error_code_e hci_le_set_advertising_enable(_u8* data,_u8 length,bt_hci_event_t** event)
-{
-    
+    int status = ll_set_random_address(data);
+    struct le_set_random_address_retParam_t* retParam = \
+    hci_command_complete_event(hciCommandOpcode,sizeof(struct le_set_random_address_retParam_t),event);
+    retParam->status = status;
+    return status;
 }
 
+struct _PACKED le_receiver_test_param_t
+{
+    _u8 chn;
+};
+struct _PACKED le_receiver_test_retParam_t
+{
+    _u8 status;
+};
+controller_error_code_e le_receiver_test_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    //todo,receiver test process
+    struct le_receiver_test_retParam_t* retParam = \
+    hci_command_complete_event(hciCommandOpcode,sizeof(struct le_receiver_test_retParam_t),event);
+    retParam->status = (_u8)SUCCESS;
+    return SUCCESS;
+}
+
+struct _PACKED le_set_advertising_parameters_param_t
+{
+    _u16 intMin;
+    _u16 intMax;
+    _u8  advType;
+    _u8  ownAddrType;
+    _u8  peerAddrType;
+    _u8  peerAddr[6];
+    _u8  chnMap;
+    _u8  filterPolicy;
+};
+struct _PACKED le_set_advertising_parameters_retParam_t
+{
+    _u8 status;
+};
+controller_error_code_e le_set_advertising_parameters_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    struct le_set_advertising_parameters_param_t* param = (struct le_set_advertising_parameters_param_t*)data;
+    _u16 interval = param->intMin;//todo,use ecosystem base interval
+    int status = ll_set_advertising_parameters(interval,param->advType,param->ownAddrType,param->peerAddrType,param->peerAddr,param->chnMap,param->filterPolicy);
+    struct le_set_advertising_parameters_retParam_t* retParam = \
+    hci_command_complete_event(hciCommandOpcode,sizeof(struct le_set_advertising_parameters_retParam_t),event);
+    retParam->status = status;
+    return status;
+}
+
+struct _PACKED le_set_advertising_data_param_t
+{
+    _u8  dataLen;
+    _u8* data;
+};
+struct _PACKED le_set_advertising_data_retParam_t
+{
+    _u8 status;
+};
+controller_error_code_e le_set_advertising_data_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    struct le_set_advertising_data_param_t* param = (struct le_set_advertising_data_param_t*)data;
+    int status = ll_set_advertising_data(param->data,param->dataLen);
+    struct le_set_advertising_data_retParam_t* retParam = \
+    hci_command_complete_event(hciCommandOpcode,sizeof(struct le_set_advertising_data_retParam_t),event);
+    retParam->status = status;
+    return status;
+}
+
+struct _PACKED le_set_scan_response_data_param_t
+{
+    _u8  dataLen;
+    _u8* data;
+};
+struct _PACKED le_set_scan_response_data_retParam_t
+{
+    _u8 status;
+};
+controller_error_code_e le_set_scan_response_data_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    struct le_set_scan_response_data_param_t* param = (struct le_set_scan_response_data_param_t*)data;
+    int status = ll_set_scan_response_data(param->data,param->dataLen);
+    struct le_set_scan_response_data_retParam_t* retParam = \
+    hci_command_complete_event(hciCommandOpcode,sizeof(struct le_set_scan_response_data_retParam_t),event);
+    retParam->status = status;
+    return status;
+}
+
+struct _PACKED le_set_advertising_enable_param_t
+{
+    _u8 enable;
+};
+struct _PACKED le_set_advertising_enable_retParam_t
+{
+    _u8 status;
+};
+controller_error_code_e le_set_advertising_enable_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    struct le_set_advertising_enable_param_t* param = (struct le_set_advertising_enable_param_t*)data;
+    int status = ll_set_advertising_enable(param->enable);
+    struct le_set_advertising_enable_retParam_t* retParam = \
+    hci_command_complete_event(hciCommandOpcode,sizeof(struct le_set_advertising_enable_retParam_t),event);
+    retParam->status = status;
+    return status;
+}
+
+struct _PACKED le_read_advertising_physical_channel_tx_power_retParam_t
+{
+    _u8 status;
+    _u8 txPower;
+};
+controller_error_code_e le_read_advertising_physical_channel_tx_power_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    struct le_read_advertising_physical_channel_tx_power_retParam_t* retParam = \
+    hci_command_complete_event(hciCommandOpcode,sizeof(struct le_read_advertising_physical_channel_tx_power_retParam_t),event);
+    retParam->status  = (_u8)SUCCESS;
+    retParam->txPower = BLE_PHY_DEFAULT_TX_POWER; 
+    return SUCCESS;
+}
 
 struct _PACKED le_set_event_mask_retParam_t
 {
@@ -1312,7 +1425,7 @@ controller_error_code_e read_local_supported_commands_process(_u8* data,_u8 leng
     retParam->commands[0] |= (EXIT_PERIODIC_INQUIRY_MODE_PROCESS ? BIT(3) : 0);
     retParam->commands[0] |= (CREATE_CONNECTION_PROCESS ? BIT(4) : 0);
     retParam->commands[0] |= (DISCONNECT_PROCESS ? BIT(5) : 0);
-    // Octet 0 Bit 6: Previously used (跳过)
+    // Octet 0 Bit 6: Previously used 
     retParam->commands[0] |= (CREATE_CONNECTION_CANCEL_PROCESS ? BIT(7) : 0);
 
     // Octet 1
@@ -1338,15 +1451,15 @@ controller_error_code_e read_local_supported_commands_process(_u8* data,_u8 leng
     // Octet 3
     retParam->commands[3] |= (READ_CLOCK_OFFSET_PROCESS ? BIT(0) : 0);
     retParam->commands[3] |= (READ_LMP_HANDLE_PROCESS ? BIT(1) : 0);
-    // Octet 3 Bits 2-4: Reserved for future use (跳过)
-    // Octet 3 Bits 5-7: Reserved for future use (跳过)
+    // Octet 3 Bits 2-4: Reserved for future use 
+    // Octet 3 Bits 5-7: Reserved for future use 
 
     // Octet 4
-    // Octet 4 Bit 0: Reserved for future use (跳过)
+    // Octet 4 Bit 0: Reserved for future use 
     retParam->commands[4] |= (HOLD_MODE_PROCESS ? BIT(1) : 0);
     retParam->commands[4] |= (SNIFF_MODE_PROCESS ? BIT(2) : 0);
     retParam->commands[4] |= (EXIT_SNIFF_MODE_PROCESS ? BIT(3) : 0);
-    // Octet 4 Bits 4-5: Previously used (跳过)
+    // Octet 4 Bits 4-5: Previously used 
     retParam->commands[4] |= (QOS_SETUP_PROCESS ? BIT(6) : 0);
     retParam->commands[4] |= (ROLE_DISCOVERY_PROCESS ? BIT(7) : 0);
 
@@ -1365,7 +1478,7 @@ controller_error_code_e read_local_supported_commands_process(_u8* data,_u8 leng
     retParam->commands[6] |= (FLUSH_PROCESS ? BIT(1) : 0);
     retParam->commands[6] |= (READ_PIN_TYPE_PROCESS ? BIT(2) : 0);
     retParam->commands[6] |= (WRITE_PIN_TYPE_PROCESS ? BIT(3) : 0);
-    // Octet 6 Bit 4: Previously used (跳过)
+    // Octet 6 Bit 4: Previously used 
     retParam->commands[6] |= (READ_STORED_LINK_KEY_PROCESS ? BIT(5) : 0);
     retParam->commands[6] |= (WRITE_STORED_LINK_KEY_PROCESS ? BIT(6) : 0);
     retParam->commands[6] |= (DELETE_STORED_LINK_KEY_PROCESS ? BIT(7) : 0);
@@ -1387,7 +1500,7 @@ controller_error_code_e read_local_supported_commands_process(_u8* data,_u8 leng
     retParam->commands[8] |= (WRITE_INQUIRY_SCAN_ACTIVITY_PROCESS ? BIT(3) : 0);
     retParam->commands[8] |= (READ_AUTHENTICATION_ENABLE_PROCESS ? BIT(4) : 0);
     retParam->commands[8] |= (WRITE_AUTHENTICATION_ENABLE_PROCESS ? BIT(5) : 0);
-    // Octet 8 Bits 6-7: Previously used (跳过)
+    // Octet 8 Bits 6-7: Previously used 
 
     // Octet 9
     retParam->commands[9] |= (READ_CLASS_OF_DEVICE_PROCESS ? BIT(0) : 0);
@@ -1415,11 +1528,11 @@ controller_error_code_e read_local_supported_commands_process(_u8* data,_u8 leng
     retParam->commands[11] |= (READ_NUMBER_OF_SUPPORTED_IAC_PROCESS ? BIT(2) : 0);
     retParam->commands[11] |= (READ_CURRENT_IAC_LAP_PROCESS ? BIT(3) : 0);
     retParam->commands[11] |= (WRITE_CURRENT_IAC_LAP_PROCESS ? BIT(4) : 0);
-    // Octet 11 Bits 5-6: Previously used (跳过)
-    // Octet 11 Bit 7: Previously used (跳过)
+    // Octet 11 Bits 5-6: Previously used 
+    // Octet 11 Bit 7: Previously used 
 
     // Octet 12
-    // Octet 12 Bit 0: Previously used (跳过)
+    // Octet 12 Bit 0: Previously used 
     retParam->commands[12] |= (SET_AFH_HOST_CHANNEL_CLASSIFICATION_PROCESS ? BIT(1) : 0);
     retParam->commands[12] |= (LE_CS_READ_REMOTE_FAE_TABLE_PROCESS ? BIT(2) : 0);
     retParam->commands[12] |= (LE_CS_WRITE_CACHED_REMOTE_FAE_TABLE_PROCESS ? BIT(3) : 0);
@@ -1433,18 +1546,18 @@ controller_error_code_e read_local_supported_commands_process(_u8* data,_u8 leng
     retParam->commands[13] |= (WRITE_PAGE_SCAN_TYPE_PROCESS ? BIT(1) : 0);
     retParam->commands[13] |= (READ_AFH_CHANNEL_ASSESSMENT_MODE_PROCESS ? BIT(2) : 0);
     retParam->commands[13] |= (WRITE_AFH_CHANNEL_ASSESSMENT_MODE_PROCESS ? BIT(3) : 0);
-    // Octet 13 Bits 4-7: Reserved for future use (跳过)
+    // Octet 13 Bits 4-7: Reserved for future use 
 
     // Octet 14
-    // Octet 14 Bits 0-2: Reserved for future use (跳过)
+    // Octet 14 Bits 0-2: Reserved for future use 
     retParam->commands[14] |= (READ_LOCAL_VERSION_INFORMATION_PROCESS ? BIT(3) : 0);
-    // Octet 14 Bit 4: Reserved for future use (跳过)
+    // Octet 14 Bit 4: Reserved for future use 
     retParam->commands[14] |= (READ_LOCAL_SUPPORTED_FEATURES_PROCESS ? BIT(5) : 0);
     retParam->commands[14] |= (READ_LOCAL_EXTENDED_FEATURES_PROCESS ? BIT(6) : 0);
     retParam->commands[14] |= (READ_BUFFER_SIZE_PROCESS ? BIT(7) : 0);
 
     // Octet 15
-    // Octet 15 Bit 0: Previously used (跳过)
+    // Octet 15 Bit 0: Previously used 
     retParam->commands[15] |= (READ_BD_ADDR_PROCESS ? BIT(1) : 0);
     retParam->commands[15] |= (READ_FAILED_CONTACT_COUNTER_PROCESS ? BIT(2) : 0);
     retParam->commands[15] |= (RESET_FAILED_CONTACT_COUNTER_PROCESS ? BIT(3) : 0);
@@ -1467,7 +1580,7 @@ controller_error_code_e read_local_supported_commands_process(_u8* data,_u8 leng
     retParam->commands[17] |= (READ_EXTENDED_INQUIRY_RESPONSE_PROCESS ? BIT(0) : 0);
     retParam->commands[17] |= (WRITE_EXTENDED_INQUIRY_RESPONSE_PROCESS ? BIT(1) : 0);
     retParam->commands[17] |= (REFRESH_ENCRYPTION_KEY_PROCESS ? BIT(2) : 0);
-    // Octet 17 Bit 3: Reserved for future use (跳过)
+    // Octet 17 Bit 3: Reserved for future use 
     retParam->commands[17] |= (SNIFF_SUBRATING_PROCESS ? BIT(4) : 0);
     retParam->commands[17] |= (READ_SIMPLE_PAIRING_MODE_PROCESS ? BIT(5) : 0);
     retParam->commands[17] |= (WRITE_SIMPLE_PAIRING_MODE_PROCESS ? BIT(6) : 0);

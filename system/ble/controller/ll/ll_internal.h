@@ -283,7 +283,8 @@ typedef struct _PACKED
     _u8      txAddr[128];
     _u8      rxAddr[128];
     _u8      addr[6];
-    _u8      rsvd[2];
+    _u8      addrType;
+    _u8      rsvd;
     _u64     eventMask;
     _u64     leEventMask;
     struct 

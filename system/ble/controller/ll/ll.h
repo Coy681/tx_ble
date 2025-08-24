@@ -88,6 +88,7 @@ void ll_init_state_machine(_u8 number);
 controller_error_code_e ll_reset(void);
 controller_error_code_e ll_set_event_mask(_u64 eventMask);
 controller_error_code_e ll_set_le_event_mask(_u64 eventMask);
+controller_error_code_e ll_set_random_address(_u8* addr);
 void ll_get_feature(_u8* feature,_u8 len);
 
 controller_error_code_e ll_add_device_to_filter_accept_list(_u8 addrType,_u8* addr);

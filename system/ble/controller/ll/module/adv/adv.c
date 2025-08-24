@@ -209,7 +209,7 @@ int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_
             schNode = sch_get_task_list(SCH_CANCELED_LIST);           
         }
 
-
+	    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
         for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
         {
             if(ll->adv->param[i].handle == advParam[i].handle || ll->adv->param[i].handle == 0)
@@ -256,6 +256,7 @@ int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_
                 }
             }
         }
+        #endif
     //end of symbol "reCal"
     _u32 freeBlockCount = 0;
     sch_map_free_slot_t* freeBlock = NULL;
@@ -1092,62 +1093,80 @@ static int adv_event_step_phy_send_scan_rsp(ll_sm_t* ll,ll_internal_adv_param_t*
 _RAM_CODE
 static int adv_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
-	ll->phy.stop();
-    if(advParam->la->availableChnCnt)
-    {
-    	advParam->la->availableChnCnt--;
-    }
-    if(advParam->la->availableChnCnt)
-    {
-        advParam->la->sch.anchorPoint += (advParam->la->sch.duration+advParam->la->sch.stopMargin);
-    }
-    else
-    {
-        advParam->la->availableChnCnt = advParam->la->channelCnt;
-        advParam->la->sch.anchorPoint += (advParam->la->sch.interval + 30*(random_byte()|0x0f));
-        if((advParam->auxiliary == 0)||(advParam->auxiliary&&txCompareTime(advParam->ea->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval)))
-        {
-            ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI);
-        }
-    }
-    adv_get_next_event(ll);
-    adv_sub_node_remap(ll,&currentAdvSet->la->sch);
-    return 1;
+	// ll->phy.stop();
+    // if(advParam->la->availableChnCnt)
+    // {
+    // 	advParam->la->availableChnCnt--;
+    // }
+    // if(advParam->la->availableChnCnt)
+    // {
+    //     advParam->la->sch.anchorPoint += (advParam->la->sch.duration+advParam->la->sch.stopMargin);
+    // }
+    // else
+    // {
+    //     advParam->la->availableChnCnt = advParam->la->channelCnt;
+    //     advParam->la->sch.anchorPoint += (advParam->la->sch.interval + 30*(random_byte()|0x0f));
+    //     if((advParam->auxiliary == 0)||(advParam->auxiliary&&txCompareTime(advParam->ea->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval)))
+    //     {
+    //         ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI);
+    //     }
+    // }
+    // adv_get_next_event(ll);
+    // adv_sub_node_remap(ll,&currentAdvSet->la->sch);
+    // return 1;
 }
 
 _RAM_CODE
 static int adv_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
 
-    _u32 systemTime = system_time();
-    _u32 periodicDiff = (systemTime - advParam->la->sch.anchorPoint)/advParam->la->sch.interval;
-    advParam->la->sch.anchorPoint += (periodicDiff+1)*advParam->la->sch.interval;
-    advParam->la->availableChnCnt = advParam->la->channelCnt;
-    // if((advParam->auxiliary == 0)||(advParam->auxiliary&&txCompareTime(advParam->ea->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval)))
+    // _u32 systemTime = system_time();
+    // _u32 periodicDiff = (systemTime - advParam->la->sch.anchorPoint)/advParam->la->sch.interval;
+    // advParam->la->sch.anchorPoint += (periodicDiff+1)*advParam->la->sch.interval;
+    // advParam->la->availableChnCnt = advParam->la->channelCnt;
+    // // if((advParam->auxiliary == 0)||(advParam->auxiliary&&txCompareTime(advParam->ea->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval)))
+    // // {
+    // //     ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI);
+    // // }
+    // // else if()
+    // // {
+
+    // // }
+    // if(advParam->auxiliary!=0)
+    // {
+    //     if(txCompareTime(advParam->ea->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval))
+    //     {
+            
+    //     }
+    //     else
+    //     {
+    //         ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX);
+    //     }
+    // }
+    // else
     // {
     //     ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI);
     // }
-    // else if()
-    // {
-
-    // }
-    if(advParam->auxiliary!=0)
-    {
-        if(txCompareTime(advParam->ea->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval))
-        {
-            
-        }
-        else
-        {
-            ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX);
-        }
-    }
-    else
-    {
-        ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI);
-    }
 
 
+    // // if(advParam->auxiliary)
+    // // {
+    // //     adv_get_next_event(ll);
+    // // }
+    // // else
+    // // {
+    // //     _u32 systemTime = system_time();
+    // //     _u32 periodicDiff = (systemTime - advParam->la->sch.anchorPoint)/advParam->la->sch.interval;
+    // //     advParam->la->sch.anchorPoint += (periodicDiff+1)*advParam->la->sch.interval;
+    // // }
+    // adv_get_next_event(ll);
+    // adv_sub_node_remap(ll,&currentAdvSet->la->sch);
+    // return 1;
+}
+
+_RAM_CODE
+static int adv_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
+{
     // if(advParam->auxiliary)
     // {
     //     adv_get_next_event(ll);
@@ -1158,27 +1177,9 @@ static int adv_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_t* advPar
     //     _u32 periodicDiff = (systemTime - advParam->la->sch.anchorPoint)/advParam->la->sch.interval;
     //     advParam->la->sch.anchorPoint += (periodicDiff+1)*advParam->la->sch.interval;
     // }
-    adv_get_next_event(ll);
-    adv_sub_node_remap(ll,&currentAdvSet->la->sch);
-    return 1;
-}
-
-_RAM_CODE
-static int adv_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
-{
-    if(advParam->auxiliary)
-    {
-        adv_get_next_event(ll);
-    }
-    else
-    {
-        _u32 systemTime = system_time();
-        _u32 periodicDiff = (systemTime - advParam->la->sch.anchorPoint)/advParam->la->sch.interval;
-        advParam->la->sch.anchorPoint += (periodicDiff+1)*advParam->la->sch.interval;
-    }
-	advParam->la->availableChnCnt = advParam->la->channelCnt;
-    adv_sub_node_remap(ll,&currentAdvSet->la->sch);
-    return 1;
+	// advParam->la->availableChnCnt = advParam->la->channelCnt;
+    // adv_sub_node_remap(ll,&currentAdvSet->la->sch);
+    // return 1;
 }
 
 _RAM_CODE
