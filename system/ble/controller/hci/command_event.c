@@ -1354,6 +1354,18 @@ controller_error_code_e le_test_end_process(_u8* data,_u8 length,bt_hci_event_t*
     return SUCCESS;
 }
 
+// LE_CLEAR_ADVERTISING_SETS_PROCESS
+struct le_clear_advertising_sets_process_retPatam_t
+{
+    /* data */
+};
+controller_error_code_e le_clear_advertising_sets_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+
+}
+
+
+
 //special,should put it last
 /****************************************hci informational parameters command**************************/
 struct _PACKED read_br_addr_retParam_t

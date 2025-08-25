@@ -1093,27 +1093,29 @@ static int adv_event_step_phy_send_scan_rsp(ll_sm_t* ll,ll_internal_adv_param_t*
 _RAM_CODE
 static int adv_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
-	// ll->phy.stop();
-    // if(advParam->la->availableChnCnt)
-    // {
-    // 	advParam->la->availableChnCnt--;
-    // }
-    // if(advParam->la->availableChnCnt)
-    // {
-    //     advParam->la->sch.anchorPoint += (advParam->la->sch.duration+advParam->la->sch.stopMargin);
-    // }
-    // else
-    // {
-    //     advParam->la->availableChnCnt = advParam->la->channelCnt;
-    //     advParam->la->sch.anchorPoint += (advParam->la->sch.interval + 30*(random_byte()|0x0f));
-    //     if((advParam->auxiliary == 0)||(advParam->auxiliary&&txCompareTime(advParam->ea->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval)))
-    //     {
-    //         ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI);
-    //     }
-    // }
-    // adv_get_next_event(ll);
-    // adv_sub_node_remap(ll,&currentAdvSet->la->sch);
-    // return 1;
+	ll->phy.stop();
+    if(advParam->la->availableChnCnt)
+    {
+    	advParam->la->availableChnCnt--;
+    }
+    if(advParam->la->availableChnCnt)
+    {
+        advParam->la->sch.anchorPoint += (advParam->la->sch.duration+advParam->la->sch.stopMargin);
+    }
+    else
+    {
+        advParam->la->availableChnCnt = advParam->la->channelCnt;
+        advParam->la->sch.anchorPoint += (advParam->la->sch.interval + 30*(random_byte()|0x0f));
+        #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
+        if((advParam->auxiliary == 0)||(advParam->auxiliary&&txCompareTime(advParam->ea->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval)))
+        #endif
+        {
+            ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI);
+        }
+    }
+    adv_get_next_event(ll);
+    adv_sub_node_remap(ll,&currentAdvSet->la->sch);
+    return 1;
 }
 
 _RAM_CODE

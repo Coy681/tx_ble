@@ -40,3 +40,25 @@ BLE HCI命令，特别是获取信息类别的命令，可以直接用宏来解�
 # 20250821
 
 判断力，实践性，耐心，见识，希望我的焦虑越来越少
+
+# 20250825
+
+## BLE Active Clock Accuracy
+
+1. 含义：系统在PHY Active状态的时钟精度，从开始收发包到收发包结束之间的PHY活动，称为Active状态
+2. 核心指标
+    - 瞬时抖动在±2us以内
+    - 时钟偏移在±50ppm以内
+## BLE Sleep Clock Accuracy
+1. 含义：系统在PHY Inactive状态的时钟精度，从上一次停止活动到下一次开始活动，称为Sleep状态
+2. 核心指标
+    - 瞬时抖动在±16us以内
+    - 时钟偏移在±500ppm以内
+
+## Window Widen
+
+发射机的绝对时间偏移：
+TransmitterAllowance = (txCA÷1000000)*(receiveWindowEnd - timeOfLastSync) + Jus
+
+window widening = TransmitterAllowance+receiverAllowance
+receiverAllowance悠接收机自己确定
