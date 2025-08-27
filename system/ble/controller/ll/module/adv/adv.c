@@ -93,34 +93,32 @@ static int currentEventClass;
 _RAM_CODE 
 void adv_get_next_event(ll_sm_t* ll)
 {
-	#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING!=1)
-    currentAdvSet = &ll->adv->param[0];
-    currentEventClass = ADV_EVENT;
-	#else
-    _u8  advIndex = 0;
+	#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
     _u32 timestamp = 0; 
     for(_u8 i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
     {
         if((ll->adv->param[i].la->sch.anchorPoint!=0) && (timestamp<ll->adv->param[i].la->sch.anchorPoint))
         {
-            advIndex = i;
             timestamp = ll->adv->param[i].la->sch.anchorPoint;
             currentAdvSet = &ll->adv->param[i];
             currentEventClass = ADV_EVENT;
         }
         if((ll->adv->param[i].ea->sch.anchorPoint!=0) && (timestamp<ll->adv->param[i].ea->sch.anchorPoint))
         {
-            advIndex = i;
             timestamp = ll->adv->param[i].ea->sch.anchorPoint;
             currentAdvSet = &ll->adv->param[i];
             currentEventClass = ADV_EVENT;
         }
     }
     #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
-    #endif
+    #endif/*(LL_SUPPORT_LE_PERIODIC_ADVERTISING)*/
     #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
-    #endif
-	#endif
+    #endif/*(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)*/
+
+	#else/*(!LL_SUPPORT_LE_EXTENDED_ADVERTISING)*/
+    currentAdvSet = &ll->adv->param[0];
+    currentEventClass = ADV_EVENT;
+	#endif/*(LL_SUPPORT_LE_EXTENDED_ADVERTISING)*/
 }
 
 /**
@@ -1021,9 +1019,7 @@ static int adv_event_step_phy_send_advertising(ll_sm_t* ll,ll_internal_adv_param
     }
     advParam->la->sch.eventCnt++;
     advParam->la->phy.chn = advParam->la->chnTable[(advParam->la->sch.eventCnt%advParam->la->channelCnt)];
-    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING!=1)
-    adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_LEG);
-    #else
+    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
     if(advParam->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU)
     {
         adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_LEG);
@@ -1032,7 +1028,8 @@ static int adv_event_step_phy_send_advertising(ll_sm_t* ll,ll_internal_adv_param
     {
         adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_EXT);
     }
-  
+    #else
+    adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_LEG);
     #endif
     adv_prepare_phy(ll,&advParam->la->phy,advParam->la->sch.anchorPoint,PHY_DIR_TX);
     ll->phy.start();
@@ -1321,14 +1318,28 @@ static int adv_extended_event_step_phy_send_aux_connect_rsp(ll_sm_t* ll,ll_inter
 }
 static int adv_extended_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
+    if(!advParam->chained)
+    {
+        ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX);
+    }
+    else
+    {
+        if(advParam->ea->chainInx == (advParam->ea->chainCnt-1))
+        {
+            ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_ALL);
+        }
+    }
+    adv_get_next_event(ll);
 	return 1;
 }
 static int adv_extended_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
+    //todo
 	return 1;
 }
 static int adv_extended_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
 {
+    //todo
 	return 1;
 }
 

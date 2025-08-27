@@ -25,10 +25,6 @@ typedef struct _PACKED{
     _u8 sca:3;
 }init_connectInd_llData_t;
 
-typedef struct _PACKED{
-	_u8 initA[6];
-    _u8 advA[6];
-	_u8 llData[22];
-}init_type_connectInd_t;
+
 
 #endif /* BLE_CONTROLLER_LL_PACKET_FORMAT_CONNPACKET_H_ */

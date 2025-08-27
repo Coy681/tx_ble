@@ -1084,14 +1084,18 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
                 	pAdv->ea->phy.txAddress       = ll_get_shared_phy_tx_address();
                 	if(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_CONNECTED)
                 	{
-
+                		pAdv->ea->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN+pAdv->ea->dataLen,0)+PACKET_DEFAULT_TIFS_TIME\
+												+ll_get_air_packet_time(ll->phy.mode,3+sizeof(scan_type_aux_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME\
+												+ll_get_air_packet_time(ll->phy.mode,3+sizeof(init_type_auxConnectRsp_t),0);
                 	}
                 	else if(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_SCANNABLE)
                 	{
+						pAdv->ea->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN,0)+PACKET_DEFAULT_TIFS_TIME\
+											    +ll_get_air_packet_time(ll->phy.mode,3+sizeof(scan_type_aux_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME\
+												+ll_get_air_packet_time(ll->phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN+pAdv->ea->dataLen,0);
 
                 	}
-                	else if
-                	pAdv->ea->sch.duration        = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,pAdv->ea->dataLen,0)+PACKET_DEFAULT_TIFS_TIME;
+
                     if(POINTER_VALID(pAdv->ea->chain))
                     {
                         for(int i=0;i<pAdv->ea->chainCnt;i++)
@@ -1110,6 +1114,7 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
                             pAdv->ea->chain[i].phy.accessCode = BLE_ADV_ACCESS_CODE;
                             pAdv->ea->chain[i].phy.mode       = pAdv->ea->phy.mode;
                             pAdv->ea->chain[i].phy.txAddress  = ll_get_shared_phy_tx_address();
+							pAdv->ea->chain[i].sch.duration   = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN+pAdv->ea->chain[i].data.len,0)+PACKET_DEFAULT_TIFS_TIME;
                         }
                         pAdv->ea->sch.startMargin     = 100;
                         pAdv->ea->sch.stopMargin      = 100;
