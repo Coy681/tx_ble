@@ -90,25 +90,42 @@ typedef struct
 static ll_internal_adv_param_t* currentAdvSet;
 static int currentEventClass;
 
+_RAM_CODE
+static void adv_sub_node_remap(ll_sm_t* ll,ll_adv_sch_entry_t* advSch)
+{
+    ll->sch.timestamp    = advSch->anchorPoint;
+    ll->sch.duration     = ll->sch.durationMin= advSch->duration;
+    ll->sch.startLatency = advSch->startMargin;
+    ll->sch.stopLatency  = advSch->stopMargin;
+}
+
 _RAM_CODE 
 void adv_get_next_event(ll_sm_t* ll)
 {
 	#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
-    _u32 timestamp = 0; 
+    _u32 timestamp = 0;
     for(_u8 i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
     {
-        if((ll->adv->param[i].la->sch.anchorPoint!=0) && (timestamp<ll->adv->param[i].la->sch.anchorPoint))
-        {
-            timestamp = ll->adv->param[i].la->sch.anchorPoint;
-            currentAdvSet = &ll->adv->param[i];
-            currentEventClass = ADV_EVENT;
-        }
-        if((ll->adv->param[i].ea->sch.anchorPoint!=0) && (timestamp<ll->adv->param[i].ea->sch.anchorPoint))
-        {
-            timestamp = ll->adv->param[i].ea->sch.anchorPoint;
-            currentAdvSet = &ll->adv->param[i];
-            currentEventClass = ADV_EVENT;
-        }
+    	if(POINTER_VALID(ll->adv->param[i].la))
+    	{
+            if((timestamp == 0)||((ll->adv->param[i].la->sch.anchorPoint!=0) && txCompareTime(timestamp,ll->adv->param[i].la->sch.anchorPoint)))
+            {
+                timestamp = ll->adv->param[i].la->sch.anchorPoint|1;
+                currentAdvSet = &ll->adv->param[i];
+                currentEventClass = ADV_EVENT;
+                adv_sub_node_remap(ll,&currentAdvSet->la->sch);
+            }
+    	}
+    	if(POINTER_VALID(ll->adv->param[i].ea))
+    	{
+            if((timestamp == 0)||((ll->adv->param[i].ea->sch.anchorPoint!=0) && txCompareTime(timestamp,ll->adv->param[i].ea->sch.anchorPoint)))
+            {
+                timestamp = ll->adv->param[i].ea->sch.anchorPoint|1;
+                currentAdvSet = &ll->adv->param[i];
+                currentEventClass = ADV_EXTENDED_EVENT;
+                adv_sub_node_remap(ll,&currentAdvSet->ea->sch);
+            }
+    	}
     }
     #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
     #endif/*(LL_SUPPORT_LE_PERIODIC_ADVERTISING)*/
@@ -156,18 +173,12 @@ static void adv_prepare_phy(ll_sm_t* ll,ll_adv_phy_entry_t* phy,_u32 timestamp,p
     }
 }
 
-_RAM_CODE
-static void adv_sub_node_remap(ll_sm_t* ll,ll_adv_sch_entry_t* advSch)
-{
-    ll->sch.timestamp    = advSch->anchorPoint;
-    ll->sch.duration     = ll->sch.durationMin= advSch->duration;
-    ll->sch.startLatency = advSch->startMargin;
-    ll->sch.stopLatency  = advSch->stopMargin;
-}
+
 
 _RAM_CODE
 int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 refStart,_u32 refEnd,_u8 mapType)
 {
+
     _u8  nodeNum    = 0;
     _u8  nodeCount  = 0;
     reCal:
@@ -1111,7 +1122,6 @@ static int adv_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* advParam
         }
     }
     adv_get_next_event(ll);
-    adv_sub_node_remap(ll,&currentAdvSet->la->sch);
     return 1;
 }
 
@@ -1289,8 +1299,10 @@ static int adv_extended_event_step_phy_send_aux_advertising(ll_sm_t* ll,ll_inter
 {
     //prepare packet
     adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_AUX);
+    advParam->ea->phy.chn = 35;//todo
     //prepare phy
     adv_prepare_phy(ll,&advParam->ea->phy,advParam->ea->sch.anchorPoint,PHY_DIR_TX);
+    ll->phy.start();
 	return 1;
 }
 static int adv_extended_event_step_phy_send_chain_advertising(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 property)
@@ -1568,7 +1580,13 @@ static void adv_sch_callback(_u8 type)
     adv_sequence_process(SM_SCH_EVENT,type);
 }
 
-
+//volatile _u32 AAA_Param1;
+//volatile _u32 AAA_Param2;
+//volatile _u32 AAA_Param3;
+//
+//volatile _u32 AAA1_Param1;
+//volatile _u32 AAA1_Param2;
+//volatile _u32 AAA1_Param3;
 int ble_ll_enter_advertising_state(ble_ll_event_e event)
 {
     if(event == BLE_LL_EVENT_START_ADVERTISING)
@@ -1596,6 +1614,14 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
             }
         }
 
+//        AAA_Param1 = ll->adv->param[0].la->sch.anchorPoint;
+//        AAA_Param2 = ll->adv->param[0].la->sch.duration;
+//        AAA_Param3 = ll->adv->param[0].la->sch.interval;
+//
+//        AAA1_Param1 = ll->adv->param[0].ea->sch.anchorPoint;
+//        AAA1_Param2 = ll->adv->param[0].ea->sch.duration;
+//        AAA1_Param3 = ll->adv->param[0].ea->sch.interval;
+//        while(1);
 		#else
         ll_internal_adv_param_t* advParam = &ll->adv->param[0];
 		//state machine init
