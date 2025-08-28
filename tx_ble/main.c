@@ -42,6 +42,104 @@ void trap_entry(void)
 }
 volatile _u32 AAA_FREE_LIST = 0;
 volatile _u32 AAA_FREE_LIST_LEN = 0;
+
+
+void task1_callback(_u8 type);
+sch_node_t aTask1=
+{
+	.llId = 0x66,
+	.type = SCH_PERIODIC_TASK,
+    .priority = SCH_TASK_PRIORITY_A,
+	.timestamp = 0,
+    .period = 20000,
+	.duration = 200,
+	.startLatency = 50,
+	.stopLatency = 50,
+	.cb = task1_callback,
+};
+
+
+_RAM_CODE void task1_callback(_u8 type)
+{
+	if(type == SCH_TASK_START)
+	{
+    	DEBUG_GPIO_HIGH(GPIO_6);
+//		LOG_TRACE(1,"task 1 start",0,0)
+
+	}
+	else if(type == SCH_TASK_STOP)
+	{
+    	DEBUG_GPIO_LOW(GPIO_6);
+		aTask1.timestamp = aTask1.timestamp+aTask1.period;
+//		LOG_TRACE(1,"task 1 stop",0,0)
+	}
+	else if(type == SCH_TASK_CANCELED)
+	{
+    	DEBUG_GPIO_HIGH(GPIO_8);
+    	DEBUG_GPIO_LOW(GPIO_8);
+//    	DEBUG_GPIO_HIGH(GPIO_5);
+
+//		DEBUG_GPIO_LOW(GPIO_5);
+//		LOG_TRACE(1,"task 1 canceled",0,0)
+	}
+	else if(type == SCH_TASK_PASSED)
+	{
+    	DEBUG_GPIO_HIGH(GPIO_9);
+    	DEBUG_GPIO_LOW(GPIO_9);
+//    	DEBUG_GPIO_HIGH(GPIO_6);
+		aTask1.timestamp = system_time()+500;
+//		DEBUG_GPIO_LOW(GPIO_6);
+//		LOG_TRACE(1,"task 1 passed",0,0)
+	}
+}
+
+void task2_callback(_u8 type);
+
+sch_node_t aTask2=
+{
+	.llId = 0x67,
+	.type = SCH_PERIODIC_TASK,
+    .priority = SCH_TASK_PRIORITY_A,
+	.timestamp = 0,
+    .period = 20000,
+	.duration = 200,
+	.startLatency = 50,
+	.stopLatency = 50,
+	.cb = task2_callback,
+};
+
+_RAM_CODE void task2_callback(_u8 type)
+{
+	if(type == SCH_TASK_START)
+	{
+    	DEBUG_GPIO_HIGH(GPIO_7);
+//		LOG_TRACE(1,"task 2 start",0,0)
+
+	}
+	else if(type == SCH_TASK_STOP)
+	{
+    	DEBUG_GPIO_LOW(GPIO_7);
+    	aTask2.timestamp = aTask2.timestamp+aTask1.period;
+//		LOG_TRACE(1,"task 2 stop",0,0)
+	}
+	else if(type == SCH_TASK_CANCELED)
+	{
+    	DEBUG_GPIO_HIGH(GPIO_10);
+    	DEBUG_GPIO_LOW(GPIO_10);
+		aTask2.priority++;
+//		LOG_TRACE(1,"task 2 canceled",0,0)
+	}
+	else if(type == SCH_TASK_PASSED)
+	{
+    	DEBUG_GPIO_HIGH(GPIO_11);
+    	DEBUG_GPIO_LOW(GPIO_11);
+		aTask2.timestamp = system_time()+500;
+//		LOG_TRACE(1,"task 2 passed",0,0)
+	}
+
+}
+
+
 void app_rx_cmd(_u8* data,_u32 len)
 {
 	LOG_TRACE(1,"rx data",data,len)
@@ -104,6 +202,37 @@ void app_rx_cmd(_u8* data,_u32 len)
 	 										   &advEnable);
 	 		LOG_TRACE(1,"set adv enable",&status,4)
 	 		break;
+	 	case 5:
+
+			{
+		 		_u8* message = tx_message_allocate(8);
+		 		message[0] = SCHE_MESSAGE_TASK_ADD;
+		 		message[1] = ((_u32)&aTask1);
+		 		message[2] = ((_u32)&aTask1)>>8;
+		 		message[3] = ((_u32)&aTask1)>>16;
+		 		message[4] = ((_u32)&aTask1)>>24;
+		 		tx_message_send(TX_TASK_ID_SCH,message);
+		 		LOG_TRACE(1,"task add",&status,4)
+			}
+
+	 		break;
+	 	case 6:
+
+			{
+		 		_u8* message = tx_message_allocate(8);
+		 		message[0] = SCHE_MESSAGE_TASK_ADD;
+		 		message[1] = ((_u32)&aTask2);
+		 		message[2] = ((_u32)&aTask2)>>8;
+		 		message[3] = ((_u32)&aTask2)>>16;
+		 		message[4] = ((_u32)&aTask2)>>24;
+		 		tx_message_send(TX_TASK_ID_SCH,message);
+		 		LOG_TRACE(1,"task add",&status,4)
+			}
+
+	 		break;
+
+
+
 	 	default:
 	 		break;
 	 }
