@@ -152,6 +152,7 @@ static void adv_prepare_phy(ll_sm_t* ll,ll_adv_phy_entry_t* phy,_u32 timestamp,p
     ll->phy.chnIdx     = phy->chn;
     ll->phy.dir        = phydir;
 
+
     if(timestamp!=0)
     {
         ll->phy.timestamp  = timestamp - ll->phy.hw_get_prepare_time();
@@ -160,7 +161,6 @@ static void adv_prepare_phy(ll_sm_t* ll,ll_adv_phy_entry_t* phy,_u32 timestamp,p
     {
         ll->phy.timestamp  = system_time();
     }
-
     if(phydir == PHY_DIR_TX)
     {
         ll->phy.txAddress   = phy->txAddress;
@@ -1110,7 +1110,7 @@ static int adv_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* advParam
     }
     if(advParam->la->availableChnCnt)
     {
-        advParam->la->sch.anchorPoint += (advParam->la->sch.duration+advParam->la->sch.stopMargin);
+        advParam->la->sch.anchorPoint += (advParam->la->sch.duration+advParam->la->sch.stopMargin + advParam->la->sch.startMargin);
     }
     else
     {
