@@ -356,6 +356,7 @@ _u16 adv_calculate_extended_header_length(_u8 flags)
     {
         extHdLen+=sizeof(adv_extended_header_subfield_Tx_Power_t);
     }
+    return extHdLen;
 }
 
 typedef struct 
@@ -475,6 +476,7 @@ static void adv_ext_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advPara
     _u16 headerLen = adv_calculate_extended_header_length(flags);
     _u8* packet = ll_get_adv_packet(advParam->ea->phy.txAddress,headerLen,LL_ADV_TYPE_ADV_EXT_IND,0,advParam->ownAddressType?1:0,0);
     adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo);
+
 }
 //LL_ADV_TYPE_AUX_ADV_IND
 static void adv_aux_adv_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo)
