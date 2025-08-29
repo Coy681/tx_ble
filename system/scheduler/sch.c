@@ -287,7 +287,10 @@ _RAM_CODE static void sch_timer_start(void)
         	if(conflict == SCH_START_AFTER_END_AFTER)
         	{
         		schCtrl.pRunningTask->next = schCtrl.pWaitingList->next;
-        		schCtrl.pRunningTask = schCtrl.pWaitingList;
+        		schCtrl.pWaitingList->next = schCtrl.pRunningTask;
+        		schCtrl.pRunningTask = NULL;
+            	_u32 startTime = TASK_START_TIME(schCtrl.pWaitingList) - TASK_SCH_PROCESS_TIME;
+            	hal_stimer_set_capture(startTime);
         	}
         	else
         	{

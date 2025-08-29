@@ -158,7 +158,7 @@ void app_rx_cmd(_u8* data,_u32 len)
 	 	.peerAddrType           = LL_PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,
 	 	.peerAddr               = {0x00,0x00,0x00,0x00,0x00,0x00},
 	 	.scanReqNotifyEnable    = 0,
-	 	.primaryAdvInterval     = 32,
+	 	.primaryAdvInterval     = 160,
 	 	.primaryAdvChnMap       = LL_ADV_CHN_37|LL_ADV_CHN_38|LL_ADV_CHN_39,
 	 	.primaryAdvPhy          = LL_ADV_PHY_1M,
 	 	.primaryAdvphyOptions   = 0,
