@@ -104,7 +104,6 @@ typedef struct
     _u32 startMargin;
     _u32 stopMargin;
     _u32 interval;
-    _u32 eventCnt;
 }ll_adv_sch_entry_t;
 
 typedef struct 
@@ -137,6 +136,7 @@ typedef struct
     _u8  channelCnt:2;//total adv channel count,max 3,min 1
     _u8  availableChnCnt:2;//max is channelCnt
     _u8  chnTable[3];
+    _u32 eventCnt;
     ll_adv_sch_entry_t  sch;
     ll_adv_phy_entry_t  phy;
 }ll_adv_set_t;
@@ -153,15 +153,14 @@ typedef struct
     _u8  scanReqNotifyEnable:2;
     _u8  advDatafragPerf:1;//fragment preference
     _u8  scanRspDatafragPerf:1;//fragment preference
-    _u8  auxFix;
-    _u8  chainInx:3;
-    _u8  chainCnt;
-    _u8  dataLen;
-
+    _u8  auxFix:1;
+    _u8  phyMode:3;
+    _u8  currentChain:4;
+    _u8  chainCnt:4;
+    _u8  rsvd;
     _u32 expireTime;//unit is us
-
-    ll_adv_sch_entry_t sch;
-    ll_adv_phy_entry_t phy;
+    _u32 anchor;
+    _u32 eventCnt;
     ll_adv_ea_chain_t* chain;
 }ll_adv_ea_set_t;
 

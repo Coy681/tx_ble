@@ -555,25 +555,25 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 			if(pParam->secondaryAdvphyOptions == LL_ADV_PHY_OPTIONS_PREFER_S2||\
 			pParam->secondaryAdvphyOptions == LL_ADV_PHY_OPTIONS_REQUIRE_S2)
 			{
-				pAdv->ea->phy.mode = PHY_MODE_CODED_S2;
+				pAdv->ea->phyMode = PHY_MODE_CODED_S2;
 			}
 			else if(pParam->secondaryAdvphyOptions == LL_ADV_PHY_OPTIONS_PREFER_S8||\
 					pParam->secondaryAdvphyOptions == LL_ADV_PHY_OPTIONS_REQUIRE_S8)
 			{
-				pAdv->ea->phy.mode = (_u8)PHY_MODE_CODED_S8;
+				pAdv->ea->phyMode = (_u8)PHY_MODE_CODED_S8;
 			}
 			else
 			{
-				pAdv->ea->phy.mode = (_u8)PHY_MODE_CODED_S8;
+				pAdv->ea->phyMode = (_u8)PHY_MODE_CODED_S8;
 			}
 		}
 		else if(pParam->secondaryAdvPhy == LL_ADV_PHY_1M)
 		{
-			pAdv->ea->phy.mode = PHY_MODE_1M;
+			pAdv->ea->phyMode = PHY_MODE_1M;
 		}
 		else 
 		{
-			pAdv->ea->phy.mode = PHY_MODE_2M;
+			pAdv->ea->phyMode = PHY_MODE_2M;
 		}
 	}
 	if(pParam->primaryAdvPhy == LL_ADV_PHY_CODED)
@@ -663,7 +663,7 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 	}
 	if(!(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU))
 	{
-		if(ll_get_air_packet_time(pAdv->ea->phy.mode,dataLen,0)>(pAdv->la->sch.interval*3/4))
+		if(ll_get_air_packet_time(pAdv->ea->phyMode,dataLen,0)>(pAdv->la->sch.interval*3/4))
 		{
 			return PACKET_TOO_LONG;
 		}
@@ -676,7 +676,7 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 			dataFillOffset = 0;
 			return MEMORY_CAPACITY_EXCEEDED;
 		}
-		if(ll_get_air_packet_time(pAdv->ea->phy.mode,dataFillOffset+dataLen,0)>(pAdv->la->sch.interval*3/4))
+		if(ll_get_air_packet_time(pAdv->ea->phyMode,dataFillOffset+dataLen,0)>(pAdv->la->sch.interval*3/4))
 		{
 			dataFillOffset = 0;
 			return PACKET_TOO_LONG;
@@ -743,23 +743,28 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 	}
 	if((!(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU))&&(operation == LL_ADV_DATA_OPERATION_LAST_FRAGMENT||operation == LL_ADV_DATA_OPERATION_COMPLETE))
 	{
+		if(POINTER_VALID(pAdv->ea->chain))
+		{
+			tx_free((_u8*)pAdv->ea->chain);
+		}
 		//process data fragment
 		if(pAdv->data.len<=(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN))
 		{
-			pAdv->ea->dataLen = pAdv->data.len;
-			pAdv->ea->chainCnt= 0;
+			pAdv->ea->chainCnt= 1;//only aux packet exist
+			pAdv->ea->chain   = (ll_adv_ea_chain_t*)tx_malloc(sizeof(ll_adv_ea_chain_t));
+			pAdv->ea->chain[0].data.len = pAdv->data.len;
+			pAdv->ea->chain[0].data.addr= pAdv->data.addr;
 		}
 		else
 		{
 			pAdv->chained     = 1;
-			pAdv->ea->dataLen = BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN;
-			_u8 remainCnt     = ((pAdv->data.len-pAdv->ea->dataLen)%BLE_ADV_SEC_PHY_MAX_TX_LEN);
-			_u8 chainCnt      = ((pAdv->data.len-pAdv->ea->dataLen)/BLE_ADV_SEC_PHY_MAX_TX_LEN + (remainCnt==0?0:1));
+			_u8 remainLen     = ((pAdv->data.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))%BLE_ADV_SEC_PHY_MAX_TX_LEN;
+			_u8 chainCnt      = ((pAdv->data.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))/BLE_ADV_SEC_PHY_MAX_TX_LEN + (remainLen==0?1:2);
 			pAdv->ea->chainCnt= chainCnt;
 			pAdv->ea->chain   = (ll_adv_ea_chain_t*)tx_malloc(chainCnt*sizeof(ll_adv_ea_chain_t));
-			_u16 offset       = pAdv->ea->dataLen;
-			_u8 remainLen     = pAdv->data.len-pAdv->ea->dataLen - BLE_ADV_SEC_PHY_MAX_TX_LEN*(chainCnt-1);
-			for(_u8 i=0;i<chainCnt-1;i++)
+			pAdv->ea->chain[0].data.len = BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN;
+			_u16 offset       = pAdv->ea->chain[0].data.len;
+			for(_u8 i=1;i<chainCnt-1;i++)
 			{
 				pAdv->ea->chain[i].data.len = BLE_ADV_SEC_PHY_MAX_TX_LEN;
 				pAdv->ea->chain[i].data.addr= (pAdv->data.addr+offset);
@@ -833,7 +838,7 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 	}
 	if(!(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU))
 	{
-		if(ll_get_air_packet_time(pAdv->ea->phy.mode,dataLen,0)>(pAdv->la->sch.interval*3/4))
+		if(ll_get_air_packet_time(pAdv->ea->phyMode,dataLen,0)>(pAdv->la->sch.interval*3/4))
 		{
 			return PACKET_TOO_LONG;
 		}
@@ -846,7 +851,7 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 			dataFillOffset = 0;
 			return MEMORY_CAPACITY_EXCEEDED;
 		}
-		if(ll_get_air_packet_time(pAdv->ea->phy.mode,dataFillOffset+dataLen,0)>(pAdv->la->sch.interval*3/4))
+		if(ll_get_air_packet_time(pAdv->ea->phyMode,dataFillOffset+dataLen,0)>(pAdv->la->sch.interval*3/4))
 		{
 			return PACKET_TOO_LONG;
 		}
@@ -897,20 +902,21 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 		//process data fragment
 		if(pAdv->scanRsp.len<=(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN))
 		{
-			pAdv->ea->dataLen = pAdv->scanRsp.len;
-			pAdv->ea->chainCnt= 0;
+			pAdv->ea->chainCnt= 1;//only aux packet exist
+			pAdv->ea->chain   = (ll_adv_ea_chain_t*)tx_malloc(sizeof(ll_adv_ea_chain_t));
+			pAdv->ea->chain[0].data.len = pAdv->scanRsp.len;
+			pAdv->ea->chain[0].data.addr= pAdv->scanRsp.addr;
 		}
 		else
 		{
 			pAdv->chained     = 1;
-			pAdv->ea->dataLen = BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN;
-			_u8 remainCnt     = ((pAdv->scanRsp.len-pAdv->ea->dataLen)%BLE_ADV_SEC_PHY_MAX_TX_LEN);
-			_u8 chainCnt      = ((pAdv->scanRsp.len-pAdv->ea->dataLen)/BLE_ADV_SEC_PHY_MAX_TX_LEN + (remainCnt==0?0:1));
+			_u8 remainLen     = ((pAdv->scanRsp.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))%BLE_ADV_SEC_PHY_MAX_TX_LEN;
+			_u8 chainCnt      = ((pAdv->scanRsp.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))/BLE_ADV_SEC_PHY_MAX_TX_LEN + (remainLen==0?1:2);
 			pAdv->ea->chainCnt= chainCnt;
 			pAdv->ea->chain   = (ll_adv_ea_chain_t*)tx_malloc(chainCnt*sizeof(ll_adv_ea_chain_t));
-			_u16 offset       = pAdv->ea->dataLen;
-			_u8 remainLen     = pAdv->scanRsp.len-pAdv->ea->dataLen - BLE_ADV_SEC_PHY_MAX_TX_LEN*(chainCnt-1);
-			for(_u8 i=0;i<chainCnt-1;i++)
+			pAdv->ea->chain[0].data.len = BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN;
+			_u16 offset       = pAdv->ea->chain[0].data.len;
+			for(_u8 i=1;i<chainCnt-1;i++)
 			{
 				pAdv->ea->chain[i].data.len = BLE_ADV_SEC_PHY_MAX_TX_LEN;
 				pAdv->ea->chain[i].data.addr= (pAdv->scanRsp.addr+offset);
@@ -918,6 +924,7 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 			}
 			pAdv->ea->chain[chainCnt-1].data.len = remainLen;
 			pAdv->ea->chain[chainCnt-1].data.addr= (pAdv->scanRsp.addr+offset);
+
 		}	
 	}
 	pAdv->ea->scanRspDatafragPerf = fragPref;
@@ -1011,7 +1018,7 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 					if(pEnableSubFiled[i].maxEvents!=0)
 					{
 						ll->adv->param[i].ea->maxEvents    = pEnableSubFiled[i].maxEvents;
-						ll->adv->param[i].ea->sch.eventCnt = 0;
+						ll->adv->param[i].ea->eventCnt = 0;
 					}
 					else
 					{
@@ -1039,7 +1046,7 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 			if(pEnableSubFiled[i].maxEvents!=0)
 			{
 				pAdv->ea->maxEvents    = pEnableSubFiled[i].maxEvents;
-				pAdv->ea->sch.eventCnt = 0;
+				pAdv->ea->eventCnt = 0;
 			}
 			else
 			{
@@ -1056,7 +1063,7 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 				//la sch init
 				pAdv->la->availableChnCnt = 0;
 				pAdv->la->availableChnCnt = pAdv->la->channelCnt;
-				pAdv->la->sch.eventCnt    = 0;
+				pAdv->la->eventCnt    = 0;
 				pAdv->la->sch.startMargin = 100;
 				pAdv->la->sch.stopMargin  = 100;
 		        phy_obj_cast(&ll->phy);
@@ -1074,34 +1081,37 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
                 }
                 else
                 {
+					if(POINTER_NOT_VALID(pAdv->ea->chain))
+					{
+						pAdv->ea->chain    = (ll_adv_ea_chain_t*)tx_malloc(sizeof(ll_adv_ea_chain_t));
+						pAdv->ea->chainCnt = 1;
+					}
                 	pAdv->la->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+PACKET_DEFAULT_TIFS_TIME;
                     //ea sch and phy init
-
-                	pAdv->ea->phy.crcInit         = BLE_ADV_CRC_INIT;
-                	pAdv->ea->phy.accessCode      = BLE_ADV_ACCESS_CODE;
-                	pAdv->ea->phy.rxMaxOctets     = BLE_ADV_SEC_PHY_MAX_TX_LEN;
-                	pAdv->ea->phy.rxAddress       = ll_get_shared_phy_rx_address();
-                	pAdv->ea->phy.txAddress       = ll_get_shared_phy_tx_address();
                 	if(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_CONNECTED)
                 	{
-                		pAdv->ea->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN+pAdv->ea->dataLen,0)+PACKET_DEFAULT_TIFS_TIME\
-												+ll_get_air_packet_time(ll->phy.mode,3+sizeof(scan_type_aux_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME\
-												+ll_get_air_packet_time(ll->phy.mode,3+sizeof(init_type_auxConnectRsp_t),0);
-                	}
-                	else if(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_SCANNABLE)
+						pAdv->ea->chain[0].sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN+pAdv->ea->chain[0].data.len,0)+PACKET_DEFAULT_TIFS_TIME\
+												        + ll_get_air_packet_time(ll->phy.mode,3+sizeof(scan_type_aux_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME\
+												        + ll_get_air_packet_time(ll->phy.mode,3+sizeof(init_type_auxConnectRsp_t),0);
+					}
+					else if(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_SCANNABLE)
                 	{
-						pAdv->ea->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN,0)+PACKET_DEFAULT_TIFS_TIME\
-											    +ll_get_air_packet_time(ll->phy.mode,3+sizeof(scan_type_aux_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME\
-												+ll_get_air_packet_time(ll->phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN+pAdv->ea->dataLen,0);
-
-                	}
-
-                    if(POINTER_VALID(pAdv->ea->chain))
+						pAdv->ea->chain[0].sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN,0)+PACKET_DEFAULT_TIFS_TIME\
+											            + ll_get_air_packet_time(ll->phy.mode,3+sizeof(scan_type_aux_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME\
+												        + ll_get_air_packet_time(ll->phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN+pAdv->ea->chain[0].data.len,0);
+					}
+                	pAdv->ea->chain[0].phy.crcInit         = BLE_ADV_CRC_INIT;
+                	pAdv->ea->chain[0].phy.accessCode      = BLE_ADV_ACCESS_CODE;
+                	pAdv->ea->chain[0].phy.rxMaxOctets     = BLE_ADV_SEC_PHY_MAX_TX_LEN;
+                	pAdv->ea->chain[0].phy.rxAddress       = ll_get_shared_phy_rx_address();
+                	pAdv->ea->chain[0].phy.txAddress       = ll_get_shared_phy_tx_address();
+					pAdv->ea->chain[0].phy.mode            = pAdv->ea->phyMode;
+					pAdv->ea->eventCnt = 0;
+                    if(pAdv->chained)
                     {
                         for(int i=0;i<pAdv->ea->chainCnt;i++)
                         {
                         	pAdv->ea->chain[i].sch.startMargin = 100;
-                        	pAdv->ea->chain[i].sch.eventCnt    = 0;
                             if(i==pAdv->ea->chainCnt)
                             {
                             	pAdv->ea->chain[i].sch.stopMargin  = 200;
@@ -1112,17 +1122,17 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
                             }
                             pAdv->ea->chain[i].phy.crcInit    = BLE_ADV_CRC_INIT;
                             pAdv->ea->chain[i].phy.accessCode = BLE_ADV_ACCESS_CODE;
-                            pAdv->ea->chain[i].phy.mode       = pAdv->ea->phy.mode;
+                            pAdv->ea->chain[i].phy.mode       = pAdv->ea->phyMode;
                             pAdv->ea->chain[i].phy.txAddress  = ll_get_shared_phy_tx_address();
 							pAdv->ea->chain[i].sch.duration   = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN+pAdv->ea->chain[i].data.len,0)+PACKET_DEFAULT_TIFS_TIME;
                         }
-                        pAdv->ea->sch.startMargin     = 100;
-                        pAdv->ea->sch.stopMargin      = 100;
+                        pAdv->ea->chain[pAdv->ea->chainCnt-1].sch.startMargin     = 100;
+                        pAdv->ea->chain[pAdv->ea->chainCnt-1].sch.stopMargin      = 100;
                     }
                     else
                     {
-                    	pAdv->ea->sch.startMargin     = 100;
-                    	pAdv->ea->sch.stopMargin      = 200;//shall location the next event
+                    	pAdv->ea->chain[0].sch.startMargin     = 100;
+                    	pAdv->ea->chain[0].sch.stopMargin      = 200;//shall location the next event
                     }
                 }
 
