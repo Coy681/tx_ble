@@ -107,15 +107,8 @@
 #define BLE_PHY_DEFAULT_TX_POWER                       0
 #endif
 
-#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING!=1)
-#ifndef BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS
-#define BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS           1//fixed value,not configurable
-#endif
+#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
 
-#ifndef BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH
-#define BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH        31//fixed value,not configurable
-#endif
-#else
 #ifndef BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS 
 #define BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS           4
 #endif
@@ -124,4 +117,12 @@
 #define BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH        512
 #endif
 
+#else/*(!LL_SUPPORT_LE_EXTENDED_ADVERTISING)*/
+#ifndef BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS
+#define BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS           1//fixed value,not configurable
 #endif
+
+#ifndef BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH
+#define BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH        31//fixed value,not configurable
+#endif
+#endif/*(LL_SUPPORT_LE_EXTENDED_ADVERTISING)*/

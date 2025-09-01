@@ -169,7 +169,12 @@ typedef struct
 #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
 typedef struct 
 {
-
+    _u8 enable:1;
+    _u8 includeTxPower:1;
+    _u8 rsvd:6;
+    ll_adv_data_entry_t data; 
+    ll_adv_sch_entry_t  sch;
+    ll_adv_phy_entry_t  phy; 
 }ll_adv_pa_set_t;
 #endif
 
@@ -185,20 +190,26 @@ typedef struct
 {
     _u8  enable:1;
     _u8  state:5;//state machine sate
+    _u8  rsvd0:2;
     _u8  eventType:4;//adv event type,search"adv_event_type_e"
     _u8  processingEvent:4;//to prevent re-retrance
     #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
     _u8  handle;
     _u8  auxiliary:1;
     _u8  chained:1;
-    _u16 eventProperty;
-    #else
+    _u8  paIndex:1;
+    _u8  pawrIndex:1;
     _u8  rsvd1;
+
+    _u16 eventProperty;
+    _u8  rsvd2;
+    #else
+    _u8  rsvd2;
     #endif
     _u8  ownAddressType:2;//'ll_own_address_type_e'
     _u8  peerAddressType:2;//'ll_peer_address_type_e'
     _u8  filterPolicy:2;//'ll_advertising_filter_policy_e'
-    _u8  rsvd2:2;
+    _u8  rsvd3:2;
 
     _u8  peerAddress[6];
     _u8  randomAddress[6];

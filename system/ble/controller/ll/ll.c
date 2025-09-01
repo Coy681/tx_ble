@@ -1253,4 +1253,128 @@ controller_error_code_e ll_clear_advertising_sets(void)
 	return SUCCESS;
 }
 
-#endif/*(LL_SUPPORT_LE_EXTENDED_ADVERTISING!=1)*/
+#endif/*(LL_SUPPORT_LE_EXTENDED_ADVERTISING)*/
+
+#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
+
+controller_error_code_e ll_set_periodic_advertising_paramters(_u8 advHandle,_u8 interval,_u16 property)
+{
+	ll_internal_adv_param_t* pAdv = ll_extended_adv_get_entity(advHandle,0);
+	if(POINTER_NOT_VALID(pAdv))
+	{
+		return UNKNOWN_ADVERTISING_IDENTIFIER;
+	}
+	if(POINTER_NOT_VALID(pAdv->pa))
+	{
+		pAdv->pa = (ll_adv_pa_set_t*)tx_malloc(sizeof(ll_adv_pa_set_t));
+	}
+	if(property&LL_ADV_EVENT_PROPERTY_INCLUDE_TX_POWER)
+	{
+		pAdv->pa->includeTxPower = 1;
+	}
+	pAdv->pa->sch.interval = 1250*interval;
+	pAdv->paIndex = 1;
+	return SUCCESS;
+}
+
+controller_error_code_e ll_set_periodic_advertising_data(_u8 advHandle,ll_advertising_data_operation_e operation,_u8 dataLen,_u8* data)
+{
+	ll_internal_adv_param_t* pAdv = ll_extended_adv_get_entity(advHandle,0);
+	if(POINTER_NOT_VALID(pAdv))
+	{
+		return UNKNOWN_ADVERTISING_IDENTIFIER;
+	}
+	if(pAdv->paIndex == 0 || pAdv->pawrIndex == 1)
+	{
+		return COMMAND_DISALLOWED;
+	}
+	static _u32 dataFillOffset = 0;
+	if(dataLen > BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH || (dataLen+dataFillOffset>BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH))
+	{
+		return MEMORY_CAPACITY_EXCEEDED;
+	}
+	if(ll_get_air_packet_time(pAdv->ea->phyMode,dataFillOffset+dataLen,0)>(pAdv->pa->sch.interval*3/4))
+	{
+		return PACKET_TOO_LONG;
+	}
+	if(operation == LL_ADV_DATA_OPERATION_UNCHANGED)
+	{
+		if(pAdv->pa->enable == 0\
+		||POINTER_NOT_VALID(pAdv->pa->data.addr)\
+	    ||pAdv->pa->data.len==0\
+	    ||dataLen!=0)
+		{
+			return IVALID_HCI_COMMAND_PARAMETERS;
+		}
+	}
+	if(dataLen==0\
+	&&(operation!=LL_ADV_DATA_OPERATION_COMPLETE)\
+	&&(operation!=LL_ADV_DATA_OPERATION_UNCHANGED))
+	{
+		return IVALID_HCI_COMMAND_PARAMETERS;
+	}
+	if(pAdv->pa->enable\
+	&&(operation!=LL_ADV_DATA_OPERATION_COMPLETE)\
+	&&(operation!=LL_ADV_DATA_OPERATION_UNCHANGED))
+	{
+		return COMMAND_DISALLOWED;
+	}
+	if(POINTER_NOT_VALID(pAdv->pa->data.addr))
+	{
+		if(operation == LL_ADV_DATA_OPERATION_COMPLETE)
+		{
+			pAdv->pa->data.addr = tx_malloc(dataLen);
+		}
+		else
+		{
+			pAdv->pa->data.addr = tx_malloc(BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH);
+		}
+	}
+	switch(operation)
+	{
+		case LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT:
+		{
+			txMemcpy4(pAdv->pa->data.addr+dataFillOffset,data,dataLen);
+			dataFillOffset+=dataLen;
+		}
+			break;
+		case LL_ADV_DATA_OPERATION_FIRST_FRAGMENT:
+		{
+			txMemcpy4(pAdv->pa->data.addr,data,dataLen);
+			dataFillOffset=dataLen;
+		}
+			break;	
+		case LL_ADV_DATA_OPERATION_LAST_FRAGMENT:
+		{
+			txMemcpy4(pAdv->pa->data.addr+dataFillOffset,data,dataLen);
+			pAdv->pa->data.len = dataFillOffset+dataLen;
+			pAdv->ea->did++;
+			dataFillOffset = 0;
+		}
+			break;
+		case LL_ADV_DATA_OPERATION_COMPLETE:
+		{
+			txMemcpy(pAdv->pa->data.addr,data,dataLen);
+			pAdv->ea->did++;
+			pAdv->pa->data.len = dataLen;
+		}
+			break;
+		case LL_ADV_DATA_OPERATION_UNCHANGED:
+		{
+			pAdv->ea->did++;
+		}
+			break;
+	}
+}
+
+controller_error_code_e ll_set_periodic_advertising_enable(_u8 enable,_u8 advHandle)
+{
+	ll_internal_adv_param_t* pAdv = ll_extended_adv_get_entity(advHandle,0);
+	if(POINTER_NOT_VALID(pAdv))
+	{
+		return UNKNOWN_ADVERTISING_IDENTIFIER;
+	}
+	pAdv->pa->enable = (enable&BIT(0));
+}
+
+#endif
