@@ -134,6 +134,7 @@ void adv_get_next_event(ll_sm_t* ll)
 	#else/*(!LL_SUPPORT_LE_EXTENDED_ADVERTISING)*/
     currentAdvSet = &ll->adv->param[0];
     currentEventClass = ADV_EVENT;
+    adv_sub_node_remap(ll,&currentAdvSet->la->sch);
 	#endif/*(LL_SUPPORT_LE_EXTENDED_ADVERTISING)*/
 }
 
@@ -172,7 +173,7 @@ static void adv_prepare_phy(ll_sm_t* ll,ll_adv_phy_entry_t* phy,_u32 timestamp,p
     }
 }
 
-
+volatile _u32 AACC_NODE_START ;
 
 _RAM_CODE
 int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 refStart,_u32 refEnd,_u8 mapType)
@@ -188,6 +189,7 @@ int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_
             ASSERT(0);
         }
         sch_map_node_t node[nodeCount];//20 node can cover most of the situation,if can't,plus 20 and calculate again.
+        AACC_NODE_START = node;
         sch_node_t* schNode = sch_get_task_list(SCH_WAITING_LIST);
         for(_u8 n=0;n<2;n++)
         {
@@ -261,7 +263,9 @@ int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_
     //end of symbol "reCal"
     _u32 freeBlockCount = 0;
     sch_map_free_slot_t* freeBlock = NULL;
+    DEBUG_GPIO_HIGH(GPIO_15);
     sch_map_calculate_free_space_by_time(refStart,refEnd,node,nodeNum,&freeBlock,&freeBlockCount);
+    DEBUG_GPIO_LOW(GPIO_15);
     int blockIndex = 0;
     if(mapType&ADV_SCH_MAP_PRI)
     {
@@ -1088,6 +1092,7 @@ static int adv_event_step_default_process(ll_sm_t* ll,ll_internal_adv_param_t* a
 	return 1;
 }
 
+
 _RAM_CODE
 static int adv_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
@@ -1111,8 +1116,6 @@ static int adv_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* advParam
             ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI);
         }
     }
-    DEBUG_GPIO_HIGH(GPIO_14);
-    DEBUG_GPIO_LOW(GPIO_14);
     adv_get_next_event(ll);
     return 1;
 }
@@ -1120,67 +1123,35 @@ static int adv_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* advParam
 _RAM_CODE
 static int adv_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
-
-    // _u32 systemTime = system_time();
-    // _u32 periodicDiff = (systemTime - advParam->la->sch.anchorPoint)/advParam->la->sch.interval;
-    // advParam->la->sch.anchorPoint += (periodicDiff+1)*advParam->la->sch.interval;
-    // advParam->la->availableChnCnt = advParam->la->channelCnt;
-    // // if((advParam->auxiliary == 0)||(advParam->auxiliary&&txCompareTime(advParam->ea->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval)))
-    // // {
-    // //     ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI);
-    // // }
-    // // else if()
-    // // {
-
-    // // }
-    // if(advParam->auxiliary!=0)
-    // {
-    //     if(txCompareTime(advParam->ea->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval))
-    //     {
-            
-    //     }
-    //     else
-    //     {
-    //         ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX);
-    //     }
-    // }
-    // else
-    // {
-    //     ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI);
-    // }
-
-
-    // // if(advParam->auxiliary)
-    // // {
-    // //     adv_get_next_event(ll);
-    // // }
-    // // else
-    // // {
-    // //     _u32 systemTime = system_time();
-    // //     _u32 periodicDiff = (systemTime - advParam->la->sch.anchorPoint)/advParam->la->sch.interval;
-    // //     advParam->la->sch.anchorPoint += (periodicDiff+1)*advParam->la->sch.interval;
-    // // }
-    // adv_get_next_event(ll);
-    // adv_sub_node_remap(ll,&currentAdvSet->la->sch);
-    // return 1;
+     _u32 systemTime = system_time();
+     _u32 periodicDiff = (systemTime - advParam->la->sch.anchorPoint)/advParam->la->sch.interval;
+     advParam->la->sch.anchorPoint += (periodicDiff+1)*advParam->la->sch.interval;
+     advParam->la->availableChnCnt = advParam->la->channelCnt;
+     #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
+     if((advParam->auxiliary == 0)||(advParam->auxiliary&&txCompareTime(advParam->ea->anchor,advParam->la->sch.anchorPoint+advParam->la->sch.interval)))
+     #endif
+     {
+         ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI);
+     }
+     adv_get_next_event(ll);
+     return 1;
 }
 
 _RAM_CODE
 static int adv_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
-    // if(advParam->auxiliary)
-    // {
-    //     adv_get_next_event(ll);
-    // }
-    // else
-    // {
-    //     _u32 systemTime = system_time();
-    //     _u32 periodicDiff = (systemTime - advParam->la->sch.anchorPoint)/advParam->la->sch.interval;
-    //     advParam->la->sch.anchorPoint += (periodicDiff+1)*advParam->la->sch.interval;
-    // }
-	// advParam->la->availableChnCnt = advParam->la->channelCnt;
-    // adv_sub_node_remap(ll,&currentAdvSet->la->sch);
-    // return 1;
+    _u32 systemTime = system_time();
+    _u32 periodicDiff = (systemTime - advParam->la->sch.anchorPoint)/advParam->la->sch.interval;
+    advParam->la->sch.anchorPoint += (periodicDiff+1)*advParam->la->sch.interval;
+    advParam->la->availableChnCnt = advParam->la->channelCnt;
+    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
+    if((advParam->auxiliary == 0)||(advParam->auxiliary&&txCompareTime(advParam->ea->anchor,advParam->la->sch.anchorPoint+advParam->la->sch.interval)))
+    #endif
+    {
+        ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI);
+    }
+    adv_get_next_event(ll);
+    return 1;
 }
 
 _RAM_CODE
@@ -1629,9 +1600,7 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
                 ll_internal_adv_param_t* advParam = &ll->adv->param[i];
                 //sm init
                 advParam->state = ADV_SM_STATE_IDLE;
-			    DEBUG_GPIO_HIGH(GPIO_12);
                 ll_extended_adv_map_out_task(ll,&ll->adv->param[i],system_time()+500,system_time()+500+ll->adv->param[i].la->sch.interval,ADV_SCH_MAP_ALL);
-			    DEBUG_GPIO_LOW(GPIO_12);
             }
         }
 
@@ -1647,9 +1616,10 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         ll_internal_adv_param_t* advParam = &ll->adv->param[0];
 		//state machine init
 		advParam->state                   = ADV_SM_STATE_IDLE;
+
 		//sch init
 		advParam->la->availableChnCnt     = advParam->la->channelCnt;
-		advParam->la->sch.eventCnt        = 0;
+		advParam->la->eventCnt        = 0;
 		advParam->la->sch.anchorPoint     = system_time() + 500;
 		if(advParam->eventType == ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED)
 		{

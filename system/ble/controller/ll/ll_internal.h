@@ -120,6 +120,7 @@ typedef struct
 typedef struct 
 {
    _u16 len;//to be compatible with adv and extended adv,use 2 byte to store data.
+   _u16 rsvd;
    _u8* addr;
 }ll_adv_data_entry_t;
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)

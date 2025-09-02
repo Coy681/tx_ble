@@ -65,6 +65,14 @@ void sch_map_calculate_free_space_by_time(_u32 refTimeStart,_u32 refTimeEnd,sch_
             nodeEnd   += node[i].period;
         }
     }
+    if(mapNodeCount == 0)
+    {
+    	*freeBlock = (sch_map_free_slot_t*)tx_malloc(sizeof(sch_map_free_slot_t));
+    	(*freeBlock)[0].start = refTimeStart;
+    	(*freeBlock)[0].end   = refTimeEnd;
+    	*freeCount = 1;
+    	return;
+    }
 
     for(_u8 i=0;i<mapNodeCount-1;i++)
     {
