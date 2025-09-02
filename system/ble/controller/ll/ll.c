@@ -423,6 +423,30 @@ controller_error_code_e ll_set_advertising_enable(_u8 enable)
 		ll->adv->param[index].enable = enable;
 		if(ll->adv->param[index].enable == LL_ADVERTISING_ENABLE)
 		{
+	        phy_obj_cast(&ll->phy);
+	        phy_obj_init(&ll->phy);
+	        ll_internal_adv_param_t* advParam = &ll->adv->param[0];
+			//sch init
+			advParam->la->availableChnCnt     = advParam->la->channelCnt;
+			advParam->la->eventCnt        = 0;
+			advParam->la->sch.anchorPoint     = system_time() + 500;
+			if(advParam->eventType == ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED)
+			{
+				advParam->la->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(PHY_MODE_1M,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+PACKET_DEFAULT_TIFS_TIME;
+			}
+			else
+			{
+				advParam->la->sch.duration = ll->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(PHY_MODE_1M,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+2*PACKET_DEFAULT_TIFS_TIME;
+			}
+			advParam->la->sch.startMargin     = 100;
+			advParam->la->sch.stopMargin      = 75;
+			//phy init
+			advParam->la->phy.mode            = PHY_MODE_1M;
+			advParam->la->phy.crcInit         = BLE_ADV_CRC_INIT;
+			advParam->la->phy.accessCode      = BLE_ADV_ACCESS_CODE;
+			advParam->la->phy.rxMaxOctets     = BLE_ADV_PRI_PHY_MAX_TX_LEN;
+			advParam->la->phy.rxAddress       = ll_get_shared_phy_rx_address();
+			advParam->la->phy.txAddress       = ll_get_shared_phy_tx_address();
 			if(BLE_LL_STATE_SUCCESS!=ble_ll_process_event(ll,BLE_LL_EVENT_START_ADVERTISING))
 			{
 				return IVALID_HCI_COMMAND_PARAMETERS;
