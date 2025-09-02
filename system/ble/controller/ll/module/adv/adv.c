@@ -1023,13 +1023,20 @@ static int adv_event_step_phy_send_advertising(ll_sm_t* ll,ll_internal_adv_param
     advParam->la->eventCnt++;
     advParam->la->phy.chn = advParam->la->chnTable[(advParam->la->eventCnt%advParam->la->channelCnt)];
     #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
-    if(advParam->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU)
+    if(POINTER_VALID(advParam->ea))
     {
-        adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_LEG);
-    } 
+        if(advParam->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU)
+        {
+            adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_LEG);
+        } 
+        else
+        {
+            adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_EXT);
+        }
+    }
     else
     {
-        adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_EXT);
+        adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_LEG); 
     }
     #else
     adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_LEG);
