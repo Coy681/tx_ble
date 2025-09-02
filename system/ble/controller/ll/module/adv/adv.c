@@ -1015,6 +1015,7 @@ static int adv_event_step_phy_send_advertising(ll_sm_t* ll,ll_internal_adv_param
     {
         return 0;
     }
+    phy_obj_cast(&ll->phy);
     advParam->la->eventCnt++;
     advParam->la->phy.chn = advParam->la->chnTable[(advParam->la->eventCnt%advParam->la->channelCnt)];
     #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
@@ -1070,7 +1071,7 @@ static int adv_event_step_received_packet_analyze(ll_sm_t* ll)
 _RAM_CODE
 static int adv_event_step_phy_send_scan_rsp(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
-	if(adv_event_step_received_packet_analyze(ll)!=0)//packet analyze shall be execute first
+	if(ll->phy.hw_is_rx_packet_valid()&&(adv_event_step_received_packet_analyze(ll)!=0))//packet analyze shall be execute first
 	{
         adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_SCAN_RSP);
         _u32 timestamp = ll->phy.hw_get_rx_air_ts() + ll_get_air_packet_time(advParam->la->phy.mode,sizeof(scan_type_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME;
@@ -1289,6 +1290,7 @@ int ll_extended_adv_get_current_set_number(void)
 
 static int adv_extended_event_step_phy_send_aux_advertising(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
+    phy_obj_cast(&ll->phy);
     //prepare packet
     if(advParam->ea->currentChain==0)
     {
@@ -1313,11 +1315,45 @@ static int adv_extended_event_step_phy_start_listen_aux(ll_sm_t* ll,ll_internal_
 }
 static int adv_extended_event_step_phy_send_aux_scan_rsp(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
-	return 1;
+	if(ll->phy.hw_is_rx_packet_valid())
+	{
+		ll_adv_packet_t* packet = (ll_adv_packet_t*)(advParam->ea->chain[0].phy.rxAddress + ll_get_packet_header_offset_from_address(PHY_DIR_RX));
+		if((packet->hdr.pduType == LL_ADV_TYPE_AUX_SCAN_REQ)&&(packet->hdr.length == sizeof(scan_type_aux_scan_req_t)))
+		{
+			//scan req process
+			scan_type_aux_scan_req_t* scanReq = (scan_type_aux_scan_req_t*)(packet->data);
+			if(txMemcmp(ll_get_device_address(),scanReq->advA,6) == 0)
+			{
+				adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_SCAN_RSP);
+				_u32 timestamp = ll->phy.hw_get_rx_air_ts() + ll_get_air_packet_time(advParam->ea->chain[0].phy.mode,sizeof(scan_type_aux_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME;
+				adv_prepare_phy(ll,&advParam->ea->chain[0].phy,timestamp,PHY_DIR_TX);
+				ll->phy.start();
+				return 1;
+	        }
+		}
+	}
+	return 0;
 }
 static int adv_extended_event_step_phy_send_aux_connect_rsp(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
-	return 1;
+	if(ll->phy.hw_is_rx_packet_valid())
+	{
+		ll_adv_packet_t* packet = (ll_adv_packet_t*)(advParam->ea->chain[0].phy.rxAddress + ll_get_packet_header_offset_from_address(PHY_DIR_RX));
+		if((packet->hdr.pduType == LL_ADV_TYPE_AUX_CONNECT_REQ)&&(packet->hdr.length == sizeof(init_type_auxConnectReq_t)))
+		{
+			//scan req process
+			init_type_auxConnectReq_t* scanReq = (init_type_auxConnectReq_t*)(packet->data);
+//			if(txMemcmp(ll_get_device_address(),scanReq->advA,6) == 0)
+//			{
+				adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_CONN_RSP);
+				_u32 timestamp = ll->phy.hw_get_rx_air_ts() + ll_get_air_packet_time(advParam->ea->chain[0].phy.mode,sizeof(init_type_auxConnectReq_t),0)+PACKET_DEFAULT_TIFS_TIME;
+				adv_prepare_phy(ll,&advParam->ea->chain[0].phy,timestamp,PHY_DIR_TX);
+				ll->phy.start();
+				return 1;
+//	        }
+		}
+	}
+	return 0;
 }
 static int adv_extended_event_step_default_process(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
