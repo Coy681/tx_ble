@@ -1042,6 +1042,7 @@ static int adv_event_step_phy_send_advertising(ll_sm_t* ll,ll_internal_adv_param
 _RAM_CODE
 static int adv_event_step_phy_start_listen(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
+    phy_obj_cast(&ll->phy);
 //    	_u32 timestamp = advParam->la->sch.anchorPoint + ll_get_air_packet_time(advParam->la->phy.mode,6+advParam->data.len,0)+PACKET_DEFAULT_TIFS_TIME;
 	adv_prepare_phy(ll,&advParam->la->phy,0,PHY_DIR_RX);
 	ll->phy.start();
@@ -1279,6 +1280,7 @@ static int adv_extended_event_step_phy_send_aux_advertising(ll_sm_t* ll,ll_inter
 }
 static int adv_extended_event_step_phy_start_listen_aux(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
+    phy_obj_cast(&ll->phy);
     // _u32 timestamp = advParam->ea->sch.anchor + ll_get_air_packet_time(advParam->la->phy.mode,6+advParam->data.len,0)+PACKET_DEFAULT_TIFS_TIME;
 	adv_prepare_phy(ll,&advParam->ea->chain[advParam->ea->currentChain].phy,0,PHY_DIR_RX);
 	ll->phy.start();
