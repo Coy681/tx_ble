@@ -937,7 +937,7 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 		}
 		pAdv->ea->aux->data.addr= pAdv->scanRsp.addr;
 		//process data fragment
-		if(pAdv->data.len<=(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN))
+		if(pAdv->scanRsp.len<=(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN))
 		{
 			pAdv->ea->chainCnt= 0;//only aux packet exist
 			pAdv->ea->aux->data.len = pAdv->scanRsp.len;
