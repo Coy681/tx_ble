@@ -129,7 +129,7 @@ typedef struct
     ll_adv_data_entry_t data; 
     ll_adv_sch_entry_t  sch;
     ll_adv_phy_entry_t  phy; 
-}ll_adv_ea_chain_t;
+}ll_adv_ea_entry_t;
 #endif
 
 typedef struct 
@@ -154,15 +154,17 @@ typedef struct
     _u8  scanReqNotifyEnable:2;
     _u8  advDatafragPerf:1;//fragment preference
     _u8  scanRspDatafragPerf:1;//fragment preference
-    _u8  auxFix:1;
+    _u8  rsvd1;
     _u8  phyMode:3;
     _u8  currentChain:4;
     _u8  chainCnt:4;
-    _u8  rsvd;
+    _u8  rsvd2;
+
     _u32 expireTime;//unit is us
     _u32 anchor;
     _u32 eventCnt;
-    ll_adv_ea_chain_t* chain;
+    ll_adv_ea_entry_t* aux;
+    ll_adv_ea_entry_t* chain;
 }ll_adv_ea_set_t;
 
 #endif
@@ -194,18 +196,15 @@ typedef struct
     _u8  rsvd0:2;
     _u8  eventType:4;//adv event type,search"adv_event_type_e"
     _u8  processingEvent:4;//to prevent re-retrance
+
     #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
     _u8  handle;
-    _u8  auxiliary:1;
-    _u8  chained:1;
-    _u8  paIndex:1;
-    _u8  pawrIndex:1;
-    _u8  rsvd1;
-
     _u16 eventProperty;
-    _u8  rsvd2;
-    #else
-    _u8  rsvd2;
+    _u8  schMap;
+    _u8  currentSch;
+	#else
+    _u8  schMap:4;
+    _u8  currentSch:4;
     #endif
     _u8  ownAddressType:2;//'ll_own_address_type_e'
     _u8  peerAddressType:2;//'ll_peer_address_type_e'
@@ -291,8 +290,8 @@ typedef struct _PACKED
 
 typedef struct _PACKED
 {
-    _u8      txAddr[128];
-    _u8      rxAddr[128];
+    _u8      txAddr[256];
+    _u8      rxAddr[256];
     _u8      addr[6];
     _u8      addrType;
     _u8      rsvd;
