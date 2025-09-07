@@ -1310,7 +1310,7 @@ controller_error_code_e ll_set_periodic_advertising_paramters(_u8 advHandle,_u8 
 		pAdv->pa->includeTxPower = 1;
 	}
 	pAdv->pa->sch.interval = 1250*interval;
-	pAdv->paIndex = 1;
+	pAdv->schMap |= ADV_SCH_MAP_PA;
 	return SUCCESS;
 }
 
@@ -1321,10 +1321,16 @@ controller_error_code_e ll_set_periodic_advertising_data(_u8 advHandle,ll_advert
 	{
 		return UNKNOWN_ADVERTISING_IDENTIFIER;
 	}
-	if(pAdv->paIndex == 0 || pAdv->pawrIndex == 1)
+	if((!pAdv->schMap&ADV_SCH_MAP_PA))
 	{
 		return COMMAND_DISALLOWED;
 	}
+	#if (LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
+	if(pAdv->schMap&ADV_SCH_MAP_PAWR)
+	{
+		return COMMAND_DISALLOWED;
+	}
+	#endif
 	static _u32 dataFillOffset = 0;
 	if(dataLen > BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH || (dataLen+dataFillOffset>BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH))
 	{
@@ -1411,7 +1417,8 @@ controller_error_code_e ll_set_periodic_advertising_enable(_u8 enable,_u8 advHan
 	{
 		return UNKNOWN_ADVERTISING_IDENTIFIER;
 	}
-	pAdv->pa->enable = (enable&BIT(0));
+	pAdv->pa->enable = (enable&BIT(0)==0?0:1);
+	pAdv->pa->includeAdi = (enable&BIT(1)==0?0:1);
 }
 
 #endif

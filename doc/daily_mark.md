@@ -62,3 +62,8 @@ TransmitterAllowance = (txCA÷1000000)*(receiveWindowEnd - timeOfLastSync) + Jus
 
 window widening = TransmitterAllowance+receiverAllowance
 receiverAllowance悠接收机自己确定
+
+
+# 20250906
+
+对象定义是很讲究的，如何做到精准，空间利用率最大化，在保证实现完整功能的前提下，使得资源占用最少，是非常讲究的

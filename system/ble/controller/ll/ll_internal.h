@@ -123,14 +123,13 @@ typedef struct
    _u16 rsvd;
    _u8* addr;
 }ll_adv_data_entry_t;
-#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
-typedef struct 
+
+typedef struct
 {
     ll_adv_data_entry_t data; 
     ll_adv_sch_entry_t  sch;
     ll_adv_phy_entry_t  phy; 
-}ll_adv_ea_entry_t;
-#endif
+}ll_adv_entry_t;
 
 typedef struct 
 {
@@ -143,6 +142,14 @@ typedef struct
 }ll_adv_set_t;
 
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
+typedef struct
+{
+    _u8  cnt;
+    _u8  current;
+    _u16 rsvd;
+    ll_adv_set_t* chain;
+}ll_adv_chain_entry_t;
+
 typedef struct 
 {
     _u16 sid:4;
@@ -154,30 +161,30 @@ typedef struct
     _u8  scanReqNotifyEnable:2;
     _u8  advDatafragPerf:1;//fragment preference
     _u8  scanRspDatafragPerf:1;//fragment preference
-    _u8  rsvd1;
     _u8  phyMode:3;
-    _u8  currentChain:4;
-    _u8  chainCnt:4;
-    _u8  rsvd2;
+    _u8  rsvd1:1;
+    _u16 rsvd2;
 
     _u32 expireTime;//unit is us
     _u32 anchor;
     _u32 eventCnt;
-    ll_adv_ea_entry_t* aux;
-    ll_adv_ea_entry_t* chain;
+    ll_adv_entry_t        aux;
+    ll_adv_chain_entry_t  chain;
 }ll_adv_ea_set_t;
-
 #endif
 
 #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
 typedef struct 
 {
-    _u8 enable:1;
-    _u8 includeTxPower:1;
-    _u8 rsvd:6;
-    ll_adv_data_entry_t data; 
-    ll_adv_sch_entry_t  sch;
-    ll_adv_phy_entry_t  phy; 
+    _u8  enable:1;
+    _u8  includeTxPower:1;
+    _u8  includeAdi:1;
+    _u8  rsvd:5;
+    _u8  chainCnt:4;
+    _u8  currentChain:4;
+    _u32 eventCnt;
+    ll_adv_entry_t        sync;
+    ll_adv_chain_entry_t  chain;
 }ll_adv_pa_set_t;
 #endif
 
@@ -199,9 +206,12 @@ typedef struct
 
     #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
     _u8  handle;
-    _u16 eventProperty;
     _u8  schMap;
+
+    _u8* chain;
+
     _u8  currentSch;
+    _u16 eventProperty;
 	#else
     _u8  schMap:4;
     _u8  currentSch:4;

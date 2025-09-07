@@ -30,6 +30,7 @@ typedef enum
     ADV_SM_STATE_RECEIVING_AUX,
     #endif
     #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
+    ADV_SM_STATE_SENDING_PERIODIC_ADV,
     #endif
 
     #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
@@ -103,37 +104,51 @@ void adv_get_next_event(ll_sm_t* ll)
     _u32 timestamp = 0;
     for(_u8 i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
     {
-    	if(POINTER_VALID(ll->adv->param[i].la))
-    	{
-            if((timestamp == 0)||((ll->adv->param[i].la->sch.anchorPoint!=0) && txCompareTime(timestamp,ll->adv->param[i].la->sch.anchorPoint)))
+        if(ll->adv->param[i].enable)
+        {
+            if(POINTER_VALID(ll->adv->param[i].la))
             {
-                timestamp = ll->adv->param[i].la->sch.anchorPoint|1;
-                currentAdvSet = &ll->adv->param[i];
-                currentEventClass = ADV_EVENT;
-                adv_sub_node_remap(ll,&currentAdvSet->la->sch);
+                if((timestamp == 0)||((ll->adv->param[i].la->sch.anchorPoint!=0) && txCompareTime(timestamp,ll->adv->param[i].la->sch.anchorPoint)))
+                {
+                    timestamp = ll->adv->param[i].la->sch.anchorPoint|1;
+                    currentAdvSet = &ll->adv->param[i];
+                    currentEventClass = ADV_EVENT;
+                    adv_sub_node_remap(ll,&currentAdvSet->la->sch);
+                }
             }
-    	}
-    	if(POINTER_VALID(ll->adv->param[i].ea))
-    	{
-            if((timestamp == 0)||((ll->adv->param[i].ea->anchor!=0) && txCompareTime(timestamp,ll->adv->param[i].ea->anchor)))
+            if(POINTER_VALID(ll->adv->param[i].ea))
             {
-                timestamp = ll->adv->param[i].ea->anchor|1;
-                if(ll->adv->param[i].ea->anchor == ll->adv->param[i].ea->aux->sch.anchorPoint)
+                if((timestamp == 0)||((ll->adv->param[i].ea->anchor!=0) && txCompareTime(timestamp,ll->adv->param[i].ea->anchor)))
                 {
-                	currentAdvSet->currentSch = ADV_SCH_MAP_AUX;
+                    timestamp = ll->adv->param[i].ea->anchor|1;
+                    if(ll->adv->param[i].ea->anchor == ll->adv->param[i].ea->aux->sch.anchorPoint)
+                    {
+                        currentAdvSet->currentSch = ADV_SCH_MAP_AUX;
+                    }
+                    else
+                    {
+                        currentAdvSet->currentSch = ADV_SCH_MAP_CHAIN;
+                    }
+                    currentAdvSet = &ll->adv->param[i];
+                    currentEventClass = ADV_EXTENDED_EVENT;
+                    adv_sub_node_remap(ll,&currentAdvSet->ea->chain[currentAdvSet->ea->currentChain].sch);
                 }
-                else
-                {
-                	currentAdvSet->currentSch = ADV_SCH_MAP_CHAIN;
-                }
-                currentAdvSet = &ll->adv->param[i];
-                currentEventClass = ADV_EXTENDED_EVENT;
-                adv_sub_node_remap(ll,&currentAdvSet->ea->chain[currentAdvSet->ea->currentChain].sch);
             }
-    	}
+            #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
+            if(POINTER_VALID(ll->adv->param[i].pa)&&ll->adv->param[i].pa->enable)
+            {
+                if((timestamp == 0)||txCompareTime(timestamp,ll->adv->param[i].pa->sch.anchorPoint))
+                {
+                    timestamp = ll->adv->param[i].pa->sch.anchorPoint|1;
+                    currentAdvSet = &ll->adv->param[i];
+                    currentEventClass = ADV_PERIODIC_EVENT;
+                    adv_sub_node_remap(ll,&currentAdvSet->pa->sch);
+                }
+            }
+            #endif/*(LL_SUPPORT_LE_PERIODIC_ADVERTISING)*/
+        }
+
     }
-    #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
-    #endif/*(LL_SUPPORT_LE_PERIODIC_ADVERTISING)*/
     #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
     #endif/*(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)*/
 
@@ -1310,18 +1325,6 @@ static int adv_extended_event_step_phy_send_aux_advertising(ll_sm_t* ll,ll_inter
     ll->phy.start();
 	return 1;
 }
-
-static int adv_extended_event_step_phy_send_chain_advertising(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
-{
-    phy_obj_cast(&ll->phy);
-    //prepare packet
-    adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_CHAIN);
-    advParam->ea->chain[advParam->ea->currentChain].phy.chn = 35;//todo
-    //prepare phy
-    adv_prepare_phy(ll,&advParam->ea->chain[advParam->ea->currentChain].phy,advParam->ea->chain[advParam->ea->currentChain].sch.anchorPoint,PHY_DIR_TX);
-    ll->phy.start();
-	return 1;
-}
 static int adv_extended_event_step_phy_start_listen_aux(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
     phy_obj_cast(&ll->phy);
@@ -1353,6 +1356,7 @@ static int adv_extended_event_step_phy_send_aux_scan_rsp(ll_sm_t* ll,ll_internal
 	        }
 		}
 	}
+
 	return 0;
 }
 static int adv_extended_event_step_phy_send_aux_connect_rsp(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
@@ -1382,38 +1386,35 @@ static int adv_extended_event_step_default_process(ll_sm_t* ll,ll_internal_adv_p
 }
 static int adv_extended_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
-	if(advParam->currentSch == ADV_SCH_MAP_AUX)
-	{
-		if(((advParam->schMap&ADV_SCH_MAP_CHAIN)\
-		 &&((advParam->eventType == ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED_WITH_AUXILIARY)\
-		    ||(advParam->eventType == ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITH_AUXILIARY))))
-		{
-			advParam->currentSch = ADV_SCH_MAP_CHAIN;
-		}
-	}
-	else if(advParam->currentSch == ADV_SCH_MAP_CHAIN)
-	{
-		if(advParam->ea->chainCnt == advParam->ea->currentChain)
-		{
-
-		}
-		else
-		{
-			advParam->currentSch = ADV_SCH_MAP_CHAIN;
-			advParam->ea->anchor = advParam->ea->chain[advParam->ea->currentChain++].sch.anchorPoint;
-		}
-	}
+    if(advParam->state == ADV_SM_STATE_SENDING_AUX_SCAN_RSP)
+    {
+        if(advParam->schMap&ADV_SCH_MAP_CHAIN)
+        {
+            adv_get_next_event(ll);    
+            return 1; 
+        }
+    }
+    else if(advParam->schMap&ADV_SCH_MAP_CHAIN)
+    {
+        adv_get_next_event(ll);
+        return 1;
+    }
+    ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_CHAIN);
     adv_get_next_event(ll);
 	return 1;
 }
 static int adv_extended_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
+    ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_CHAIN);
     //todo
+    adv_get_next_event(ll);
 	return 1;
 }
 static int adv_extended_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
+    ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_CHAIN);
     //todo
+    adv_get_next_event(ll);
 	return 1;
 }
 
@@ -1438,22 +1439,37 @@ static adv_event_sm_t adv_extended_event_state_machine[]=
 
 static int adv_chained_event_step_phy_send_chain_advertising(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
-
+    phy_obj_cast(&ll->phy);
+    //prepare packet
+    adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_CHAIN);
+    advParam->ea->chain[advParam->ea->currentChain].phy.chn = 35;//todo
+    //prepare phy
+    adv_prepare_phy(ll,&advParam->ea->chain[advParam->ea->currentChain].phy,advParam->ea->chain[advParam->ea->currentChain].sch.anchorPoint,PHY_DIR_TX);
+    ll->phy.start();
+	return 1;
 }
 
 static int adv_chained_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
-
+    ll->phy.stop();
+    advParam->ea->currentChain++;
+    if(advParam->ea->currentChain==advParam->ea->chainCnt)
+    {
+        ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_CHAIN);
+    }
+    adv_get_next_event(ll);
 }
 
 static int adv_chained_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
-
+    ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_CHAIN);
+    adv_get_next_event(ll);
 }
 
 static int adv_chained_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
-
+    ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_CHAIN);
+    adv_get_next_event(ll);
 }
 
 _DATA
@@ -1464,8 +1480,8 @@ static adv_event_sm_t adv_chained_event_state_machine[] =
 	{adv_chained_event_step_sch_canceled,              ADV_CONTEXT_CHAINED,ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,ADV_SM_SCH_EVENT_CANCELED},
 	{adv_chained_event_step_sch_passed,                ADV_CONTEXT_CHAINED,ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,ADV_SM_SCH_EVENT_PASSED},
 
-	{adv_chained_event_step_phy_send_chain_advertising,ADV_CONTEXT_CHAINED,ADV_SM_STATE_SENDING_CHAIN_ADV,ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,ADV_SM_PHY_EVENT_SEND_FINISHED},
-	{adv_chained_event_step_phy_send_chain_advertising,ADV_CONTEXT_CHAINED,ADV_SM_STATE_SENDING_CHAIN_ADV,ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,ADV_SM_SCH_EVENT_STOP},
+	{adv_chained_event_step_sch_stop,                  ADV_CONTEXT_CHAINED,ADV_SM_STATE_SENDING_CHAIN_ADV,ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,ADV_SM_PHY_EVENT_SEND_FINISHED},
+	{adv_chained_event_step_sch_stop,                  ADV_CONTEXT_CHAINED,ADV_SM_STATE_SENDING_CHAIN_ADV,ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,ADV_SM_SCH_EVENT_STOP},
 };
 
 static adv_procedure_list_t adv_extended_con_undirected_procedure[]=
@@ -1484,24 +1500,28 @@ static adv_procedure_list_t adv_extended_scan_undirected_procedure[]=
 {
     {ADV_EVENT,         adv_event_state_machine,         ADV_SM_LIST_LENGTH(adv_event_state_machine),         ADV_CONTEXT_DEFAULT},
     {ADV_EXTENDED_EVENT,adv_extended_event_state_machine,ADV_SM_LIST_LENGTH(adv_extended_event_state_machine),ADV_CONTEXT_SCANNABLE},
+    {ADV_CHAINED_EVENT, adv_chained_event_state_machine, ADV_SM_LIST_LENGTH(adv_chained_event_state_machine), ADV_CONTEXT_CHAINED},
 };
 
 static adv_procedure_list_t adv_extended_scan_directed_procedure[]=
 {
     {ADV_EVENT,         adv_event_state_machine,         ADV_SM_LIST_LENGTH(adv_event_state_machine),         ADV_CONTEXT_DEFAULT},
     {ADV_EXTENDED_EVENT,adv_extended_event_state_machine,ADV_SM_LIST_LENGTH(adv_extended_event_state_machine),ADV_CONTEXT_SCANNABLE},
+    {ADV_CHAINED_EVENT, adv_chained_event_state_machine, ADV_SM_LIST_LENGTH(adv_chained_event_state_machine), ADV_CONTEXT_CHAINED},
 };
 
 static adv_procedure_list_t adv_extended_non_con_non_scan_undirected_procedure_with_auxiliary[]=
 {
     {ADV_EVENT,         adv_event_state_machine,         ADV_SM_LIST_LENGTH(adv_event_state_machine),         ADV_CONTEXT_DEFAULT},
     {ADV_EXTENDED_EVENT,adv_extended_event_state_machine,ADV_SM_LIST_LENGTH(adv_extended_event_state_machine),ADV_CONTEXT_AUXILIARY},
+    {ADV_CHAINED_EVENT, adv_chained_event_state_machine, ADV_SM_LIST_LENGTH(adv_chained_event_state_machine), ADV_CONTEXT_CHAINED},
 };
 
 static adv_procedure_list_t adv_extended_non_con_non_scan_directed_procedure_with_auxiliary[]=
 {
     {ADV_EVENT,         adv_event_state_machine,         ADV_SM_LIST_LENGTH(adv_event_state_machine),         ADV_CONTEXT_DEFAULT},
     {ADV_EXTENDED_EVENT,adv_extended_event_state_machine,ADV_SM_LIST_LENGTH(adv_extended_event_state_machine),ADV_CONTEXT_AUXILIARY},
+    {ADV_CHAINED_EVENT, adv_chained_event_state_machine, ADV_SM_LIST_LENGTH(adv_chained_event_state_machine), ADV_CONTEXT_CHAINED},
 };
 
 static adv_procedure_list_t adv_extended_non_con_non_scan_undirected_procedure_without_auxiliary[]=
@@ -1516,19 +1536,52 @@ static adv_procedure_list_t adv_extended_non_con_non_scan_directed_procedure_wit
 #endif
 /*****************************************ADV Periodic Event Process ***********************************************/
 #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
-typedef enum
+static int adv_periodic_event_step_phy_send_advertising(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
-    ADV_PERIODIC_EVENT_NONE,
-}adv_periodic_event_property_e;
+    phy_obj_cast(&ll->phy);
+    //prepare packet
+    adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_SYNC);
+    advParam->pa->phy.chn = 35;//todo
+    //prepare phy
+    adv_prepare_phy(ll,&advParam->pa->phy,advParam->pa->sch.anchorPoint,PHY_DIR_TX);
+    ll->phy.start();
+    advParam->pa->eventCnt++;
+	return 1;
+}
+static int adv_periodic_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+{
+    ll->phy.stop();
+    advParam->pa->sch.anchorPoint+=advParam->pa->sch.interval;
+    adv_get_next_event(ll);
+}
+static int adv_periodic_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+{
+    advParam->pa->eventCnt++;
+    advParam->pa->sch.anchorPoint+=advParam->pa->sch.interval;
+    adv_get_next_event(ll);
+}
+static int adv_periodic_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+{
+    advParam->pa->eventCnt++;
+    advParam->pa->sch.anchorPoint+=advParam->pa->sch.interval;
+    adv_get_next_event(ll);
+}
 static adv_event_sm_t adv_periodic_event_state_machine[]= 
 {
+    {adv_periodic_event_step_phy_send_advertising,ADV_CONTEXT_DEFAULT,ADV_SM_STATE_IDLE,                ADV_SM_STATE_SENDING_PERIODIC_ADV,ADV_SM_STATE_IDLE,ADV_SM_SCH_EVENT_START},
+    {adv_periodic_event_step_sch_stop,            ADV_CONTEXT_DEFAULT,ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,ADV_SM_SCH_EVENT_STOP},
+    {adv_periodic_event_step_sch_passed,          ADV_CONTEXT_DEFAULT,ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,ADV_SM_SCH_EVENT_PASSED},
+    {adv_periodic_event_step_sch_canceled,        ADV_CONTEXT_DEFAULT,ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,ADV_SM_SCH_EVENT_CANCELED},
 
+    {adv_periodic_event_step_sch_stop,            ADV_CONTEXT_DEFAULT,ADV_SM_STATE_SENDING_PERIODIC_ADV,ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,ADV_SM_PHY_EVENT_SEND_FINISHED},
+    {adv_periodic_event_step_sch_stop,            ADV_CONTEXT_DEFAULT,ADV_SM_STATE_SENDING_PERIODIC_ADV,ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,ADV_SM_SCH_EVENT_STOP},
 };
 static adv_procedure_list_t adv_extended_periodic_procedure[]=
 {
-    {ADV_EVENT,         adv_event_state_machine,         ADV_SM_LIST_LENGTH(adv_event_state_machine),         ADV_EVENT_NONE},
-    {ADV_EXTENDED_EVENT,adv_extended_event_state_machine,ADV_SM_LIST_LENGTH(adv_extended_event_state_machine),ADV_EXTENDED_EVENT_NONE},
-    {ADV_PERIODIC_EVENT,adv_periodic_event_state_machine,ADV_SM_LIST_LENGTH(adv_periodic_event_state_machine),ADV_PERIODIC_EVENT_NONE},
+    {ADV_EVENT,         adv_event_state_machine,         ADV_SM_LIST_LENGTH(adv_event_state_machine),         ADV_CONTEXT_DEFAULT},
+    {ADV_EXTENDED_EVENT,adv_extended_event_state_machine,ADV_SM_LIST_LENGTH(adv_extended_event_state_machine),ADV_CONTEXT_DEFAULT},
+    {ADV_PERIODIC_EVENT,adv_periodic_event_state_machine,ADV_SM_LIST_LENGTH(adv_periodic_event_state_machine),ADV_CONTEXT_DEFAULT},
+    {ADV_CHAINED_EVENT, adv_chained_event_state_machine, ADV_SM_LIST_LENGTH(adv_chained_event_state_machine), ADV_CONTEXT_CHAINED},
 };
 #endif
 /*****************************************ADV Periodic With Rsp Process ***********************************************/
@@ -1566,10 +1619,10 @@ _DATA static adv_sequence_t advSequence[] =
     {ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITHOUT_AUXILIARY,   adv_extended_non_con_non_scan_directed_procedure_without_auxiliary,  ADV_PROCEDURE_LIST_LENGTH(adv_extended_non_con_non_scan_directed_procedure_without_auxiliary)},
     #endif
     #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
-    {ADV_EVENT_EXTENDED_PERIODIC,                                 adv_extended_periodic_procedure,                   ADV_PROCEDURE_LIST_LENGTH(adv_extended_periodic_procedure)},
+    {ADV_EVENT_EXTENDED_PERIODIC,                                                   adv_extended_periodic_procedure,                                     ADV_PROCEDURE_LIST_LENGTH(adv_extended_periodic_procedure)},
     #endif
     #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
-    {ADV_EVENT_EXTENDED_PERIODIC_WITH_RESPONSE,                   adv_extended_periodic_with_rsp_procedure,          ADV_PROCEDURE_LIST_LENGTH(adv_extended_periodic_with_rsp_procedure)},
+    {ADV_EVENT_EXTENDED_PERIODIC_WITH_RESPONSE,                                     adv_extended_periodic_with_rsp_procedure,                            ADV_PROCEDURE_LIST_LENGTH(adv_extended_periodic_with_rsp_procedure)},
     #endif
 };
 
