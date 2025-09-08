@@ -532,18 +532,50 @@ static void adv_generate_extended_header(ll_sm_t* ll,ll_internal_adv_param_t* ad
             if(anchorDiff>(30*0x1fff))
             {
                 ((adv_extended_header_subfield_auxPtr_t*)(extHeader->param+offset))->auxOffset   = anchorDiff/300;
-                ((adv_extended_header_subfield_auxPtr_t*)(extHeader->param+offset))->offsetUnits = ADV_EXTENDED_AUX_PTR_OFFSET_UNIT_300US;
+                ((adv_extended_header_subfield_auxPtr_t*)(extHeader->param+offset))->offsetUnits = ADV_EXTENDED_OFFSET_UNIT_300US;
             }
             else
             {
                 ((adv_extended_header_subfield_auxPtr_t*)(extHeader->param+offset))->auxOffset   = anchorDiff/30;
-                ((adv_extended_header_subfield_auxPtr_t*)(extHeader->param+offset))->offsetUnits = ADV_EXTENDED_AUX_PTR_OFFSET_UNIT_30US;
+                ((adv_extended_header_subfield_auxPtr_t*)(extHeader->param+offset))->offsetUnits = ADV_EXTENDED_OFFSET_UNIT_30US;
             }
         }
         offset+=sizeof(adv_extended_header_subfield_auxPtr_t);
     }
     if(flags & ADV_EXTENDED_HEADER_FLAG_SYNC_INFO)
     {
+    	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->interval   = advParam->pa->sync.sch.interval;
+    	//todo with access code,crc init,sca
+    	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->chMH       = 0x1f;
+    	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->chML       = 0xffffffff;
+    	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->AA         = 0x23411243;
+    	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->crcInit[0] = 0x32;
+    	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->crcInit[1] = 0x54;
+    	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->crcInit[2] = 0x76;
+    	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->sca        = 3;
+    	_u32 stepCnt = 0;
+    	_u32 anchorTime = advParam->ea->aux.sch.anchorPoint;
+    	_u32 targetTime = advParam->pa->sync.sch.anchorPoint;
+    	if(txCompare(anchorTime,targetTime))
+    	{
+    		stepCnt = (anchorTime-targetTime)/advParam->pa->sync.sch.interval;
+    		stepCnt++;
+    		targetTime+=(stepCnt*advParam->pa->sync.sch.interval);
+    	}
+        _u32 anchorDiff = targetTime - anchorTime;
+        if(anchorDiff>(30*0x1fff))
+        {
+        	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->offsetUnits    = ADV_EXTENDED_OFFSET_UNIT_300US;
+        	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->offsetBase     = anchorDiff/300;
+        	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->offsetAdjust   = 0;
+        }
+        else
+        {
+        	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->offsetUnits    = ADV_EXTENDED_OFFSET_UNIT_30US;
+        	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->offsetBase     = anchorDiff/30;
+        	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->offsetAdjust   = 0;
+        }
+        ((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->eventCounter   = advParam->pa->eventCnt+stepCnt;
         offset+=sizeof(adv_extended_header_subfield_syncInfo_t);
     }
     if(flags & ADV_EXTENDED_HEADER_FLAG_TX_POWER)

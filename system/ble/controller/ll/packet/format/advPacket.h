@@ -76,9 +76,9 @@ typedef struct _PACKED{
 
 typedef enum
 {
-	ADV_EXTENDED_AUX_PTR_OFFSET_UNIT_30US  = 0,
-	ADV_EXTENDED_AUX_PTR_OFFSET_UNIT_300US = 1,
-}adv_extended_header_auxPtr_offsetUnit_e;
+	ADV_EXTENDED_OFFSET_UNIT_30US  = 0,
+	ADV_EXTENDED_OFFSET_UNIT_300US = 1,
+}adv_extended_header_auxPtr_offsetUnit_e,adv_extended_header_syncInfo_offsetUnit_e;
 
 typedef enum
 {
