@@ -474,6 +474,7 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 		for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 		{
 			ll->adv->param[i].handle = LL_EXTENDED_ADV_INVALID_HANDLE;
+			ll->adv->param[i].sid = i;
 		}
 	}
 
@@ -566,7 +567,7 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 			}
 				break;
 		}
-		pAdv->sid                  = pParam->advSid;
+		pAdv->sid                      = pParam->advSid;
 		pAdv->ea->scanReqNotifyEnable  = pParam->scanReqNotifyEnable;
 		pAdv->ea->secondaryMaxSkip     = pParam->secondaryAdvMaxSkip;
 		pAdv->ea->power  = 0;
@@ -775,19 +776,18 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 		//process data fragment
 		if(pAdv->data.len<=(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN))
 		{
-			pAdv->ea->chain.cnt= 0;//only aux packet exist
+			pAdv->ea->chain.cnt    = 0;//only aux packet exist
 			pAdv->ea->aux.data.len = pAdv->data.len;
-
 		}
 		else
 		{
-			_u8 remainLen         = ((pAdv->data.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))%BLE_ADV_SEC_PHY_MAX_TX_LEN;
-			_u8 chainCnt          = ((pAdv->data.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))/BLE_ADV_SEC_PHY_MAX_TX_LEN + (remainLen==0?0:1);
-			pAdv->schMap         |= ADV_SCH_MAP_AUX_CHAIN;
-			pAdv->ea->chain.entry = (ll_adv_entry_t*)tx_malloc(chainCnt*sizeof(ll_adv_entry_t));
-			pAdv->ea->chain.cnt   = chainCnt;
+			_u8 remainLen          = ((pAdv->data.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))%BLE_ADV_SEC_PHY_MAX_TX_LEN;
+			_u8 chainCnt           = ((pAdv->data.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))/BLE_ADV_SEC_PHY_MAX_TX_LEN + (remainLen==0?0:1);
+			pAdv->schMap          |= ADV_SCH_MAP_AUX_CHAIN;
+			pAdv->ea->chain.entry  = (ll_adv_entry_t*)tx_malloc(chainCnt*sizeof(ll_adv_entry_t));
+			pAdv->ea->chain.cnt    = chainCnt;
 			pAdv->ea->aux.data.len = BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN;
-			_u16 offset           = pAdv->ea->aux.data.len;
+			_u16 offset            = pAdv->ea->aux.data.len;
 			for(_u8 i=0;i<chainCnt-1;i++)
 			{
 				pAdv->ea->chain.entry[i].data.len = BLE_ADV_SEC_PHY_MAX_TX_LEN;
@@ -936,7 +936,6 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 		{
 			pAdv->ea->chain.cnt= 0;//only aux packet exist
 			pAdv->ea->aux.data.len = pAdv->scanRsp.len;
-
 		}
 		else
 		{
@@ -1457,7 +1456,6 @@ controller_error_code_e ll_set_periodic_advertising_enable(_u8 enable,_u8 advHan
 		{
 			pAdv->pa->chain.cnt= 0;//only aux packet exist
 			pAdv->pa->sync.data.len = pAdv->pa->data.len;
-
 		}
 		else
 		{
