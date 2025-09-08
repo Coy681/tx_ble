@@ -152,8 +152,8 @@ typedef struct
 
 typedef struct 
 {
-    _u16 sid:4;
     _u16 did:12;
+    _u16 rsvd:4;
     _u8  power;
     _u8  maxEvents;
 
@@ -179,9 +179,11 @@ typedef struct
     _u8  enable:1;
     _u8  includeTxPower:1;
     _u8  includeAdi:1;
-    _u8  rsvd:5;
+    _u8  active:1;
+    _u8  rsvd:4;
+    _u16 did:12;
+    _u16 rsvd2:4;
     _u8  rsvd1;
-    _u16 rsvd2;
 
     _u32 eventCnt;
     _u32 anchor;
@@ -214,6 +216,7 @@ typedef struct
 
     ll_adv_chain_entry_t* pChain;
 
+    _u8  sid:4;
     _u8  rsvd1;
     _u16 eventProperty;
 	#else
