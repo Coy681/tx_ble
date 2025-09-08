@@ -121,7 +121,7 @@ void adv_get_next_event(ll_sm_t* ll)
                 if((timestamp == 0)||((ll->adv->param[i].ea->anchor!=0) && txCompareTime(timestamp,ll->adv->param[i].ea->anchor)))
                 {
                     timestamp = ll->adv->param[i].ea->anchor|1;
-                    if(ll->adv->param[i].ea->anchor == ll->adv->param[i].ea->aux->sch.anchorPoint)
+                    if(ll->adv->param[i].ea->anchor == ll->adv->param[i].ea->aux.sch.anchorPoint)
                     {
                         currentAdvSet->currentSch = ADV_SCH_MAP_AUX;
                     }
@@ -131,7 +131,7 @@ void adv_get_next_event(ll_sm_t* ll)
                     }
                     currentAdvSet = &ll->adv->param[i];
                     currentEventClass = ADV_EXTENDED_EVENT;
-                    adv_sub_node_remap(ll,&currentAdvSet->ea->chain[currentAdvSet->ea->currentChain].sch);
+                    adv_sub_node_remap(ll,&currentAdvSet->ea->chain.entry[currentAdvSet->ea->chain.current].sch);
                 }
             }
             #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
@@ -257,10 +257,10 @@ int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_
             }
             if(ll->adv->param[i].schMap&ADV_SCH_MAP_AUX)
             {
-                if((ll->adv->param[i].ea->aux->sch.anchorPoint!=0)&&txCompareTime(refEnd,ll->adv->param[i].ea->aux->sch.anchorPoint))
+                if((ll->adv->param[i].ea->aux.sch.anchorPoint!=0)&&txCompareTime(refEnd,ll->adv->param[i].ea->aux.sch.anchorPoint))
                 {
-                    node[nodeNum].start = ll->adv->param[i].ea->aux->sch.anchorPoint - ll->adv->param[i].ea->aux->sch.startMargin;
-                    node[nodeNum].end   = ll->adv->param[i].ea->aux->sch.anchorPoint + ll->adv->param[i].ea->aux->sch.duration + ll->adv->param[i].ea->aux->sch.stopMargin;
+                    node[nodeNum].start = ll->adv->param[i].ea->aux.sch.anchorPoint - ll->adv->param[i].ea->aux.sch.startMargin;
+                    node[nodeNum].end   = ll->adv->param[i].ea->aux.sch.anchorPoint + ll->adv->param[i].ea->aux.sch.duration + ll->adv->param[i].ea->aux.sch.stopMargin;
                     node[nodeNum].type  = SCH_SPORADIC_TASK;
                     nodeNum++;
                     if(nodeNum>nodeCount)
@@ -270,16 +270,16 @@ int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_
                 }
                 if(ll->adv->param[i].schMap&ADV_SCH_MAP_CHAIN)
                 {
-                    for(int j=0;j<ll->adv->param[i].ea->chainCnt;j++)
+                    for(int j=0;j<ll->adv->param[i].ea->chain.cnt;j++)
                     {
-                        if(txCompareTime(refEnd,ll->adv->param[i].ea->chain[j].sch.anchorPoint))
+                        if(txCompareTime(refEnd,ll->adv->param[i].ea->chain.entry[j].sch.anchorPoint))
                         {
-                            node[nodeNum].start = ll->adv->param[i].ea->chain[j].sch.anchorPoint\
-                                                - ll->adv->param[i].ea->chain[j].sch.startMargin;
+                            node[nodeNum].start = ll->adv->param[i].ea->chain.entry[j].sch.anchorPoint\
+                                                - ll->adv->param[i].ea->chain.entry[j].sch.startMargin;
 
-                            node[nodeNum].end   = ll->adv->param[i].ea->chain[j].sch.anchorPoint\
-                                                + ll->adv->param[i].ea->chain[j].sch.duration\
-                                                + ll->adv->param[i].ea->chain[j].sch.stopMargin;
+                            node[nodeNum].end   = ll->adv->param[i].ea->chain.entry[j].sch.anchorPoint\
+                                                + ll->adv->param[i].ea->chain.entry[j].sch.duration\
+                                                + ll->adv->param[i].ea->chain.entry[j].sch.stopMargin;
                             node[nodeNum].type  = SCH_SPORADIC_TASK;
                             nodeNum++;
                             if(nodeNum>nodeCount)
@@ -315,31 +315,31 @@ int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_
 	#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
     if(((mapType&ADV_SCH_MAP_AUX))&&(advParam->schMap&ADV_SCH_MAP_AUX))
     {
-        _u32 secondarySpace = advParam->ea->aux->sch.startMargin\
-        		            + advParam->ea->aux->sch.duration\
-							+ advParam->ea->aux->sch.stopMargin;
+        _u32 secondarySpace = advParam->ea->aux.sch.startMargin\
+        		            + advParam->ea->aux.sch.duration\
+							+ advParam->ea->aux.sch.stopMargin;
         for(;blockIndex<freeBlockCount;blockIndex++)
         {
             if((freeBlock[blockIndex].end - freeBlock[blockIndex].start)>(secondarySpace+PACKET_T_MAFS_TIME))
             {
-                advParam->ea->aux->sch.anchorPoint = freeBlock[blockIndex].start+advParam->ea->aux->sch.startMargin;
-                advParam->ea->anchor = advParam->ea->aux->sch.anchorPoint;
+                advParam->ea->aux.sch.anchorPoint = freeBlock[blockIndex].start+advParam->ea->aux.sch.startMargin;
+                advParam->ea->anchor = advParam->ea->aux.sch.anchorPoint;
                 freeBlock[blockIndex].start +=(secondarySpace+PACKET_T_MAFS_TIME);//todo,check need space how much
                 break;
             }
         }
         if((mapType&ADV_SCH_MAP_CHAIN)&&(advParam->schMap&ADV_SCH_MAP_CHAIN))
         {
-            for(int j=0;j<advParam->ea->chainCnt;j++)
+            for(int j=0;j<advParam->ea->chain.cnt;j++)
             {
-                _u32 chainSpace = advParam->ea->chain[j].sch.startMargin\
-                                + advParam->ea->chain[j].sch.duration\
-                                + advParam->ea->chain[j].sch.stopMargin;
+                _u32 chainSpace = advParam->ea->chain.entry[j].sch.startMargin\
+                                + advParam->ea->chain.entry[j].sch.duration\
+                                + advParam->ea->chain.entry[j].sch.stopMargin;
                 for(;blockIndex<freeBlockCount;blockIndex++)
                 {
                     if((freeBlock[blockIndex].end - freeBlock[blockIndex].start)>(chainSpace+PACKET_T_MAFS_TIME))
                     {
-                        advParam->ea->chain[j].sch.anchorPoint = freeBlock[blockIndex].start+advParam->ea->chain[j].sch.startMargin;
+                        advParam->ea->chain.entry[j].sch.anchorPoint = freeBlock[blockIndex].start+advParam->ea->chain.entry[j].sch.startMargin;
                         freeBlock[blockIndex].start +=(chainSpace+PACKET_T_MAFS_TIME);//todo,check need space how much
                         break;
                     }
@@ -517,40 +517,40 @@ static void adv_ext_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advPara
 static void adv_aux_adv_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
-    _u8* packet = ll_get_adv_packet(advParam->ea->aux->phy.txAddress,headerLen+advParam->ea->aux->data.len,LL_ADV_TYPE_AUX_ADV_IND,0,advParam->ownAddressType?1:0,0);
+    _u8* packet = ll_get_adv_packet(advParam->ea->aux.phy.txAddress,headerLen+advParam->ea->aux.data.len,LL_ADV_TYPE_AUX_ADV_IND,0,advParam->ownAddressType?1:0,0);
     adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo);
-    if(advParam->ea->aux->data.len!=0)
+    if(advParam->ea->aux.data.len!=0)
     {
-        txMemcpy(packet+(2+((adv_extended_header_t*)packet)->len),advParam->ea->aux->data.addr,advParam->ea->aux->data.len);
+        txMemcpy(packet+(2+((adv_extended_header_t*)packet)->len),advParam->ea->aux.data.addr,advParam->ea->aux.data.len);
     }
 }
 //LL_ADV_TYPE_AUX_SCAN_RSP
 static void adv_aux_scan_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
-    _u8* packet = ll_get_adv_packet(advParam->ea->aux->phy.txAddress,headerLen+advParam->ea->aux->data.len,LL_ADV_TYPE_AUX_SCAN_RSP,0,advParam->ownAddressType?1:0,0);
+    _u8* packet = ll_get_adv_packet(advParam->ea->aux.phy.txAddress,headerLen+advParam->ea->aux.data.len,LL_ADV_TYPE_AUX_SCAN_RSP,0,advParam->ownAddressType?1:0,0);
     adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo);
-    if(advParam->ea->aux->data.len!=0)
+    if(advParam->ea->aux.data.len!=0)
     {
-        txMemcpy(packet+(2+((adv_extended_header_t*)packet)->len),advParam->ea->aux->data.addr,advParam->ea->aux->data.len);
+        txMemcpy(packet+(2+((adv_extended_header_t*)packet)->len),advParam->ea->aux.data.addr,advParam->ea->aux.data.len);
     }
 }
 //LL_ADV_TYPE_AUX_CONNECT_RSP
 static void adv_aux_conn_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
-    _u8* packet = ll_get_adv_packet(advParam->ea->aux->phy.txAddress,headerLen,LL_ADV_TYPE_AUX_CONNECT_RSP,0,advParam->ownAddressType?1:0,0);
+    _u8* packet = ll_get_adv_packet(advParam->ea->aux.phy.txAddress,headerLen,LL_ADV_TYPE_AUX_CONNECT_RSP,0,advParam->ownAddressType?1:0,0);
     adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo);
 }
 //LL_ADV_TYPE_AUX_CHAIN_IND
 static void adv_aux_chain_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
-    _u8* packet = ll_get_adv_packet(advParam->ea->chain[advParam->ea->currentChain].phy.txAddress,headerLen+advParam->ea->chain[advParam->ea->currentChain].data.len,LL_ADV_TYPE_AUX_CHAIN_IND,0,advParam->ownAddressType?1:0,0);
+    _u8* packet = ll_get_adv_packet(advParam->ea->chain.entry[advParam->ea->chain.current].phy.txAddress,headerLen+advParam->ea->chain.entry[advParam->ea->chain.current].data.len,LL_ADV_TYPE_AUX_CHAIN_IND,0,advParam->ownAddressType?1:0,0);
     adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo);
-    if(advParam->ea->chain[advParam->ea->currentChain].data.len!=0)
+    if(advParam->ea->chain.entry[advParam->ea->chain.current].data.len!=0)
     {
-        txMemcpy(packet+(2+((adv_extended_header_t*)packet)->len),advParam->ea->chain[advParam->ea->currentChain].data.addr,advParam->ea->chain[advParam->ea->currentChain].data.len);
+        txMemcpy(packet+(2+((adv_extended_header_t*)packet)->len),advParam->ea->chain.entry[advParam->ea->chain.current].data.addr,advParam->ea->chain.entry[advParam->ea->chain.current].data.len);
     }
 }
 #endif
@@ -655,9 +655,9 @@ static void adv_event_extended_connectable_directed_packet_prapare(ll_sm_t* ll,l
             flags   = ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
             advMode = 1; 
             auxInfo.anchorPoint       = advParam->la->sch.anchorPoint;
-            auxInfo.targetAnchorPoint = advParam->ea->aux->sch.anchorPoint;
-            auxInfo.channel           = advParam->ea->aux->phy.chn;
-            auxInfo.phy               = advParam->ea->aux->phy.mode;
+            auxInfo.targetAnchorPoint = advParam->ea->aux.sch.anchorPoint;
+            auxInfo.channel           = advParam->ea->aux.phy.chn;
+            auxInfo.phy               = advParam->ea->aux.phy.mode;
             adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
         break;
@@ -695,9 +695,9 @@ static void adv_event_extended_connectable_undirected_packet_prapare(ll_sm_t* ll
             flags = ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
             advMode = 1;
             auxInfo.anchorPoint       = advParam->la->sch.anchorPoint;
-            auxInfo.targetAnchorPoint = advParam->ea->aux->sch.anchorPoint;
-            auxInfo.channel           = advParam->ea->aux->phy.chn;
-            auxInfo.phy               = advParam->ea->aux->phy.mode;
+            auxInfo.targetAnchorPoint = advParam->ea->aux.sch.anchorPoint;
+            auxInfo.channel           = advParam->ea->aux.phy.chn;
+            auxInfo.phy               = advParam->ea->aux.phy.mode;
             adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
         break;
@@ -735,9 +735,9 @@ static void adv_event_extended_scannable_directed_packet_prapare(ll_sm_t* ll,ll_
             flags = ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
             advMode = 2;
             auxInfo.anchorPoint       = advParam->la->sch.anchorPoint;
-            auxInfo.targetAnchorPoint = advParam->ea->aux->sch.anchorPoint;
-            auxInfo.channel           = advParam->ea->aux->phy.chn;
-            auxInfo.phy               = advParam->ea->aux->phy.mode;
+            auxInfo.targetAnchorPoint = advParam->ea->aux.sch.anchorPoint;
+            auxInfo.channel           = advParam->ea->aux.phy.chn;
+            auxInfo.phy               = advParam->ea->aux.phy.mode;
             adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
         break;
@@ -759,13 +759,13 @@ static void adv_event_extended_scannable_directed_packet_prapare(ll_sm_t* ll,ll_
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            if(advParam->ea->chainCnt!=0)
+            if(advParam->ea->chain.cnt!=0)
             {
                 flags|= ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-                auxInfo.anchorPoint       = advParam->ea->aux->sch.anchorPoint;
-                auxInfo.targetAnchorPoint = advParam->ea->chain[0].sch.anchorPoint;
-                auxInfo.channel           = advParam->ea->chain[0].phy.chn;
-                auxInfo.phy               = advParam->ea->chain[0].phy.mode;
+                auxInfo.anchorPoint       = advParam->ea->aux.sch.anchorPoint;
+                auxInfo.targetAnchorPoint = advParam->ea->chain.entry[0].sch.anchorPoint;
+                auxInfo.channel           = advParam->ea->chain.entry[0].phy.chn;
+                auxInfo.phy               = advParam->ea->chain.entry[0].phy.mode;
             }
             adv_aux_scan_rsp_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
@@ -773,13 +773,13 @@ static void adv_event_extended_scannable_directed_packet_prapare(ll_sm_t* ll,ll_
         case ADV_PDU_CLASS_CHAIN:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI;
-            if((advParam->ea->chainCnt-1)!=advParam->ea->currentChain)
+            if((advParam->ea->chain.cnt-1)!=advParam->ea->chain.current)
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-                auxInfo.anchorPoint       = advParam->ea->chain[advParam->ea->currentChain].sch.anchorPoint;
-                auxInfo.targetAnchorPoint = advParam->ea->chain[advParam->ea->currentChain+1].sch.anchorPoint;
-                auxInfo.channel           = advParam->ea->chain[advParam->ea->currentChain+1].phy.chn;
-                auxInfo.phy               = advParam->ea->chain[advParam->ea->currentChain+1].phy.mode;
+                auxInfo.anchorPoint       = advParam->ea->chain.entry[advParam->ea->chain.current].sch.anchorPoint;
+                auxInfo.targetAnchorPoint = advParam->ea->chain.entry[advParam->ea->chain.current+1].sch.anchorPoint;
+                auxInfo.channel           = advParam->ea->chain.entry[advParam->ea->chain.current+1].phy.chn;
+                auxInfo.phy               = advParam->ea->chain.entry[advParam->ea->chain.current+1].phy.mode;
             }
             adv_aux_chain_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
@@ -801,9 +801,9 @@ static void adv_event_extended_scannable_undirected_packet_prapare(ll_sm_t* ll,l
             flags = ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
             advMode = 2;
             auxInfo.anchorPoint       = advParam->la->sch.anchorPoint;
-            auxInfo.targetAnchorPoint = advParam->ea->chain[0].sch.anchorPoint;
-            auxInfo.channel           = advParam->ea->chain[0].phy.chn;
-            auxInfo.phy               = advParam->ea->chain[0].phy.mode;
+            auxInfo.targetAnchorPoint = advParam->ea->chain.entry[0].sch.anchorPoint;
+            auxInfo.channel           = advParam->ea->chain.entry[0].phy.chn;
+            auxInfo.phy               = advParam->ea->chain.entry[0].phy.mode;
             adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
         break;
@@ -825,13 +825,13 @@ static void adv_event_extended_scannable_undirected_packet_prapare(ll_sm_t* ll,l
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            if(advParam->ea->chainCnt!=0)
+            if(advParam->ea->chain.cnt!=0)
             {
                 flags|= ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-                auxInfo.anchorPoint       = advParam->ea->aux->sch.anchorPoint;
-                auxInfo.targetAnchorPoint = advParam->ea->chain[0].sch.anchorPoint;
-                auxInfo.channel           = advParam->ea->chain[0].phy.chn;
-                auxInfo.phy               = advParam->ea->chain[0].phy.mode;
+                auxInfo.anchorPoint       = advParam->ea->aux.sch.anchorPoint;
+                auxInfo.targetAnchorPoint = advParam->ea->chain.entry[0].sch.anchorPoint;
+                auxInfo.channel           = advParam->ea->chain.entry[0].phy.chn;
+                auxInfo.phy               = advParam->ea->chain.entry[0].phy.mode;
             }
             adv_aux_scan_rsp_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
@@ -839,13 +839,13 @@ static void adv_event_extended_scannable_undirected_packet_prapare(ll_sm_t* ll,l
         case ADV_PDU_CLASS_CHAIN:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI;
-            if(advParam->ea->chainCnt!=advParam->ea->currentChain)
+            if(advParam->ea->chain.cnt!=advParam->ea->chain.current)
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-                auxInfo.anchorPoint       = advParam->ea->chain[advParam->ea->currentChain].sch.anchorPoint;
-                auxInfo.targetAnchorPoint = advParam->ea->chain[advParam->ea->currentChain+1].sch.anchorPoint;
-                auxInfo.channel           = advParam->ea->chain[advParam->ea->currentChain+1].phy.chn;
-                auxInfo.phy               = advParam->ea->chain[advParam->ea->currentChain+1].phy.mode;
+                auxInfo.anchorPoint       = advParam->ea->chain.entry[advParam->ea->chain.current].sch.anchorPoint;
+                auxInfo.targetAnchorPoint = advParam->ea->chain.entry[advParam->ea->chain.current+1].sch.anchorPoint;
+                auxInfo.channel           = advParam->ea->chain.entry[advParam->ea->chain.current+1].phy.chn;
+                auxInfo.phy               = advParam->ea->chain.entry[advParam->ea->chain.current+1].phy.mode;
             }
             adv_aux_chain_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
@@ -866,9 +866,9 @@ static void adv_event_extended_non_connectable_non_scannable_directed_with_auxil
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
             auxInfo.anchorPoint       = advParam->la->sch.anchorPoint;
-            auxInfo.targetAnchorPoint = advParam->ea->aux->sch.anchorPoint;
-            auxInfo.channel           = advParam->ea->aux->phy.chn;
-            auxInfo.phy               = advParam->ea->aux->phy.mode;
+            auxInfo.targetAnchorPoint = advParam->ea->aux.sch.anchorPoint;
+            auxInfo.channel           = advParam->ea->aux.phy.chn;
+            auxInfo.phy               = advParam->ea->aux.phy.mode;
             adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
         break;
@@ -879,13 +879,13 @@ static void adv_event_extended_non_connectable_non_scannable_directed_with_auxil
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            if(advParam->ea->chainCnt!=0)
+            if(advParam->ea->chain.cnt!=0)
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-                auxInfo.anchorPoint       = advParam->ea->aux->sch.anchorPoint;
-                auxInfo.targetAnchorPoint = advParam->ea->chain[0].sch.anchorPoint;
-                auxInfo.channel           = advParam->ea->chain[0].phy.chn;
-                auxInfo.phy               = advParam->ea->chain[0].phy.mode;
+                auxInfo.anchorPoint       = advParam->ea->aux.sch.anchorPoint;
+                auxInfo.targetAnchorPoint = advParam->ea->chain.entry[0].sch.anchorPoint;
+                auxInfo.channel           = advParam->ea->chain.entry[0].phy.chn;
+                auxInfo.phy               = advParam->ea->chain.entry[0].phy.mode;
             }
             //sync info optional
             adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
@@ -898,13 +898,13 @@ static void adv_event_extended_non_connectable_non_scannable_directed_with_auxil
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            if(advParam->ea->chainCnt!=advParam->ea->currentChain)
+            if(advParam->ea->chain.cnt!=advParam->ea->chain.current)
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-                auxInfo.anchorPoint       = advParam->ea->chain[advParam->ea->currentChain].sch.anchorPoint;
-                auxInfo.targetAnchorPoint = advParam->ea->chain[advParam->ea->currentChain+1].sch.anchorPoint;
-                auxInfo.channel           = advParam->ea->chain[advParam->ea->currentChain+1].phy.chn;
-                auxInfo.phy               = advParam->ea->chain[advParam->ea->currentChain+1].phy.mode;
+                auxInfo.anchorPoint       = advParam->ea->chain.entry[advParam->ea->chain.current].sch.anchorPoint;
+                auxInfo.targetAnchorPoint = advParam->ea->chain.entry[advParam->ea->chain.current+1].sch.anchorPoint;
+                auxInfo.channel           = advParam->ea->chain.entry[advParam->ea->chain.current+1].phy.chn;
+                auxInfo.phy               = advParam->ea->chain.entry[advParam->ea->chain.current+1].phy.mode;
             }
             adv_aux_chain_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
@@ -925,9 +925,9 @@ static void adv_event_extended_non_connectable_non_scannable_undirected_with_aux
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
             auxInfo.anchorPoint       = advParam->la->sch.anchorPoint;
-            auxInfo.targetAnchorPoint = advParam->ea->aux->sch.anchorPoint;
-            auxInfo.channel           = advParam->ea->aux->phy.chn;
-            auxInfo.phy               = advParam->ea->aux->phy.mode;
+            auxInfo.targetAnchorPoint = advParam->ea->aux.sch.anchorPoint;
+            auxInfo.channel           = advParam->ea->aux.phy.chn;
+            auxInfo.phy               = advParam->ea->aux.phy.mode;
             adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
         break;
@@ -938,13 +938,13 @@ static void adv_event_extended_non_connectable_non_scannable_undirected_with_aux
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            if(advParam->ea->chainCnt!=0)
+            if(advParam->ea->chain.cnt!=0)
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-                auxInfo.anchorPoint       = advParam->ea->aux->sch.anchorPoint;
-                auxInfo.targetAnchorPoint = advParam->ea->chain[0].sch.anchorPoint;
-                auxInfo.channel           = advParam->ea->chain[0].phy.chn;
-                auxInfo.phy               = advParam->ea->chain[0].phy.mode;
+                auxInfo.anchorPoint       = advParam->ea->aux.sch.anchorPoint;
+                auxInfo.targetAnchorPoint = advParam->ea->chain.entry[0].sch.anchorPoint;
+                auxInfo.channel           = advParam->ea->chain.entry[0].phy.chn;
+                auxInfo.phy               = advParam->ea->chain.entry[0].phy.mode;
             }   
             //sync info optional
             adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
@@ -957,13 +957,13 @@ static void adv_event_extended_non_connectable_non_scannable_undirected_with_aux
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            if(advParam->ea->chainCnt!=advParam->ea->currentChain)
+            if(advParam->ea->chain.cnt!=advParam->ea->chain.current)
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-                auxInfo.anchorPoint       = advParam->ea->chain[advParam->ea->currentChain].sch.anchorPoint;
-                auxInfo.targetAnchorPoint = advParam->ea->chain[advParam->ea->currentChain+1].sch.anchorPoint;
-                auxInfo.channel           = advParam->ea->chain[advParam->ea->currentChain+1].phy.chn;
-                auxInfo.phy               = advParam->ea->chain[advParam->ea->currentChain+1].phy.mode;
+                auxInfo.anchorPoint       = advParam->ea->chain.entry[advParam->ea->chain.current].sch.anchorPoint;
+                auxInfo.targetAnchorPoint = advParam->ea->chain.entry[advParam->ea->chain.current+1].sch.anchorPoint;
+                auxInfo.channel           = advParam->ea->chain.entry[advParam->ea->chain.current+1].phy.chn;
+                auxInfo.phy               = advParam->ea->chain.entry[advParam->ea->chain.current+1].phy.mode;
             }
             adv_aux_chain_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
@@ -1319,9 +1319,9 @@ static int adv_extended_event_step_phy_send_aux_advertising(ll_sm_t* ll,ll_inter
     phy_obj_cast(&ll->phy);
     //prepare packet
     adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_AUX);
-    advParam->ea->chain[advParam->ea->currentChain].phy.chn = 35;//todo
+    advParam->ea->aux.phy.chn = 35;//todo
     //prepare phy
-    adv_prepare_phy(ll,&advParam->ea->aux->phy,advParam->ea->aux->sch.anchorPoint,PHY_DIR_TX);
+    adv_prepare_phy(ll,&advParam->ea->aux.phy,advParam->ea->aux.sch.anchorPoint,PHY_DIR_TX);
     ll->phy.start();
 	return 1;
 }
@@ -1329,7 +1329,7 @@ static int adv_extended_event_step_phy_start_listen_aux(ll_sm_t* ll,ll_internal_
 {
     phy_obj_cast(&ll->phy);
     // _u32 timestamp = advParam->ea->sch.anchor + ll_get_air_packet_time(advParam->la->phy.mode,6+advParam->data.len,0)+PACKET_DEFAULT_TIFS_TIME;
-	adv_prepare_phy(ll,&advParam->ea->chain[advParam->ea->currentChain].phy,0,PHY_DIR_RX);
+	adv_prepare_phy(ll,&advParam->ea->aux.phy,0,PHY_DIR_RX);
 	ll->phy.start();
 	return 1;
 }
@@ -1337,7 +1337,7 @@ static int adv_extended_event_step_phy_send_aux_scan_rsp(ll_sm_t* ll,ll_internal
 {
 	if(ll->phy.hw_is_rx_packet_valid())
 	{
-		ll_adv_packet_t* packet = (ll_adv_packet_t*)(advParam->ea->aux->phy.rxAddress + ll_get_packet_header_offset_from_address(PHY_DIR_RX));
+		ll_adv_packet_t* packet = (ll_adv_packet_t*)(advParam->ea->aux.phy.rxAddress + ll_get_packet_header_offset_from_address(PHY_DIR_RX));
 		if((packet->hdr.pduType == LL_ADV_TYPE_AUX_SCAN_REQ)&&(packet->hdr.length == sizeof(scan_type_aux_scan_req_t)))
 		{
 			//scan req process
@@ -1345,8 +1345,8 @@ static int adv_extended_event_step_phy_send_aux_scan_rsp(ll_sm_t* ll,ll_internal
 			if(txMemcmp(ll_get_device_address(),scanReq->advA,6) == 0)
 			{
 				adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_SCAN_RSP);
-				_u32 timestamp = ll->phy.hw_get_rx_air_ts() + ll_get_air_packet_time(advParam->ea->aux->phy.mode,sizeof(scan_type_aux_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME;
-				adv_prepare_phy(ll,&advParam->ea->aux->phy,timestamp,PHY_DIR_TX);
+				_u32 timestamp = ll->phy.hw_get_rx_air_ts() + ll_get_air_packet_time(advParam->ea->aux.phy.mode,sizeof(scan_type_aux_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME;
+				adv_prepare_phy(ll,&advParam->ea->aux.phy,timestamp,PHY_DIR_TX);
 				ll->phy.start();
 				if(advParam->schMap&ADV_SCH_MAP_CHAIN)
 				{
@@ -1363,7 +1363,7 @@ static int adv_extended_event_step_phy_send_aux_connect_rsp(ll_sm_t* ll,ll_inter
 {
 	if(ll->phy.hw_is_rx_packet_valid())
 	{
-		ll_adv_packet_t* packet = (ll_adv_packet_t*)(advParam->ea->aux->phy.rxAddress + ll_get_packet_header_offset_from_address(PHY_DIR_RX));
+		ll_adv_packet_t* packet = (ll_adv_packet_t*)(advParam->ea->aux.phy.rxAddress + ll_get_packet_header_offset_from_address(PHY_DIR_RX));
 		if((packet->hdr.pduType == LL_ADV_TYPE_AUX_CONNECT_REQ)&&(packet->hdr.length == sizeof(init_type_auxConnectReq_t)))
 		{
 			//scan req process
@@ -1371,8 +1371,8 @@ static int adv_extended_event_step_phy_send_aux_connect_rsp(ll_sm_t* ll,ll_inter
 //			if(txMemcmp(ll_get_device_address(),scanReq->advA,6) == 0)
 //			{
 				adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_CONN_RSP);
-				_u32 timestamp = ll->phy.hw_get_rx_air_ts() + ll_get_air_packet_time(advParam->ea->aux->phy.mode,sizeof(init_type_auxConnectReq_t),0)+PACKET_DEFAULT_TIFS_TIME;
-				adv_prepare_phy(ll,&advParam->ea->aux->phy,timestamp,PHY_DIR_TX);
+				_u32 timestamp = ll->phy.hw_get_rx_air_ts() + ll_get_air_packet_time(advParam->ea->aux.phy.mode,sizeof(init_type_auxConnectReq_t),0)+PACKET_DEFAULT_TIFS_TIME;
+				adv_prepare_phy(ll,&advParam->ea->aux.phy,timestamp,PHY_DIR_TX);
 				ll->phy.start();
 				return 1;
 //	        }
@@ -1442,9 +1442,9 @@ static int adv_chained_event_step_phy_send_chain_advertising(ll_sm_t* ll,ll_inte
     phy_obj_cast(&ll->phy);
     //prepare packet
     adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_CHAIN);
-    advParam->ea->chain[advParam->ea->currentChain].phy.chn = 35;//todo
+    advParam->ea->chain.entry[advParam->ea->chain.current].phy.chn = 35;//todo
     //prepare phy
-    adv_prepare_phy(ll,&advParam->ea->chain[advParam->ea->currentChain].phy,advParam->ea->chain[advParam->ea->currentChain].sch.anchorPoint,PHY_DIR_TX);
+    adv_prepare_phy(ll,&advParam->ea->chain.entry[advParam->ea->chain.current].phy,advParam->ea->chain.entry[advParam->ea->chain.current].sch.anchorPoint,PHY_DIR_TX);
     ll->phy.start();
 	return 1;
 }
@@ -1452,8 +1452,8 @@ static int adv_chained_event_step_phy_send_chain_advertising(ll_sm_t* ll,ll_inte
 static int adv_chained_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
     ll->phy.stop();
-    advParam->ea->currentChain++;
-    if(advParam->ea->currentChain==advParam->ea->chainCnt)
+    advParam->ea->chain.current++;
+    if(advParam->ea->chain.current==advParam->ea->chain.cnt)
     {
         ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_CHAIN);
     }

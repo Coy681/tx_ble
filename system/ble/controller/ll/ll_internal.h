@@ -5,7 +5,7 @@
 #include"../phy/phy.h"
 #include"packet/packet.h"
 #include"ll_feature.h"
-#include"ll_config.h"
+#include"ll_property.h"
 
  #ifndef LL_INTERNAL_H_
  #define LL_INTERNAL_H_
@@ -147,7 +147,7 @@ typedef struct
     _u8  cnt;
     _u8  current;
     _u16 rsvd;
-    ll_adv_set_t* chain;
+    ll_adv_entry_t* entry;
 }ll_adv_chain_entry_t;
 
 typedef struct 
