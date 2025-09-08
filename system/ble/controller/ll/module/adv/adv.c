@@ -249,27 +249,16 @@ int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_
 	    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
         for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
         {
-            if((ll->adv->param[i].handle == advParam[i].handle) || (ll->adv->param[i].handle == 0) || (ll->adv->param[i].enable == 0))
+            if((ll->adv->param[i].handle == advParam[i].handle) || (ll->adv->param[i].handle == 0))
             {
                 continue;
             }
-            if((ll->adv->param[i].la->sch.interval!=0)&&txCompareTime(refEnd,ll->adv->param[i].la->sch.interval))
+            if(ll->adv->param[i].enable)
             {
-                node[nodeNum].start = ll->adv->param[i].la->sch.anchorPoint - ll->adv->param[i].la->sch.startMargin;
-                node[nodeNum].end   = ll->adv->param[i].la->sch.anchorPoint + ll->adv->param[i].la->sch.startMargin+ll->adv->param[i].la->sch.stopMargin;
-                node[nodeNum].type  = SCH_SPORADIC_TASK;
-                nodeNum++;
-                if(nodeNum>nodeCount)
+                if(txCompareTime(refEnd,ll->adv->param[i].la->sch.interval))
                 {
-                    goto reCal;
-                }               
-            }
-            if(ll->adv->param[i].schMap&ADV_SCH_MAP_AUX)
-            {
-                if((ll->adv->param[i].ea->aux.sch.anchorPoint!=0)&&txCompareTime(refEnd,ll->adv->param[i].ea->aux.sch.anchorPoint))
-                {
-                    node[nodeNum].start = ll->adv->param[i].ea->aux.sch.anchorPoint - ll->adv->param[i].ea->aux.sch.startMargin;
-                    node[nodeNum].end   = ll->adv->param[i].ea->aux.sch.anchorPoint + ll->adv->param[i].ea->aux.sch.duration + ll->adv->param[i].ea->aux.sch.stopMargin;
+                    node[nodeNum].start = ll->adv->param[i].la->sch.anchorPoint - ll->adv->param[i].la->sch.startMargin;
+                    node[nodeNum].end   = ll->adv->param[i].la->sch.anchorPoint + ll->adv->param[i].la->sch.startMargin+ll->adv->param[i].la->sch.stopMargin;
                     node[nodeNum].type  = SCH_SPORADIC_TASK;
                     nodeNum++;
                     if(nodeNum>nodeCount)
@@ -277,30 +266,84 @@ int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_
                         goto reCal;
                     }
                 }
-                if(ll->adv->param[i].schMap&ADV_SCH_MAP_AUX_CHAIN)
+                if(ll->adv->param[i].schMap&ADV_SCH_MAP_AUX)
                 {
-                    for(int j=0;j<ll->adv->param[i].ea->chain.cnt;j++)
+                    if(txCompareTime(refEnd,ll->adv->param[i].ea->aux.sch.anchorPoint))
                     {
-                        if(txCompareTime(refEnd,ll->adv->param[i].ea->chain.entry[j].sch.anchorPoint))
+                        node[nodeNum].start = ll->adv->param[i].ea->aux.sch.anchorPoint - ll->adv->param[i].ea->aux.sch.startMargin;
+                        node[nodeNum].end   = ll->adv->param[i].ea->aux.sch.anchorPoint + ll->adv->param[i].ea->aux.sch.duration + ll->adv->param[i].ea->aux.sch.stopMargin;
+                        node[nodeNum].type  = SCH_SPORADIC_TASK;
+                        nodeNum++;
+                        if(nodeNum>nodeCount)
                         {
-                            node[nodeNum].start = ll->adv->param[i].ea->chain.entry[j].sch.anchorPoint\
-                                                - ll->adv->param[i].ea->chain.entry[j].sch.startMargin;
-
-                            node[nodeNum].end   = ll->adv->param[i].ea->chain.entry[j].sch.anchorPoint\
-                                                + ll->adv->param[i].ea->chain.entry[j].sch.duration\
-                                                + ll->adv->param[i].ea->chain.entry[j].sch.stopMargin;
-                            node[nodeNum].type  = SCH_SPORADIC_TASK;
-                            nodeNum++;
-                            if(nodeNum>nodeCount)
+                            goto reCal;
+                        }
+                    }
+                    if(ll->adv->param[i].schMap&ADV_SCH_MAP_AUX_CHAIN)
+                    {
+                        for(int j=0;j<ll->adv->param[i].ea->chain.cnt;j++)
+                        {
+                            if(txCompareTime(refEnd,ll->adv->param[i].ea->chain.entry[j].sch.anchorPoint))
                             {
-                                goto reCal;
+                                node[nodeNum].start = ll->adv->param[i].ea->chain.entry[j].sch.anchorPoint\
+                                                    - ll->adv->param[i].ea->chain.entry[j].sch.startMargin;
+
+                                node[nodeNum].end   = ll->adv->param[i].ea->chain.entry[j].sch.anchorPoint\
+                                                    + ll->adv->param[i].ea->chain.entry[j].sch.duration\
+                                                    + ll->adv->param[i].ea->chain.entry[j].sch.stopMargin;
+                                node[nodeNum].type  = SCH_SPORADIC_TASK;
+                                nodeNum++;
+                                if(nodeNum>nodeCount)
+                                {
+                                    goto reCal;
+                                }
                             }
                         }
                     }
                 }
             }
+			#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
+    		if(ll->adv->param[i].pa->active)
+            {
+    			if(ll->adv->param[i].schMap&ADV_SCH_MAP_PA)
+    			{
+    				if(txCompareTime(refEnd,ll->adv->param[i].pa->sync.sch.anchorPoint))
+    				{
+                        node[nodeNum].start = ll->adv->param[i].pa->sync.sch.anchorPoint - ll->adv->param[i].pa->sync.sch.startMargin;
+                        node[nodeNum].end   = ll->adv->param[i].pa->sync.sch.anchorPoint + ll->adv->param[i].pa->sync.sch.duration + ll->adv->param[i].pa->sync.sch.stopMargin;
+                        node[nodeNum].type  = SCH_PERIODIC_TASK;
+                        nodeNum++;
+                        if(nodeNum>nodeCount)
+                        {
+                            goto reCal;
+                        }
+    				}
+    				if(ll->adv->param[i].schMap&ADV_SCH_MAP_PA_CHAIN)
+    				{
+                        for(int j=0;j<ll->adv->param[i].pa->chain.cnt;j++)
+                        {
+                            if(txCompareTime(refEnd,ll->adv->param[i].pa->chain.entry[j].sch.anchorPoint))
+                            {
+                                node[nodeNum].start = ll->adv->param[i].pa->chain.entry[j].sch.anchorPoint\
+                                                    - ll->adv->param[i].pa->chain.entry[j].sch.startMargin;
+
+                                node[nodeNum].end   = ll->adv->param[i].pa->chain.entry[j].sch.anchorPoint\
+                                                    + ll->adv->param[i].pa->chain.entry[j].sch.duration\
+                                                    + ll->adv->param[i].pa->chain.entry[j].sch.stopMargin;
+                                node[nodeNum].type  = SCH_SPORADIC_TASK;
+                                nodeNum++;
+                                if(nodeNum>nodeCount)
+                                {
+                                    goto reCal;
+                                }
+                            }
+                        }
+    				}
+    			}
+            }
+			#endif
         }
-        #endif
+        #endif/*(LL_SUPPORT_LE_EXTENDED_ADVERTISING)*/
     //end of symbol "reCal"
     _u32 freeBlockCount = 0;
     sch_map_free_slot_t* freeBlock = NULL;
@@ -356,9 +399,44 @@ int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_
             }
         }
     }
+	#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
+    if(((mapType&ADV_SCH_MAP_PA))&&(advParam->schMap&ADV_SCH_MAP_PA))
+    {
+        _u32 syncSpace = advParam->pa->sync.sch.startMargin\
+        		       + advParam->pa->sync.sch.duration\
+					   + advParam->pa->sync.sch.stopMargin;
+        for(;blockIndex<freeBlockCount;blockIndex++)
+        {
+            if((freeBlock[blockIndex].end - freeBlock[blockIndex].start)>(syncSpace+PACKET_T_MAFS_TIME))
+            {
+                advParam->pa->sync.sch.anchorPoint = freeBlock[blockIndex].start+advParam->pa->sync.sch.startMargin;
+                advParam->pa->anchor = advParam->pa->sync.sch.anchorPoint;
+                freeBlock[blockIndex].start +=(syncSpace+PACKET_T_MAFS_TIME);//todo,check need space how much
+                break;
+            }
+        }
 
-
-    #endif
+        if((mapType&ADV_SCH_MAP_PA_CHAIN)&&(advParam->schMap&ADV_SCH_MAP_PA_CHAIN))
+        {
+            for(int j=0;j<advParam->pa->chain.cnt;j++)
+            {
+                _u32 chainSpace = advParam->pa->chain.entry[j].sch.startMargin\
+                                + advParam->pa->chain.entry[j].sch.duration\
+                                + advParam->pa->chain.entry[j].sch.stopMargin;
+                for(;blockIndex<freeBlockCount;blockIndex++)
+                {
+                    if((freeBlock[blockIndex].end - freeBlock[blockIndex].start)>(chainSpace+PACKET_T_MAFS_TIME))
+                    {
+                        advParam->pa->chain.entry[j].sch.anchorPoint = freeBlock[blockIndex].start+advParam->pa->chain.entry[j].sch.startMargin;
+                        freeBlock[blockIndex].start +=(chainSpace+PACKET_T_MAFS_TIME);//todo,check need space how much
+                        break;
+                    }
+                }
+            }
+        }
+    }
+	#endif/*(LL_SUPPORT_LE_PERIODIC_ADVERTISING)*/
+    #endif/*(LL_SUPPORT_LE_EXTENDED_ADVERTISING)*/
     tx_free((_u8*)freeBlock);
 }
 
@@ -565,9 +643,15 @@ static void adv_aux_chain_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* a
 #endif
 #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
 //LL_ADV_TYPE_AUX_SYNC_IND
-static void adv_aux_sync_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static void adv_aux_sync_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo)
 {
-
+    _u16 headerLen = adv_calculate_extended_header_length(flags);
+    _u8* packet = ll_get_adv_packet(advParam->pa->sync.phy.txAddress,headerLen+advParam->pa->sync.data.len,LL_ADV_TYPE_AUX_SYNC_IND,0,advParam->ownAddressType?1:0,0);
+    adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo);
+    if(advParam->pa->sync.data.len!=0)
+    {
+        txMemcpy(packet+(2+((adv_extended_header_t*)packet)->len),advParam->pa->sync.data.addr,advParam->pa->sync.data.len);
+    }
 }
 #endif
 
@@ -1027,7 +1111,33 @@ static void adv_event_extended_non_connectable_non_scannable_undirected_without_
 _RAM_CODE
 static void adv_event_extended_periodic_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
 {
-    
+    _u8 flags = 0;
+    _u8 advMode = 0;
+    _u8 extHeaderLen = 0;
+    adv_extended_header_auxInfo_t auxInfo = {0};
+    switch(pduClass)
+    {
+        case ADV_PDU_CLASS_SYNC:
+        {
+        	if(advParam->pa->includeAdi)
+        	{
+                flags |= ADV_EXTENDED_HEADER_FLAG_ADI;
+        	}
+        	if(advParam->pa->includeTxPower)
+        	{
+                flags |= ADV_EXTENDED_HEADER_FLAG_TX_POWER;
+        	}
+        	if(advParam->schMap&ADV_SCH_MAP_PA_CHAIN)
+        	{
+        		flags |= ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
+        		auxInfo.anchorPoint       = advParam->pa->sync.sch.anchorPoint;
+        		auxInfo.targetAnchorPoint = advParam->pa->chain.entry[0].sch.anchorPoint;
+          		auxInfo.phy               = advParam->pa->chain.entry[0].phy.mode;
+          		auxInfo.channel           = advParam->pa->chain.entry[0].phy.chn;
+        	}
+        	adv_aux_sync_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
+        }
+    }
 }
 #endif
 
@@ -1545,7 +1655,7 @@ static int adv_periodic_event_step_phy_send_sync_advertising(ll_sm_t* ll,ll_inte
 {
     phy_obj_cast(&ll->phy);
     //prepare packet
-    adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_SYNC);
+    adv_prepare_packet[ADV_EVENT_EXTENDED_PERIODIC](ll,advParam,ADV_PDU_CLASS_SYNC);
     advParam->pa->sync.phy.chn = 35;//todo
     //prepare phy
     adv_prepare_phy(ll,&advParam->pa->sync.phy,advParam->pa->sync.sch.anchorPoint,PHY_DIR_TX);
