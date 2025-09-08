@@ -180,9 +180,13 @@ typedef struct
     _u8  includeTxPower:1;
     _u8  includeAdi:1;
     _u8  rsvd:5;
-    _u8  chainCnt:4;
-    _u8  currentChain:4;
+    _u8  rsvd1;
+    _u16 rsvd2;
+
     _u32 eventCnt;
+    _u32 anchor;
+    ll_adv_data_entry_t   data;
+
     ll_adv_entry_t        sync;
     ll_adv_chain_entry_t  chain;
 }ll_adv_pa_set_t;

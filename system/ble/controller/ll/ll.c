@@ -1306,7 +1306,7 @@ controller_error_code_e ll_set_periodic_advertising_paramters(_u8 advHandle,_u8 
 	{
 		pAdv->pa->includeTxPower = 1;
 	}
-	pAdv->pa->sch.interval = 1250*interval;
+	pAdv->pa->sync.sch.interval = 1250*interval;
 	pAdv->schMap |= ADV_SCH_MAP_PA;
 	return SUCCESS;
 }
@@ -1333,15 +1333,15 @@ controller_error_code_e ll_set_periodic_advertising_data(_u8 advHandle,ll_advert
 	{
 		return MEMORY_CAPACITY_EXCEEDED;
 	}
-	if(ll_get_air_packet_time(pAdv->ea->phyMode,dataFillOffset+dataLen,0)>(pAdv->pa->sch.interval*3/4))
+	if(ll_get_air_packet_time(pAdv->ea->phyMode,dataFillOffset+dataLen,0)>(pAdv->pa->sync.sch.interval*3/4))
 	{
 		return PACKET_TOO_LONG;
 	}
 	if(operation == LL_ADV_DATA_OPERATION_UNCHANGED)
 	{
 		if(pAdv->pa->enable == 0\
-		||POINTER_NOT_VALID(pAdv->pa->sync.data.addr)\
-	    ||pAdv->pa->sync.data.len==0\
+		||POINTER_NOT_VALID(pAdv->pa->data.addr)\
+	    ||pAdv->pa->data.len==0\
 	    ||dataLen!=0)
 		{
 			return IVALID_HCI_COMMAND_PARAMETERS;
@@ -1359,28 +1359,28 @@ controller_error_code_e ll_set_periodic_advertising_data(_u8 advHandle,ll_advert
 	{
 		return COMMAND_DISALLOWED;
 	}
-	if(POINTER_NOT_VALID(pAdv->pa->sync.data.addr))
+	if(POINTER_NOT_VALID(pAdv->pa->data.addr))
 	{
 		if(operation == LL_ADV_DATA_OPERATION_COMPLETE)
 		{
-			pAdv->pa->sync.data.addr = tx_malloc(dataLen);
+			pAdv->pa->data.addr = tx_malloc(dataLen);
 		}
 		else
 		{
-			pAdv->pa->sync.data.addr = tx_malloc(BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH);
+			pAdv->pa->data.addr = tx_malloc(BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH);
 		}
 	}
 	switch(operation)
 	{
 		case LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT:
 		{
-			txMemcpy4(pAdv->pa->sync.data.addr+dataFillOffset,data,dataLen);
+			txMemcpy4(pAdv->pa->data.addr+dataFillOffset,data,dataLen);
 			dataFillOffset+=dataLen;
 		}
 			break;
 		case LL_ADV_DATA_OPERATION_FIRST_FRAGMENT:
 		{
-			txMemcpy4(pAdv->pa->sync.data.addr,data,dataLen);
+			txMemcpy4(pAdv->pa->data.addr,data,dataLen);
 			dataFillOffset=dataLen;
 		}
 			break;	
@@ -1414,8 +1414,13 @@ controller_error_code_e ll_set_periodic_advertising_enable(_u8 enable,_u8 advHan
 	{
 		return UNKNOWN_ADVERTISING_IDENTIFIER;
 	}
+	if()
+	{
+
+	}
 	pAdv->pa->enable = (enable&BIT(0)==0?0:1);
 	pAdv->pa->includeAdi = (enable&BIT(1)==0?0:1);
+
 }
 
 #endif
