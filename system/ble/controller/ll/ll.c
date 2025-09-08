@@ -783,7 +783,7 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 		{
 			_u8 remainLen         = ((pAdv->data.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))%BLE_ADV_SEC_PHY_MAX_TX_LEN;
 			_u8 chainCnt          = ((pAdv->data.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))/BLE_ADV_SEC_PHY_MAX_TX_LEN + (remainLen==0?0:1);
-			pAdv->schMap         |= ADV_SCH_MAP_CHAIN;
+			pAdv->schMap         |= ADV_SCH_MAP_AUX_CHAIN;
 			pAdv->ea->chain.entry = (ll_adv_entry_t*)tx_malloc(chainCnt*sizeof(ll_adv_entry_t));
 			pAdv->ea->chain.cnt   = chainCnt;
 			pAdv->ea->aux.data.len = BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN;
@@ -942,7 +942,7 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 		{
 			_u8 remainLen         = ((pAdv->scanRsp.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))%BLE_ADV_SEC_PHY_MAX_TX_LEN;
 			_u8 chainCnt          = ((pAdv->scanRsp.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))/BLE_ADV_SEC_PHY_MAX_TX_LEN + (remainLen==0?0:1);
-			pAdv->schMap         |= ADV_SCH_MAP_CHAIN;
+			pAdv->schMap         |= ADV_SCH_MAP_AUX_CHAIN;
 			pAdv->ea->chain.entry = (ll_adv_entry_t*)tx_malloc(chainCnt*sizeof(ll_adv_entry_t));
 			pAdv->ea->chain.cnt   = chainCnt;
 			pAdv->ea->aux.data.len = BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN;
@@ -1141,7 +1141,7 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
                 	pAdv->ea->aux.phy.txAddress       = ll_get_shared_phy_tx_address();
 					pAdv->ea->aux.phy.mode            = pAdv->ea->phyMode;
 					pAdv->ea->eventCnt = 0;
-                    if(pAdv->schMap&ADV_SCH_MAP_CHAIN)
+                    if(pAdv->schMap&ADV_SCH_MAP_AUX_CHAIN)
                     {
                         for(int i=0;i<pAdv->ea->chain.cnt;i++)
                         {

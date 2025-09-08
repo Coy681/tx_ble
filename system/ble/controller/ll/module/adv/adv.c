@@ -116,22 +116,23 @@ void adv_get_next_event(ll_sm_t* ll)
                     adv_sub_node_remap(ll,&currentAdvSet->la->sch);
                 }
             }
-            if(POINTER_VALID(ll->adv->param[i].ea))
+            if(ll->adv->param[i].schMap&ADV_SCH_MAP_AUX)
             {
-                if((timestamp == 0)||((ll->adv->param[i].ea->anchor!=0) && txCompareTime(timestamp,ll->adv->param[i].ea->anchor)))
+                if((timestamp == 0)||txCompareTime(timestamp,ll->adv->param[i].ea->anchor))
                 {
                     timestamp = ll->adv->param[i].ea->anchor|1;
+                    currentAdvSet = &ll->adv->param[i];
                     if(ll->adv->param[i].ea->anchor == ll->adv->param[i].ea->aux.sch.anchorPoint)
                     {
-                        currentAdvSet->currentSch = ADV_SCH_MAP_AUX;
+                        adv_sub_node_remap(ll,&currentAdvSet->ea->aux.sch);
+                        currentEventClass = ADV_EXTENDED_EVENT;
                     }
-                    else
+                    else if(ll->adv->param[i].schMap&ADV_SCH_MAP_AUX_CHAIN)
                     {
-                        currentAdvSet->currentSch = ADV_SCH_MAP_CHAIN;
+                        adv_sub_node_remap(ll,&currentAdvSet->ea->chain.entry[currentAdvSet->ea->chain.current].sch);
+                        currentEventClass = ADV_CHAINED_EVENT;
+                        currentAdvSet->pChain = &currentAdvSet->ea->chain;
                     }
-                    currentAdvSet = &ll->adv->param[i];
-                    currentEventClass = ADV_EXTENDED_EVENT;
-                    adv_sub_node_remap(ll,&currentAdvSet->ea->chain.entry[currentAdvSet->ea->chain.current].sch);
                 }
             }
             #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
@@ -268,7 +269,7 @@ int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_
                         goto reCal;
                     }
                 }
-                if(ll->adv->param[i].schMap&ADV_SCH_MAP_CHAIN)
+                if(ll->adv->param[i].schMap&ADV_SCH_MAP_AUX_CHAIN)
                 {
                     for(int j=0;j<ll->adv->param[i].ea->chain.cnt;j++)
                     {
@@ -328,7 +329,7 @@ int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_
                 break;
             }
         }
-        if((mapType&ADV_SCH_MAP_CHAIN)&&(advParam->schMap&ADV_SCH_MAP_CHAIN))
+        if((mapType&ADV_SCH_MAP_AUX_CHAIN)&&(advParam->schMap&ADV_SCH_MAP_AUX_CHAIN))
         {
             for(int j=0;j<advParam->ea->chain.cnt;j++)
             {
@@ -546,11 +547,11 @@ static void adv_aux_conn_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* ad
 static void adv_aux_chain_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
-    _u8* packet = ll_get_adv_packet(advParam->ea->chain.entry[advParam->ea->chain.current].phy.txAddress,headerLen+advParam->ea->chain.entry[advParam->ea->chain.current].data.len,LL_ADV_TYPE_AUX_CHAIN_IND,0,advParam->ownAddressType?1:0,0);
+    _u8* packet = ll_get_adv_packet(advParam->pChain->entry[advParam->pChain->current].phy.txAddress,headerLen+advParam->ea->chain.entry[advParam->pChain->current].data.len,LL_ADV_TYPE_AUX_CHAIN_IND,0,advParam->ownAddressType?1:0,0);
     adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo);
-    if(advParam->ea->chain.entry[advParam->ea->chain.current].data.len!=0)
+    if(advParam->pChain->entry[advParam->pChain->current].data.len!=0)
     {
-        txMemcpy(packet+(2+((adv_extended_header_t*)packet)->len),advParam->ea->chain.entry[advParam->ea->chain.current].data.addr,advParam->ea->chain.entry[advParam->ea->chain.current].data.len);
+        txMemcpy(packet+(2+((adv_extended_header_t*)packet)->len),advParam->pChain->entry[advParam->pChain->current].data.addr,advParam->pChain->entry[advParam->pChain->current].data.len);
     }
 }
 #endif
@@ -759,13 +760,13 @@ static void adv_event_extended_scannable_directed_packet_prapare(ll_sm_t* ll,ll_
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            if(advParam->ea->chain.cnt!=0)
+            if(advParam->pChain->cnt!=0)
             {
                 flags|= ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
                 auxInfo.anchorPoint       = advParam->ea->aux.sch.anchorPoint;
-                auxInfo.targetAnchorPoint = advParam->ea->chain.entry[0].sch.anchorPoint;
-                auxInfo.channel           = advParam->ea->chain.entry[0].phy.chn;
-                auxInfo.phy               = advParam->ea->chain.entry[0].phy.mode;
+                auxInfo.targetAnchorPoint = advParam->pChain->entry[0].sch.anchorPoint;
+                auxInfo.channel           = advParam->pChain->entry[0].phy.chn;
+                auxInfo.phy               = advParam->pChain->entry[0].phy.mode;
             }
             adv_aux_scan_rsp_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
@@ -773,13 +774,13 @@ static void adv_event_extended_scannable_directed_packet_prapare(ll_sm_t* ll,ll_
         case ADV_PDU_CLASS_CHAIN:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI;
-            if((advParam->ea->chain.cnt-1)!=advParam->ea->chain.current)
+            if((advParam->ea->chain.cnt-1)!=advParam->pChain->current)
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-                auxInfo.anchorPoint       = advParam->ea->chain.entry[advParam->ea->chain.current].sch.anchorPoint;
-                auxInfo.targetAnchorPoint = advParam->ea->chain.entry[advParam->ea->chain.current+1].sch.anchorPoint;
-                auxInfo.channel           = advParam->ea->chain.entry[advParam->ea->chain.current+1].phy.chn;
-                auxInfo.phy               = advParam->ea->chain.entry[advParam->ea->chain.current+1].phy.mode;
+                auxInfo.anchorPoint       = advParam->pChain->entry[advParam->pChain->current].sch.anchorPoint;
+                auxInfo.targetAnchorPoint = advParam->pChain->entry[advParam->pChain->current+1].sch.anchorPoint;
+                auxInfo.channel           = advParam->pChain->entry[advParam->pChain->current+1].phy.chn;
+                auxInfo.phy               = advParam->pChain->entry[advParam->pChain->current+1].phy.mode;
             }
             adv_aux_chain_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
@@ -801,9 +802,9 @@ static void adv_event_extended_scannable_undirected_packet_prapare(ll_sm_t* ll,l
             flags = ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
             advMode = 2;
             auxInfo.anchorPoint       = advParam->la->sch.anchorPoint;
-            auxInfo.targetAnchorPoint = advParam->ea->chain.entry[0].sch.anchorPoint;
-            auxInfo.channel           = advParam->ea->chain.entry[0].phy.chn;
-            auxInfo.phy               = advParam->ea->chain.entry[0].phy.mode;
+            auxInfo.targetAnchorPoint = advParam->pChain->entry[0].sch.anchorPoint;
+            auxInfo.channel           = advParam->pChain->entry[0].phy.chn;
+            auxInfo.phy               = advParam->pChain->entry[0].phy.mode;
             adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
         break;
@@ -825,13 +826,13 @@ static void adv_event_extended_scannable_undirected_packet_prapare(ll_sm_t* ll,l
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            if(advParam->ea->chain.cnt!=0)
+            if(advParam->pChain->cnt!=0)
             {
                 flags|= ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
                 auxInfo.anchorPoint       = advParam->ea->aux.sch.anchorPoint;
-                auxInfo.targetAnchorPoint = advParam->ea->chain.entry[0].sch.anchorPoint;
-                auxInfo.channel           = advParam->ea->chain.entry[0].phy.chn;
-                auxInfo.phy               = advParam->ea->chain.entry[0].phy.mode;
+                auxInfo.targetAnchorPoint = advParam->pChain->entry[0].sch.anchorPoint;
+                auxInfo.channel           = advParam->pChain->entry[0].phy.chn;
+                auxInfo.phy               = advParam->pChain->entry[0].phy.mode;
             }
             adv_aux_scan_rsp_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
@@ -839,13 +840,13 @@ static void adv_event_extended_scannable_undirected_packet_prapare(ll_sm_t* ll,l
         case ADV_PDU_CLASS_CHAIN:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI;
-            if(advParam->ea->chain.cnt!=advParam->ea->chain.current)
+            if(advParam->pChain->cnt!=advParam->pChain->current)
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-                auxInfo.anchorPoint       = advParam->ea->chain.entry[advParam->ea->chain.current].sch.anchorPoint;
-                auxInfo.targetAnchorPoint = advParam->ea->chain.entry[advParam->ea->chain.current+1].sch.anchorPoint;
-                auxInfo.channel           = advParam->ea->chain.entry[advParam->ea->chain.current+1].phy.chn;
-                auxInfo.phy               = advParam->ea->chain.entry[advParam->ea->chain.current+1].phy.mode;
+                auxInfo.anchorPoint       = advParam->pChain->entry[advParam->pChain->current].sch.anchorPoint;
+                auxInfo.targetAnchorPoint = advParam->pChain->entry[advParam->pChain->current+1].sch.anchorPoint;
+                auxInfo.channel           = advParam->pChain->entry[advParam->pChain->current+1].phy.chn;
+                auxInfo.phy               = advParam->pChain->entry[advParam->pChain->current+1].phy.mode;
             }
             adv_aux_chain_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
@@ -879,13 +880,13 @@ static void adv_event_extended_non_connectable_non_scannable_directed_with_auxil
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            if(advParam->ea->chain.cnt!=0)
+            if(advParam->pChain->cnt!=0)
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
                 auxInfo.anchorPoint       = advParam->ea->aux.sch.anchorPoint;
-                auxInfo.targetAnchorPoint = advParam->ea->chain.entry[0].sch.anchorPoint;
-                auxInfo.channel           = advParam->ea->chain.entry[0].phy.chn;
-                auxInfo.phy               = advParam->ea->chain.entry[0].phy.mode;
+                auxInfo.targetAnchorPoint = advParam->pChain->entry[0].sch.anchorPoint;
+                auxInfo.channel           = advParam->pChain->entry[0].phy.chn;
+                auxInfo.phy               = advParam->pChain->entry[0].phy.mode;
             }
             //sync info optional
             adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
@@ -898,13 +899,13 @@ static void adv_event_extended_non_connectable_non_scannable_directed_with_auxil
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            if(advParam->ea->chain.cnt!=advParam->ea->chain.current)
+            if(advParam->pChain->cnt!=advParam->pChain->current)
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-                auxInfo.anchorPoint       = advParam->ea->chain.entry[advParam->ea->chain.current].sch.anchorPoint;
-                auxInfo.targetAnchorPoint = advParam->ea->chain.entry[advParam->ea->chain.current+1].sch.anchorPoint;
-                auxInfo.channel           = advParam->ea->chain.entry[advParam->ea->chain.current+1].phy.chn;
-                auxInfo.phy               = advParam->ea->chain.entry[advParam->ea->chain.current+1].phy.mode;
+                auxInfo.anchorPoint       = advParam->pChain->entry[advParam->pChain->current].sch.anchorPoint;
+                auxInfo.targetAnchorPoint = advParam->pChain->entry[advParam->pChain->current+1].sch.anchorPoint;
+                auxInfo.channel           = advParam->pChain->entry[advParam->pChain->current+1].phy.chn;
+                auxInfo.phy               = advParam->pChain->entry[advParam->pChain->current+1].phy.mode;
             }
             adv_aux_chain_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
@@ -938,13 +939,13 @@ static void adv_event_extended_non_connectable_non_scannable_undirected_with_aux
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            if(advParam->ea->chain.cnt!=0)
+            if(advParam->pChain->cnt!=0)
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
                 auxInfo.anchorPoint       = advParam->ea->aux.sch.anchorPoint;
-                auxInfo.targetAnchorPoint = advParam->ea->chain.entry[0].sch.anchorPoint;
-                auxInfo.channel           = advParam->ea->chain.entry[0].phy.chn;
-                auxInfo.phy               = advParam->ea->chain.entry[0].phy.mode;
+                auxInfo.targetAnchorPoint = advParam->pChain->entry[0].sch.anchorPoint;
+                auxInfo.channel           = advParam->pChain->entry[0].phy.chn;
+                auxInfo.phy               = advParam->pChain->entry[0].phy.mode;
             }   
             //sync info optional
             adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
@@ -957,13 +958,13 @@ static void adv_event_extended_non_connectable_non_scannable_undirected_with_aux
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            if(advParam->ea->chain.cnt!=advParam->ea->chain.current)
+            if(advParam->pChain->cnt!=advParam->pChain->current)
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-                auxInfo.anchorPoint       = advParam->ea->chain.entry[advParam->ea->chain.current].sch.anchorPoint;
-                auxInfo.targetAnchorPoint = advParam->ea->chain.entry[advParam->ea->chain.current+1].sch.anchorPoint;
-                auxInfo.channel           = advParam->ea->chain.entry[advParam->ea->chain.current+1].phy.chn;
-                auxInfo.phy               = advParam->ea->chain.entry[advParam->ea->chain.current+1].phy.mode;
+                auxInfo.anchorPoint       = advParam->pChain->entry[advParam->pChain->current].sch.anchorPoint;
+                auxInfo.targetAnchorPoint = advParam->pChain->entry[advParam->pChain->current+1].sch.anchorPoint;
+                auxInfo.channel           = advParam->pChain->entry[advParam->pChain->current+1].phy.chn;
+                auxInfo.phy               = advParam->pChain->entry[advParam->pChain->current+1].phy.mode;
             }
             adv_aux_chain_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo);
         }
@@ -1348,10 +1349,6 @@ static int adv_extended_event_step_phy_send_aux_scan_rsp(ll_sm_t* ll,ll_internal
 				_u32 timestamp = ll->phy.hw_get_rx_air_ts() + ll_get_air_packet_time(advParam->ea->aux.phy.mode,sizeof(scan_type_aux_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME;
 				adv_prepare_phy(ll,&advParam->ea->aux.phy,timestamp,PHY_DIR_TX);
 				ll->phy.start();
-				if(advParam->schMap&ADV_SCH_MAP_CHAIN)
-				{
-					advParam->currentSch = ADV_SCH_MAP_CHAIN;
-				}
 				return 1;
 	        }
 		}
@@ -1388,31 +1385,31 @@ static int adv_extended_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t*
 {
     if(advParam->state == ADV_SM_STATE_SENDING_AUX_SCAN_RSP)
     {
-        if(advParam->schMap&ADV_SCH_MAP_CHAIN)
+        if(advParam->schMap&ADV_SCH_MAP_AUX_CHAIN)
         {
             adv_get_next_event(ll);    
             return 1; 
         }
     }
-    else if(advParam->schMap&ADV_SCH_MAP_CHAIN)
+    else if(advParam->schMap&ADV_SCH_MAP_AUX_CHAIN)
     {
         adv_get_next_event(ll);
         return 1;
     }
-    ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_CHAIN);
+    ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
     adv_get_next_event(ll);
 	return 1;
 }
 static int adv_extended_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
-    ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_CHAIN);
+    ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
     //todo
     adv_get_next_event(ll);
 	return 1;
 }
 static int adv_extended_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
-    ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_CHAIN);
+    ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
     //todo
     adv_get_next_event(ll);
 	return 1;
@@ -1442,9 +1439,9 @@ static int adv_chained_event_step_phy_send_chain_advertising(ll_sm_t* ll,ll_inte
     phy_obj_cast(&ll->phy);
     //prepare packet
     adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_CHAIN);
-    advParam->ea->chain.entry[advParam->ea->chain.current].phy.chn = 35;//todo
+    advParam->pChain->entry[advParam->pChain->current].phy.chn = 35;//todo
     //prepare phy
-    adv_prepare_phy(ll,&advParam->ea->chain.entry[advParam->ea->chain.current].phy,advParam->ea->chain.entry[advParam->ea->chain.current].sch.anchorPoint,PHY_DIR_TX);
+    adv_prepare_phy(ll,&advParam->pChain->entry[advParam->pChain->current].phy,advParam->pChain->entry[advParam->pChain->current].sch.anchorPoint,PHY_DIR_TX);
     ll->phy.start();
 	return 1;
 }
@@ -1452,23 +1449,23 @@ static int adv_chained_event_step_phy_send_chain_advertising(ll_sm_t* ll,ll_inte
 static int adv_chained_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
     ll->phy.stop();
-    advParam->ea->chain.current++;
-    if(advParam->ea->chain.current==advParam->ea->chain.cnt)
+    advParam->pChain->current++;
+    if(advParam->pChain->current==advParam->pChain->cnt)
     {
-        ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_CHAIN);
+        ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
     }
     adv_get_next_event(ll);
 }
 
 static int adv_chained_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
-    ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_CHAIN);
+    ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
     adv_get_next_event(ll);
 }
 
 static int adv_chained_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
-    ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_CHAIN);
+    ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
     adv_get_next_event(ll);
 }
 

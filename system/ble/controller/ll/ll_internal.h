@@ -208,13 +208,13 @@ typedef struct
     _u8  handle;
     _u8  schMap;
 
-    _u8* chain;
+    ll_adv_chain_entry_t* pChain;
 
-    _u8  currentSch;
+    _u8  rsvd1;
     _u16 eventProperty;
 	#else
     _u8  schMap:4;
-    _u8  currentSch:4;
+    _u8  rsvd1:4;
     #endif
     _u8  ownAddressType:2;//'ll_own_address_type_e'
     _u8  peerAddressType:2;//'ll_peer_address_type_e'
