@@ -1416,36 +1416,8 @@ controller_error_code_e ll_set_periodic_advertising_data(_u8 advHandle,ll_advert
 		}
 			break;
 	}
-}
-
-controller_error_code_e ll_set_periodic_advertising_enable(_u8 enable,_u8 advHandle)
-{
-	ll_internal_adv_param_t* pAdv = ll_extended_adv_get_entity(advHandle,0);
-	if(POINTER_NOT_VALID(pAdv))
+	if(operation == LL_ADV_DATA_OPERATION_LAST_FRAGMENT||operation == LL_ADV_DATA_OPERATION_COMPLETE)
 	{
-		return UNKNOWN_ADVERTISING_IDENTIFIER;
-	}
-	if((!pAdv->schMap&ADV_SCH_MAP_PA))
-	{
-		return COMMAND_DISALLOWED;
-	}
-	if(pAdv->eventProperty&(LL_ADV_EVENT_PROPERTY_LEGACY_PDU|LL_ADV_EVENT_PROPERTY_CONNECTED|LL_ADV_EVENT_PROPERTY_SCANNABLE|LL_ADV_EVENT_PROPERTY_ANONYMOUS_ADV))
-	{
-		return COMMAND_DISALLOWED;
-	}
-	if(pAdv->pa->enable&&(enable&BIT(0)))
-	{
-		//random address change
-	}
-	if((pAdv->pa->enable == 0)&&(enable&BIT(0)))
-	{
-		pAdv->pa->enable = 1;
-		if(pAdv->enable)
-		{
-			pAdv->pa->active = 1;
-		}
-		pAdv->pa->includeAdi = (enable&BIT(1)==0?0:1);
-		pAdv->schMap |= ADV_SCH_MAP_PA;
 		if(POINTER_VALID(pAdv->pa->chain.entry))
 		{
 			tx_free((_u8*)pAdv->pa->chain.entry);
@@ -1478,6 +1450,46 @@ controller_error_code_e ll_set_periodic_advertising_enable(_u8 enable,_u8 advHan
 				pAdv->pa->chain.entry[chainCnt-1].data.addr= (pAdv->pa->data.addr+offset);
 			}
 		}
+	}
+	return SUCCESS;
+}
+
+controller_error_code_e ll_set_periodic_advertising_enable(_u8 enable,_u8 advHandle)
+{
+	ll_internal_adv_param_t* pAdv = ll_extended_adv_get_entity(advHandle,0);
+	ll_sm_t* ll = ll_get_current_state_machine();
+	if(POINTER_NOT_VALID(pAdv))
+	{
+		return UNKNOWN_ADVERTISING_IDENTIFIER;
+	}
+	if((!pAdv->schMap&ADV_SCH_MAP_PA))
+	{
+		return COMMAND_DISALLOWED;
+	}
+	if(pAdv->eventProperty&(LL_ADV_EVENT_PROPERTY_LEGACY_PDU|LL_ADV_EVENT_PROPERTY_CONNECTED|LL_ADV_EVENT_PROPERTY_SCANNABLE|LL_ADV_EVENT_PROPERTY_ANONYMOUS_ADV))
+	{
+		return COMMAND_DISALLOWED;
+	}
+	if(pAdv->pa->enable&&(enable&BIT(0)))
+	{
+		//random address change
+	}
+	if((pAdv->pa->enable == 0)&&(enable&BIT(0)))
+	{
+		pAdv->pa->enable = 1;
+		if(pAdv->enable)
+		{
+			pAdv->pa->active = 1;
+		}
+		pAdv->pa->includeAdi = (enable&BIT(1)==0?0:1);
+		pAdv->schMap |= ADV_SCH_MAP_PA;
+		phy_obj_cast(&ll->phy);
+		pAdv->pa->sync.phy.accessCode = ;
+		
+		pAdv->pa->sync.sch.startMargin = 100;
+		pAdv->pa->sync.sch.stopMargin  = 100;
+		pAdv->pa->sync.sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN,0);
+
 	}
 	if((pAdv->pa->enable == 1)&&(!(enable&BIT(0))))
 	{

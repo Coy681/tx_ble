@@ -180,8 +180,6 @@ static void adv_prepare_phy(ll_sm_t* ll,ll_adv_phy_entry_t* phy,_u32 timestamp,p
     ll->phy.mode       = phy->mode;
     ll->phy.chnIdx     = phy->chn;
     ll->phy.dir        = phydir;
-
-
     if(timestamp!=0)
     {
         ll->phy.timestamp  = timestamp - ll->phy.hw_get_prepare_time();
@@ -248,7 +246,7 @@ int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_
 	    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
         for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
         {
-            if((ll->adv->param[i].handle == advParam[i].handle) || (ll->adv->param[i].handle == 0))
+            if((ll->adv->param[i].handle == advParam[i].handle) || (ll->adv->param[i].enable == 0))
             {
                 continue;
             }
@@ -302,7 +300,7 @@ int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_
                 }
             }
 			#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
-    		if(ll->adv->param[i].pa->active)
+    		if(POINTER_VALID(ll->adv->param[i].pa)&&ll->adv->param[i].pa->active)
             {
     			if(ll->adv->param[i].schMap&ADV_SCH_MAP_PA)
     			{
@@ -511,7 +509,7 @@ static void adv_generate_extended_header(ll_sm_t* ll,ll_internal_adv_param_t* ad
     }
     if(flags & ADV_EXTENDED_HEADER_FLAG_ADI)
     {
-        ((adv_extended_header_subfield_adi_t*)(extHeader->param+offset))->did = advParam->ea->did;
+        ((adv_extended_header_subfield_adi_t*)(extHeader->param+offset))->did = did;
         ((adv_extended_header_subfield_adi_t*)(extHeader->param+offset))->sid = advParam->sid;
         offset+=sizeof(adv_extended_header_subfield_adi_t);
     }
