@@ -1106,11 +1106,11 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
                 {
                     if(pAdv->eventType == ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED)
                     {
-                    	pAdv->la->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+PACKET_DEFAULT_TIFS_TIME;
+                    	pAdv->la->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(pAdv->la->phy.mode,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+PACKET_DEFAULT_TIFS_TIME;
                     }
                     else
                     {
-                    	pAdv->la->sch.duration = ll->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(ll->phy.mode,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+2*PACKET_DEFAULT_TIFS_TIME;
+                    	pAdv->la->sch.duration = ll->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(pAdv->la->phy.mode,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+2*PACKET_DEFAULT_TIFS_TIME;
                     }
                 }
                 else
@@ -1119,27 +1119,32 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 					{
 						pAdv->ea->chain.cnt = 0;
 					}
-                	pAdv->la->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+PACKET_DEFAULT_TIFS_TIME;
-                    //ea sch and phy init
-                	if(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_CONNECTED)
-                	{
-						pAdv->ea->aux.sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN+pAdv->ea->aux.data.len,0)+PACKET_DEFAULT_TIFS_TIME\
-												        + ll_get_air_packet_time(ll->phy.mode,3+sizeof(scan_type_aux_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME\
-												        + ll_get_air_packet_time(ll->phy.mode,3+sizeof(init_type_auxConnectRsp_t),0);
-					}
-					else if(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_SCANNABLE)
-                	{
-						pAdv->ea->aux.sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN,0)+PACKET_DEFAULT_TIFS_TIME\
-											            + ll_get_air_packet_time(ll->phy.mode,3+sizeof(scan_type_aux_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME\
-												        + ll_get_air_packet_time(ll->phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN+pAdv->ea->aux.data.len,0);
-					}
+					pAdv->la->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(pAdv->la->phy.mode,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+PACKET_DEFAULT_TIFS_TIME;
                 	pAdv->ea->aux.phy.crcInit         = BLE_ADV_CRC_INIT;
                 	pAdv->ea->aux.phy.accessCode      = BLE_ADV_ACCESS_CODE;
                 	pAdv->ea->aux.phy.rxMaxOctets     = BLE_ADV_SEC_PHY_MAX_TX_LEN;
                 	pAdv->ea->aux.phy.rxAddress       = ll_get_shared_phy_rx_address();
                 	pAdv->ea->aux.phy.txAddress       = ll_get_shared_phy_tx_address();
-					pAdv->ea->aux.phy.mode            = pAdv->ea->phyMode;
 					pAdv->ea->eventCnt = 0;
+					pAdv->ea->aux.phy.mode            = pAdv->ea->phyMode;
+                    //ea sch and phy init
+                	if(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_CONNECTED)
+                	{
+						pAdv->ea->aux.sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(pAdv->ea->aux.phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN+pAdv->ea->aux.data.len,0)+PACKET_DEFAULT_TIFS_TIME\
+												        + ll_get_air_packet_time(pAdv->ea->aux.phy.mode,3+sizeof(scan_type_aux_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME\
+												        + ll_get_air_packet_time(pAdv->ea->aux.phy.mode,3+sizeof(init_type_auxConnectRsp_t),0);
+					}
+					else if(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_SCANNABLE)
+                	{
+						pAdv->ea->aux.sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(pAdv->ea->aux.phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN,0)+PACKET_DEFAULT_TIFS_TIME\
+											            + ll_get_air_packet_time(pAdv->ea->aux.phy.mode,3+sizeof(scan_type_aux_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME\
+												        + ll_get_air_packet_time(pAdv->ea->aux.phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN+pAdv->ea->aux.data.len,0);
+					}
+					else
+					{
+						pAdv->ea->aux.sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(pAdv->ea->aux.phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN+pAdv->ea->aux.data.len,0);
+					}
+
                     if(pAdv->schMap&ADV_SCH_MAP_AUX_CHAIN)
                     {
                         for(int i=0;i<pAdv->ea->chain.cnt;i++)
@@ -1157,7 +1162,7 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
                             pAdv->ea->chain.entry[i].phy.accessCode = BLE_ADV_ACCESS_CODE;
                             pAdv->ea->chain.entry[i].phy.mode       = pAdv->ea->phyMode;
                             pAdv->ea->chain.entry[i].phy.txAddress  = ll_get_shared_phy_tx_address();
-							pAdv->ea->chain.entry[i].sch.duration   = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN+pAdv->ea->chain.entry[i].data.len,0)+PACKET_DEFAULT_TIFS_TIME;
+							pAdv->ea->chain.entry[i].sch.duration   = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(pAdv->ea->chain.entry[i].phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN+pAdv->ea->chain.entry[i].data.len,0)+PACKET_DEFAULT_TIFS_TIME;
                         }
                     	pAdv->ea->aux.sch.startMargin     = 100;
                     	pAdv->ea->aux.sch.stopMargin      = 100;//shall location the next event
@@ -1494,7 +1499,7 @@ controller_error_code_e ll_set_periodic_advertising_enable(_u8 enable,_u8 advHan
 
 		pAdv->pa->sync.sch.startMargin= 100;
 		pAdv->pa->sync.sch.stopMargin = 100;
-		pAdv->pa->sync.sch.duration   = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,2+BLE_ADV_SEC_PHY_MAX_TX_LEN,0);
+		pAdv->pa->sync.sch.duration   = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(pAdv->pa->sync.phy.mode,2+BLE_ADV_SEC_PHY_MAX_TX_LEN,0);
 		pAdv->pa->sync.sch.anchorPoint= system_time()+2000;//todo,periodic task get anchor point from planner
 	}
 	if((pAdv->pa->enable == 1)&&(!(enable&BIT(0))))
