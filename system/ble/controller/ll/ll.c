@@ -831,9 +831,9 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 	}
 	else 
 	{
-		if(pAdv->eventType != ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED||\
-		   pAdv->eventType != ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED||\
-		   pAdv->eventType != ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED||\
+		if(pAdv->eventType != ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED&&\
+		   pAdv->eventType != ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED&&\
+		   pAdv->eventType != ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED&&\
 		   pAdv->eventType != ADV_EVENT_SCANNABLE_UNDIRECTED)
 		{
 			return IVALID_HCI_COMMAND_PARAMETERS;

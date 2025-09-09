@@ -621,11 +621,16 @@ static void adv_ext_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advPara
 static void adv_aux_adv_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
-    _u8* packet = ll_get_adv_packet(advParam->ea->aux.phy.txAddress,headerLen+advParam->ea->aux.data.len,LL_ADV_TYPE_AUX_ADV_IND,0,advParam->ownAddressType?1:0,0);
-    adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo,did);
-    if(advParam->ea->aux.data.len!=0)
+    _u16 dataLen = advParam->ea->aux.data.len;
+    if(advParam->eventProperty&LL_ADV_EVENT_PROPERTY_SCANNABLE)
     {
-        txMemcpy(packet+headerLen,advParam->ea->aux.data.addr,advParam->ea->aux.data.len);
+    	dataLen = 0;
+    }
+    _u8* packet = ll_get_adv_packet(advParam->ea->aux.phy.txAddress,headerLen+dataLen,LL_ADV_TYPE_AUX_ADV_IND,0,advParam->ownAddressType?1:0,0);
+    adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo,did);
+    if(dataLen!=0)
+    {
+        txMemcpy(packet+headerLen,advParam->ea->aux.data.addr,dataLen);
     }
 }
 //LL_ADV_TYPE_AUX_SCAN_RSP
@@ -1195,7 +1200,6 @@ void(*adv_prepare_packet[])(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pd
 
 
 /*****************************************ADV Event Process ***********************************************/
-
 _RAM_CODE
 static int adv_event_step_phy_send_advertising(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
