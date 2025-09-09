@@ -236,52 +236,52 @@ void app_rx_cmd(_u8* data,_u32 len)
 //	 	default:
 //	 		break;
 //	 }
-//	   switch(data[0])
-//	   {
-//
-//	   	case 1:
-//	   		ll_set_advertising_parameters(16,LL_ADV_IND,LL_PUBLIC_DEVICE_ADDRESS,LL_PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,0,7,LL_FILTER_LIST_NOT_USE);
-//	   		break;
-//	   	case 2:
-//	   		ll_set_advertising_data(data1,sizeof(data1));
-//	   		break;
-//	   	case 3:
-//	   	    ll_set_scan_response_data(data1,sizeof(data1));
-//	   		break;
-//	   	case 4:
-//	   		ll_set_advertising_enable(1);
-//	   		break;
-//	   	case 5:
-//	   		ll_set_advertising_enable(0);
-//	   		break;
-//	   	case 6:
-//	   	{
-//	   		int len = ll_get_air_packet_time(PHY_MODE_1M,data[1],0);
-//	   		LOG_TRACE(1,"1M data len",&len,4)
-//	   	}
-//	   		break;
-//	   	case 7:
-//	   	{
-//	   		int len = ll_get_air_packet_time(PHY_MODE_2M,data[1],0);
-//	   		LOG_TRACE(1,"2M data len",&len,4)
-//	   	}
-//	   		break;
-//	   	case 8:
-//	   	{
-//	   		int len = ll_get_air_packet_time(PHY_MODE_CODED_S2,data[1],0);
-//	   		LOG_TRACE(1,"S2 data len",&len,4)
-//	   	}
-//	   		break;
-//	   	case 9:
-//	   	{
-//	   		int len = ll_get_air_packet_time(PHY_MODE_CODED_S8,data[1],0);
-//	   		LOG_TRACE(1,"S8 data len",&len,4)
-//	   	}
-//	   		break;
-//
-//	   	default:
-//	   		break;
-//	   }
+	   switch(data[0])
+	   {
+
+	   	case 1:
+	   		ll_set_advertising_parameters(32,LL_ADV_NONCONN_IND,LL_PUBLIC_DEVICE_ADDRESS,LL_PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,0,7,LL_FILTER_LIST_NOT_USE);
+	   		break;
+	   	case 2:
+	   		ll_set_advertising_data(data1,sizeof(data1));
+	   		break;
+	   	case 3:
+	   	    ll_set_scan_response_data(data1,sizeof(data1));
+	   		break;
+	   	case 4:
+	   		ll_set_advertising_enable(1);
+	   		break;
+	   	case 5:
+	   		ll_set_advertising_enable(0);
+	   		break;
+	   	case 6:
+	   	{
+	   		int len = ll_get_air_packet_time(PHY_MODE_1M,data[1],0);
+	   		LOG_TRACE(1,"1M data len",&len,4)
+	   	}
+	   		break;
+	   	case 7:
+	   	{
+	   		int len = ll_get_air_packet_time(PHY_MODE_2M,data[1],0);
+	   		LOG_TRACE(1,"2M data len",&len,4)
+	   	}
+	   		break;
+	   	case 8:
+	   	{
+	   		int len = ll_get_air_packet_time(PHY_MODE_CODED_S2,data[1],0);
+	   		LOG_TRACE(1,"S2 data len",&len,4)
+	   	}
+	   		break;
+	   	case 9:
+	   	{
+	   		int len = ll_get_air_packet_time(PHY_MODE_CODED_S8,data[1],0);
+	   		LOG_TRACE(1,"S8 data len",&len,4)
+	   	}
+	   		break;
+
+	   	default:
+	   		break;
+	   }
 
 
 

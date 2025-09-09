@@ -432,7 +432,7 @@ controller_error_code_e ll_set_advertising_enable(_u8 enable)
 			advParam->la->sch.anchorPoint     = system_time() + 500;
 			if(advParam->eventType == ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED)
 			{
-				advParam->la->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(PHY_MODE_1M,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+PACKET_DEFAULT_TIFS_TIME;
+				advParam->la->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(PHY_MODE_1M,BLE_ADV_PRI_PHY_MAX_TX_LEN,0);
 			}
 			else
 			{
