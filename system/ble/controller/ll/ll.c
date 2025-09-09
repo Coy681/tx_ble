@@ -620,7 +620,7 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 	}
 	else
 	{
-		pAdv->la->phy.mode = LL_ADV_PHY_1M;
+		pAdv->la->phy.mode = PHY_MODE_1M;
 	}
 	return SUCCESS;
 }

@@ -29,7 +29,7 @@ static void phy_start(void)
     hal_rf_set_channel_index(phyCtrl->chnIdx);
     if(lastPhy!= phyCtrl->mode)
     {
-        phy_mode[phyCtrl->mode];
+        phy_mode[phyCtrl->mode]();
         lastPhy = phyCtrl->mode;
     }
     if(phyCtrl->dir == PHY_DIR_TX)

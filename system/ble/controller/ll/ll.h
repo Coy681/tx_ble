@@ -172,9 +172,9 @@ typedef enum
 
 typedef enum
 {
-    LL_ADV_PHY_1M    = 0x01,
-    LL_ADV_PHY_2M    = 0x02,
-    LL_ADV_PHY_CODED = 0x03,
+    LL_ADV_PHY_1M    = 1,
+    LL_ADV_PHY_2M    = 2,
+    LL_ADV_PHY_CODED = 3,
 }ll_advertising_phy_e;
 
 typedef enum

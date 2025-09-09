@@ -163,7 +163,7 @@ void app_rx_cmd(_u8* data,_u32 len)
 	 	.primaryAdvPhy          = LL_ADV_PHY_1M,
 	 	.primaryAdvphyOptions   = 0,
 	 	.secondaryAdvMaxSkip    = 0,
-	 	.secondaryAdvPhy        = LL_ADV_PHY_1M,
+	 	.secondaryAdvPhy        = LL_ADV_PHY_2M,
 	 	.secondaryAdvphyOptions = 0,
 	 };
 	 ll_extended_adv_enable_subField_e advEnable =
