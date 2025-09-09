@@ -615,8 +615,8 @@ static void adv_ext_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advPara
     _u16 headerLen = adv_calculate_extended_header_length(flags);
     _u8* packet = ll_get_adv_packet(advParam->la->phy.txAddress,headerLen,LL_ADV_TYPE_ADV_EXT_IND,0,advParam->ownAddressType?1:0,0);
     adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo,did);
-
 }
+
 //LL_ADV_TYPE_AUX_ADV_IND
 static void adv_aux_adv_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
 {
@@ -625,7 +625,7 @@ static void adv_aux_adv_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* adv
     adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo,did);
     if(advParam->ea->aux.data.len!=0)
     {
-        txMemcpy(packet+(2+((adv_extended_header_t*)packet)->len),advParam->ea->aux.data.addr,advParam->ea->aux.data.len);
+        txMemcpy(packet+headerLen,advParam->ea->aux.data.addr,advParam->ea->aux.data.len);
     }
 }
 //LL_ADV_TYPE_AUX_SCAN_RSP
@@ -636,7 +636,7 @@ static void adv_aux_scan_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* ad
     adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo,did);
     if(advParam->ea->aux.data.len!=0)
     {
-        txMemcpy(packet+(2+((adv_extended_header_t*)packet)->len),advParam->ea->aux.data.addr,advParam->ea->aux.data.len);
+        txMemcpy(packet+headerLen,advParam->ea->aux.data.addr,advParam->ea->aux.data.len);
     }
 }
 //LL_ADV_TYPE_AUX_CONNECT_RSP
@@ -654,7 +654,7 @@ static void adv_aux_chain_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* a
     adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo,did);
     if(advParam->pChain->entry[advParam->pChain->current].data.len!=0)
     {
-        txMemcpy(packet+(2+((adv_extended_header_t*)packet)->len),advParam->pChain->entry[advParam->pChain->current].data.addr,advParam->pChain->entry[advParam->pChain->current].data.len);
+        txMemcpy(packet+headerLen,advParam->pChain->entry[advParam->pChain->current].data.addr,advParam->pChain->entry[advParam->pChain->current].data.len);
     }
 }
 #endif
@@ -667,7 +667,7 @@ static void adv_aux_sync_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* ad
     adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo,did);
     if(advParam->pa->sync.data.len!=0)
     {
-        txMemcpy(packet+(2+((adv_extended_header_t*)packet)->len),advParam->pa->sync.data.addr,advParam->pa->sync.data.len);
+        txMemcpy(packet+headerLen,advParam->pa->sync.data.addr,advParam->pa->sync.data.len);
     }
 }
 #endif
@@ -790,6 +790,8 @@ static void adv_event_extended_connectable_directed_packet_prapare(ll_sm_t* ll,l
         break;
     }
 }
+
+volatile _u8 AAVV_PACKET[50];
 //ADV_EVENT_EXTENDED_CONNECTABLE_UNDIRECTED
 _RAM_CODE
 static void adv_event_extended_connectable_undirected_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)

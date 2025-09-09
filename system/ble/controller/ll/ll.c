@@ -629,6 +629,7 @@ volatile int AAA_DATA_ADDRESS;
 volatile int AAA_RSP_ADDRESS;
 volatile int AAA_DATA_LEN;
 volatile int AAA_RSP_LEN;
+
 controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 														ll_advertising_data_operation_e operation,\
 														ll_advertising_data_fragment_perference_e fragPref,\
@@ -1116,7 +1117,6 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
                 {
 					if(POINTER_NOT_VALID(pAdv->ea->chain.entry))
 					{
-						pAdv->ea->aux.data.len = 0;
 						pAdv->ea->chain.cnt = 0;
 					}
                 	pAdv->la->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+PACKET_DEFAULT_TIFS_TIME;
