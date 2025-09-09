@@ -15,6 +15,14 @@
 #define BLE_ADV_SEC_PHY_MAX_TX_LEN                     128//Configurable,min is adv extended header length,which is 64 octets.
 #endif
 
+#ifndef BLE_ADV_PRI_PHY_MAX_RX_LEN
+#define BLE_ADV_PRI_PHY_MAX_RX_LEN                     37//fix value,37 octets.
+#endif
+
+#ifndef BLE_ADV_SEC_PHY_MAX_RX_LEN
+#define BLE_ADV_SEC_PHY_MAX_RX_LEN                     200//Configurable,min is adv extended header length,which is 64 octets.
+#endif
+
 #ifndef BLE_PHY_DEFAULT_TX_POWER
 #define BLE_PHY_DEFAULT_TX_POWER                       0
 #endif

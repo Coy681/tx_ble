@@ -444,7 +444,7 @@ controller_error_code_e ll_set_advertising_enable(_u8 enable)
 			advParam->la->phy.mode            = PHY_MODE_1M;
 			advParam->la->phy.crcInit         = BLE_ADV_CRC_INIT;
 			advParam->la->phy.accessCode      = BLE_ADV_ACCESS_CODE;
-			advParam->la->phy.rxMaxOctets     = BLE_ADV_PRI_PHY_MAX_TX_LEN;
+			advParam->la->phy.rxMaxOctets     = BLE_ADV_PRI_PHY_MAX_RX_LEN;
 			advParam->la->phy.rxAddress       = ll_get_shared_phy_rx_address();
 			advParam->la->phy.txAddress       = ll_get_shared_phy_tx_address();
 			if(BLE_LL_STATE_SUCCESS!=ble_ll_process_event(ll,BLE_LL_EVENT_START_ADVERTISING))
@@ -1484,12 +1484,18 @@ controller_error_code_e ll_set_periodic_advertising_enable(_u8 enable,_u8 advHan
 		pAdv->pa->includeAdi = (enable&BIT(1)==0?0:1);
 		pAdv->schMap |= ADV_SCH_MAP_PA;
 		phy_obj_cast(&ll->phy);
-		pAdv->pa->sync.phy.accessCode = ;
-		
-		pAdv->pa->sync.sch.startMargin = 100;
-		pAdv->pa->sync.sch.stopMargin  = 100;
-		pAdv->pa->sync.sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN,0);
+		pAdv->pa->sync.phy.mode       = pAdv->ea->phyMode;
+		pAdv->pa->sync.phy.rxMaxOctets= BLE_ADV_PRI_PHY_MAX_RX_LEN;
+		pAdv->pa->sync.phy.accessCode = 0x89762349;
+		pAdv->pa->sync.phy.crcInit    = 0x192874;
+		pAdv->pa->sync.phy.txAddress  = ll_get_shared_phy_tx_address();;
+		pAdv->pa->sync.phy.rxAddress  = ll_get_shared_phy_rx_address();
 
+
+		pAdv->pa->sync.sch.startMargin= 100;
+		pAdv->pa->sync.sch.stopMargin = 100;
+		pAdv->pa->sync.sch.duration   = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(ll->phy.mode,2+BLE_ADV_SEC_PHY_MAX_TX_LEN,0);
+		pAdv->pa->sync.sch.anchorPoint= system_time()+2000;//todo,periodic task get anchor point from planner
 	}
 	if((pAdv->pa->enable == 1)&&(!(enable&BIT(0))))
 	{

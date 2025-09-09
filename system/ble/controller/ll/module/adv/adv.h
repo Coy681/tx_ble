@@ -38,12 +38,14 @@ typedef enum
     ADV_PDU_CLASS_SYNC,
 }adv_pdu_class_e;
 
-#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
+
 typedef enum
 {
     ADV_SCH_MAP_PRI       = BIT(0),
+	#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
     ADV_SCH_MAP_AUX       = BIT(1),
     ADV_SCH_MAP_AUX_CHAIN = BIT(2),
+	#endif
 	#if (LL_SUPPORT_LE_PERIODIC_ADVERTISING)
     ADV_SCH_MAP_PA        = BIT(3),
     ADV_SCH_MAP_PA_CHAIN  = BIT(4),
@@ -52,8 +54,10 @@ typedef enum
     ADV_SCH_MAP_PAWR      = BIT(5),
 	#endif
 	ADV_SCH_MAP_ALL       = ADV_SCH_MAP_PRI
+	#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
 					       |ADV_SCH_MAP_AUX
 						   |ADV_SCH_MAP_AUX_CHAIN
+	#endif
 	#if (LL_SUPPORT_LE_PERIODIC_ADVERTISING)
 						   |ADV_SCH_MAP_PA
 						   |ADV_SCH_MAP_PA_CHAIN
@@ -62,7 +66,7 @@ typedef enum
 						   |ADV_SCH_MAP_PAWR
 	#endif
 } adv_ext_sch_map_e;
-#endif
+
 
 typedef enum
 {

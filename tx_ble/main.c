@@ -147,95 +147,95 @@ void app_rx_cmd(_u8* data,_u32 len)
 			       0x02,0x01,0x05,
                    0x03,0x19,0x80,0x01,
                    0x05,0x02,0x12,0x18,0x0f,0x18};
-	 ll_extended_adv_param_t extendedAdvParam =
-	 {
-	 	.advHandle              = 0x00,
-	 	.advEventProperty       = LL_ADV_EVENT_PROPERTY_CONNECTED,
-	 	.filterPolicy           = LL_FILTER_LIST_NOT_USE,
-	 	.txPower                = 0x7f,
-	 	.advSid                 = 0x00,
-	 	.ownAddrType            = LL_PUBLIC_DEVICE_ADDRESS,
-	 	.peerAddrType           = LL_PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,
-	 	.peerAddr               = {0x00,0x00,0x00,0x00,0x00,0x00},
-	 	.scanReqNotifyEnable    = 0,
-	 	.primaryAdvInterval     = 160,
-	 	.primaryAdvChnMap       = LL_ADV_CHN_37|LL_ADV_CHN_38|LL_ADV_CHN_39,
-	 	.primaryAdvPhy          = LL_ADV_PHY_1M,
-	 	.primaryAdvphyOptions   = 0,
-	 	.secondaryAdvMaxSkip    = 0,
-	 	.secondaryAdvPhy        = LL_ADV_PHY_1M,
-	 	.secondaryAdvphyOptions = 0,
-	 };
-	 ll_extended_adv_enable_subField_e advEnable =
-	 {
-	 	.advHandle = 0x00,
-	 	.duration  = 0x00,
-	 	.maxEvents = 0x00,
-	 };
-	 int status = 0;
-
-	 switch(data[0])
-	 {
-	 	case 1:
-	 		status = ll_set_extended_advertising_parameters(&extendedAdvParam);
-	 		LOG_TRACE(1,"set extended param",&status,4)
-	 		break;
-	 	case 2:
-	 		status = ll_set_extended_advertising_data(0x00,\
-	 				                         LL_ADV_DATA_OPERATION_COMPLETE,\
-	 										 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
-	 										 sizeof(data1),
-	 										 data1);
-	 		LOG_TRACE(1,"set extended data",&status,4)
-	 		break;
-	 	case 3:
-	 		status = ll_set_extended_scan_response_data(0x00,\
-	 				                         LL_ADV_DATA_OPERATION_COMPLETE,\
-	 										 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
-	 										 sizeof(data1),
-	 										 data1);
-	 		LOG_TRACE(1,"set scan rsp data",&status,4)
-	 		break;
-	 	case 4:
-	 		status = ll_set_extended_advertising_enable(1,\
-	 				                           1,\
-	 										   &advEnable);
-	 		LOG_TRACE(1,"set adv enable",&status,4)
-	 		break;
-	 	case 5:
-
-			{
-		 		_u8* message = tx_message_allocate(8);
-		 		message[0] = SCHE_MESSAGE_TASK_ADD;
-		 		message[1] = ((_u32)&aTask1);
-		 		message[2] = ((_u32)&aTask1)>>8;
-		 		message[3] = ((_u32)&aTask1)>>16;
-		 		message[4] = ((_u32)&aTask1)>>24;
-		 		tx_message_send(TX_TASK_ID_SCH,message);
-		 		LOG_TRACE(1,"task add",&status,4)
-			}
-
-	 		break;
-	 	case 6:
-
-			{
-		 		_u8* message = tx_message_allocate(8);
-		 		message[0] = SCHE_MESSAGE_TASK_ADD;
-		 		message[1] = ((_u32)&aTask2);
-		 		message[2] = ((_u32)&aTask2)>>8;
-		 		message[3] = ((_u32)&aTask2)>>16;
-		 		message[4] = ((_u32)&aTask2)>>24;
-		 		tx_message_send(TX_TASK_ID_SCH,message);
-		 		LOG_TRACE(1,"task add",&status,4)
-			}
-
-	 		break;
-
-
-
-	 	default:
-	 		break;
-	 }
+//	 ll_extended_adv_param_t extendedAdvParam =
+//	 {
+//	 	.advHandle              = 0x00,
+//	 	.advEventProperty       = LL_ADV_EVENT_PROPERTY_CONNECTED,
+//	 	.filterPolicy           = LL_FILTER_LIST_NOT_USE,
+//	 	.txPower                = 0x7f,
+//	 	.advSid                 = 0x00,
+//	 	.ownAddrType            = LL_PUBLIC_DEVICE_ADDRESS,
+//	 	.peerAddrType           = LL_PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,
+//	 	.peerAddr               = {0x00,0x00,0x00,0x00,0x00,0x00},
+//	 	.scanReqNotifyEnable    = 0,
+//	 	.primaryAdvInterval     = 160,
+//	 	.primaryAdvChnMap       = LL_ADV_CHN_37|LL_ADV_CHN_38|LL_ADV_CHN_39,
+//	 	.primaryAdvPhy          = LL_ADV_PHY_1M,
+//	 	.primaryAdvphyOptions   = 0,
+//	 	.secondaryAdvMaxSkip    = 0,
+//	 	.secondaryAdvPhy        = LL_ADV_PHY_1M,
+//	 	.secondaryAdvphyOptions = 0,
+//	 };
+//	 ll_extended_adv_enable_subField_e advEnable =
+//	 {
+//	 	.advHandle = 0x00,
+//	 	.duration  = 0x00,
+//	 	.maxEvents = 0x00,
+//	 };
+//	 int status = 0;
+//
+//	 switch(data[0])
+//	 {
+//	 	case 1:
+//	 		status = ll_set_extended_advertising_parameters(&extendedAdvParam);
+//	 		LOG_TRACE(1,"set extended param",&status,4)
+//	 		break;
+//	 	case 2:
+//	 		status = ll_set_extended_advertising_data(0x00,\
+//	 				                         LL_ADV_DATA_OPERATION_COMPLETE,\
+//	 										 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
+//	 										 sizeof(data1),
+//	 										 data1);
+//	 		LOG_TRACE(1,"set extended data",&status,4)
+//	 		break;
+//	 	case 3:
+//	 		status = ll_set_extended_scan_response_data(0x00,\
+//	 				                         LL_ADV_DATA_OPERATION_COMPLETE,\
+//	 										 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
+//	 										 sizeof(data1),
+//	 										 data1);
+//	 		LOG_TRACE(1,"set scan rsp data",&status,4)
+//	 		break;
+//	 	case 4:
+//	 		status = ll_set_extended_advertising_enable(1,\
+//	 				                           1,\
+//	 										   &advEnable);
+//	 		LOG_TRACE(1,"set adv enable",&status,4)
+//	 		break;
+//	 	case 5:
+//
+//			{
+//		 		_u8* message = tx_message_allocate(8);
+//		 		message[0] = SCHE_MESSAGE_TASK_ADD;
+//		 		message[1] = ((_u32)&aTask1);
+//		 		message[2] = ((_u32)&aTask1)>>8;
+//		 		message[3] = ((_u32)&aTask1)>>16;
+//		 		message[4] = ((_u32)&aTask1)>>24;
+//		 		tx_message_send(TX_TASK_ID_SCH,message);
+//		 		LOG_TRACE(1,"task add",&status,4)
+//			}
+//
+//	 		break;
+//	 	case 6:
+//
+//			{
+//		 		_u8* message = tx_message_allocate(8);
+//		 		message[0] = SCHE_MESSAGE_TASK_ADD;
+//		 		message[1] = ((_u32)&aTask2);
+//		 		message[2] = ((_u32)&aTask2)>>8;
+//		 		message[3] = ((_u32)&aTask2)>>16;
+//		 		message[4] = ((_u32)&aTask2)>>24;
+//		 		tx_message_send(TX_TASK_ID_SCH,message);
+//		 		LOG_TRACE(1,"task add",&status,4)
+//			}
+//
+//	 		break;
+//
+//
+//
+//	 	default:
+//	 		break;
+//	 }
 //	   switch(data[0])
 //	   {
 //

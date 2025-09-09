@@ -398,21 +398,7 @@ int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_
     }
 	#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
     if(((mapType&ADV_SCH_MAP_PA))&&(advParam->schMap&ADV_SCH_MAP_PA))
-    {
-        _u32 syncSpace = advParam->pa->sync.sch.startMargin\
-        		       + advParam->pa->sync.sch.duration\
-					   + advParam->pa->sync.sch.stopMargin;
-        for(;blockIndex<freeBlockCount;blockIndex++)
-        {
-            if((freeBlock[blockIndex].end - freeBlock[blockIndex].start)>(syncSpace+PACKET_T_MAFS_TIME))
-            {
-                advParam->pa->sync.sch.anchorPoint = freeBlock[blockIndex].start+advParam->pa->sync.sch.startMargin;
-                advParam->pa->anchor = advParam->pa->sync.sch.anchorPoint;
-                freeBlock[blockIndex].start +=(syncSpace+PACKET_T_MAFS_TIME);//todo,check need space how much
-                break;
-            }
-        }
-
+    {//attention,chain of periodic sync pdu should greater than sync anchor and smaller than sync anchor plus sync interval
         if((mapType&ADV_SCH_MAP_PA_CHAIN)&&(advParam->schMap&ADV_SCH_MAP_PA_CHAIN))
         {
             for(int j=0;j<advParam->pa->chain.cnt;j++)
@@ -541,6 +527,7 @@ static void adv_generate_extended_header(ll_sm_t* ll,ll_internal_adv_param_t* ad
     }
     if(flags & ADV_EXTENDED_HEADER_FLAG_SYNC_INFO)
     {
+		#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
     	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->interval   = advParam->pa->sync.sch.interval;
     	//todo with access code,crc init,sca
     	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->chMH       = 0x1f;
@@ -573,6 +560,7 @@ static void adv_generate_extended_header(ll_sm_t* ll,ll_internal_adv_param_t* ad
         	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->offsetAdjust   = 0;
         }
         ((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->eventCounter   = advParam->pa->eventCnt+stepCnt;
+		#endif
         offset+=sizeof(adv_extended_header_subfield_syncInfo_t);
     }
     if(flags & ADV_EXTENDED_HEADER_FLAG_TX_POWER)
