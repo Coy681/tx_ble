@@ -918,9 +918,9 @@ static void adv_event_extended_scannable_undirected_packet_prapare(ll_sm_t* ll,l
             flags = ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
             advMode = 2;
             auxInfo.anchorPoint       = advParam->la->sch.anchorPoint;
-            auxInfo.targetAnchorPoint = advParam->pChain->entry[0].sch.anchorPoint;
-            auxInfo.channel           = advParam->pChain->entry[0].phy.chn;
-            auxInfo.phy               = advParam->pChain->entry[0].phy.mode;
+            auxInfo.targetAnchorPoint = advParam->ea->aux.sch.anchorPoint;
+            auxInfo.channel           = advParam->ea->aux.phy.chn;
+            auxInfo.phy               = advParam->ea->aux.phy.mode;
             adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo,advParam->ea->did);
         }
         break;
