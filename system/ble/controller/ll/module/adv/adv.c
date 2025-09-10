@@ -121,6 +121,7 @@ void adv_get_next_event(ll_sm_t* ll)
                 {
                     timestamp = ll->adv->param[i].ea->anchor|1;
                     currentAdvSet = &ll->adv->param[i];
+                    currentAdvSet->pChain = &currentAdvSet->ea->chain;
                     if(ll->adv->param[i].ea->anchor == ll->adv->param[i].ea->aux.sch.anchorPoint)
                     {
                         adv_sub_node_remap(ll,&currentAdvSet->ea->aux.sch);
@@ -130,7 +131,6 @@ void adv_get_next_event(ll_sm_t* ll)
                     {
                         adv_sub_node_remap(ll,&currentAdvSet->ea->chain.entry[currentAdvSet->ea->chain.current].sch);
                         currentEventClass = ADV_CHAINED_EVENT;
-                        currentAdvSet->pChain = &currentAdvSet->ea->chain;
                     }
                 }
             }
@@ -142,6 +142,7 @@ void adv_get_next_event(ll_sm_t* ll)
 			{
 				timestamp = ll->adv->param[i].pa->anchor|1;
 				currentAdvSet = &ll->adv->param[i];
+                currentAdvSet->pChain = &currentAdvSet->pa->chain;
 				if(ll->adv->param[i].pa->anchor == ll->adv->param[i].pa->sync.sch.anchorPoint)
 				{
 					currentEventClass = ADV_PERIODIC_EVENT;
@@ -151,7 +152,6 @@ void adv_get_next_event(ll_sm_t* ll)
 				{
 					currentEventClass = ADV_CHAINED_EVENT;
 					adv_sub_node_remap(ll,&currentAdvSet->pa->chain.entry[currentAdvSet->pa->chain.current].sch);
-                    currentAdvSet->pChain = &currentAdvSet->pa->chain;
 				}
 			}
 		}
@@ -998,6 +998,8 @@ static void adv_event_extended_non_connectable_non_scannable_directed_with_auxil
             }
             if(advParam->pChain->cnt!=0)
             {
+                DEBUG_GPIO_HIGH(GPIO_13);
+                DEBUG_GPIO_LOW(GPIO_13);
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
                 auxInfo.anchorPoint       = advParam->ea->aux.sch.anchorPoint;
                 auxInfo.targetAnchorPoint = advParam->pChain->entry[0].sch.anchorPoint;
