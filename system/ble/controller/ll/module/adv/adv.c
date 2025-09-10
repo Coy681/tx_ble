@@ -252,10 +252,10 @@ int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_
             }
             if(ll->adv->param[i].enable)
             {
-                if(txCompareTime(refEnd,ll->adv->param[i].la->sch.interval))
+                if(txCompareTime(refEnd,ll->adv->param[i].la->sch.anchorPoint))
                 {
                     node[nodeNum].start = ll->adv->param[i].la->sch.anchorPoint - ll->adv->param[i].la->sch.startMargin;
-                    node[nodeNum].end   = ll->adv->param[i].la->sch.anchorPoint + ll->adv->param[i].la->sch.startMargin+ll->adv->param[i].la->sch.stopMargin;
+                    node[nodeNum].end   = node[nodeNum].start+3*(ll->adv->param[i].la->sch.duration + ll->adv->param[i].la->sch.startMargin+ll->adv->param[i].la->sch.stopMargin);
                     node[nodeNum].type  = SCH_SPORADIC_TASK;
                     nodeNum++;
                     if(nodeNum>nodeCount)
@@ -379,6 +379,7 @@ int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_
         }
         if((mapType&ADV_SCH_MAP_AUX_CHAIN)&&(advParam->schMap&ADV_SCH_MAP_AUX_CHAIN))
         {
+
             for(int j=0;j<advParam->ea->chain.cnt;j++)
             {
                 _u32 chainSpace = advParam->ea->chain.entry[j].sch.startMargin\
@@ -890,7 +891,7 @@ static void adv_event_extended_scannable_directed_packet_prapare(ll_sm_t* ll,ll_
         case ADV_PDU_CLASS_CHAIN:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI;
-            if((advParam->ea->chain.cnt-1)!=advParam->pChain->current)
+            if(advParam->pChain->cnt>(advParam->pChain->current+1))
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
                 auxInfo.anchorPoint       = advParam->pChain->entry[advParam->pChain->current].sch.anchorPoint;
@@ -956,7 +957,7 @@ static void adv_event_extended_scannable_undirected_packet_prapare(ll_sm_t* ll,l
         case ADV_PDU_CLASS_CHAIN:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI;
-            if(advParam->pChain->cnt!=advParam->pChain->current)
+            if(advParam->pChain->cnt>(advParam->pChain->current+1))
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
                 auxInfo.anchorPoint       = advParam->pChain->entry[advParam->pChain->current].sch.anchorPoint;
@@ -1015,7 +1016,7 @@ static void adv_event_extended_non_connectable_non_scannable_directed_with_auxil
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            if(advParam->pChain->cnt!=advParam->pChain->current)
+            if(advParam->pChain->cnt>(advParam->pChain->current+1))
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
                 auxInfo.anchorPoint       = advParam->pChain->entry[advParam->pChain->current].sch.anchorPoint;
@@ -1074,7 +1075,7 @@ static void adv_event_extended_non_connectable_non_scannable_undirected_with_aux
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            if(advParam->pChain->cnt!=advParam->pChain->current)
+            if(advParam->pChain->cnt>(advParam->pChain->current+1))
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
                 auxInfo.anchorPoint       = advParam->pChain->entry[advParam->pChain->current].sch.anchorPoint;
@@ -1288,10 +1289,10 @@ static int adv_event_step_default_process(ll_sm_t* ll,ll_internal_adv_param_t* a
 	return 1;
 }
 
-
 _RAM_CODE
 static int adv_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
+
 	ll->phy.stop();
     if(advParam->la->availableChnCnt)
     {
@@ -1300,6 +1301,7 @@ static int adv_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* advParam
     if(advParam->la->availableChnCnt)
     {
         advParam->la->sch.anchorPoint += (advParam->la->sch.duration+advParam->la->sch.stopMargin + advParam->la->sch.startMargin);
+
     }
     else
     {
@@ -1332,6 +1334,8 @@ static int adv_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_t* advPar
      return 1;
 }
 
+
+
 _RAM_CODE
 static int adv_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
@@ -1339,6 +1343,7 @@ static int adv_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advP
     _u32 periodicDiff = (systemTime - advParam->la->sch.anchorPoint)/advParam->la->sch.interval;
     advParam->la->sch.anchorPoint += (periodicDiff+1)*advParam->la->sch.interval;
     advParam->la->availableChnCnt = advParam->la->channelCnt;
+
     #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
     if((!(advParam->schMap&ADV_SCH_MAP_AUX))||((advParam->schMap&ADV_SCH_MAP_AUX)&&txCompareTime(advParam->ea->anchor,advParam->la->sch.anchorPoint+advParam->la->sch.interval)))
     #endif
@@ -1533,18 +1538,19 @@ static int adv_extended_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t*
         advParam->ea->anchor = advParam->ea->chain.entry[0].sch.anchorPoint;
         return 1;
     }
+
     ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX);
 	return 1;
 }
 static int adv_extended_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
-    ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX);
+    ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_ALL);
     //todo
 	return 1;
 }
 static int adv_extended_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
-    ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX);
+    ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_ALL);
     //todo
 	return 1;
 }
@@ -1586,10 +1592,14 @@ static int adv_chained_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* 
     advParam->pChain->current++;
     if(advParam->pChain->current==advParam->pChain->cnt)
     {
+    	advParam->pChain->current = 0;
         ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
     }
 }
-
+static int adv_chained_event_step_default_process(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+{
+	return 1;
+}
 static int adv_chained_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
     ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
@@ -1608,7 +1618,7 @@ static adv_event_sm_t adv_chained_event_state_machine[] =
 	{adv_chained_event_step_sch_canceled,              ADV_CONTEXT_CHAINED,ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,ADV_SM_SCH_EVENT_CANCELED},
 	{adv_chained_event_step_sch_passed,                ADV_CONTEXT_CHAINED,ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,ADV_SM_SCH_EVENT_PASSED},
 
-	{adv_chained_event_step_sch_stop,                  ADV_CONTEXT_CHAINED,ADV_SM_STATE_SENDING_CHAIN_ADV,ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,ADV_SM_PHY_EVENT_SEND_FINISHED},
+	{adv_chained_event_step_default_process,           ADV_CONTEXT_CHAINED,ADV_SM_STATE_SENDING_CHAIN_ADV,ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,ADV_SM_PHY_EVENT_SEND_FINISHED},
 	{adv_chained_event_step_sch_stop,                  ADV_CONTEXT_CHAINED,ADV_SM_STATE_SENDING_CHAIN_ADV,ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,ADV_SM_SCH_EVENT_STOP},
 };
 
@@ -1792,7 +1802,7 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
                     }
                     currentAdvSet->processingEvent = 0;
                 }
-                if(currentAdvSet->state == ADV_SM_STATE_IDLE)
+                if(type == SM_SCH_EVENT&&currentAdvSet->state == ADV_SM_STATE_IDLE)
                 {
                     adv_get_next_event(ll);
                 }

@@ -139,7 +139,7 @@ _RAM_CODE void task2_callback(_u8 type)
 
 }
 
-
+_u8 data2[240];
 void app_rx_cmd(_u8* data,_u32 len)
 {
 	LOG_TRACE(1,"rx data",data,len)
@@ -150,7 +150,7 @@ void app_rx_cmd(_u8* data,_u32 len)
 	 ll_extended_adv_param_t extendedAdvParam =
 	 {
 	 	.advHandle              = 0x00,
-	 	.advEventProperty       = LL_ADV_EVENT_PROPERTY_CONNECTED,
+	 	.advEventProperty       = LL_ADV_EVENT_PROPERTY_DIRECTED,
 	 	.filterPolicy           = LL_FILTER_LIST_NOT_USE,
 	 	.txPower                = 0x7f,
 	 	.advSid                 = 0x00,
@@ -158,14 +158,21 @@ void app_rx_cmd(_u8* data,_u32 len)
 	 	.peerAddrType           = LL_PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,
 	 	.peerAddr               = {0x00,0x00,0x00,0x00,0x00,0x00},
 	 	.scanReqNotifyEnable    = 0,
-	 	.primaryAdvInterval     = 160,
+	 	.primaryAdvInterval     = 80,
 	 	.primaryAdvChnMap       = LL_ADV_CHN_37|LL_ADV_CHN_38|LL_ADV_CHN_39,
 	 	.primaryAdvPhy          = LL_ADV_PHY_1M,
 	 	.primaryAdvphyOptions   = 0,
 	 	.secondaryAdvMaxSkip    = 0,
-	 	.secondaryAdvPhy        = LL_ADV_PHY_1M,
+	 	.secondaryAdvPhy        = LL_ADV_PHY_2M,
 	 	.secondaryAdvphyOptions = 0,
 	 };
+
+
+
+	 for(_u8 i=0;i<240;i++)
+	 {
+		 data2[i] = i;
+	 }
 	 ll_extended_adv_enable_subField_e advEnable =
 	 {
 	 	.advHandle = 0x00,
@@ -181,12 +188,36 @@ void app_rx_cmd(_u8* data,_u32 len)
 	 		LOG_TRACE(1,"set extended param",&status,4)
 	 		break;
 	 	case 2:
-	 		status = ll_set_extended_advertising_data(0x00,\
-	 				                         LL_ADV_DATA_OPERATION_COMPLETE,\
-	 										 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
-	 										 sizeof(data1),
-	 										 data1);
-	 		LOG_TRACE(1,"set extended data",&status,4)
+				status = ll_set_extended_advertising_data(0x00,\
+												 LL_ADV_DATA_OPERATION_FIRST_FRAGMENT,\
+												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
+												 48,
+												 data2);
+				LOG_TRACE(1,"set extended data1",&status,4)
+				status = ll_set_extended_advertising_data(0x00,\
+												 LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
+												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
+												 48,
+												 data2+48);
+				LOG_TRACE(1,"set extended data2",&status,4)
+				status = ll_set_extended_advertising_data(0x00,\
+												LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
+												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
+												 48,
+												 data2+96);
+				LOG_TRACE(1,"set extended data3",&status,4)
+		 		status = ll_set_extended_advertising_data(0x00,\
+		 										LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
+		 										 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
+		 										 48,
+												 data2+144);
+		 		LOG_TRACE(1,"set extended data4",&status,4)
+		 		status = ll_set_extended_advertising_data(0x00,\
+		 								         LL_ADV_DATA_OPERATION_LAST_FRAGMENT,\
+		 										 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
+		 										 48,
+												 data2+192);
+		 		LOG_TRACE(1,"set extended data5",&status,4)
 	 		break;
 	 	case 3:
 	 		status = ll_set_extended_scan_response_data(0x00,\

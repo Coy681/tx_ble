@@ -629,7 +629,6 @@ volatile int AAA_DATA_ADDRESS;
 volatile int AAA_RSP_ADDRESS;
 volatile int AAA_DATA_LEN;
 volatile int AAA_RSP_LEN;
-
 controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 														ll_advertising_data_operation_e operation,\
 														ll_advertising_data_fragment_perference_e fragPref,\
@@ -687,14 +686,30 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 	{
 		return MEMORY_CAPACITY_EXCEEDED;
 	}
+
+	static _u32 dataFillOffset = 0;
+	if(operation == LL_ADV_DATA_OPERATION_FIRST_FRAGMENT||\
+	   operation == LL_ADV_DATA_OPERATION_COMPLETE||\
+	   operation == LL_ADV_DATA_OPERATION_UNCHANGED)
+	{
+		dataFillOffset = 0;
+	}
 	if(!(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU))
 	{
 		if(ll_get_air_packet_time(pAdv->ea->phyMode,dataLen,0)>(pAdv->la->sch.interval*3/4))
 		{
 			return PACKET_TOO_LONG;
 		}
+		if(pAdv->eventProperty & (LL_ADV_EVENT_PROPERTY_CONNECTED))
+		{
+			if((dataFillOffset+dataLen)>BLE_ADV_SEC_PHY_MAX_TX_LEN)
+			{
+				dataFillOffset = 0;
+				return MEMORY_CAPACITY_EXCEEDED;
+			}
+		}
 	}
-	static _u32 dataFillOffset = 0;
+
 	if((operation == LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT) || (operation == LL_ADV_DATA_OPERATION_LAST_FRAGMENT))
 	{
 		if((dataFillOffset+dataLen)>BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH)
@@ -706,6 +721,10 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 		{
 			dataFillOffset = 0;
 			return PACKET_TOO_LONG;
+		}
+		if(dataFillOffset == 0)
+		{
+			return COMMAND_DISALLOWED;
 		}
 	}
 
@@ -864,14 +883,30 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 	{
 		return MEMORY_CAPACITY_EXCEEDED;
 	}
+
+	static _u32 dataFillOffset = 0;
+	if(operation == LL_ADV_DATA_OPERATION_FIRST_FRAGMENT||\
+	   operation == LL_ADV_DATA_OPERATION_COMPLETE||\
+	   operation == LL_ADV_DATA_OPERATION_UNCHANGED)
+	{
+		dataFillOffset = 0;
+	}
+
 	if(!(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU))
 	{
 		if(ll_get_air_packet_time(pAdv->ea->phyMode,dataLen,0)>(pAdv->la->sch.interval*3/4))
 		{
 			return PACKET_TOO_LONG;
 		}
+		if(pAdv->eventProperty & (LL_ADV_EVENT_PROPERTY_SCANNABLE))
+		{
+			if((dataFillOffset+dataLen)>BLE_ADV_SEC_PHY_MAX_TX_LEN)
+			{
+				dataFillOffset = 0;
+				return MEMORY_CAPACITY_EXCEEDED;
+			}
+		}
 	}
-	static _u32 dataFillOffset = 0;
 	if((operation == LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT) || (operation == LL_ADV_DATA_OPERATION_LAST_FRAGMENT))
 	{
 		if((dataFillOffset+dataLen)>BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH)
@@ -882,6 +917,10 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 		if(ll_get_air_packet_time(pAdv->ea->phyMode,dataFillOffset+dataLen,0)>(pAdv->la->sch.interval*3/4))
 		{
 			return PACKET_TOO_LONG;
+		}
+		if(dataFillOffset == 0)
+		{
+			return COMMAND_DISALLOWED;
 		}
 	}
 	if(POINTER_NOT_VALID(pAdv->scanRsp.addr))
