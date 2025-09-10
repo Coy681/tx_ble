@@ -998,8 +998,6 @@ static void adv_event_extended_non_connectable_non_scannable_directed_with_auxil
             }
             if(advParam->pChain->cnt!=0)
             {
-                DEBUG_GPIO_HIGH(GPIO_13);
-                DEBUG_GPIO_LOW(GPIO_13);
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
                 auxInfo.anchorPoint       = advParam->ea->aux.sch.anchorPoint;
                 auxInfo.targetAnchorPoint = advParam->pChain->entry[0].sch.anchorPoint;
@@ -1315,7 +1313,6 @@ static int adv_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* advParam
             ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI);
         }
     }
-    adv_get_next_event(ll);
     return 1;
 }
 
@@ -1332,7 +1329,6 @@ static int adv_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_t* advPar
      {
          ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI);
      }
-     adv_get_next_event(ll);
      return 1;
 }
 
@@ -1349,7 +1345,6 @@ static int adv_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advP
     {
         ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI);
     }
-    adv_get_next_event(ll);
     return 1;
 }
 
@@ -1530,31 +1525,27 @@ static int adv_extended_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t*
     {
         if(advParam->schMap&ADV_SCH_MAP_AUX_CHAIN)
         {
-            adv_get_next_event(ll);    
             return 1; 
         }
     }
     else if(advParam->schMap&ADV_SCH_MAP_AUX_CHAIN)
     {
-        adv_get_next_event(ll);
+        advParam->ea->anchor = advParam->ea->chain.entry[0].sch.anchorPoint;
         return 1;
     }
-    ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
-    adv_get_next_event(ll);
+    ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX);
 	return 1;
 }
 static int adv_extended_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
-    ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
+    ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX);
     //todo
-    adv_get_next_event(ll);
 	return 1;
 }
 static int adv_extended_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
-    ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
+    ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX);
     //todo
-    adv_get_next_event(ll);
 	return 1;
 }
 
@@ -1597,19 +1588,16 @@ static int adv_chained_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* 
     {
         ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
     }
-    adv_get_next_event(ll);
 }
 
 static int adv_chained_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
     ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
-    adv_get_next_event(ll);
 }
 
 static int adv_chained_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
     ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
-    adv_get_next_event(ll);
 }
 
 _DATA
@@ -1692,19 +1680,16 @@ static int adv_periodic_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t*
 {
     ll->phy.stop();
     advParam->pa->sync.sch.anchorPoint+=advParam->pa->sync.sch.interval;
-    adv_get_next_event(ll);
 }
 static int adv_periodic_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
     advParam->pa->eventCnt++;
     advParam->pa->sync.sch.anchorPoint+=advParam->pa->sync.sch.interval;
-    adv_get_next_event(ll);
 }
 static int adv_periodic_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
     advParam->pa->eventCnt++;
     advParam->pa->sync.sch.anchorPoint+=advParam->pa->sync.sch.interval;
-    adv_get_next_event(ll);
 }
 static adv_event_sm_t adv_periodic_event_state_machine[]= 
 {
@@ -1806,6 +1791,10 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
                     	currentAdvSet->state = advSequence[eventType].procedureList[eventClass].sm[i].transFailState;
                     }
                     currentAdvSet->processingEvent = 0;
+                }
+                if(currentAdvSet->state == ADV_SM_STATE_IDLE)
+                {
+                    adv_get_next_event(ll);
                 }
                 break;               
                  
