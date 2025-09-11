@@ -397,12 +397,11 @@ _RAM_CODE static void sch_timer_start(void)
     {
         hal_stimer_set_capture(time+1000000);
     }
-
 }
 
  _RAM_CODE void sch_schedule_next_task(void)
 {
-	DEBUG_GPIO_HIGH(GPIO_2);
+	DEBUG_GPIO_HIGH(GPIO_3);
     if(TASK_VALID(schCtrl.pRunningTask))
     {
         schCtrl.pRunningTask->cb(SCH_TASK_STOP);
@@ -420,7 +419,7 @@ _RAM_CODE static void sch_timer_start(void)
         schCtrl.pRunningTask->cb(SCH_TASK_START);
     }
     sch_program_timer();
-	DEBUG_GPIO_LOW(GPIO_2);
+	DEBUG_GPIO_LOW(GPIO_3);
 }
 
 _RAM_CODE sch_node_t* sch_get_task_list(_u8 type)
@@ -439,7 +438,7 @@ _RAM_CODE sch_node_t* sch_get_task_list(_u8 type)
     }
 }
 
- _RAM_CODE static int sch_remove_task(_u8 taskId)
+ _RAM_CODE int sch_remove_task(_u8 taskId)
 {
 	IRQ_DISABLE;
     if(TASK_VALID(schCtrl.pWaitingList))
@@ -476,6 +475,15 @@ _RAM_CODE sch_node_t* sch_get_task_list(_u8 type)
 	IRQ_RESTORE;
     return 0;
 }
+
+ _RAM_CODE void sch_stop(void)
+{
+	 schCtrl.pWaitingList  = NULL;
+	 schCtrl.pRunningTask  = NULL;
+	 schCtrl.pCanceledList = NULL;
+	 sch_schedule_next_task();
+}
+
 static void sche_task_init(void)
 {
     schCtrl.pWaitingList = NULL;

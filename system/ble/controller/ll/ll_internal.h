@@ -85,6 +85,8 @@ typedef enum
     LL_SYNCHRONOUS_PRIORITY = SCH_TASK_PRIORITY_2,
 }ll_task_priority_e;
 
+typedef void(*reset_f)(void);
+
 /***********************ll standby sate**********************/
 typedef struct _PACKED
 {
@@ -248,6 +250,7 @@ typedef struct
 
 typedef struct
 {
+	reset_f reset;
     ll_internal_adv_param_t param[BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS];
 }ll_internal_adv_ctrl_t;
 
@@ -259,32 +262,32 @@ int                      ll_extended_adv_get_current_set_number(void);
 /***********************ll connection sate**********************/
 typedef struct _PACKED
 {
-     
+	reset_f reset;
 }ll_internal_connection_ctrl_t;
 
 
 /***********************ll scanning sate**********************/
 typedef struct _PACKED
 {
-    
+	reset_f reset;
 }ll_internal_scan_ctrl_t;
 
 /***********************ll initiating sate**********************/
 typedef struct _PACKED
 {
-    
+	reset_f reset;
 }ll_internal_initiating_ctrl_t;
 
 /***********************ll synchronization sate**********************/
 typedef struct _PACKED
 {
-    
+	reset_f reset;
 }ll_internal_synchronous_ctrl_t;
 
 /***********************ll broadcasting sate**********************/
 typedef struct _PACKED
 {
-    
+	reset_f reset;
 }ll_internal_broadcast_ctrl_t;
 
 /***********************ll sate**********************/

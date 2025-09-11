@@ -1864,15 +1864,45 @@ static void adv_sch_callback(_u8 type)
     adv_sequence_process(SM_SCH_EVENT,type);
 }
 
+static void ble_ll_adv_reset(void)
+{
+    ll_sm_t* ll = ll_get_current_state_machine();
+	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+	{
+		if(POINTER_VALID(ll->adv->param[i].la))
+		{
+			tx_free(ll->adv->param[i].la);
+			ll->adv->param[i].la = NULL;
+		}
+		if(POINTER_VALID(ll->adv->param[i].data.addr))
+		{
+			tx_free(ll->adv->param[i].data.addr);
+			ll->adv->param[i].data.addr = NULL;
+		}
+		if(POINTER_VALID(ll->adv->param[i].scanRsp.addr))
+		{
+			tx_free(ll->adv->param[i].scanRsp.addr);
+			ll->adv->param[i].scanRsp.addr = NULL;
+		}
+		#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
+		#endif
+		#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
+		#endif
+		#if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
+		#endif
+	}
+}
+
 int ble_ll_enter_advertising_state(ble_ll_event_e event)
 {
     if(event == BLE_LL_EVENT_START_ADVERTISING)
     {
         ll_sm_t* ll = ll_get_current_state_machine();
-        if(ll->adv == NULL)
+        if(POINTER_NOT_VALID(ll->adv))
         {   
             return 0;
         }
+        ll->adv->reset = ble_ll_adv_reset;
         //phy init
         ll->phy.hw_irq_cb  = adv_phy_irq_callback;
 

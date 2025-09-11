@@ -91,6 +91,10 @@ typedef struct _PACKED
 
 void sch_schedule_next_task(void);
 
+int  sch_remove_task(_u8 taskId);
+
+void sch_stop(void);
+
 sch_node_t* sch_get_task_list(_u8 type);
 
 #define TASK_VALID(task)              ((task)!=NULL)
