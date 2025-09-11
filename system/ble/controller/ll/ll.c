@@ -280,67 +280,70 @@ controller_error_code_e ll_clear_filter_accept_list(void)
 /******************************************ll reset*******************************************/
 controller_error_code_e ll_reset(void)
 {
-	ll_sm_t* llSm = ll_get_current_state_machine();
 	//ll feature reset
 	ll_feature_reset();
-
 	sch_stop();
-	llSm->state = BLE_LL_STATE_STANDBY;
-	if(POINTER_VALID(llSm->adv))
+	for(int i=0;i<llSmConut;i++)
 	{
-		if(POINTER_VALID(llSm->adv->reset))
+	    //ll reset process
+		ll_sm_t* llSm = ll->sm[i];
+		llSm->state = BLE_LL_STATE_STANDBY;
+		if(POINTER_VALID(llSm->adv))
 		{
-			llSm->adv->reset();
+			if(POINTER_VALID(llSm->adv->reset))
+			{
+				llSm->adv->reset();
+			}
+			tx_free((_u8*)llSm->adv);
+			llSm->adv = NULL;
 		}
-		tx_free((_u8*)llSm->adv);
-		llSm->adv = NULL;
-	}
-	if(POINTER_VALID(llSm->scan))
-	{
-		if(POINTER_VALID(llSm->scan->reset))
+		if(POINTER_VALID(llSm->scan))
 		{
-			llSm->scan->reset();
+			if(POINTER_VALID(llSm->scan->reset))
+			{
+				llSm->scan->reset();
+			}
+			tx_free((_u8*)llSm->scan);
+			llSm->scan = NULL;
 		}
-		tx_free((_u8*)llSm->scan);
-		llSm->scan = NULL;
-	}
-	if(POINTER_VALID(llSm->initiating))
-	{
-		if(POINTER_VALID(llSm->initiating->reset))
+		if(POINTER_VALID(llSm->initiating))
 		{
-			llSm->initiating->reset();
+			if(POINTER_VALID(llSm->initiating->reset))
+			{
+				llSm->initiating->reset();
+			}
+			tx_free((_u8*)llSm->initiating);
+			llSm->initiating = NULL;
 		}
-		tx_free((_u8*)llSm->initiating);
-		llSm->initiating = NULL;
-	}
-	if(POINTER_VALID(llSm->conn))
-	{
-		if(POINTER_VALID(llSm->conn->reset))
+		if(POINTER_VALID(llSm->conn))
 		{
-			llSm->conn->reset();
+			if(POINTER_VALID(llSm->conn->reset))
+			{
+				llSm->conn->reset();
+			}
+			tx_free((_u8*)llSm->conn);
+			llSm->conn = NULL;
 		}
-		tx_free((_u8*)llSm->conn);
-		llSm->conn = NULL;
-	}
-	if(POINTER_VALID(llSm->synchronous))
-	{
-		if(POINTER_VALID(llSm->synchronous->reset))
+		if(POINTER_VALID(llSm->synchronous))
 		{
-			llSm->synchronous->reset();
+			if(POINTER_VALID(llSm->synchronous->reset))
+			{
+				llSm->synchronous->reset();
+			}
+			tx_free((_u8*)llSm->synchronous);
+			llSm->synchronous = NULL;
 		}
-		tx_free((_u8*)llSm->synchronous);
-		llSm->synchronous = NULL;
-	}
-	if(POINTER_VALID(llSm->broadcast))
-	{
-		if(POINTER_VALID(llSm->broadcast->reset))
+		if(POINTER_VALID(llSm->broadcast))
 		{
-			llSm->broadcast->reset();
+			if(POINTER_VALID(llSm->broadcast->reset))
+			{
+				llSm->broadcast->reset();
+			}
+			tx_free((_u8*)llSm->broadcast);
+			llSm->broadcast = NULL;
 		}
-		tx_free((_u8*)llSm->broadcast);
-		llSm->broadcast = NULL;
 	}
-    //ll reset process
+
     return SUCCESS;
 }
 
