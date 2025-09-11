@@ -139,7 +139,7 @@ _RAM_CODE void task2_callback(_u8 type)
 
 }
 
-_u8 data2[240];
+_u8 data2[480];
 void app_rx_cmd(_u8* data,_u32 len)
 {
 	LOG_TRACE(1,"rx data",data,len)
@@ -169,7 +169,7 @@ void app_rx_cmd(_u8* data,_u32 len)
 
 
 
-	 for(_u8 i=0;i<240;i++)
+	 for(int i=0;i<480;i++)
 	 {
 		 data2[i] = i;
 	 }
@@ -213,11 +213,29 @@ void app_rx_cmd(_u8* data,_u32 len)
 												 data2+144);
 		 		LOG_TRACE(1,"set extended data4",&status,4)
 		 		status = ll_set_extended_advertising_data(0x00,\
-		 								         LL_ADV_DATA_OPERATION_LAST_FRAGMENT,\
+		 										 LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
 		 										 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
 		 										 48,
 												 data2+192);
 		 		LOG_TRACE(1,"set extended data5",&status,4)
+		 		status = ll_set_extended_advertising_data(0x00,\
+		 										 LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
+		 										 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
+		 										 48,
+												 data2+240);
+		 		LOG_TRACE(1,"set extended data6",&status,4)
+		 		status = ll_set_extended_advertising_data(0x00,\
+		 				                         LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
+		 										 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
+		 										 48,
+												 data2+288);
+		 		LOG_TRACE(1,"set extended data7",&status,4)
+		 		status = ll_set_extended_advertising_data(0x00,\
+		 								         LL_ADV_DATA_OPERATION_LAST_FRAGMENT,\
+		 										 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
+		 										 48,
+												 data2+336);
+		 		LOG_TRACE(1,"set extended data8",&status,4)
 	 		break;
 	 	case 3:
 	 		status = ll_set_extended_scan_response_data(0x00,\

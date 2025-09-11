@@ -1595,6 +1595,10 @@ static int adv_chained_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* 
     	advParam->pChain->current = 0;
         ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
     }
+    else
+    {
+        advParam->ea->anchor = advParam->ea->chain.entry[advParam->pChain->current].sch.anchorPoint;
+    }
 }
 static int adv_chained_event_step_default_process(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
