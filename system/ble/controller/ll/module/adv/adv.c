@@ -1871,7 +1871,7 @@ static void ble_ll_adv_reset(void)
 	{
 		if(POINTER_VALID(ll->adv->param[i].la))
 		{
-			tx_free(ll->adv->param[i].la);
+			tx_free((_u8*)ll->adv->param[i].la);
 			ll->adv->param[i].la = NULL;
 		}
 		if(POINTER_VALID(ll->adv->param[i].data.addr))
@@ -1885,6 +1885,16 @@ static void ble_ll_adv_reset(void)
 			ll->adv->param[i].scanRsp.addr = NULL;
 		}
 		#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
+		if(POINTER_VALID(ll->adv->param[i].ea))
+		{
+			if(POINTER_VALID(ll->adv->param[i].ea->chain.entry))
+			{
+				tx_free((_u8*)ll->adv->param[i].ea->chain.entry);
+				ll->adv->param[i].ea->chain.entry = NULL;
+			}
+			tx_free((_u8*)ll->adv->param[i].ea);
+			ll->adv->param[i].ea = NULL;
+		}
 		#endif
 		#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
 		#endif
@@ -1926,6 +1936,7 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         ll->sch.duration     = currentAdvSet->la->sch.duration;
         ll->sch.startLatency = currentAdvSet->la->sch.startMargin;
         ll->sch.stopLatency  = currentAdvSet->la->sch.stopMargin;
+        ll->sch.delete       = 0;
         ll->sch.cb           = adv_sch_callback;
         sch_message_t* message = (sch_message_t*)tx_message_allocate(8);
         message->eventType  = SCHE_MESSAGE_TASK_ADD;

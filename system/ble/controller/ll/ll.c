@@ -1102,6 +1102,10 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 	}
 	ll_sm_t* ll = ll_get_current_state_machine();
 
+	if(POINTER_NOT_VALID(ll->adv))
+	{
+		return COMMAND_DISALLOWED;
+	}
 	if((enable == 0) && (numSets == 0))
 	{
 		for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
@@ -1294,11 +1298,32 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 			else if(pAdv->enable && !enable)
 			{
 				pAdv->enable = enable;
-				pAdv->schMap&=(~(ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN));
 			}
 		}
 	}
-	ble_ll_process_event(ll,BLE_LL_EVENT_START_ADVERTISING);
+	_u8 gEnable = 0;
+	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+	{
+		if(ll->adv->param[i].handle!=LL_EXTENDED_ADV_INVALID_HANDLE)
+		{
+			if(ll->adv->param[i].enable)
+			{
+				gEnable = 1;
+			}
+		}
+	}
+	if(gEnable)
+	{
+		ble_ll_process_event(ll,BLE_LL_EVENT_START_ADVERTISING);
+	}
+	else
+	{
+		IRQ_DISABLE;
+		ll->sch.delete=1;
+		IRQ_RESTORE;
+		ble_ll_process_event(ll,BLE_LL_EVENT_STOP_ADVERTISING);
+	}
+
 	return SUCCESS;
 }
   

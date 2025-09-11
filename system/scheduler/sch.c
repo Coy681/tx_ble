@@ -319,8 +319,10 @@ _RAM_CODE static void sch_timer_start(void)
 	{
 		if(scan->delete)
 		{
-			scan->delete = 0;
-			sch_delete_node_from_list(list,scan);
+			sch_node_t* deleteNode = scan;
+			scan = scan->next;
+			deleteNode->delete = 0;
+			sch_delete_node_from_list(list,deleteNode);
 			continue;
 		}
 		_u32 startTime = TASK_START_TIME(scan);
