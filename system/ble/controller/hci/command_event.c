@@ -50,7 +50,7 @@
 #define LE_GENERATE_DHKEY_PROCESS                                            HCI_DEFAULT_PROCESS_ADDRESS
 #define LE_GENERATE_DHKEY_V2_PROCESS                                         HCI_DEFAULT_PROCESS_ADDRESS
 // C.145: Mandatory if any event in event mask page 2 is supported, otherwise optional
-#define SET_EVENT_MASK_PAGE_2_PROCESS                                        HCI_DEFAULT_PROCESS_ADDRESS
+#define SET_EVENT_MASK_PAGE_2_PROCESS                                        set_event_mask_page2_process
 
 #if(SET_MWS_SIGNALING_PROCESS)
 // C.109: Mandatory if the Set MWS Signaling command is supported, otherwise excluded
@@ -1063,6 +1063,20 @@ controller_error_code_e set_event_mask_process(_u8* data,_u8 length,bt_hci_event
 	controller_error_code_e status = ll_set_event_mask(eventMask);
 	struct set_event_mask_retParam_t* retParam = \
     (struct set_event_mask_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct set_event_mask_retParam_t),event);
+	retParam->status = status;
+	return status;
+}
+
+struct _PACKED set_event_mask_page2_retParam_t
+{
+	_u8 status;
+};
+controller_error_code_e set_event_mask_page2_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+	_u64 eventMask = ((_u64)data[0])|((_u64)data[1]<<8)|((_u64)data[2]<<16)|((_u64)data[3]<<24)|(((_u64)data[4]<<32))|((_u64)data[5]<<40)|((_u64)data[6]<<48)|((_u64)data[7]<<56);
+	controller_error_code_e status = ll_set_event_mask2(eventMask);
+	struct set_event_mask_page2_retParam_t* retParam = \
+    (struct set_event_mask_page2_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct set_event_mask_page2_retParam_t),event);
 	retParam->status = status;
 	return status;
 }

@@ -313,6 +313,7 @@ typedef struct _PACKED
     _u8      addrType;
     _u8      rsvd;
     _u64     eventMask;
+    _u64     eventMask2;
     _u64     leEventMask;
     struct 
     {

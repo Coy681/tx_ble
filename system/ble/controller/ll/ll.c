@@ -283,6 +283,8 @@ controller_error_code_e ll_reset(void)
 	//ll feature reset
 	ll_feature_reset();
 
+	//
+
     //ll reset process
     return SUCCESS;
 }
@@ -290,6 +292,12 @@ controller_error_code_e ll_reset(void)
 controller_error_code_e ll_set_event_mask(_u64 eventMask)
 {
 	ll->eventMask = eventMask;
+	return SUCCESS;
+}
+
+controller_error_code_e ll_set_event_mask2(_u64 eventMask)
+{
+	ll->eventMask2 = eventMask;
 	return SUCCESS;
 }
 
