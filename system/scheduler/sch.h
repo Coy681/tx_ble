@@ -52,7 +52,7 @@ typedef struct _PACKED sch_node_t
     _u8  llId;
     _u8  type;//sch_task_type_e
     _u8  priority;//sch_task_priority_e
-    _u8  rsvd0;
+    _u8  delete;
     _u32 timestamp;//us
     _u32 period;//us
     _u32 durationMin;//min duraiton,us

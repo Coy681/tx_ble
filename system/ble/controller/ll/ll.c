@@ -286,7 +286,7 @@ controller_error_code_e ll_reset(void)
 	for(int i=0;i<llSmConut;i++)
 	{
 	    //ll reset process
-		ll_sm_t* llSm = ll->sm[i];
+		ll_sm_t* llSm = &ll->sm[i];
 		llSm->state = BLE_LL_STATE_STANDBY;
 		if(POINTER_VALID(llSm->adv))
 		{
@@ -520,6 +520,9 @@ controller_error_code_e ll_set_advertising_enable(_u8 enable)
 		}
 		else//LL_ADVERTISING_DISABLE
 		{
+			IRQ_DISABLE;
+			ll->sch.delete=1;
+			IRQ_RESTORE;
 			if(BLE_LL_STATE_SUCCESS!=ble_ll_process_event(ll,BLE_LL_EVENT_STOP_ADVERTISING))
 			{
 				return IVALID_HCI_COMMAND_PARAMETERS;

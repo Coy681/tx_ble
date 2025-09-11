@@ -317,6 +317,12 @@ _RAM_CODE static void sch_timer_start(void)
 	sch_node_t* scan = *list;
 	while(scan!=NULL)
 	{
+		if(scan->delete)
+		{
+			scan->delete = 0;
+			sch_delete_node_from_list(list,scan);
+			continue;
+		}
 		_u32 startTime = TASK_START_TIME(scan);
 		if(txCompareTime(currentTime,startTime))
 		{
@@ -478,6 +484,10 @@ _RAM_CODE sch_node_t* sch_get_task_list(_u8 type)
 
  _RAM_CODE void sch_stop(void)
 {
+	if(TASK_VALID(schCtrl.pRunningTask))
+	{
+		schCtrl.pRunningTask->cb(SCH_TASK_STOP);
+	}
 	 schCtrl.pWaitingList  = NULL;
 	 schCtrl.pRunningTask  = NULL;
 	 schCtrl.pCanceledList = NULL;
