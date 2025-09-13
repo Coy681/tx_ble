@@ -283,7 +283,7 @@ sch_ctrl_t schCtrl;
     return SCH_STATUS_SUCCESS;
 }
 
-_RAM_CODE void sch_timer_start(void)
+_RAM_CODE void sch_start(void)
 {
     if(TASK_VALID(schCtrl.pRunningTask))
     {

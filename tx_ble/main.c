@@ -147,144 +147,144 @@ void app_rx_cmd(_u8* data,_u32 len)
 			       0x02,0x01,0x05,
                    0x03,0x19,0x80,0x01,
                    0x05,0x02,0x12,0x18,0x0f,0x18};
-	 ll_extended_adv_param_t extendedAdvParam =
-	 {
-	 	.advHandle              = 0x00,
-	 	.advEventProperty       = LL_ADV_EVENT_PROPERTY_DIRECTED,
-	 	.filterPolicy           = LL_FILTER_LIST_NOT_USE,
-	 	.txPower                = 0x7f,
-	 	.advSid                 = 0x00,
-	 	.ownAddrType            = LL_PUBLIC_DEVICE_ADDRESS,
-	 	.peerAddrType           = LL_PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,
-	 	.peerAddr               = {0x00,0x00,0x00,0x00,0x00,0x00},
-	 	.scanReqNotifyEnable    = 0,
-	 	.primaryAdvInterval     = 80,
-	 	.primaryAdvChnMap       = LL_ADV_CHN_37|LL_ADV_CHN_38|LL_ADV_CHN_39,
-	 	.primaryAdvPhy          = LL_ADV_PHY_1M,
-	 	.primaryAdvphyOptions   = 0,
-	 	.secondaryAdvMaxSkip    = 0,
-	 	.secondaryAdvPhy        = LL_ADV_PHY_2M,
-	 	.secondaryAdvphyOptions = 0,
-	 };
+	//  ll_extended_adv_param_t extendedAdvParam =
+	//  {
+	//  	.advHandle              = 0x00,
+	//  	.advEventProperty       = LL_ADV_EVENT_PROPERTY_DIRECTED,
+	//  	.filterPolicy           = LL_FILTER_LIST_NOT_USE,
+	//  	.txPower                = 0x7f,
+	//  	.advSid                 = 0x00,
+	//  	.ownAddrType            = LL_PUBLIC_DEVICE_ADDRESS,
+	//  	.peerAddrType           = LL_PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,
+	//  	.peerAddr               = {0x00,0x00,0x00,0x00,0x00,0x00},
+	//  	.scanReqNotifyEnable    = 0,
+	//  	.primaryAdvInterval     = 80,
+	//  	.primaryAdvChnMap       = LL_ADV_CHN_37|LL_ADV_CHN_38|LL_ADV_CHN_39,
+	//  	.primaryAdvPhy          = LL_ADV_PHY_1M,
+	//  	.primaryAdvphyOptions   = 0,
+	//  	.secondaryAdvMaxSkip    = 0,
+	//  	.secondaryAdvPhy        = LL_ADV_PHY_2M,
+	//  	.secondaryAdvphyOptions = 0,
+	//  };
 
 
 
-	 for(int i=0;i<480;i++)
-	 {
-		 data2[i] = i;
-	 }
-	 ll_extended_adv_enable_subField_e advEnable =
-	 {
-	 	.advHandle = 0x00,
-	 	.duration  = 0x00,
-	 	.maxEvents = 0x00,
-	 };
-	 int status = 0;
+	//  for(int i=0;i<480;i++)
+	//  {
+	// 	 data2[i] = i;
+	//  }
+	//  ll_extended_adv_enable_subField_e advEnable =
+	//  {
+	//  	.advHandle = 0x00,
+	//  	.duration  = 0x00,
+	//  	.maxEvents = 0x00,
+	//  };
+	//  int status = 0;
 
-	 switch(data[0])
-	 {
-	 	case 1:
-	 		status = ll_set_extended_advertising_parameters(&extendedAdvParam);
-	 		LOG_TRACE(1,"set extended param",&status,4)
-	 		break;
-	 	case 2:
-				status = ll_set_extended_advertising_data(0x00,\
-												 LL_ADV_DATA_OPERATION_FIRST_FRAGMENT,\
-												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
-												 48,
-												 data2);
-				LOG_TRACE(1,"set extended data1",&status,4)
-				status = ll_set_extended_advertising_data(0x00,\
-												 LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
-												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
-												 48,
-												 data2+48);
-				LOG_TRACE(1,"set extended data2",&status,4)
-				status = ll_set_extended_advertising_data(0x00,\
-												LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
-												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
-												 48,
-												 data2+96);
-				LOG_TRACE(1,"set extended data3",&status,4)
-		 		status = ll_set_extended_advertising_data(0x00,\
-		 										LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
-		 										 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
-		 										 48,
-												 data2+144);
-		 		LOG_TRACE(1,"set extended data4",&status,4)
-		 		status = ll_set_extended_advertising_data(0x00,\
-		 										 LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
-		 										 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
-		 										 48,
-												 data2+192);
-		 		LOG_TRACE(1,"set extended data5",&status,4)
-		 		status = ll_set_extended_advertising_data(0x00,\
-		 										 LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
-		 										 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
-		 										 48,
-												 data2+240);
-		 		LOG_TRACE(1,"set extended data6",&status,4)
-		 		status = ll_set_extended_advertising_data(0x00,\
-		 				                         LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
-		 										 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
-		 										 48,
-												 data2+288);
-		 		LOG_TRACE(1,"set extended data7",&status,4)
-		 		status = ll_set_extended_advertising_data(0x00,\
-		 								         LL_ADV_DATA_OPERATION_LAST_FRAGMENT,\
-		 										 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
-		 										 48,
-												 data2+336);
-		 		LOG_TRACE(1,"set extended data8",&status,4)
-	 		break;
-	 	case 3:
-	 		status = ll_set_extended_scan_response_data(0x00,\
-	 				                         LL_ADV_DATA_OPERATION_COMPLETE,\
-	 										 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
-	 										 sizeof(data1),
-	 										 data1);
-	 		LOG_TRACE(1,"set scan rsp data",&status,4)
-	 		break;
-	 	case 4:
-	 		status = ll_set_extended_advertising_enable(1,\
-	 				                           1,\
-	 										   &advEnable);
-	 		LOG_TRACE(1,"set adv enable",&status,4)
-	 		break;
-	 	case 5:
+	//  switch(data[0])
+	//  {
+	//  	case 1:
+	//  		status = ll_set_extended_advertising_parameters(&extendedAdvParam);
+	//  		LOG_TRACE(1,"set extended param",&status,4)
+	//  		break;
+	//  	case 2:
+	// 			status = ll_set_extended_advertising_data(0x00,\
+	// 											 LL_ADV_DATA_OPERATION_FIRST_FRAGMENT,\
+	// 											 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
+	// 											 48,
+	// 											 data2);
+	// 			LOG_TRACE(1,"set extended data1",&status,4)
+	// 			status = ll_set_extended_advertising_data(0x00,\
+	// 											 LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
+	// 											 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
+	// 											 48,
+	// 											 data2+48);
+	// 			LOG_TRACE(1,"set extended data2",&status,4)
+	// 			status = ll_set_extended_advertising_data(0x00,\
+	// 											LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
+	// 											 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
+	// 											 48,
+	// 											 data2+96);
+	// 			LOG_TRACE(1,"set extended data3",&status,4)
+	// 	 		status = ll_set_extended_advertising_data(0x00,\
+	// 	 										LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
+	// 	 										 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
+	// 	 										 48,
+	// 											 data2+144);
+	// 	 		LOG_TRACE(1,"set extended data4",&status,4)
+	// 	 		status = ll_set_extended_advertising_data(0x00,\
+	// 	 										 LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
+	// 	 										 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
+	// 	 										 48,
+	// 											 data2+192);
+	// 	 		LOG_TRACE(1,"set extended data5",&status,4)
+	// 	 		status = ll_set_extended_advertising_data(0x00,\
+	// 	 										 LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
+	// 	 										 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
+	// 	 										 48,
+	// 											 data2+240);
+	// 	 		LOG_TRACE(1,"set extended data6",&status,4)
+	// 	 		status = ll_set_extended_advertising_data(0x00,\
+	// 	 				                         LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
+	// 	 										 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
+	// 	 										 48,
+	// 											 data2+288);
+	// 	 		LOG_TRACE(1,"set extended data7",&status,4)
+	// 	 		status = ll_set_extended_advertising_data(0x00,\
+	// 	 								         LL_ADV_DATA_OPERATION_LAST_FRAGMENT,\
+	// 	 										 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
+	// 	 										 48,
+	// 											 data2+336);
+	// 	 		LOG_TRACE(1,"set extended data8",&status,4)
+	//  		break;
+	//  	case 3:
+	//  		status = ll_set_extended_scan_response_data(0x00,\
+	//  				                         LL_ADV_DATA_OPERATION_COMPLETE,\
+	//  										 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
+	//  										 sizeof(data1),
+	//  										 data1);
+	//  		LOG_TRACE(1,"set scan rsp data",&status,4)
+	//  		break;
+	//  	case 4:
+	//  		status = ll_set_extended_advertising_enable(1,\
+	//  				                           1,\
+	//  										   &advEnable);
+	//  		LOG_TRACE(1,"set adv enable",&status,4)
+	//  		break;
+	//  	case 5:
 
-			{
-		 		_u8* message = tx_message_allocate(8);
-		 		message[0] = SCHE_MESSAGE_TASK_ADD;
-		 		message[1] = ((_u32)&aTask1);
-		 		message[2] = ((_u32)&aTask1)>>8;
-		 		message[3] = ((_u32)&aTask1)>>16;
-		 		message[4] = ((_u32)&aTask1)>>24;
-		 		tx_message_send(TX_TASK_ID_SCH,message);
-		 		LOG_TRACE(1,"task add",&status,4)
-			}
+	// 		{
+	// 	 		_u8* message = tx_message_allocate(8);
+	// 	 		message[0] = SCHE_MESSAGE_TASK_ADD;
+	// 	 		message[1] = ((_u32)&aTask1);
+	// 	 		message[2] = ((_u32)&aTask1)>>8;
+	// 	 		message[3] = ((_u32)&aTask1)>>16;
+	// 	 		message[4] = ((_u32)&aTask1)>>24;
+	// 	 		tx_message_send(TX_TASK_ID_SCH,message);
+	// 	 		LOG_TRACE(1,"task add",&status,4)
+	// 		}
 
-	 		break;
-	 	case 6:
+	//  		break;
+	//  	case 6:
 
-			{
-		 		_u8* message = tx_message_allocate(8);
-		 		message[0] = SCHE_MESSAGE_TASK_ADD;
-		 		message[1] = ((_u32)&aTask2);
-		 		message[2] = ((_u32)&aTask2)>>8;
-		 		message[3] = ((_u32)&aTask2)>>16;
-		 		message[4] = ((_u32)&aTask2)>>24;
-		 		tx_message_send(TX_TASK_ID_SCH,message);
-		 		LOG_TRACE(1,"task add",&status,4)
-			}
+	// 		{
+	// 	 		_u8* message = tx_message_allocate(8);
+	// 	 		message[0] = SCHE_MESSAGE_TASK_ADD;
+	// 	 		message[1] = ((_u32)&aTask2);
+	// 	 		message[2] = ((_u32)&aTask2)>>8;
+	// 	 		message[3] = ((_u32)&aTask2)>>16;
+	// 	 		message[4] = ((_u32)&aTask2)>>24;
+	// 	 		tx_message_send(TX_TASK_ID_SCH,message);
+	// 	 		LOG_TRACE(1,"task add",&status,4)
+	// 		}
 
-	 		break;
+	//  		break;
 
 
 
-	 	default:
-	 		break;
-	 }
+	//  	default:
+	//  		break;
+	//  }
 //	   switch(data[0])
 //	   {
 //

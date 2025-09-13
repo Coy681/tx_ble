@@ -1,8 +1,18 @@
 #include"common/txCommon.h"
 #include"system/task/event/event.h"
 #include"system/task/message/message.h"
- #ifndef TX_SCH_H_
- #define TX_SCH_H_
+#ifndef TX_SCH_H_
+#define TX_SCH_H_
+
+#define TASK_VALID(task)              ((task)!=NULL)
+#define TASK_NOT_VALID(task)          ((task)==NULL)
+#define TASK_START_TIME(task)         (task->timestamp - task->startLatency)
+#define TASK_SCH_PROCESS_TIME         30
+#define TASK_STOP_TIME(task)          (task->timestamp + task->duration + task->stopLatency)
+
+#ifndef TX_SCHE_LOG_ENABLE
+#define TX_SCHE_LOG_ENABLE  1
+#endif
 
 typedef enum
 {
@@ -77,27 +87,14 @@ typedef struct
     sch_node_t* pCanceledList;
 }sch_ctrl_t;
 
-
 int  sch_insert_task(sch_node_t* task);
 
 int  sch_remove_task(_u8 taskId);
 
-void sch_timer_start(void);
+void sch_start(void);
 
 void sch_stop(void);
 
-void sch_schedule_next_task(void);
-
 sch_node_t* sch_get_task_list(_u8 type);
 
-#define TASK_VALID(task)              ((task)!=NULL)
-#define TASK_NOT_VALID(task)          ((task)==NULL)
-#define TASK_START_TIME(task)         (task->timestamp - task->startLatency)
-#define TASK_SCH_PROCESS_TIME         30
-#define TASK_STOP_TIME(task)          (task->timestamp + task->duration + task->stopLatency)
-
-
-#ifndef TX_SCHE_LOG_ENABLE
-#define TX_SCHE_LOG_ENABLE  1
-#endif
 #endif//TX_SCH_H_

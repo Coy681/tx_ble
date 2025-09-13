@@ -1948,7 +1948,7 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         ll->sch.cb           = adv_sch_callback;
         if(sch_insert_task(&ll->sch)==SCH_STATUS_SUCCESS)
         {
-            sch_timer_start();
+            sch_start();
         }
         return 1;
     }
