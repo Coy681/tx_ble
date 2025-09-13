@@ -1294,13 +1294,13 @@ static int adv_event_step_phy_send_scan_rsp(ll_sm_t* ll,ll_internal_adv_param_t*
 _RAM_CODE
 static int adv_event_step_default_process(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
+	ll->phy.stop();
 	return 1;
 }
 
 _RAM_CODE
 static int adv_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
-
 	ll->phy.stop();
     if(advParam->la->availableChnCnt)
     {
@@ -1946,15 +1946,10 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         ll->sch.stopLatency  = currentAdvSet->la->sch.stopMargin;
         ll->sch.delete       = 0;
         ll->sch.cb           = adv_sch_callback;
-
-        sch_message_t* message = (sch_message_t*)tx_message_allocate(8);
-        message->eventType  = SCHE_MESSAGE_TASK_ADD;
-        message->message[0] = ((_u32)&ll->sch);
-        message->message[1] = ((_u32)&ll->sch)>>8;
-        message->message[2] = ((_u32)&ll->sch)>>16;
-        message->message[3] = ((_u32)&ll->sch)>>24;
-        tx_message_send(TX_TASK_ID_SCH,(_u8*)message);
-        LOG_TRACE(LL_LOG_TRACE,"enter advertising state",0,0);
+        if(sch_insert_task(&ll->sch)==SCH_STATUS_SUCCESS)
+        {
+            sch_timer_start();
+        }
         return 1;
     }
     return 0;

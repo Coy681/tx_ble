@@ -77,23 +77,16 @@ typedef struct
     sch_node_t* pCanceledList;
 }sch_ctrl_t;
 
-typedef enum
-{
-	SCHE_MESSAGE_TASK_ADD,
-	SCHE_MESSAGE_TASK_REMOVE,
-}sch_background_event_e;
 
-typedef struct _PACKED
-{
-    _u8 eventType;
-    _u8 message[0];
-}sch_message_t;
-
-void sch_schedule_next_task(void);
+int  sch_insert_task(sch_node_t* task);
 
 int  sch_remove_task(_u8 taskId);
 
+void sch_timer_start(void);
+
 void sch_stop(void);
+
+void sch_schedule_next_task(void);
 
 sch_node_t* sch_get_task_list(_u8 type);
 

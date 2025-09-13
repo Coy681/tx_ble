@@ -158,11 +158,9 @@ void hal_rf_set_2M_phy(void)
 _RAM_CODE
 void hal_rf_stop(void)
 {
-    if(read_reg8(0x170224)!=FLD_RF_STATE_MACHINE_IDLE)
-    {
-        reg_rf_ll_cmd = 0x80;
-    }
+    reg_rf_ll_cmd = 0x80;
 }
+
 
 /******************hal rf tx setting***************/
 

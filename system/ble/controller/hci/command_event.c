@@ -1273,7 +1273,7 @@ controller_error_code_e le_set_advertising_parameters_process(_u8* data,_u8 leng
 struct _PACKED le_set_advertising_data_param_t
 {
     _u8  dataLen;
-    _u8* data;
+    _u8  data[0];
 };
 struct _PACKED le_set_advertising_data_retParam_t
 {
@@ -1292,7 +1292,7 @@ controller_error_code_e le_set_advertising_data_process(_u8* data,_u8 length,bt_
 struct _PACKED le_set_scan_response_data_param_t
 {
     _u8  dataLen;
-    _u8* data;
+    _u8  data[0];
 };
 struct _PACKED le_set_scan_response_data_retParam_t
 {

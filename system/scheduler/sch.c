@@ -193,7 +193,7 @@ sch_ctrl_t schCtrl;
     }
 }
 
- _RAM_CODE static int sch_insert_task(sch_node_t* task)
+ _RAM_CODE int sch_insert_task(sch_node_t* task)
 {
     if(TASK_NOT_VALID(task))
     {
@@ -283,7 +283,7 @@ sch_ctrl_t schCtrl;
     return SCH_STATUS_SUCCESS;
 }
 
-_RAM_CODE static void sch_timer_start(void)
+_RAM_CODE void sch_timer_start(void)
 {
     if(TASK_VALID(schCtrl.pRunningTask))
     {
@@ -510,62 +510,12 @@ _RAM_CODE sch_node_t* sch_get_task_list(_u8 type)
 	 sch_schedule_next_task();
 }
 
-static void sche_task_init(void)
+void sche_init(void)
 {
+    hal_stimer_register_task(sch_schedule_next_task);
     schCtrl.pWaitingList = NULL;
     schCtrl.pRunningTask = NULL;
     schCtrl.pCanceledList = NULL;
-}
-
-_u32 sche_event_process(_u16 taskId,_u32 event)
-{
-    if(event & TX_TASK_EVENT_MESSAGE)
-    {
-        sch_message_t* pMessage = (sch_message_t*)tx_message_receive(taskId);
-        while(pMessage)
-        {
-            switch(pMessage->eventType)
-            {
-                case SCHE_MESSAGE_TASK_ADD:
-                {
-                    _u32 address = 0;
-                    BYTE_TO_U32(address,pMessage->message);
-                	LOG_TRACE(TX_SCHE_LOG_ENABLE,"schedule add task",&address,4);
-                	sch_node_t* task = (sch_node_t*)address;
-            		_u32 startTime   = TASK_START_TIME(task);
-            		_u32 currentTime = system_time();
-            		if(txCompareTime(currentTime,startTime))
-            		{
-                		LOG_TRACE(TX_SCHE_LOG_ENABLE,"sche task passed",0,0);
-                		task->cb(SCH_TASK_PASSED);
-            		}
-                    if(sch_insert_task(task)==SCH_STATUS_SUCCESS)
-                    {
-                        sch_timer_start();
-                    }
-                }
-                    break;
-                case SCHE_MESSAGE_TASK_REMOVE:
-                {
-                	LOG_TRACE(TX_SCHE_LOG_ENABLE,"remove task",0,0);
-                    sch_remove_task(pMessage->message[0]);
-                }
-                    break;
-                default:
-                    break;
-            }
-            tx_message_deallocate((_u8*)pMessage);
-            pMessage = (sch_message_t*)tx_message_receive(taskId);
-        }
-        return event^TX_TASK_EVENT_MESSAGE;
-    }
-    return 0;
-}
-
-void sche_init(void)
-{
-    _u32 ret = tx_task_add(sche_task_init,sche_event_process,TX_TASK_ID_SCH,TX_TASK_PRIORITY_15);
-    hal_stimer_register_task(sch_schedule_next_task);
 }
 #if(TX_SCHEDULER_ENABLE)
 TASK_INIT(sche_init);
