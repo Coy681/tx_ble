@@ -152,7 +152,6 @@ sch_ctrl_t schCtrl;
 }
  _RAM_CODE static sch_node_t* sch_serach_node_in_list(sch_node_t* list,_u8 id)
 {
-    ASSERT(TASK_VALID(list));
     sch_node_t* scan = list;
     while(TASK_VALID(scan))
     {
@@ -201,6 +200,13 @@ sch_ctrl_t schCtrl;
         return SCH_STATUS_TASK_NULL;
     }
     IRQ_DISABLE;
+    if(sch_serach_node_in_list(schCtrl.pWaitingList,task->llId)||\
+	   sch_serach_node_in_list(schCtrl.pRunningTask,task->llId)||\
+	   sch_serach_node_in_list(schCtrl.pCanceledList,task->llId))
+    {
+        IRQ_RESTORE;
+    	return SCH_STATUS_REJECTED;
+    }
     sch_node_t* scan = schCtrl.pWaitingList;
     sch_node_t* prev = NULL;
     task->next = NULL;
@@ -281,25 +287,32 @@ _RAM_CODE static void sch_timer_start(void)
 {
     if(TASK_VALID(schCtrl.pRunningTask))
     {
-    	int conflict = sch_task1_conflict_with_task2(schCtrl.pRunningTask,schCtrl.pWaitingList);
-        if(conflict!=SCH_START_BEFORE_END_BEFORE)
-        {
-        	if(conflict == SCH_START_AFTER_END_AFTER)
-        	{
-        		schCtrl.pRunningTask->next = schCtrl.pWaitingList->next;
-        		schCtrl.pWaitingList->next = schCtrl.pRunningTask;
-        		schCtrl.pRunningTask = NULL;
-            	_u32 startTime = TASK_START_TIME(schCtrl.pWaitingList) - TASK_SCH_PROCESS_TIME;
-            	hal_stimer_set_capture(startTime);
-        	}
-        	else
-        	{
-        		if(schCtrl.pWaitingList->next->priority>schCtrl.pRunningTask->next->priority)
-        		{
-        			hal_stimer_set_capture(system_time()+20);
-        		}
-        	}
-        }
+    	if(TASK_VALID(schCtrl.pWaitingList))
+    	{
+        	int conflict = sch_task1_conflict_with_task2(schCtrl.pRunningTask,schCtrl.pWaitingList);
+            if(conflict!=SCH_START_BEFORE_END_BEFORE)
+            {
+            	if(conflict == SCH_START_AFTER_END_AFTER)
+            	{
+            		schCtrl.pRunningTask->next = schCtrl.pWaitingList->next;
+            		schCtrl.pWaitingList->next = schCtrl.pRunningTask;
+            		schCtrl.pRunningTask = NULL;
+                	_u32 startTime = TASK_START_TIME(schCtrl.pWaitingList) - TASK_SCH_PROCESS_TIME;
+                	hal_stimer_set_capture(startTime);
+                	return;
+            	}
+            	else
+            	{
+            		if(schCtrl.pWaitingList->next->priority>schCtrl.pRunningTask->next->priority)
+            		{
+            			hal_stimer_set_capture(system_time()+20);
+                    	return;
+            		}
+            	}
+            }
+    	}
+		_u32 startTime = TASK_START_TIME(schCtrl.pRunningTask) - TASK_SCH_PROCESS_TIME;
+		hal_stimer_set_capture(startTime);
     }
     else if(TASK_VALID(schCtrl.pWaitingList))
     {
@@ -319,6 +332,7 @@ _RAM_CODE static void sch_timer_start(void)
 	{
 		if(scan->delete)
 		{
+
 			sch_node_t* deleteNode = scan;
 			scan = scan->next;
 			deleteNode->delete = 0;
@@ -525,8 +539,10 @@ _u32 sche_event_process(_u16 taskId,_u32 event)
                 		LOG_TRACE(TX_SCHE_LOG_ENABLE,"sche task passed",0,0);
                 		task->cb(SCH_TASK_PASSED);
             		}
-                    sch_insert_task(task);
-                    sch_timer_start();
+                    if(sch_insert_task(task)==SCH_STATUS_SUCCESS)
+                    {
+                        sch_timer_start();
+                    }
                 }
                     break;
                 case SCHE_MESSAGE_TASK_REMOVE:

@@ -219,6 +219,12 @@ int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_
         {
             while(POINTER_VALID(schNode))
             {
+            	if(schNode->llId == ll->sch.llId)
+            	{
+                    schNode = schNode->next;
+
+            		continue;
+            	}
                 if(TASK_START_TIME(schNode)<refEnd)
                 {
                     node[nodeNum].start = TASK_START_TIME(schNode);
@@ -233,10 +239,12 @@ int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_
                         node[nodeNum].type = SCH_SPORADIC_TASK;
                     }
                     nodeNum++;
+
                 }
                 schNode = schNode->next;
                 if(nodeNum>nodeCount)
                 {
+
                     goto reCal;
                 }               
             }
@@ -1938,6 +1946,7 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         ll->sch.stopLatency  = currentAdvSet->la->sch.stopMargin;
         ll->sch.delete       = 0;
         ll->sch.cb           = adv_sch_callback;
+
         sch_message_t* message = (sch_message_t*)tx_message_allocate(8);
         message->eventType  = SCHE_MESSAGE_TASK_ADD;
         message->message[0] = ((_u32)&ll->sch);
