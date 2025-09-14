@@ -1258,7 +1258,6 @@ static int adv_event_step_received_packet_analyze(ll_sm_t* ll)
 {
 	 ll_adv_packet_t* packet = (ll_adv_packet_t*)(ll->phy.rxAddress + ll_get_packet_header_offset_from_address(PHY_DIR_RX));
 
-
 	 if(packet->hdr.pduType == LL_ADV_TYPE_SCAN_REQ && packet->hdr.length == sizeof(scan_type_scan_req_t))
 	 {
 		 //scan req process
@@ -1273,6 +1272,7 @@ static int adv_event_step_received_packet_analyze(ll_sm_t* ll)
 		 //connect ind process
 		 init_type_connectInd_t* connInd = (init_type_connectInd_t*)(packet->data);
 		 //ll state machine transform
+        sch_stop_and_process_next_task();  
 	 }
 	return 0;
 }

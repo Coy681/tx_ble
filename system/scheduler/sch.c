@@ -446,6 +446,11 @@ _RAM_CODE void sch_start(void)
 
 _RAM_CODE void sch_process_next_task(void)
 {
+    hal_stimer_set_capture(system_time()+10);
+}
+
+_RAM_CODE void sch_stop_and_process_next_task(void)
+{
     if(TASK_VALID(schCtrl.pRunningTask))
     {
         if(schCtrl.pRunningTask->type == SCH_PERIODIC_TASK)

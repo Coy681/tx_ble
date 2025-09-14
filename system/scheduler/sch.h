@@ -97,6 +97,8 @@ int  sch_remove_task(_u8 taskId);
 
 void sch_process_next_task(void);
 
+void sch_stop_and_process_next_task(void);
+
 sch_node_t* sch_get_task_list(_u8 type);
 
 #endif//TX_SCH_H_
