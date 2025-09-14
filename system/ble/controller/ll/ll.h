@@ -84,7 +84,7 @@ typedef enum
 
 /***********************Bluetooth LE LL config **************************/
 void ll_init_state_machine(_u8 number);
-
+void ble_ll_setup_new_entity(void);
 controller_error_code_e ll_reset(void);
 controller_error_code_e ll_set_event_mask(_u64 eventMask);
 controller_error_code_e ll_set_event_mask2(_u64 eventMask);

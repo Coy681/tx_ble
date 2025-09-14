@@ -56,6 +56,7 @@ ll_sm_t* ll_get_idle_state_machine(void)
 	{
 		if(ll->sm[i].state == (_u8)BLE_LL_STATE_STANDBY)
 		{
+			llCurrentSm = i;
 			return &ll->sm[i];
 		}
 	}
@@ -69,6 +70,7 @@ ll_sm_t* ll_get_state_machine_by_id(_u8 id)
 	{
 		if(ll->sm[i].id == id)
 		{
+			llCurrentSm = i;
 			return &ll->sm[i];
 		}
 	}
@@ -79,6 +81,11 @@ _RAM_CODE
 ll_sm_t* ll_get_current_state_machine(void)
 {
 	return &ll->sm[llCurrentSm];
+}
+
+void ble_ll_setup_new_entity(void)
+{
+	ll_get_idle_state_machine();
 }
 
 _RAM_CODE

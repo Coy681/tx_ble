@@ -9,6 +9,19 @@
 #define BLE_CONTROLLER_LL_PACKET_FORMAT_INITPACKET_H_
 
 typedef struct _PACKED{
+    _u32 AA;
+    _u32 crcInit:24;
+    _u32 winSize:8;
+    _u16 winOffset;
+    _u16 interval;
+    _u16 latency;
+    _u16 timeout;
+    _u8  chnMap[5];
+    _u8  hop:5;
+    _u8  sca:3;
+}init_type_ll_data_t;
+
+typedef struct _PACKED{
 	_u8 initA[6];
     _u8 advA[6];
 	_u8 llData[22];

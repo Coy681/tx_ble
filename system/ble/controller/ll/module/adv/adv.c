@@ -1494,7 +1494,7 @@ static int adv_extended_event_step_phy_send_aux_scan_rsp(ll_sm_t* ll,ll_internal
 		{
 			//scan req process
 			scan_type_aux_scan_req_t* scanReq = (scan_type_aux_scan_req_t*)(packet->data);
-			if(txMemcmp(ll_get_device_address(),scanReq->advA,6) == 0)
+			if((advParam->scanRsp.len!=0)&&(txMemcmp(ll_get_device_address(),scanReq->advA,6) == 0))
 			{
 				adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_SCAN_RSP);
 				_u32 timestamp = ll->phy.hw_get_rx_air_ts() + ll_get_air_packet_time(advParam->ea->aux.phy.mode,sizeof(scan_type_aux_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME;
@@ -1503,6 +1503,20 @@ static int adv_extended_event_step_phy_send_aux_scan_rsp(ll_sm_t* ll,ll_internal
 				return 1;
 	        }
 		}
+        else if((packet->hdr.pduType == LL_ADV_TYPE_CONNECT_IND)&&(packet->hdr.length == sizeof(init_type_connectInd_t)))
+        {
+            //scan req process
+			init_type_connectInd_t* connInd = (init_type_connectInd_t*)(packet->data);
+            if(txMemcmp(ll_get_device_address(),connInd->advA,6) == 0)
+            {
+                init_type_ll_data_t* llData = (init_type_ll_data_t*)connInd->llData;
+                if(POINTER_NOT_VALID(ll->conn))
+                {
+                    ll->conn = (ll_internal_connection_ctrl_t*)tx_malloc(sizeof(ll_internal_connection_ctrl_t));
+                    
+                }
+            }
+        }
 	}
 
 	return 0;
