@@ -421,7 +421,7 @@ _RAM_CODE void sch_start(void)
     }
 }
 
- _RAM_CODE void sch_schedule_next_task(void)
+ _RAM_CODE void sch_irq_process(void)
 {
 	DEBUG_GPIO_HIGH(GPIO_3);
     if(TASK_VALID(schCtrl.pRunningTask))
@@ -442,6 +442,20 @@ _RAM_CODE void sch_start(void)
     }
     sch_program_timer();
 	DEBUG_GPIO_LOW(GPIO_3);
+}
+
+_RAM_CODE void sch_process_next_task(void)
+{
+    if(TASK_VALID(schCtrl.pRunningTask))
+    {
+        if(schCtrl.pRunningTask->type == SCH_PERIODIC_TASK)
+        {
+        	sch_node_t* pTask = schCtrl.pRunningTask;
+        	schCtrl.pRunningTask = NULL;
+            sch_insert_task(pTask);
+        }
+    }
+    hal_stimer_set_capture(system_time()+10);
 }
 
 _RAM_CODE sch_node_t* sch_get_task_list(_u8 type)
@@ -507,12 +521,12 @@ _RAM_CODE sch_node_t* sch_get_task_list(_u8 type)
 	 schCtrl.pWaitingList  = NULL;
 	 schCtrl.pRunningTask  = NULL;
 	 schCtrl.pCanceledList = NULL;
-	 sch_schedule_next_task();
+	 sch_irq_process();
 }
 
 void sche_init(void)
 {
-    hal_stimer_register_task(sch_schedule_next_task);
+    hal_stimer_register_task(sch_irq_process);
     schCtrl.pWaitingList = NULL;
     schCtrl.pRunningTask = NULL;
     schCtrl.pCanceledList = NULL;

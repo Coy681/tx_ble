@@ -1828,9 +1828,16 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
                     }
                     currentAdvSet->processingEvent = 0;
                 }
-                if(type == SM_SCH_EVENT&&currentAdvSet->state == ADV_SM_STATE_IDLE)
+                if(type         == SM_SCH_EVENT \
+                   && ll->state == BLE_LL_STATE_ADVERTISING \
+                   && currentAdvSet->state == ADV_SM_STATE_IDLE)
                 {
                     adv_get_next_event(ll);
+                }
+                if(type == SM_PHY_EVENT\
+                  && currentAdvSet->state == ADV_SM_STATE_IDLE)
+                {
+                    sch_process_next_task();
                 }
                 break;               
                  
