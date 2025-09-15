@@ -42,7 +42,7 @@ typedef struct _PACKED
     adv_sm_state_e  currentState;
     adv_sm_state_e  transSuccessState;
     adv_sm_state_e  transFailState;
-    adv_sm_event_e  event;
+    ll_event_e      event;
 }adv_event_sm_t; 
 
 /*****************************************ADV Procedure ***********************************************/
@@ -1278,9 +1278,12 @@ static int adv_event_step_phy_send_scan_rsp(ll_sm_t* ll,ll_internal_adv_param_t*
                 ll->sch.timestamp  = connIndAnchor +1250+llData->winOffset*1250;
                 ll->sch.duration   = ll->sch.durationMin = llData->winSize*1250;
                 ll->sch.period     = llData->interval*1250;
+                ll->sch.startLatency = 100;
+                ll->sch.stopLatency  = 100;
                 ll->phy.mode       = PHY_MODE_1M;
                 ll->phy.accessCode = llData->AA;
                 ll->phy.crcInit    = llData->crcInit;
+
                 sch_abort_current_and_process_next_task();
             }
             else 

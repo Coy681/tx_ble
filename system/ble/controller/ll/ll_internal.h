@@ -107,7 +107,7 @@ typedef enum
     LL_PHY_EVENT_SEND_FINISHED     = LL_PHY_EVENT_BASE+PHY_IRQ_TX_FINISHED,
     LL_PHY_EVENT_RECEIVE_FINISHED  = LL_PHY_EVENT_BASE+PHY_IRQ_RX_FINISHED,
     LL_PHY_EVENT_RECEIVE_TIMEOUT   = LL_PHY_EVENT_BASE+PHY_IRQ_RX_TIMEOUT,
-}adv_sm_event_e;
+}ll_event_e;
 
 /***********************ll standby sate**********************/
 typedef struct _PACKED

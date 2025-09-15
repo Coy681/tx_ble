@@ -8,4 +8,6 @@ typedef enum
 }conn_role_e;
 
 
+
+
 int ble_ll_enter_connection_state(ble_ll_event_e event);
