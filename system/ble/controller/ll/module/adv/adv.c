@@ -2,19 +2,7 @@
 #include"adv.h"
 #include"system/scheduler/sch_map.h"
 /*****************************************ADV State Machine***********************************************/
-typedef enum
-{
-    ADV_SM_SCH_EVENT_BASE              = 0x10,
-    ADV_SM_SCH_EVENT_START             = ADV_SM_SCH_EVENT_BASE+SCH_TASK_START,
-    ADV_SM_SCH_EVENT_STOP              = ADV_SM_SCH_EVENT_BASE+SCH_TASK_STOP,             
-    ADV_SM_SCH_EVENT_CANCELED          = ADV_SM_SCH_EVENT_BASE+SCH_TASK_CANCELED,
-    ADV_SM_SCH_EVENT_PASSED            = ADV_SM_SCH_EVENT_BASE+SCH_TASK_PASSED,
 
-    ADV_SM_PHY_EVENT_BASE              = 0x20,
-    ADV_SM_PHY_EVENT_SEND_FINISHED     = ADV_SM_PHY_EVENT_BASE+PHY_IRQ_TX_FINISHED,
-    ADV_SM_PHY_EVENT_RECEIVE_FINISHED  = ADV_SM_PHY_EVENT_BASE+PHY_IRQ_RX_FINISHED,
-    ADV_SM_PHY_EVENT_RECEIVE_TIMEOUT   = ADV_SM_PHY_EVENT_BASE+PHY_IRQ_RX_TIMEOUT,
-}adv_sm_event_e;
 
 typedef enum
 {
@@ -36,11 +24,6 @@ typedef enum
     #endif
 }adv_sm_state_e;
 
-typedef enum
-{
-    SM_SCH_EVENT = BIT(1),
-    SM_PHY_EVENT = BIT(2),
-}sm_event_type_e;
 
 typedef enum
 {
@@ -94,6 +77,7 @@ static void adv_sub_node_remap(ll_sm_t* ll,ll_adv_sch_entry_t* advSch)
     ll->sch.duration     = ll->sch.durationMin= advSch->duration;
     ll->sch.startLatency = advSch->startMargin;
     ll->sch.stopLatency  = advSch->stopMargin;
+    ll->sch.period       = advSch->interval;
 }
 
 _RAM_CODE 
@@ -1276,8 +1260,33 @@ static int adv_event_step_phy_send_scan_rsp(ll_sm_t* ll,ll_internal_adv_param_t*
 		{
 			//connect ind process
 			init_type_connectInd_t* connInd = (init_type_connectInd_t*)(packet->data);
+            if(POINTER_NOT_VALID(ll->conn))
+            {
+                ll->conn = (ll_internal_connection_ctrl_t*)tx_malloc(sizeof(ll_internal_connection_ctrl_t));
+            }
 			//ll state machine transform
-			sch_abort_current_and_process_next_task();
+            if(ble_ll_process_event(ll,BLE_LL_EVENT_START_CONNECTION) == BLE_LL_STATE_SUCCESS)
+            {
+                init_type_ll_data_t* llData = (init_type_ll_data_t*)(connInd->llData);
+                ll->conn->peer.sca = llData->sca;
+                ll->conn->timeout  = llData->timeout;
+                ll->conn->latency  = llData->latency;
+                ll->conn->chn.hop  = llData->hop;
+                txMemcpy(ll->conn->chn.map,llData->chnMap,5);
+                //transmit window delay is 1.25ms when connect ind used
+                _u32 connIndAnchor = ll->phy.hw_get_rx_air_ts() + ll_get_air_packet_time(advParam->la->phy.mode,sizeof(init_type_connectInd_t),0);
+                ll->sch.timestamp  = connIndAnchor +1250+llData->winOffset*1250;
+                ll->sch.duration   = ll->sch.durationMin = llData->winSize*1250;
+                ll->sch.period     = llData->interval*1250;
+                ll->phy.mode       = PHY_MODE_1M;
+                ll->phy.accessCode = llData->AA;
+                ll->phy.crcInit    = llData->crcInit;
+                sch_abort_current_and_process_next_task();
+            }
+            else 
+            {
+                tx_free((_u8*)ll->conn);
+            }
 		}
 	}
 	return 0;
@@ -1353,30 +1362,24 @@ static int adv_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advP
     return 1;
 }
 
-_RAM_CODE
-static int adv_event_step_phy_send_rsp_finished(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
-{
-    return 1;
-}
-
 _DATA
 static adv_event_sm_t adv_event_state_machine[]=
 {
-    {adv_event_step_phy_send_advertising, ADV_CONTEXT_DEFAULT|ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,ADV_SM_STATE_IDLE,       ADV_SM_STATE_SENDING_ADV, ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_START},
-    {adv_event_step_sch_stop,             ADV_CONTEXT_DEFAULT|ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,ADV_SM_STATE_IDLE,       ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_STOP},
-    {adv_event_step_sch_canceled,         ADV_CONTEXT_DEFAULT|ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,ADV_SM_STATE_IDLE,       ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_CANCELED},
-    {adv_event_step_sch_passed,           ADV_CONTEXT_DEFAULT|ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,ADV_SM_STATE_IDLE,       ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_PASSED},
+    {adv_event_step_phy_send_advertising, ADV_CONTEXT_DEFAULT|ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,ADV_SM_STATE_IDLE,       ADV_SM_STATE_SENDING_ADV, ADV_SM_STATE_IDLE, LL_SCH_EVENT_START},
+    {adv_event_step_sch_stop,             ADV_CONTEXT_DEFAULT|ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,ADV_SM_STATE_IDLE,       ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, LL_SCH_EVENT_STOP},
+    {adv_event_step_sch_canceled,         ADV_CONTEXT_DEFAULT|ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,ADV_SM_STATE_IDLE,       ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, LL_SCH_EVENT_CANCELED},
+    {adv_event_step_sch_passed,           ADV_CONTEXT_DEFAULT|ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,ADV_SM_STATE_IDLE,       ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, LL_SCH_EVENT_PASSED},
 
-    {adv_event_step_phy_start_listen,     ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,                    ADV_SM_STATE_SENDING_ADV,ADV_SM_STATE_RECEIVING,   ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_SEND_FINISHED},
-    {adv_event_step_sch_stop,             ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,                    ADV_SM_STATE_SENDING_ADV,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_STOP},
-    {adv_event_step_default_process,      ADV_CONTEXT_DEFAULT,                                              ADV_SM_STATE_SENDING_ADV,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_SEND_FINISHED},
+    {adv_event_step_phy_start_listen,     ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,                    ADV_SM_STATE_SENDING_ADV,ADV_SM_STATE_RECEIVING,   ADV_SM_STATE_IDLE, LL_PHY_EVENT_SEND_FINISHED},
+    {adv_event_step_sch_stop,             ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,                    ADV_SM_STATE_SENDING_ADV,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, LL_SCH_EVENT_STOP},
+    {adv_event_step_default_process,      ADV_CONTEXT_DEFAULT,                                              ADV_SM_STATE_SENDING_ADV,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, LL_PHY_EVENT_SEND_FINISHED},
 
-    {adv_event_step_phy_send_scan_rsp,    ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,                    ADV_SM_STATE_RECEIVING,  ADV_SM_STATE_SENDING_RSP, ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_RECEIVE_FINISHED},
-    {adv_event_step_default_process,      ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,                    ADV_SM_STATE_RECEIVING,  ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_RECEIVE_TIMEOUT},
-	{adv_event_step_sch_stop,             ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,                    ADV_SM_STATE_RECEIVING,  ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_STOP},
+    {adv_event_step_phy_send_scan_rsp,    ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,                    ADV_SM_STATE_RECEIVING,  ADV_SM_STATE_SENDING_RSP, ADV_SM_STATE_IDLE, LL_PHY_EVENT_RECEIVE_FINISHED},
+    {adv_event_step_default_process,      ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,                    ADV_SM_STATE_RECEIVING,  ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, LL_PHY_EVENT_RECEIVE_TIMEOUT},
+	{adv_event_step_sch_stop,             ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,                    ADV_SM_STATE_RECEIVING,  ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, LL_SCH_EVENT_STOP},
 
-    {adv_event_step_phy_send_rsp_finished,ADV_CONTEXT_SCANNABLE,                                            ADV_SM_STATE_SENDING_RSP,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_SEND_FINISHED},
-    {adv_event_step_sch_stop,             ADV_CONTEXT_SCANNABLE,                                            ADV_SM_STATE_SENDING_RSP,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_STOP},
+    {adv_event_step_default_process,      ADV_CONTEXT_SCANNABLE,                                            ADV_SM_STATE_SENDING_RSP,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, LL_PHY_EVENT_SEND_FINISHED},
+    {adv_event_step_sch_stop,             ADV_CONTEXT_SCANNABLE,                                            ADV_SM_STATE_SENDING_RSP,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, LL_SCH_EVENT_STOP},
 };
 static adv_procedure_list_t adv_con_scan_undirected_procedure[] =
 {
@@ -1563,19 +1566,19 @@ static int adv_extended_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_
 _DATA
 static adv_event_sm_t adv_extended_event_state_machine[]= 
 {
-    {adv_extended_event_step_phy_send_aux_advertising,  ADV_CONTEXT_AUXILIARY|ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,ADV_SM_STATE_IDLE,                  ADV_SM_STATE_SENDING_AUX_ADV,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_START},
-    {adv_extended_event_step_sch_stop,                  ADV_CONTEXT_AUXILIARY|ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,ADV_SM_STATE_IDLE,                  ADV_SM_STATE_IDLE,                   ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_STOP},
-    {adv_extended_event_step_sch_canceled,              ADV_CONTEXT_AUXILIARY|ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,ADV_SM_STATE_IDLE,                  ADV_SM_STATE_IDLE,                   ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_CANCELED},
-    {adv_extended_event_step_sch_passed,                ADV_CONTEXT_AUXILIARY|ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,ADV_SM_STATE_IDLE,                  ADV_SM_STATE_IDLE,                   ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_PASSED},
+    {adv_extended_event_step_phy_send_aux_advertising,  ADV_CONTEXT_AUXILIARY|ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,ADV_SM_STATE_IDLE,                  ADV_SM_STATE_SENDING_AUX_ADV,        ADV_SM_STATE_IDLE, LL_SCH_EVENT_START},
+    {adv_extended_event_step_sch_stop,                  ADV_CONTEXT_AUXILIARY|ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,ADV_SM_STATE_IDLE,                  ADV_SM_STATE_IDLE,                   ADV_SM_STATE_IDLE, LL_SCH_EVENT_STOP},
+    {adv_extended_event_step_sch_canceled,              ADV_CONTEXT_AUXILIARY|ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,ADV_SM_STATE_IDLE,                  ADV_SM_STATE_IDLE,                   ADV_SM_STATE_IDLE, LL_SCH_EVENT_CANCELED},
+    {adv_extended_event_step_sch_passed,                ADV_CONTEXT_AUXILIARY|ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,ADV_SM_STATE_IDLE,                  ADV_SM_STATE_IDLE,                   ADV_SM_STATE_IDLE, LL_SCH_EVENT_PASSED},
 
-    {adv_extended_event_step_phy_start_listen_aux,      ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,                      ADV_SM_STATE_SENDING_AUX_ADV,       ADV_SM_STATE_RECEIVING_AUX,          ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_SEND_FINISHED},
-    {adv_extended_event_step_sch_stop,                  ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,                      ADV_SM_STATE_SENDING_AUX_ADV,       ADV_SM_STATE_IDLE,                   ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_STOP},
-    {adv_extended_event_step_default_process,           ADV_CONTEXT_AUXILIARY,                                              ADV_SM_STATE_SENDING_AUX_ADV,       ADV_SM_STATE_IDLE,                   ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_SEND_FINISHED},
-    {adv_extended_event_step_default_process,           ADV_CONTEXT_AUXILIARY,                                              ADV_SM_STATE_SENDING_AUX_ADV,       ADV_SM_STATE_IDLE,                   ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_SEND_FINISHED},
+    {adv_extended_event_step_phy_start_listen_aux,      ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,                      ADV_SM_STATE_SENDING_AUX_ADV,       ADV_SM_STATE_RECEIVING_AUX,          ADV_SM_STATE_IDLE, LL_PHY_EVENT_SEND_FINISHED},
+    {adv_extended_event_step_sch_stop,                  ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,                      ADV_SM_STATE_SENDING_AUX_ADV,       ADV_SM_STATE_IDLE,                   ADV_SM_STATE_IDLE, LL_SCH_EVENT_STOP},
+    {adv_extended_event_step_default_process,           ADV_CONTEXT_AUXILIARY,                                              ADV_SM_STATE_SENDING_AUX_ADV,       ADV_SM_STATE_IDLE,                   ADV_SM_STATE_IDLE, LL_PHY_EVENT_SEND_FINISHED},
+    {adv_extended_event_step_default_process,           ADV_CONTEXT_AUXILIARY,                                              ADV_SM_STATE_SENDING_AUX_ADV,       ADV_SM_STATE_IDLE,                   ADV_SM_STATE_IDLE, LL_PHY_EVENT_SEND_FINISHED},
 
-    {adv_extended_event_step_phy_send_aux_scan_rsp,     ADV_CONTEXT_CONNECTABLE,                                            ADV_SM_STATE_RECEIVING_AUX,         ADV_SM_STATE_SENDING_AUX_SCAN_RSP,   ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_RECEIVE_FINISHED},
-    {adv_extended_event_step_phy_send_aux_connect_rsp,  ADV_CONTEXT_SCANNABLE,                                              ADV_SM_STATE_RECEIVING_AUX,         ADV_SM_STATE_SENDING_AUX_CONNECT_RSP,ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_RECEIVE_FINISHED},
-    {adv_extended_event_step_sch_stop,                  ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,                      ADV_SM_STATE_RECEIVING_AUX,         ADV_SM_STATE_IDLE,                   ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_STOP},
+    {adv_extended_event_step_phy_send_aux_scan_rsp,     ADV_CONTEXT_CONNECTABLE,                                            ADV_SM_STATE_RECEIVING_AUX,         ADV_SM_STATE_SENDING_AUX_SCAN_RSP,   ADV_SM_STATE_IDLE, LL_PHY_EVENT_RECEIVE_FINISHED},
+    {adv_extended_event_step_phy_send_aux_connect_rsp,  ADV_CONTEXT_SCANNABLE,                                              ADV_SM_STATE_RECEIVING_AUX,         ADV_SM_STATE_SENDING_AUX_CONNECT_RSP,ADV_SM_STATE_IDLE, LL_PHY_EVENT_RECEIVE_FINISHED},
+    {adv_extended_event_step_sch_stop,                  ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,                      ADV_SM_STATE_RECEIVING_AUX,         ADV_SM_STATE_IDLE,                   ADV_SM_STATE_IDLE, LL_SCH_EVENT_STOP},
 };
 
 
@@ -1622,13 +1625,13 @@ static int adv_chained_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_t
 _DATA
 static adv_event_sm_t adv_chained_event_state_machine[] =
 {
-	{adv_chained_event_step_phy_send_chain_advertising,ADV_CONTEXT_CHAINED,ADV_SM_STATE_IDLE,             ADV_SM_STATE_SENDING_CHAIN_ADV,ADV_SM_STATE_IDLE,ADV_SM_SCH_EVENT_START},
-	{adv_chained_event_step_sch_stop,                  ADV_CONTEXT_CHAINED,ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,ADV_SM_SCH_EVENT_STOP},
-	{adv_chained_event_step_sch_canceled,              ADV_CONTEXT_CHAINED,ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,ADV_SM_SCH_EVENT_CANCELED},
-	{adv_chained_event_step_sch_passed,                ADV_CONTEXT_CHAINED,ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,ADV_SM_SCH_EVENT_PASSED},
+	{adv_chained_event_step_phy_send_chain_advertising,ADV_CONTEXT_CHAINED,ADV_SM_STATE_IDLE,             ADV_SM_STATE_SENDING_CHAIN_ADV,ADV_SM_STATE_IDLE,LL_SCH_EVENT_START},
+	{adv_chained_event_step_sch_stop,                  ADV_CONTEXT_CHAINED,ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,LL_SCH_EVENT_STOP},
+	{adv_chained_event_step_sch_canceled,              ADV_CONTEXT_CHAINED,ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,LL_SCH_EVENT_CANCELED},
+	{adv_chained_event_step_sch_passed,                ADV_CONTEXT_CHAINED,ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,LL_SCH_EVENT_PASSED},
 
-	{adv_chained_event_step_default_process,           ADV_CONTEXT_CHAINED,ADV_SM_STATE_SENDING_CHAIN_ADV,ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,ADV_SM_PHY_EVENT_SEND_FINISHED},
-	{adv_chained_event_step_sch_stop,                  ADV_CONTEXT_CHAINED,ADV_SM_STATE_SENDING_CHAIN_ADV,ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,ADV_SM_SCH_EVENT_STOP},
+	{adv_chained_event_step_default_process,           ADV_CONTEXT_CHAINED,ADV_SM_STATE_SENDING_CHAIN_ADV,ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,LL_PHY_EVENT_SEND_FINISHED},
+	{adv_chained_event_step_sch_stop,                  ADV_CONTEXT_CHAINED,ADV_SM_STATE_SENDING_CHAIN_ADV,ADV_SM_STATE_IDLE,             ADV_SM_STATE_IDLE,LL_SCH_EVENT_STOP},
 };
 
 static adv_procedure_list_t adv_extended_con_undirected_procedure[]=
@@ -1712,13 +1715,13 @@ static int adv_periodic_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_para
 }
 static adv_event_sm_t adv_periodic_event_state_machine[]= 
 {
-    {adv_periodic_event_step_phy_send_sync_advertising,ADV_CONTEXT_DEFAULT,ADV_SM_STATE_IDLE,                ADV_SM_STATE_SENDING_PERIODIC_ADV,ADV_SM_STATE_IDLE,ADV_SM_SCH_EVENT_START},
-    {adv_periodic_event_step_sch_stop,                 ADV_CONTEXT_DEFAULT,ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,ADV_SM_SCH_EVENT_STOP},
-    {adv_periodic_event_step_sch_passed,               ADV_CONTEXT_DEFAULT,ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,ADV_SM_SCH_EVENT_PASSED},
-    {adv_periodic_event_step_sch_canceled,             ADV_CONTEXT_DEFAULT,ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,ADV_SM_SCH_EVENT_CANCELED},
+    {adv_periodic_event_step_phy_send_sync_advertising,ADV_CONTEXT_DEFAULT,ADV_SM_STATE_IDLE,                ADV_SM_STATE_SENDING_PERIODIC_ADV,ADV_SM_STATE_IDLE,LL_SCH_EVENT_START},
+    {adv_periodic_event_step_sch_stop,                 ADV_CONTEXT_DEFAULT,ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,LL_SCH_EVENT_STOP},
+    {adv_periodic_event_step_sch_passed,               ADV_CONTEXT_DEFAULT,ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,LL_SCH_EVENT_PASSED},
+    {adv_periodic_event_step_sch_canceled,             ADV_CONTEXT_DEFAULT,ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,LL_SCH_EVENT_CANCELED},
 
-    {adv_periodic_event_step_sch_stop,                 ADV_CONTEXT_DEFAULT,ADV_SM_STATE_SENDING_PERIODIC_ADV,ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,ADV_SM_PHY_EVENT_SEND_FINISHED},
-    {adv_periodic_event_step_sch_stop,                 ADV_CONTEXT_DEFAULT,ADV_SM_STATE_SENDING_PERIODIC_ADV,ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,ADV_SM_SCH_EVENT_STOP},
+    {adv_periodic_event_step_sch_stop,                 ADV_CONTEXT_DEFAULT,ADV_SM_STATE_SENDING_PERIODIC_ADV,ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,LL_PHY_EVENT_SEND_FINISHED},
+    {adv_periodic_event_step_sch_stop,                 ADV_CONTEXT_DEFAULT,ADV_SM_STATE_SENDING_PERIODIC_ADV,ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,LL_SCH_EVENT_STOP},
 };
 static adv_procedure_list_t adv_extended_periodic_procedure[]=
 {
@@ -1774,13 +1777,13 @@ _RAM_CODE
 static void adv_sequence_process(sm_event_type_e type,_u8 event)
 {
     _u8 smEventType = 0; 
-    if(type == SM_SCH_EVENT)
+    if(type == LL_SCH_EVENT)
     {
-        smEventType = ADV_SM_SCH_EVENT_BASE+event;
+        smEventType = LL_SCH_EVENT_BASE+event;
     }
     else
     {
-    	smEventType = ADV_SM_PHY_EVENT_BASE+event;
+    	smEventType = LL_PHY_EVENT_BASE+event;
     }
     ll_sm_t* ll     = ll_get_current_state_machine();
     _u8 eventType     = currentAdvSet->eventType;
@@ -1811,13 +1814,14 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
                     }
                     currentAdvSet->processingEvent = 0;
                 }
-                if(type         == SM_SCH_EVENT \
+                if(type         == LL_SCH_EVENT \
                    && ll->state == BLE_LL_STATE_ADVERTISING \
                    && currentAdvSet->state == ADV_SM_STATE_IDLE)
                 {
                     adv_get_next_event(ll);
                 }
-                if(type == SM_PHY_EVENT\
+                if(type         == LL_PHY_EVENT\
+                  && ll->state  == BLE_LL_STATE_ADVERTISING \
                   && currentAdvSet->state == ADV_SM_STATE_IDLE)
                 {
                 	sch_stop_task_early();
@@ -1847,7 +1851,7 @@ static void adv_phy_irq_callback(_u8 type)
         DEBUG_GPIO_HIGH(GPIO_10);
         DEBUG_GPIO_LOW(GPIO_10);
     }
-    adv_sequence_process(SM_PHY_EVENT,type);
+    adv_sequence_process(LL_PHY_EVENT,type);
 }
 
 _RAM_CODE
@@ -1873,7 +1877,7 @@ static void adv_sch_callback(_u8 type)
         DEBUG_GPIO_HIGH(GPIO_14);
         DEBUG_GPIO_LOW(GPIO_14);
     }
-    adv_sequence_process(SM_SCH_EVENT,type);
+    adv_sequence_process(LL_SCH_EVENT,type);
 }
 
 static void ble_ll_adv_reset(void)

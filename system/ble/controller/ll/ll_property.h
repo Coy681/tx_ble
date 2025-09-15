@@ -47,4 +47,20 @@
 #endif
 #endif/*(LL_SUPPORT_LE_EXTENDED_ADVERTISING)*/
 
+
+
+#if defined(BLE_SUPPORT_CONN)
+
+#ifndef BLE_CONN_TX_MAX_OCTETS
+#define BLE_CONN_TX_MAX_OCTETS                         27
+#endif
+
+#ifndef BLE_CONN_RX_MAX_OCTETS
+#define BLE_CONN_RX_MAX_OCTETS                         27
+#endif
+
+#endif
+
+
+
 #endif /* BLE_CONTROLLER_LL_LL_PROPERTY_H_ */

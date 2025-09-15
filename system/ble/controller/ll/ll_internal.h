@@ -87,6 +87,28 @@ typedef enum
 
 typedef void(*reset_f)(void);
 
+/***********************link layer event define**********************/
+
+typedef enum
+{
+    LL_SCH_EVENT = BIT(1),
+    LL_PHY_EVENT = BIT(2),
+}sm_event_type_e;
+
+typedef enum
+{
+    LL_SCH_EVENT_BASE              = 0x10,
+    LL_SCH_EVENT_START             = LL_SCH_EVENT_BASE+SCH_TASK_START,
+    LL_SCH_EVENT_STOP              = LL_SCH_EVENT_BASE+SCH_TASK_STOP,
+    LL_SCH_EVENT_CANCELED          = LL_SCH_EVENT_BASE+SCH_TASK_CANCELED,
+    LL_SCH_EVENT_PASSED            = LL_SCH_EVENT_BASE+SCH_TASK_PASSED,
+
+    LL_PHY_EVENT_BASE              = 0x20,
+    LL_PHY_EVENT_SEND_FINISHED     = LL_PHY_EVENT_BASE+PHY_IRQ_TX_FINISHED,
+    LL_PHY_EVENT_RECEIVE_FINISHED  = LL_PHY_EVENT_BASE+PHY_IRQ_RX_FINISHED,
+    LL_PHY_EVENT_RECEIVE_TIMEOUT   = LL_PHY_EVENT_BASE+PHY_IRQ_RX_TIMEOUT,
+}adv_sm_event_e;
+
 /***********************ll standby sate**********************/
 typedef struct _PACKED
 {
@@ -262,6 +284,43 @@ int                      ll_extended_adv_get_current_set_number(void);
 /***********************ll connection sate**********************/
 typedef struct _PACKED
 {
+	_u8  sca:3;
+	_u8  rsvd:5;
+	_u8  rsvd1;
+	_u16 rsvd2;
+
+	_u16 maxTxOctets;
+	_u16 maxRxOctets;
+	_u16 maxTxTime;
+	_u16 maxRxTime;
+
+	_u16 rsvd3;
+	_u8  address[6];
+}ll_conn_peer_info_t;
+
+typedef struct _PACKED
+{
+	_u8  hop:5;
+	_u8  rsvd:3;
+    _u16 rsvd2;
+    _u8  map[5];
+}ll_conn_chn_info_t;
+
+typedef struct _PACKED
+{
+	_u8  role:1;
+	_u8  rsvd0:7;
+	_u8  rsvd1;
+	_u16 rsvd2;
+	_u16 latency;
+	_u16 timeout;
+
+	_u16 maxTxOctets;
+	_u16 maxRxOctets;
+	_u16 maxTxTime;
+	_u16 maxRxTime;
+	ll_conn_chn_info_t  chn;
+	ll_conn_peer_info_t peer;
 	reset_f reset;
 }ll_internal_connection_ctrl_t;
 
