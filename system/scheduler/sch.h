@@ -95,9 +95,9 @@ int  sch_insert_task(sch_node_t* task);
 
 int  sch_remove_task(_u8 taskId);
 
-void sch_process_next_task(void);
+void sch_stop_task_early(void);
 
-void sch_stop_and_process_next_task(void);
+void sch_abort_current_and_process_next_task(void);
 
 sch_node_t* sch_get_task_list(_u8 type);
 

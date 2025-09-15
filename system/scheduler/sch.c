@@ -444,12 +444,12 @@ _RAM_CODE void sch_start(void)
 	DEBUG_GPIO_LOW(GPIO_3);
 }
 
-_RAM_CODE void sch_process_next_task(void)
+_RAM_CODE void sch_stop_task_early(void)
 {
     hal_stimer_set_capture(system_time()+10);
 }
 
-_RAM_CODE void sch_stop_and_process_next_task(void)
+_RAM_CODE void sch_abort_current_and_process_next_task(void)
 {
     if(TASK_VALID(schCtrl.pRunningTask))
     {

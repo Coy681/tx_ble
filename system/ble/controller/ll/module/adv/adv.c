@@ -1277,7 +1277,7 @@ static int adv_event_step_phy_send_scan_rsp(ll_sm_t* ll,ll_internal_adv_param_t*
 			//connect ind process
 			init_type_connectInd_t* connInd = (init_type_connectInd_t*)(packet->data);
 			//ll state machine transform
-	        sch_stop_and_process_next_task();
+			sch_abort_current_and_process_next_task();
 		}
 	}
 	return 0;
@@ -1820,7 +1820,7 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
                 if(type == SM_PHY_EVENT\
                   && currentAdvSet->state == ADV_SM_STATE_IDLE)
                 {
-                    sch_process_next_task();
+                	sch_stop_task_early();
                 }
                 break;               
                  
