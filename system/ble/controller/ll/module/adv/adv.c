@@ -1253,40 +1253,32 @@ static int adv_event_step_phy_start_listen(ll_sm_t* ll,ll_internal_adv_param_t* 
 	return 1;
 }
 
-_RAM_CODE
-static int adv_event_step_received_packet_analyze(ll_sm_t* ll)
-{
-	 ll_adv_packet_t* packet = (ll_adv_packet_t*)(ll->phy.rxAddress + ll_get_packet_header_offset_from_address(PHY_DIR_RX));
-
-	 if(packet->hdr.pduType == LL_ADV_TYPE_SCAN_REQ && packet->hdr.length == sizeof(scan_type_scan_req_t))
-	 {
-		 //scan req process
-		 scan_type_scan_req_t* scanReq = (scan_type_scan_req_t*)(packet->data);
-		 if(txMemcmp(ll_get_device_address(),scanReq->advA,6) == 0)
-		 {
-			 return 1;
-		 }
-	 }
-	 else if(packet->hdr.pduType == LL_ADV_TYPE_CONNECT_IND && packet->hdr.length == sizeof(init_type_connectInd_t))
-	 {
-		 //connect ind process
-		 init_type_connectInd_t* connInd = (init_type_connectInd_t*)(packet->data);
-		 //ll state machine transform
-        sch_stop_and_process_next_task();  
-	 }
-	return 0;
-}
 
 _RAM_CODE
 static int adv_event_step_phy_send_scan_rsp(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
-	if(ll->phy.hw_is_rx_packet_valid()&&(adv_event_step_received_packet_analyze(ll)!=0))//packet analyze shall be execute first
+	if(ll->phy.hw_is_rx_packet_valid())//packet analyze shall be execute first
 	{
-        adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_SCAN_RSP);
-        _u32 timestamp = ll->phy.hw_get_rx_air_ts() + ll_get_air_packet_time(advParam->la->phy.mode,sizeof(scan_type_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME;
-        adv_prepare_phy(ll,&advParam->la->phy,timestamp,PHY_DIR_TX);
-        ll->phy.start();
-        return 1;
+		ll_adv_packet_t* packet = (ll_adv_packet_t*)(ll->phy.rxAddress + ll_get_packet_header_offset_from_address(PHY_DIR_RX));
+		if(packet->hdr.pduType == LL_ADV_TYPE_SCAN_REQ && packet->hdr.length == sizeof(scan_type_scan_req_t))
+		{
+			 scan_type_scan_req_t* scanReq = (scan_type_scan_req_t*)(packet->data);
+			 if((txMemcmp(ll_get_device_address(),scanReq->advA,6) == 0))
+			 {
+				adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_SCAN_RSP);
+				_u32 timestamp = ll->phy.hw_get_rx_air_ts() + ll_get_air_packet_time(advParam->la->phy.mode,sizeof(scan_type_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME;
+				adv_prepare_phy(ll,&advParam->la->phy,timestamp,PHY_DIR_TX);
+				ll->phy.start();
+				return 1;
+			 }
+		}
+		else if(packet->hdr.pduType == LL_ADV_TYPE_CONNECT_IND && packet->hdr.length == sizeof(init_type_connectInd_t))
+		{
+			//connect ind process
+			init_type_connectInd_t* connInd = (init_type_connectInd_t*)(packet->data);
+			//ll state machine transform
+	        sch_stop_and_process_next_task();
+		}
 	}
 	return 0;
 }
@@ -1380,7 +1372,8 @@ static adv_event_sm_t adv_event_state_machine[]=
     {adv_event_step_default_process,      ADV_CONTEXT_DEFAULT,                                              ADV_SM_STATE_SENDING_ADV,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_SEND_FINISHED},
 
     {adv_event_step_phy_send_scan_rsp,    ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,                    ADV_SM_STATE_RECEIVING,  ADV_SM_STATE_SENDING_RSP, ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_RECEIVE_FINISHED},
-    {adv_event_step_sch_stop,             ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,                    ADV_SM_STATE_RECEIVING,  ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_STOP},
+    {adv_event_step_default_process,      ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,                    ADV_SM_STATE_RECEIVING,  ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_RECEIVE_TIMEOUT},
+	{adv_event_step_sch_stop,             ADV_CONTEXT_SCANNABLE|ADV_CONTEXT_CONNECTABLE,                    ADV_SM_STATE_RECEIVING,  ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_STOP},
 
     {adv_event_step_phy_send_rsp_finished,ADV_CONTEXT_SCANNABLE,                                            ADV_SM_STATE_SENDING_RSP,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_PHY_EVENT_SEND_FINISHED},
     {adv_event_step_sch_stop,             ADV_CONTEXT_SCANNABLE,                                            ADV_SM_STATE_SENDING_RSP,ADV_SM_STATE_IDLE,        ADV_SM_STATE_IDLE, ADV_SM_SCH_EVENT_STOP},
@@ -1505,17 +1498,7 @@ static int adv_extended_event_step_phy_send_aux_scan_rsp(ll_sm_t* ll,ll_internal
 		}
         else if((packet->hdr.pduType == LL_ADV_TYPE_CONNECT_IND)&&(packet->hdr.length == sizeof(init_type_connectInd_t)))
         {
-            //scan req process
-			init_type_connectInd_t* connInd = (init_type_connectInd_t*)(packet->data);
-            if(txMemcmp(ll_get_device_address(),connInd->advA,6) == 0)
-            {
-                init_type_ll_data_t* llData = (init_type_ll_data_t*)connInd->llData;
-                if(POINTER_NOT_VALID(ll->conn))
-                {
-                    ll->conn = (ll_internal_connection_ctrl_t*)tx_malloc(sizeof(ll_internal_connection_ctrl_t));
-                    
-                }
-            }
+
         }
 	}
 

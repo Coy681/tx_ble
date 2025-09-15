@@ -47,6 +47,10 @@ _u8* tx_malloc(_u16 length)
 	{
         return NULL;
 	}
+	if(length==0)
+	{
+		return NULL;
+	}
     _u16 mallocLen = ((length+3)&(~3));
     txMallocNode_t* pNode = (txMallocNode_t*)txMalloc.pStart;
     txMallocNode_t* pPreviousNode =  NULL;
