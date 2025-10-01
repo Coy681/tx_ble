@@ -86,15 +86,15 @@
 
 #if defined(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
 // C.17: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Advertising State, otherwise excluded
-#define LE_CLEAR_ADVERTISING_SETS_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_REMOVE_ADVERTISING_SET_PROCESS                                    HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_SET_ADVERTISING_SET_RANDOM_ADDRESS_PROCESS                        HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_READ_MAXIMUM_ADVERTISING_DATA_LENGTH_PROCESS                      HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_READ_NUMBER_OF_SUPPORTED_ADVERTISING_SETS_PROCESS                 HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_SET_EXTENDED_ADVERTISING_DATA_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_SET_EXTENDED_SCAN_RESPONSE_DATA_PROCESS                           HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_SET_EXTENDED_ADVERTISING_ENABLE_PROCESS                           HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_SET_EXTENDED_ADVERTISING_PARAMETERS_PROCESS                       HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_CLEAR_ADVERTISING_SETS_PROCESS                                    le_clear_advertising_sets_process
+#define LE_REMOVE_ADVERTISING_SET_PROCESS                                    le_remove_advertising_set_process
+#define LE_SET_ADVERTISING_SET_RANDOM_ADDRESS_PROCESS                        le_set_advertising_set_random_address_process
+#define LE_READ_MAXIMUM_ADVERTISING_DATA_LENGTH_PROCESS                      le_read_maximum_advertising_data_length_process
+#define LE_READ_NUMBER_OF_SUPPORTED_ADVERTISING_SETS_PROCESS                 le_read_number_of_supported_advertising_sets_process
+#define LE_SET_EXTENDED_ADVERTISING_DATA_PROCESS                             le_set_extended_advertising_data_process
+#define LE_SET_EXTENDED_SCAN_RESPONSE_DATA_PROCESS                           le_set_extended_scan_response_data_process
+#define LE_SET_EXTENDED_ADVERTISING_ENABLE_PROCESS                           le_set_extended_advertising_enable_data_process
+#define LE_SET_EXTENDED_ADVERTISING_PARAMETERS_PROCESS                       le_set_extended_advertising_parameters_process
 
 #if(LL_SUPPORT_ADVERTISING_CODING_SELECTION)
 // C.66: Mandatory if LE Feature (Advertising Coding Selection) is supported
@@ -1369,16 +1369,210 @@ controller_error_code_e le_test_end_process(_u8* data,_u8 length,bt_hci_event_t*
 }
 
 // LE_CLEAR_ADVERTISING_SETS_PROCESS
-struct le_clear_advertising_sets_process_retPatam_t
+struct le_clear_advertising_sets_process_retParam_t
 {
-    /* data */
+    _u8 status;
 };
 controller_error_code_e le_clear_advertising_sets_process(_u8* data,_u8 length,bt_hci_event_t** event)
 {
-
+    int status = ll_clear_advertising_sets();
+    struct le_clear_advertising_sets_process_retParam_t* retParam = \
+    (struct le_clear_advertising_sets_process_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct le_clear_advertising_sets_process_retParam_t),event);
+    retParam->status = status;
+    return status;
 }
 
+//LE_REMOVE_ADVERTISING_SET_PROCESS
+struct le_remove_advertising_set_process_param_t
+{
+    _u8 handle;
+};
+struct le_remove_advertising_set_process_retParam_t
+{
+    _u8 status;
+};
+controller_error_code_e le_remove_advertising_set_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    struct le_remove_advertising_set_process_param_t* param = (struct le_remove_advertising_set_process_param_t*)data;
+    int status = ll_remove_advertising_sets(param->handle);
+    struct le_remove_advertising_set_process_retParam_t* retParam = \
+    (struct le_remove_advertising_set_process_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct le_remove_advertising_set_process_retParam_t),event);
+    retParam->status = status;
+    return status;
+}
 
+//LE_SET_ADVERTISING_SET_RANDOM_ADDRESS_PROCESS
+struct le_set_advertising_set_random_address_process_param_t
+{
+    _u8 handle;
+    _u8 address[6];
+};
+struct le_set_advertising_set_random_address_process_retParam_t
+{
+    _u8 status;
+};
+controller_error_code_e le_set_advertising_set_random_address_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    struct le_set_advertising_set_random_address_process_param_t* param = (struct le_set_advertising_set_random_address_process_param_t*)data;
+    int status = ll_set_adv_set_random_address(param->handle,param->address);
+    struct le_set_advertising_set_random_address_process_retParam_t* retParam = \
+    (struct le_set_advertising_set_random_address_process_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct le_set_advertising_set_random_address_process_retParam_t),event);
+    retParam->status = status;
+    return status;
+}
+//LE_READ_MAXIMUM_ADVERTISING_DATA_LENGTH_PROCESS
+struct le_read_maximum_advertising_data_length_process_retParam_t
+{
+    _u8  status;
+    _u16 length;
+};
+controller_error_code_e le_read_maximum_advertising_data_length_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    struct le_read_maximum_advertising_data_length_process_retParam_t* retParam = \
+    (struct le_read_maximum_advertising_data_length_process_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct le_read_maximum_advertising_data_length_process_retParam_t),event);
+    retParam->status = (_u8)SUCCESS;
+    ll_read_maximum_advertising_data_length(&retParam->length);
+    return SUCCESS;
+}
+
+//LE_READ_NUMBER_OF_SUPPORTED_ADVERTISING_SETS_PROCESS
+struct le_read_number_of_supported_advertising_sets_process_retParam_t
+{
+    _u8  status;
+    _u16 number;
+};
+controller_error_code_e le_read_number_of_supported_advertising_sets_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    struct le_read_number_of_supported_advertising_sets_process_retParam_t* retParam = \
+    (struct le_read_number_of_supported_advertising_sets_process_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct le_read_number_of_supported_advertising_sets_process_retParam_t),event);
+    retParam->status = (_u8)SUCCESS;
+    ll_read_number_of_supported_advertising_sets(&retParam->number);
+    return SUCCESS;
+}
+
+//LE_SET_EXTENDED_ADVERTISING_DATA_PROCESS
+struct le_set_extended_advertising_data_process_param_t
+{
+    _u8  handle;
+    _u8  operation;
+    _u8  fragPref;
+    _u8  length;
+    _u8  data[0];
+};
+struct le_set_extended_advertising_data_process_retParam_t
+{
+    _u8  status;
+};
+controller_error_code_e le_set_extended_advertising_data_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    struct le_set_extended_advertising_data_process_param_t* param = (struct le_set_extended_advertising_data_process_param_t*)data;
+    _u8 status = ll_set_extended_advertising_data(param->handle,param->operation,param->fragPref,param->length,param->data);
+    struct le_set_extended_advertising_data_process_retParam_t* retParam = \
+    (struct le_set_extended_advertising_data_process_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct le_set_extended_advertising_data_process_retParam_t),event);
+    retParam->status = status;
+    return SUCCESS;
+}
+
+//LE_SET_EXTENDED_SCAN_RESPONSE_DATA_PROCESS
+struct le_set_extended_scan_response_data_process_param_t
+{
+    _u8  handle;
+    _u8  operation;
+    _u8  fragPref;
+    _u8  length;
+    _u8  data[0];
+};
+struct le_set_extended_scan_response_data_process_retParam_t
+{
+    _u8  status;
+};
+controller_error_code_e le_set_extended_scan_response_data_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    struct le_set_extended_scan_response_data_process_param_t* param = (struct le_set_extended_scan_response_data_process_param_t*)data;
+    _u8 status = ll_set_extended_scan_response_data(param->handle,param->operation,param->fragPref,param->length,param->data);
+    struct le_set_extended_scan_response_data_process_retParam_t* retParam = \
+    (struct le_set_extended_scan_response_data_process_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct le_set_extended_scan_response_data_process_retParam_t),event);
+    retParam->status = status;
+    return SUCCESS;
+}
+
+//LE_SET_EXTENDED_ADVERTISING_ENABLE_PROCESS
+struct le_set_extended_advertising_enable_process_param_t
+{
+    _u8  enable;
+    _u8  numSets;
+    _u8  set[0];
+};
+struct le_set_extended_advertising_enable_process_retParam_t
+{
+    _u8  status;
+};
+controller_error_code_e le_set_extended_advertising_enable_data_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    struct le_set_extended_advertising_enable_process_param_t* param = (struct le_set_extended_advertising_enable_process_param_t*)data;
+    _u8 status = ll_set_extended_advertising_enable(param->enable,param->numSets,(ll_extended_adv_enable_subField_e*)param->set);
+    struct le_set_extended_advertising_enable_process_retParam_t* retParam = \
+    (struct le_set_extended_advertising_enable_process_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct le_set_extended_advertising_enable_process_retParam_t),event);
+    retParam->status = status;
+    return status;
+}
+
+//LE_SET_EXTENDED_ADVERTISING_PARAMETERS_PROCESS
+struct le_set_extended_advertising_parameters_process_param_t
+{
+    _u8  handle;
+    _u16 eventProperty;
+    _u8  priIntMin[3];
+    _u8  priIntMax[3];
+    _u8  priChnMap;
+    _u8  ownAddrType;
+    _u8  peerAddrType;
+    _u8  peerAddr[6];
+    _u8  filterPolicy;
+    _u8  txPower;
+    _u8  priPhy;
+    _u8  secMaxSkip;
+    _u8  secPhy;
+    _u8  sid;
+    _u8  scanReqNotiEn;
+    _u8  priAdvPhyOpt;
+    _u8  secAdvPhyOpt;
+};
+struct le_set_extended_advertising_parameters_process_retParam_t
+{
+    _u8  status;
+    _u8  txPower;
+};
+controller_error_code_e le_set_extended_advertising_parameters_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    struct le_set_extended_advertising_parameters_process_param_t* param = (struct le_set_extended_advertising_parameters_process_param_t*)data;
+    ll_extended_adv_param_t extendedAdvParam = {0};
+    extendedAdvParam.advHandle           = param->handle;
+    extendedAdvParam.advEventProperty    = param->eventProperty;
+    extendedAdvParam.filterPolicy        = param->filterPolicy;
+    extendedAdvParam.txPower             = param->txPower;
+    extendedAdvParam.advSid              = param->sid;
+    extendedAdvParam.ownAddrType         = param->ownAddrType;
+    extendedAdvParam.peerAddrType        = param->peerAddrType;
+    txMemcpy(extendedAdvParam.peerAddr,param->peerAddr,6);
+    extendedAdvParam.scanReqNotifyEnable = param->scanReqNotiEn;
+    int intMin,intMax;
+    BYTE_TO_U24(intMin,param->priIntMin);
+    BYTE_TO_U24(intMin,param->priIntMax);
+    extendedAdvParam.primaryAdvInterval  = intMin;
+    extendedAdvParam.primaryAdvChnMap    = param->priChnMap;
+    extendedAdvParam.primaryAdvPhy       = param->priPhy;
+    extendedAdvParam.primaryAdvphyOptions= param->priAdvPhyOpt;
+    extendedAdvParam.secondaryAdvMaxSkip = param->secMaxSkip;
+    extendedAdvParam.secondaryAdvPhy     = param->secPhy;
+    extendedAdvParam.secondaryAdvphyOptions = param->secAdvPhyOpt;
+    _u8 status = ll_set_extended_advertising_parameters(&extendedAdvParam);
+    struct le_set_extended_advertising_parameters_process_retParam_t* retParam = \
+    (struct le_set_extended_advertising_parameters_process_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct le_set_extended_advertising_parameters_process_retParam_t),event);
+    retParam->status  = status;
+    retParam->txPower = 0x00;
+    return status;
+}
 
 //special,should put it last
 /****************************************hci informational parameters command**************************/

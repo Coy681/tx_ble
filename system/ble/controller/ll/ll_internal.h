@@ -309,7 +309,8 @@ typedef struct _PACKED
 typedef struct _PACKED
 {
 	_u8  role:1;
-	_u8  rsvd0:7;
+	_u8  state:3;
+    _u8  rsvd0:4;
 	_u8  rsvd1;
 	_u16 rsvd2;
 	_u16 latency;
