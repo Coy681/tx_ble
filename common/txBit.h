@@ -42,6 +42,8 @@
 
 #define BIT_CLR(var, bit)               ((var) &= ~(1U << (bit)))
 
+#define BIT_N_VALID(p,n)                (p[n>>3]&BIT(n&0x07))
+
 static inline int count_bits_one(unsigned int n)
 {
     int count = 0;
