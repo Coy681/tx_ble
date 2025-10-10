@@ -29,8 +29,8 @@
  *    -isochronous :uses general purpose channel.
  *    -data        :uses general purpose channel.
  */
-#include"ll_internal.h"
-#include"txCommon.h"
+#include"../ll_internal.h"
+#include"common/txCommon.h"
 typedef enum
 {
     LL_CHANNEL_UNKNOWN,
@@ -39,3 +39,4 @@ typedef enum
 }ll_channel_classfication_e;
 
 void ll_csa1_calculate_channel_table(ll_conn_chn_info_t* info);
+

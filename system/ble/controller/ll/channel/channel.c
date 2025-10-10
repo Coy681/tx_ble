@@ -17,7 +17,8 @@ void ll_csa1_calculate_channel_table(ll_conn_chn_info_t* info)
     for(int i=0;i<37;i++)
     {
         unMappedChn = (lastUnMappedChn+info->hop)%37;
-        if(!BIT_N_VALID(info->map,i))
+        lastUnMappedChn = unMappedChn;
+        if(!BIT_N_VALID(info->map,unMappedChn))
         {
             unMappedChn = usedChn[unMappedChn%usedNum];
         }
