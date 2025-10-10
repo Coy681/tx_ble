@@ -44,6 +44,16 @@
 
 #define BIT_N_VALID(p,n)                (p[n>>3]&BIT(n&0x07))
 
+#define BIT_REVERSE_8(x) \
+    ( ((x) & 0x01) << 7 |  /* bit0→bit7 */ \
+      ((x) & 0x02) << 5 |  /* bit1→bit6 */ \
+      ((x) & 0x04) << 3 |  /* bit2→bit5 */ \
+      ((x) & 0x08) << 1 |  /* bit3→bit4 */ \
+      ((x) & 0x10) >> 1 |  /* bit4→bit3 */ \
+      ((x) & 0x20) >> 3 |  /* bit5→bit2 */ \
+      ((x) & 0x40) >> 5 |  /* bit6→bit1 */ \
+      ((x) & 0x80) >> 7 )  /* bit7→bit0 */
+
 static inline int count_bits_one(unsigned int n)
 {
     int count = 0;

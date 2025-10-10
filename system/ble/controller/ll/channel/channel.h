@@ -38,5 +38,6 @@ typedef enum
     LL_CHANNEL_GOOD,
 }ll_channel_classfication_e;
 
-void ll_csa1_calculate_channel_table(ll_conn_chn_info_t* info);
+void ll_csa1_calculate_channel_table(ll_conn_chn_info_t* chnInfo);
 
+_u8  ll_csa2_calculate_channel_index(ll_conn_chn_info_t* chnInfo,_u16 counter,_u16 chnId,_u8 seNum);

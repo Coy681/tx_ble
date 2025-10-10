@@ -302,9 +302,15 @@ typedef struct _PACKED
 {
 	_u8  hop:5;
 	_u8  rsvd:3;
-    _u8  rsvd2;
+    _u8  usedNum;
     _u8  map[5];//maybe can discard;
     _u8  table[37];
+	#if(LL_SUPPORT_CHANNEL_SELECTION_ALGORITHM_2)
+    _u8  d;
+    _u8  lastSeIdx;
+    _u16 lastUsedPrn;
+	#endif
+
 }ll_conn_chn_info_t;
 
 typedef struct _PACKED

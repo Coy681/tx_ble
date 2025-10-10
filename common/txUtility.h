@@ -13,4 +13,9 @@
 #define POINTER_VALID(node)            (node != 0)
  
 #define POINTER_NOT_VALID(node)        (node == 0)
+
+#define TX_MAX(a, b)                   (((a) > (b)) ? (a) : (b))
+
+#define TX_MIN(a, b)                   (((a) < (b)) ? (a) : (b))
+
 #endif /* TXUTILITY_H_ */
