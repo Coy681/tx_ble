@@ -6,7 +6,7 @@
 #include"packet/packet.h"
 #include"ll_feature.h"
 #include"ll_property.h"
-
+#include"channel/channel.h"
  #ifndef LL_INTERNAL_H_
  #define LL_INTERNAL_H_
 
@@ -300,21 +300,6 @@ typedef struct _PACKED
 
 typedef struct _PACKED
 {
-	_u8  hop:5;
-	_u8  rsvd:3;
-    _u8  usedNum;
-    _u8  map[5];//maybe can discard;
-    _u8  table[37];
-	#if(LL_SUPPORT_CHANNEL_SELECTION_ALGORITHM_2)
-    _u8  d;
-    _u8  lastSeIdx;
-    _u16 lastUsedPrn;
-	#endif
-
-}ll_conn_chn_info_t;
-
-typedef struct _PACKED
-{
 	_u8  role:1;
 	_u8  state:3;
     _u8  rsvd0:4;
@@ -327,7 +312,7 @@ typedef struct _PACKED
 	_u16 maxRxOctets;
 	_u16 maxTxTime;
 	_u16 maxRxTime;
-	ll_conn_chn_info_t  chn;
+	ll_csa_ctrl_t       chn;
 	ll_conn_peer_info_t peer;
 	reset_f reset;
 }ll_internal_connection_ctrl_t;
