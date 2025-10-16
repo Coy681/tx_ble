@@ -289,14 +289,24 @@ typedef struct _PACKED
 	_u8  rsvd1;
 	_u16 rsvd2;
 
+	_u16 rsvd3;
+	_u8  address[6];
+}ll_conn_peer_t;
+typedef struct _PACKED
+{
 	_u16 maxTxOctets;
 	_u16 maxRxOctets;
 	_u16 maxTxTime;
 	_u16 maxRxTime;
 
-	_u16 rsvd3;
-	_u8  address[6];
-}ll_conn_peer_info_t;
+	_u16 ownMaxTxOctets;
+	_u16 ownMaxRxOctets;
+	_u16 ownMaxTxTime;
+	_u16 ownMaxRxTime;
+
+	txBuffer_t in;
+	txBuffer_t out;
+}ll_conn_data_t;
 
 typedef struct _PACKED
 {
@@ -308,12 +318,9 @@ typedef struct _PACKED
 	_u16 latency;
 	_u16 timeout;
 
-	_u16 maxTxOctets;
-	_u16 maxRxOctets;
-	_u16 maxTxTime;
-	_u16 maxRxTime;
-	ll_csa_ctrl_t       chn;
-	ll_conn_peer_info_t peer;
+	ll_conn_data_t        data;
+	ll_conn_peer_t        peer;
+	ll_csa_ctrl_t         csa;
 	reset_f reset;
 }ll_internal_connection_ctrl_t;
 

@@ -74,3 +74,7 @@ receiverAllowance悠接收机自己确定
 - 观察者模式：核心目的是解决对象间的一对多依赖关系
 - 责任链模式：核心价值在于解耦请求的发送者和接收者
 
+# 20251016
+
+- ACL DATA从HOST下发会存储到Conctroller的HCI ACL DATA BUFFER里面，同理，ISO DATA从HOST下发会存储到Conctroller的HCI ISO DATA BUFFER里面
+- Host通过HCI下发的ACL DATA和ISO DATA会通过拆包拆到Controller的PHY TX FIFO里面

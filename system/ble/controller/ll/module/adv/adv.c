@@ -1,6 +1,7 @@
 
 #include"adv.h"
 #include"system/scheduler/sch_map.h"
+#include"../channel/channel.h"
 /*****************************************ADV State Machine***********************************************/
 
 
@@ -569,14 +570,14 @@ static void adv_generate_extended_header(ll_sm_t* ll,ll_internal_adv_param_t* ad
 //LL_ADV_TYPE_ADV_IND
 static void adv_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
-    _u8* packet = ll_get_adv_packet(advParam->la->phy.txAddress,6+advParam->data.len,LL_ADV_TYPE_ADV_IND,0,advParam->ownAddressType?1:0,0);
+    _u8* packet = ll_get_adv_packet(advParam->la->phy.txAddress,6+advParam->data.len,LL_ADV_TYPE_ADV_IND,LL_CHANNEL_SUPP_CSA2,advParam->ownAddressType?1:0,0);
     txMemcpy(((adv_type_ind_t*)packet)->advA,ll_get_device_address(),6);
     txMemcpy(((adv_type_ind_t*)packet)->advData,advParam->data.addr,advParam->data.len);
 }
 //LL_ADV_TYPE_ADV_DIRECT_IND
 static void adv_direct_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
-    _u8* packet = ll_get_adv_packet(advParam->la->phy.txAddress,12,LL_ADV_TYPE_ADV_DIRECT_IND,0,advParam->ownAddressType?1:0,advParam->peerAddressType?1:0);
+    _u8* packet = ll_get_adv_packet(advParam->la->phy.txAddress,12,LL_ADV_TYPE_ADV_DIRECT_IND,LL_CHANNEL_SUPP_CSA2,advParam->ownAddressType?1:0,advParam->peerAddressType?1:0);
     txMemcpy(((adv_type_direct_ind_t*)packet)->advA,ll_get_device_address(),6);
     txMemcpy(((adv_type_direct_ind_t*)packet)->targetA,advParam->peerAddress,6);
 }
@@ -1271,8 +1272,18 @@ static int adv_event_step_phy_send_scan_rsp(ll_sm_t* ll,ll_internal_adv_param_t*
                 ll->conn->peer.sca = llData->sca;
                 ll->conn->timeout  = llData->timeout;
                 ll->conn->latency  = llData->latency;
-                ll->conn->chn.hop  = llData->hop;
-                txMemcpy(ll->conn->chn.map,llData->chnMap,5);
+                ll->conn->csa.hop  = llData->hop;
+                if(packet->hdr.chSel && LL_CHANNEL_SUPP_CSA2)
+                {
+                	ll->conn->csa.mode = LL_CSA_2;
+                }
+                else
+                {
+                	ll->conn->csa.mode = LL_CSA_1;
+                }
+                ll->conn->csa.counter = 0;
+                txMemcpy(ll->conn->csa.map,llData->chnMap,5);
+                ll_csa_init(&ll->conn->csa);
                 //transmit window delay is 1.25ms when connect ind used
                 _u32 connIndAnchor = ll->phy.hw_get_rx_air_ts() + ll_get_air_packet_time(advParam->la->phy.mode,sizeof(init_type_connectInd_t),0);
                 ll->sch.timestamp  = connIndAnchor +1250+llData->winOffset*1250;
@@ -1283,7 +1294,6 @@ static int adv_event_step_phy_send_scan_rsp(ll_sm_t* ll,ll_internal_adv_param_t*
                 ll->phy.mode       = PHY_MODE_1M;
                 ll->phy.accessCode = llData->AA;
                 ll->phy.crcInit    = llData->crcInit;
-
                 sch_abort_current_and_process_next_task();
             }
             else 

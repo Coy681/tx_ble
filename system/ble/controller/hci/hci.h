@@ -40,6 +40,12 @@ typedef struct _PACKET
 {
 	txBuffer_t txBuffer;
 	txBuffer_t rxBuffer;
+	#if defined(BLE_SUPPORT_CONN)
+	txBuffer_t leAclBuffer;
+	#endif
+	#if defined(BLE_SUPPORT_ISO)
+	txBuffer_t leIsoBuffer;
+	#endif
 }ble_hci_ctrl_t;
 
 void ble_hci_send_data(ble_hci_data_type_e type,_u8* data,_u32 dataLen);

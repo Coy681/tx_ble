@@ -386,7 +386,7 @@
 #define READ_TRANSMIT_POWER_LEVEL_PROCESS                                    HCI_MANDORY_PROCESS_ADDRESS
 #define LE_READ_CHANNEL_MAP_PROCESS                                          HCI_MANDORY_PROCESS_ADDRESS
 #define LE_READ_REMOTE_FEATURES_PAGE_0_PROCESS                               HCI_MANDORY_PROCESS_ADDRESS
-#define LE_READ_BUFFER_SIZE_PROCESS                                          HCI_MANDORY_PROCESS_ADDRESS
+#define LE_READ_BUFFER_SIZE_PROCESS                                          le_read_buffer_size
 // C.96: Optional if the LE Controller supports Connection State, otherwise excluded
 #define SET_CONTROLLER_TO_HOST_FLOW_CONTROL_PROCESS                          HCI_DEFAULT_PROCESS_ADDRESS
 #if(SET_CONTROLLER_TO_HOST_FLOW_CONTROL_PROCESS)
@@ -1572,6 +1572,22 @@ controller_error_code_e le_set_extended_advertising_parameters_process(_u8* data
     retParam->status  = status;
     retParam->txPower = 0x00;
     return status;
+}
+
+struct le_read_buffer_size_retParam_t
+{
+    _u8  status;
+    _u16 aclDataPacketLen;
+    _u8  numOfAclDataPackets;
+};
+
+controller_error_code_e le_read_buffer_size(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+	struct le_read_buffer_size_retParam_t* retParam = (struct le_read_buffer_size_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct le_read_buffer_size_retParam_t),event);
+	retParam->status              = SUCCESS;
+	retParam->aclDataPacketLen    = HCI_LE_ACL_DATA_LENGTH ;
+	retParam->numOfAclDataPackets = HCI_LE_NUM_OF_ACL_PACKET;
+	return SUCCESS;
 }
 
 //special,should put it last

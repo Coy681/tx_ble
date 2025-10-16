@@ -49,6 +49,7 @@ Bluetooth LL支持多状态机的实现，支持多状态的自由组合，在�
 - 从used channel中映射使用的数据信道的channel
 
 
+
 ### 跳频算法2
 
 

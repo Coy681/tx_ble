@@ -46,6 +46,7 @@ typedef enum
 	LL_CSA_2 = 0x01,
 }ll_csa_mode_e;
 
+
 typedef struct _PACKED
 {
 	_u8  mode:3;     //input,'ll_csa_mode_e'
@@ -61,6 +62,7 @@ typedef struct _PACKED
                         	  pawr            - it is pawrEventCounter^pawrSubEventCounter
 							  iso links       - it is bit0-bit15 of bigEventCounter or cigEventCounter
                      */
+    _u16 rsvd1;
     _u8  map[5];     //input,channel map
     _u8  table[37];  /* output
     				    csa1:it is calculated periodic channel index table,use directly in order.
@@ -70,15 +72,44 @@ typedef struct _PACKED
     _u8  seNum;      //input,subevent number,
     _u8  d;          //one of csa2 parameter.
     _u8  lastSeIdx;  //dynamic
+    _u8  rsvd2;
     _u16 lastUsedPrn;//dynamic
     _u16 chnId;      //channel identifier,AccessAddress31-16 ^ AccessAddress15-0
-
 	#endif
 }ll_csa_ctrl_t;
 
+
+#if(LL_SUPPORT_CHANNEL_SELECTION_ALGORITHM_2)
+#define LL_CHANNEL_SUPP_CSA2     1
+#else
+#define LL_CHANNEL_SUPP_CSA2     0
+#endif
+
+
+/**
+ * @breief    This function servers to init ble csa1 or csa2.
+ * @param[in] for csa1,input info:
+ *            -- chnInfo.mode
+ *            -- chnInfo.hop
+ *            -- chnInfo.map
+ *            for csa2,input info:
+ *            -- chnInfo.mode
+ *            -- chnInfo.map
+ * @return    none
+ */
 void ll_csa_init(ll_csa_ctrl_t* chnInfo);
 
-_u8  ll_csa_get_next_channel_index(ll_csa_ctrl_t* chnInfo);
+/**
+ * @breief    This function servers to calculate channel index for csa1 and csa2,'ll_csa_init' must be called in advance.
+ * @param[in] for csa1,input info:
+ * 			  -- chnInfo.counter
+ *            for csa2,input info:
+ *			  -- chnInfo.counter
+ *			  -- chnInfo.seNum
+ *			  -- chnInfo.chnId
+ * @return    channel index
+ */
+_u8  ll_csa_cal_channel_index(ll_csa_ctrl_t* chnInfo);
 
 
 #endif/*LL_CHANNEL_H_*/

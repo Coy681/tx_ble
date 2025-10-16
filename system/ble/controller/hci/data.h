@@ -2,6 +2,22 @@
 #define HCI_DATA_H_
 #include"common/txCommon.h"
 
+#ifndef HCI_LE_ACL_DATA_LENGTH
+#define HCI_LE_ACL_DATA_LENGTH   128
+#endif
+
+#ifndef HCI_LE_NUM_OF_ACL_PACKET
+#define HCI_LE_NUM_OF_ACL_PACKET 8
+#endif
+
+#ifndef HCI_LE_ISO_DATA_LENGTH
+#define HCI_LE_ISO_DATA_LENGTH   256
+#endif
+
+#ifndef HCI_LE_NUM_OF_ISO_PACKET
+#define HCI_LE_NUM_OF_ISO_PACKET 8
+#endif
+
 /** HCI command packet format
  *  0        4        8        12        16        20        24        28         31
  * --------------------------------------------------------------------------------
@@ -167,8 +183,6 @@ typedef enum
 
     _u8  data[0];
  }bt_iso_sub_data_with_pb_t;
-
-
 
 
  void hci_acl_data_packet_process(_u8* data);

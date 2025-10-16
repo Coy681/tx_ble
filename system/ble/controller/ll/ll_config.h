@@ -5,6 +5,10 @@
 /************************* BLE ROLE CONFIGURE *****************************/
 #if defined (BLE_SUPPORT_ADV) 
 
+#ifndef BLE_SUPPORT_CHANNEL_SELECTION_ALGORITHM_2
+#define BLE_SUPPORT_CHANNEL_SELECTION_ALGORITHM_2
+#endif
+
 #endif 
 
 #if defined(BLE_SUPPORT_SCAN) 

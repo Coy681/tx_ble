@@ -51,12 +51,28 @@
 
 #if defined(BLE_SUPPORT_CONN)
 
-#ifndef BLE_CONN_TX_MAX_OCTETS
-#define BLE_CONN_TX_MAX_OCTETS                         27
+#if defined(BLE_SUPPORT_CEN)
+
+#ifndef BLE_CEN_MAX_TX_OCTETS
+#define BLE_CEN_MAX_TX_OCTETS                         27
 #endif
 
-#ifndef BLE_CONN_RX_MAX_OCTETS
-#define BLE_CONN_RX_MAX_OCTETS                         27
+#ifndef BLE_CEN_MAX_RX_OCTETS
+#define BLE_CEN_MAX_RX_OCTETS                         27
+#endif
+
+#endif
+
+#if defined(BLE_SUPPORT_PER)
+
+#ifndef BLE_PER_MAX_TX_OCTETS
+#define BLE_PER_MAX_TX_OCTETS                         27
+#endif
+
+#ifndef BLE_PER_MAX_RX_OCTETS
+#define BLE_PER_MAX_RX_OCTETS                         27
+#endif
+
 #endif
 
 #endif

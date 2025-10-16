@@ -149,6 +149,26 @@ static void ble_hci_init(void)
     {
     	//assert
     }
+    else
+    {
+		#if defined(BLE_SUPPORT_CONN)
+    	_u8* buffer = tx_malloc(HCI_LE_ACL_DATA_LENGTH*HCI_LE_NUM_OF_ACL_PACKET);
+        if(hciCtrl->leAclBuffer.database.pointer == NULL)
+        {
+        	//assert
+        }
+        txBuffer_init(&hciCtrl->leAclBuffer,buffer,HCI_LE_NUM_OF_ACL_PACKET,HCI_LE_ACL_DATA_LENGTH);
+		#endif
+
+		#if defined(BLE_SUPPORT_ISO)
+    	_u8* buffer1 = tx_malloc(HCI_LE_ISO_DATA_LENGTH*HCI_LE_NUM_OF_ISO_PACKET);
+        if(hciCtrl->leIsoBuffer.database.pointer == NULL)
+        {
+        	//assert
+        }
+        txBuffer_init(&hciCtrl->leIsoBuffer,buffer1,HCI_LE_NUM_OF_ISO_PACKET,HCI_LE_ISO_DATA_LENGTH);
+		#endif
+    }
 }
 
 
