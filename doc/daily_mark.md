@@ -78,3 +78,22 @@ receiverAllowance悠接收机自己确定
 
 - ACL DATA从HOST下发会存储到Conctroller的HCI ACL DATA BUFFER里面，同理，ISO DATA从HOST下发会存储到Conctroller的HCI ISO DATA BUFFER里面
 - Host通过HCI下发的ACL DATA和ISO DATA会通过拆包拆到Controller的PHY TX FIFO里面
+
+# 20251020
+
+BLE ACL LL Control Procedure Collisions的情况
+    下面几种情况的procedure不兼容
+    - 两个带有instant的procedure
+    - 两个CS Configuration procedure
+    - 两个CS Repeat Termination procudure
+    - 一个procudure是Frame Space Update Procedure，另一个Procedure是Frame Space Update Procedure或者是Connected Isochronous Stream
+      Creation procedure
+遇到冲突的procudure需要采取措施，原则是:设备不应该在一个不兼容的procedure未完成时，启动另一个procedure。
+意外情况的处理
+(1)Central启动了不兼容的Procedure A，同时收到了Peripheral启动的Procedure B
+   - 如果peripheral是在对Procedure A有过回复之后启动的Procedure B，那么Central应该立即断开
+   - 如果Peripheral是在还没回复Procedure A的时候启动的Procedure B，那么Central应该拒绝Procedure B
+(2)如果Peripheral启动了不兼容的Procedure A，同时收到了Central启动的Procedure B
+   - 此时Peripheral应该忽略自己启动的Procedure A，不再有任何动作，转而去处理Central启动的Procedure B,以Central启动的流程为主。
+
+  

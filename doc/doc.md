@@ -174,6 +174,36 @@ Bluetooth LL支持多状态机的实现，支持多状态的自由组合，在�
 
 ### LL
 
+#### LL Control
+
+LL Control Procedure要点
+- ACL Terminate Procedure可以在任意时刻发起，不受到当前进行的LL Control Procedure影响
+- 对于除了ACL Terminate Procedure之外的其他所有LL Control Procedure，每个设备每个连接在在当前时刻只能有一个LL Control Procedure在处理，
+- 一个设备可以在等待相应对端设备的LL Control Procedure时，自己再发起一个LL Control Procedure。
+- 在进入Connect之前，不得发起任何LL Control Procedure
+- 除非另有说明，LL Control Procedure之间没有顺序的限制
+- LL Control PDUs和LL Data PDU之间的发送优先级顺序是由厂商实现决定的，Host不能认为断连时，发送的数据被在断连之前被发送出去。
+
+##### LL Control Collisions
+BLE ACL LL Control Procedure Collisions的情况
+    下面几种情况的procedure不兼容
+    - 两个带有instant的procedure
+    - 两个CS Configuration procedure
+    - 两个CS Repeat Termination procudure
+    - 一个procudure是Frame Space Update Procedure，另一个Procedure是Frame Space Update Procedure或者是Connected Isochronous Stream
+      Creation procedure
+遇到冲突的procudure需要采取措施，原则是:设备不应该在一个不兼容的procedure未完成时，启动另一个procedure。
+意外情况的处理
+(1)Central启动了不兼容的Procedure A，同时收到了Peripheral启动的Procedure B
+   - 如果peripheral是在对Procedure A有过回复之后启动的Procedure B，那么Central应该立即断开
+   - 如果Peripheral是在还没回复Procedure A的时候启动的Procedure B，那么Central应该拒绝Procedure B
+(2)如果Peripheral启动了不兼容的Procedure A，同时收到了Central启动的Procedure B
+   - 此时Peripheral应该忽略自己启动的Procedure A，不再有任何动作，转而去处理Central启动的Procedure B,以Central启动的流程为主。
+
+Host应该知道当前因为LL Control Procedure Collisions导致的设备断连原因
+(1)如果Procedure A和Procedure B是一样的procedure
+(2)如果Procedure A是Connection Update procedure，Procedure B是Connection Parameters Request procedure
+
 
 待处理事项，
 (1)synchronization state的定义
