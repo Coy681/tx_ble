@@ -183,7 +183,7 @@ LL Control Procedure要点
 - 在进入Connect之前，不得发起任何LL Control Procedure
 - 除非另有说明，LL Control Procedure之间没有顺序的限制
 - LL Control PDUs和LL Data PDU之间的发送优先级顺序是由厂商实现决定的，Host不能认为断连时，发送的数据被在断连之前被发送出去。
-
+- 带Instant的Procedure，例如LL Connection Update Procedure或者LL Channel Map Update Procedure，如果超过了Instant点，LL Control PDU还没有得到ACK，那么主机和从机应该认为当前连接丢失。应该退出Connection State，回到Standby状态
 ##### LL Control Collisions
 BLE ACL LL Control Procedure Collisions的情况
     下面几种情况的procedure不兼容
