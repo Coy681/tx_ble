@@ -8,21 +8,92 @@
 #include"txBlock.h"
 
 
-static txBlockNode_t* tx_block_alloc_node(_u8 priority)
+static _u8* tx_block_alloc_and_insert_node(tx_block_ctrl_t* block,_u32 serialNum)
 {
-	return NULL;
+	if(block->freeCnt)
+	{
+		tx_block_node_t* elem = block->freeHdr;
+		block->freeHdr = block->freeHdr->next;
+		block->freeCnt--;
+		elem->serialNum = serialNum;
+		elem->next = NULL;
+		tx_block_node_t* prev = NULL;
+		if(POINTER_NOT_VALID(block->nodeHdr))
+		{
+			block->nodeHdr = elem;
+			return elem->data;
+		}
+		tx_block_node_t* curNode = block->nodeHdr;
+		while(POINTER_VALID(curNode))
+		{
+			if(curNode->serialNum>elem->serialNum)
+			{
+				break;
+			}
+			prev    = curNode;
+			curNode = curNode->next;
+		}
+		if(POINTER_VALID(prev))
+		{
+			prev->next   = elem;
+			elem->next = curNode;
+		}
+		else
+		{
+			elem->next   = curNode;
+			block->nodeHdr = elem;
+		}
+		block->nodeCnt++;
+		return elem->data;
+	}
+	else
+	{
+		return NULL;
+	}
 }
 
-static void tx_block_free_node_in_order(void)
+static _u8* tx_block_pop_node_in_serialNum(tx_block_ctrl_t* block,_u32 serialNum)
+{
+	tx_block_node_t* curNode  = block->nodeHdr;
+	tx_block_node_t* prevNode = NULL;
+	while(POINTER_VALID(curNode))
+	{
+		if(curNode->serialNum == serialNum)
+		{
+			break;
+		}
+		prevNode = curNode;
+		curNode  = curNode->next;
+	}
+	if(POINTER_VALID(prevNode))
+	{
+
+	}
+	else
+	{
+
+	}
+}
+
+static _u8* tx_block_pop_node_in_order(tx_block_ctrl_t* block)
 {
 
 }
 
-static void tx_block_free_node_by_id(_u8 priority)
+
+
+void tx_block_destory(tx_block_ctrl_t* block)
 {
-
+	if(POINTER_VALID(block->addr))
+	{
+		tx_free(block->addr);
+	}
+	block->freeHdr = NULL;
+	block->nodeHdr = NULL;
+	block->nodeCnt = NULL;
+	block->freeCnt = NULL;
+	block->sequence = 0;
 }
-
 
 void tx_block_init(tx_block_ctrl_t* block,_u16 size,_u8 num)
 {
@@ -44,6 +115,10 @@ void tx_block_init(tx_block_ctrl_t* block,_u16 size,_u8 num)
 		}
 		temp = node;
 	}
-	block->nodeCnt         = num;
-	block->freeCnt         = 0;
+	block->nodeCnt            = num;
+	block->freeCnt            = 0;
+	block->destory            = tx_block_destory;
+	block->allocAndInsertNode = tx_block_alloc_and_insert_node;
+	block->popNodeInOrder     = tx_block_pop_node_in_order;
+	block->popNodeInSerialNum = tx_block_pop_node_in_serialNum;
 }

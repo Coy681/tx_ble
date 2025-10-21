@@ -27,17 +27,17 @@ typedef struct
 typedef struct tx_block_ctrl_t tx_block_ctrl_t;
 typedef struct
 {
-	_u8                freeCnt;
 	_u8                nodeCnt;
+	_u8                freeCnt;
 	_u8                sequence;
 	_u8                rsvd;
-	_u8*               (*allocAndInsertNode)(tx_block_ctrl_t*,_u8);
-	tx_block_node_t*   (*popNodeByNum)(tx_block_ctrl_t*,_u8);
-	tx_block_node_t*   (*popNodeInOrder)(tx_block_ctrl_t*);
+	_u8*               (*allocAndInsertNode)(tx_block_ctrl_t*,_u32);
+	_u8*               (*popNodeInSerialNum)(tx_block_ctrl_t*,_u32);
+	_u8*               (*popNodeInOrder)(tx_block_ctrl_t*);
 	void               (*destory)(tx_block_ctrl_t*);
 	_u8*               addr;
-	tx_block_node_t*   freeHdr;
 	tx_block_node_t*   nodeHdr;
+	tx_block_node_t*   freeHdr;
 }tx_block_ctrl_t;
 
 void tx_block_init(tx_block_ctrl_t* block,_u16 size,_u8 num);
