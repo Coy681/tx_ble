@@ -8,6 +8,7 @@
 #ifndef TXBLOCK_H_
 #define TXBLOCK_H_
 #include"txType.h"
+#include"malloc/txMalloc.h"
 
 typedef enum
 {
@@ -22,7 +23,7 @@ typedef struct
 	_u8  data[0];
 }tx_block_node_t;
 
-#define TX_DATA_BLOCK_SIZE(size)      (sizeof(tx_block_node_t)+size+3)&(~3))
+#define TX_DATA_BLOCK_SIZE(size)      ((sizeof(tx_block_node_t)+size+3)&(~3))
 typedef struct tx_block_ctrl_t tx_block_ctrl_t;
 typedef struct
 {
@@ -31,7 +32,7 @@ typedef struct
 	_u8                sequence;
 	_u8                rsvd;
 	_u8*               (*allocAndInsertNode)(tx_block_ctrl_t*,_u8);
-	tx_block_node_t*   (*popNodeById)(tx_block_ctrl_t*,_u8);
+	tx_block_node_t*   (*popNodeByNum)(tx_block_ctrl_t*,_u8);
 	tx_block_node_t*   (*popNodeInOrder)(tx_block_ctrl_t*);
 	void               (*destory)(tx_block_ctrl_t*);
 	_u8*               addr;
