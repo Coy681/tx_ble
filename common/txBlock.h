@@ -9,43 +9,36 @@
 #define TXBLOCK_H_
 #include"txType.h"
 
-
-
 typedef enum
 {
-	TX_BLOCK_PEIORITY_LEVEL_0,
-	TX_BLOCK_PEIORITY_LEVEL_1,
-	TX_BLOCK_PEIORITY_LEVEL_2,
-	TX_BLOCK_PEIORITY_LEVEL_3,
-	TX_BLOCK_PEIORITY_LEVEL_4,
-	TX_BLOCK_PEIORITY_LEVEL_5,
-	TX_BLOCK_PEIORITY_LEVEL_6,
-	TX_BLOCK_PEIORITY_LEVEL_7,
-};
+	TX_BLOCK_SERIAL_NUMBER_ASCENDING  = 0,
+	TX_BLOCK_SERIAL_NUMBER_DESCENDING = 1,
+}tx_block_sequence_e;
 
 typedef struct
 {
-	_u8  priority;
-	_u8  id;
-	_u16 rsvd;
+	_u32 serialNum;
 	_u8* next;
 	_u8  data[0];
-}txBlockNode_t;
+}tx_block_node_t;
 
-#define TX_DATA_BLOCK_SIZE(size)      (sizeof(txBlockNode_t)+size+3)&(~3))
-
+#define TX_DATA_BLOCK_SIZE(size)      (sizeof(tx_block_node_t)+size+3)&(~3))
+typedef struct tx_block_ctrl_t tx_block_ctrl_t;
 typedef struct
 {
 	_u8                freeCnt;
 	_u8                nodeCnt;
-	txBlockNode_t*    (*allocNode)(_u8);//priority
-	void              (*freeNodeById)(_u8);
-	void              (*freeNodeInOrder)(void);
+	_u8                sequence;
+	_u8                rsvd;
+	_u8*               (*allocAndInsertNode)(tx_block_ctrl_t*,_u8);
+	tx_block_node_t*   (*popNodeById)(tx_block_ctrl_t*,_u8);
+	tx_block_node_t*   (*popNodeInOrder)(tx_block_ctrl_t*);
+	void               (*destory)(tx_block_ctrl_t*);
 	_u8*               addr;
-	txBlockNode_t*     freeHdr;
-	txBlockNode_t*     nodeHdr;
-}txBlockCtrl_t;
+	tx_block_node_t*   freeHdr;
+	tx_block_node_t*   nodeHdr;
+}tx_block_ctrl_t;
 
-void tx_block_init(txBlockCtrl_t* block,_u16 size,_u8 num);
+void tx_block_init(tx_block_ctrl_t* block,_u16 size,_u8 num);
 
 #endif /* TXBLOCK_H_ */

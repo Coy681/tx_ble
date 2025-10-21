@@ -24,7 +24,7 @@ static void tx_block_free_node_by_id(_u8 priority)
 }
 
 
-void tx_block_init(txBlockCtrl_t* block,_u16 size,_u8 num)
+void tx_block_init(tx_block_ctrl_t* block,_u16 size,_u8 num)
 {
 	block->freeHdr = NULL;
 	block->nodeHdr = NULL;
