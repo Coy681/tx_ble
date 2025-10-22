@@ -32,7 +32,7 @@ typedef struct
 	_u8                sequence;
 	_u8                rsvd;
 	_u8*               (*allocAndInsertNode)(tx_block_ctrl_t*,_u32);
-	_u8*               (*popNodeInSerialNum)(tx_block_ctrl_t*,_u32);
+	_u8*               (*popNodeBySerialNum)(tx_block_ctrl_t*,_u32);
 	_u8*               (*popNodeInOrder)(tx_block_ctrl_t*);
 	void               (*destory)(tx_block_ctrl_t*);
 	_u8*               addr;

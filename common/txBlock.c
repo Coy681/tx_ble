@@ -52,27 +52,33 @@ static _u8* tx_block_alloc_and_insert_node(tx_block_ctrl_t* block,_u32 serialNum
 	}
 }
 
-static _u8* tx_block_pop_node_in_serialNum(tx_block_ctrl_t* block,_u32 serialNum)
+static _u8* tx_block_pop_node_by_serialNum(tx_block_ctrl_t* block,_u32 serialNum)
 {
 	tx_block_node_t* curNode  = block->nodeHdr;
 	tx_block_node_t* prevNode = NULL;
+	if(POINTER_NOT_VALID(block->nodeHdr))
+	{
+		return NULL;
+	}
 	while(POINTER_VALID(curNode))
 	{
 		if(curNode->serialNum == serialNum)
 		{
-			break;
+			if(POINTER_VALID(prevNode))
+			{
+				prevNode->next = curNode->next;
+				return curNode->data;
+			}
+			else
+			{
+				return block->nodeHdr->data;
+				block->nodeHdr = NULL;
+			}
 		}
 		prevNode = curNode;
 		curNode  = curNode->next;
 	}
-	if(POINTER_VALID(prevNode))
-	{
-
-	}
-	else
-	{
-
-	}
+	return NULL;
 }
 
 static _u8* tx_block_pop_node_in_order(tx_block_ctrl_t* block)
@@ -120,5 +126,5 @@ void tx_block_init(tx_block_ctrl_t* block,_u16 size,_u8 num)
 	block->destory            = tx_block_destory;
 	block->allocAndInsertNode = tx_block_alloc_and_insert_node;
 	block->popNodeInOrder     = tx_block_pop_node_in_order;
-	block->popNodeInSerialNum = tx_block_pop_node_in_serialNum;
+	block->popNodeBySerialNum = tx_block_pop_node_by_serialNum;
 }
