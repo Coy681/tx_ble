@@ -7,7 +7,7 @@
 
 #ifndef BUFFER_C_
 #define BUFFER_C_
-#include "txBuffer.h"
+#include "rb.h"
 #include "txType.h"
 #include "txAttribute.h"
 

@@ -7,8 +7,8 @@
 
 #ifndef TXBLOCK_H_
 #define TXBLOCK_H_
-#include"txType.h"
-#include"malloc/txMalloc.h"
+#include"common/txType.h"
+#include"../ml/ml.h"
 
 typedef enum
 {

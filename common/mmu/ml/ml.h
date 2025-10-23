@@ -7,8 +7,9 @@
 
 #ifndef MALLOC_TXMALLOC_H_
 #define MALLOC_TXMALLOC_H_
-#include"common/txCommon.h"
 
+#include"common/txType.h"
+#include"common/txAttribute.h"
 typedef enum
 {
 	TX_MALLOC_FREE_SUCCESS       = 0,
