@@ -18,6 +18,7 @@ static _u8* tx_block_alloc_and_insert_node(tx_block_ctrl_t* block,_u32 serialNum
 		elem->serialNum = serialNum;
 		elem->next = NULL;
 		tx_block_node_t* prev = NULL;
+		block->nodeCnt++;
 		if(POINTER_NOT_VALID(block->nodeHdr))
 		{
 			block->nodeHdr = elem;
@@ -53,7 +54,6 @@ static _u8* tx_block_alloc_and_insert_node(tx_block_ctrl_t* block,_u32 serialNum
 			elem->next   = curNode;
 			block->nodeHdr = elem;
 		}
-		block->nodeCnt++;
 		return elem->data;
 	}
 	else
@@ -127,6 +127,11 @@ void tx_block_destory(tx_block_ctrl_t* block)
 	block->nodeCnt = 0;
 	block->freeCnt = 0;
 	block->sequence = 0;
+	block->destory            = NULL;
+	block->allocAndInsertNode = NULL;
+	block->popNodeInOrder     = NULL;
+	block->popNodeBySerialNum = NULL;
+	block->freeNode           = NULL;
 }
 
 void tx_block_init(tx_block_ctrl_t* block,_u16 size,_u8 num)

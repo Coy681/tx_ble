@@ -17,4 +17,5 @@
 #include "heap/txHeap.h"
 #include "txUtility.h"
 #include "txAssert.h"
+#include "txBlock.h"
 #endif

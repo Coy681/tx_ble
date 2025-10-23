@@ -5,3 +5,4 @@ cmake_builds
 cmake_configs
 .vscode
 CMakeLists.txt
+settings.json
