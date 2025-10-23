@@ -1439,7 +1439,7 @@ controller_error_code_e le_read_maximum_advertising_data_length_process(_u8* dat
 struct le_read_number_of_supported_advertising_sets_process_retParam_t
 {
     _u8  status;
-    _u16 number;
+    _u8  number;
 };
 controller_error_code_e le_read_number_of_supported_advertising_sets_process(_u8* data,_u8 length,bt_hci_event_t** event)
 {
