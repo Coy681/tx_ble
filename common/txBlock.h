@@ -16,7 +16,8 @@ typedef enum
 	TX_BLOCK_SERIAL_NUMBER_DESCENDING = 1,
 }tx_block_sequence_e;
 
-typedef struct
+typedef struct tx_block_node_t tx_block_node_t;
+typedef struct tx_block_node_t
 {
 	_u32             serialNum;
 	tx_block_node_t* next;
@@ -25,7 +26,7 @@ typedef struct
 
 #define TX_DATA_BLOCK_SIZE(size)      ((sizeof(tx_block_node_t)+size+3)&(~3))
 typedef struct tx_block_ctrl_t tx_block_ctrl_t;
-typedef struct
+typedef struct tx_block_ctrl_t
 {
 	_u8                nodeCnt;
 	_u8                freeCnt;
