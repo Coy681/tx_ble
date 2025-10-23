@@ -18,9 +18,9 @@ typedef enum
 
 typedef struct
 {
-	_u32 serialNum;
-	_u8* next;
-	_u8  data[0];
+	_u32             serialNum;
+	tx_block_node_t* next;
+	_u8              data[0];
 }tx_block_node_t;
 
 #define TX_DATA_BLOCK_SIZE(size)      ((sizeof(tx_block_node_t)+size+3)&(~3))
@@ -34,6 +34,7 @@ typedef struct
 	_u8*               (*allocAndInsertNode)(tx_block_ctrl_t*,_u32);
 	_u8*               (*popNodeBySerialNum)(tx_block_ctrl_t*,_u32);
 	_u8*               (*popNodeInOrder)(tx_block_ctrl_t*);
+	void               (*freeNode)(tx_block_ctrl_t*,_u8*);
 	void               (*destory)(tx_block_ctrl_t*);
 	_u8*               addr;
 	tx_block_node_t*   nodeHdr;
