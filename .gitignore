@@ -1,3 +1,7 @@
 proj_build
 .settings
 build
+cmake_builds
+cmake_configs
+.vscode
+CMakeLists.txt
