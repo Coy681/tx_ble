@@ -12,59 +12,55 @@
 #include "txAttribute.h"
 
 /********************define log database function***********************/
-_RAM_CODE
-_u8* tx_buffer_database_get_write_pointer(txBuffer_t* pDatabase)
+static int tx_rb_is_empty(txRb_t* rb)
 {
-	_u8* pRet = pDatabase->database.pointer+(pDatabase->database.blockWptr&(pDatabase->database.blockNum-1))*pDatabase->database.blockSize;
-    return pRet;
-}
-_RAM_CODE
-_u8* tx_buffer_database_get_read_pointer(txBuffer_t* pDatabase)
-{
-	_u8* pRet = pDatabase->database.pointer+(pDatabase->database.blockRptr&(pDatabase->database.blockNum-1))*pDatabase->database.blockSize;
-    return pRet;
-}
-_RAM_CODE
-int tx_buffer_database_block_availble(txBuffer_t* pDatabase)
-{
-    if(pDatabase->database.blockWptr!=pDatabase->database.blockRptr)
-    {
-        return 1;
-    }
-    return 0;
-}
-_RAM_CODE
-void tx_buffer_write_pointer_increase(txBuffer_t* pDatabase)
-{
-    pDatabase->database.blockWptr++;
+    ASSERT(rb != NULL && rb->num > 0);
+    return (((rb->wPtr - rb->rPtr) % rb->num) == 0);
 }
 
-_RAM_CODE
-void tx_buffer_read_pointer_increase(txBuffer_t* pDatabase)
+static int tx_rb_is_full(txRb_t* rb)
 {
-    pDatabase->database.blockRptr++;
+    ASSERT(rb != NULL && rb->num > 0);
+    return (((rb->wPtr - rb->rPtr) % rb->num) == rb->num - 1);
 }
 
-_RAM_CODE
-_u32 tx_buffer_get_availble_data_length(txBuffer_t* pDatabase,_u32 dataLen)
+static _u8* tx_rb_read(txRb_t* rb)
 {
-    _u32 len = (dataLen>pDatabase->database.blockSize?pDatabase->database.blockSize:dataLen);
-    return len;
+    ASSERT(rb != NULL);
+    return (rb->p+(rb->rPtr%rb->num)*rb->size);
 }
 
-void txBuffer_init(txBuffer_t* pDatabase,_u8* pointer,_u16 num,_u32 size)
+static _u8* tx_rb_write(txRb_t* rb)
 {
-	pDatabase->database.pointer         = pointer;
-	pDatabase->database.blockNum        = num;
-	pDatabase->database.blockSize       = size;
-	pDatabase->database.blockWptr       = pDatabase->database.blockRptr = 0;
-	pDatabase->getReadPointer           = tx_buffer_database_get_read_pointer;
-	pDatabase->getWritePointer          = tx_buffer_database_get_write_pointer;
-    pDatabase->blockAvailble            = tx_buffer_database_block_availble;
-    pDatabase->wPtrIncrease             = tx_buffer_write_pointer_increase;
-    pDatabase->rPtrIncrease             = tx_buffer_read_pointer_increase;
-    pDatabase->getDataLen               = tx_buffer_get_availble_data_length;
+    ASSERT(rb != NULL);
+    return (rb->p+(rb->wPtr%rb->num)*rb->size);
 }
 
+static void tx_rb_read_next(txRb_t* rb)
+{
+    ASSERT(rb != NULL);
+    rb->rPtr++;
+}
+
+static void tx_rb_write_next(txRb_t* rb)
+{
+    ASSERT(rb != NULL);
+    rb->wPtr++;
+}
+
+void tx_rb_init(txRb_t* rb,_u16 size,_u16 num)
+{
+    ASSERT(rb!=NULL);
+    rb->p         = tx_malloc(size*num);
+    rb->wPtr      = rb->rPtr = 0;
+    rb->size      = size;
+    rb->num       = num;
+    rb->isEmpty   = tx_rb_is_empty;
+    rb->isFull    = tx_rb_is_full;
+    rb->read      = tx_rb_read;
+    rb->write     = tx_rb_write;
+    rb->readNext  = tx_rb_read_next;
+    rb->writeNext = tx_rb_write_next;
+}
 
 #endif /* BUFFER_C_ */

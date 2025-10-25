@@ -10,6 +10,12 @@
 
 #define ARRAY_SIZE(A)                  (sizeof(A)/sizeof(*A))
 
+#define TRUE                           (1)
+#define FALSE                          (0)
+
+#define CONDITION_TRUE(c)              ((c) != FALSE)
+#define CONDITION_FALSE(c)             ((c) == FALSE)
+
 #define POINTER_VALID(node)            (node != 0)
  
 #define POINTER_NOT_VALID(node)        (node == 0)

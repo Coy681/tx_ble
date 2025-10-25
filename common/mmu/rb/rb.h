@@ -8,31 +8,25 @@
 #ifndef TXBUFFER_H_
 #define TXBUFFER_H_
 #include"txType.h"
+#include"common/txAssert.h"
+#include"../ml/ml.h"
 /**********************define tx buffer database**************************/
-
-typedef struct  
+typedef struct txRb_t  txRb_t;
+typedef struct txRb_t
 {
-	_u8*        pointer;
-    _u32        blockSize;
-    _u16        blockNum;
-    _u8         blockWptr;
-    _u8         blockRptr;
-}database_t;
+	_u8* p;
+	_u16 size;
+	_u16 num;
+	_u16 wPtr;
+	_u16 rPtr;
+	int  (*isEmpty)(txRb_t*);
+	int  (*isFull)(txRb_t*);
+	_u8* (*read)(txRb_t*);
+	_u8* (*write)(txRb_t*);
+	void (*readNext)(txRb_t*);
+	void (*writeNext)(txRb_t*);
+}txRb_t;
 
-typedef struct txBuffer_t txBuffer_t;
-
-typedef struct txBuffer_t
-{
-    database_t  database;//please don't access database directly
-	_u8*        (*getWritePointer)(txBuffer_t*);
-	_u8*        (*getReadPointer)(txBuffer_t*);
-	int         (*blockAvailble)(txBuffer_t*);
-	void        (*wPtrIncrease)(txBuffer_t*);
-	void        (*rPtrIncrease)(txBuffer_t*);
-	_u32        (*getDataLen)(txBuffer_t*,_u32 dataLen);
-}txBuffer_t;
-
-
-void txBuffer_init(txBuffer_t* pDatabase,_u8* pointer,_u16 num,_u32 size);
+void tx_rb_init(txRb_t* rb,_u16 size,_u16 num);
 
 #endif /* TXBUFFER_H_ */
