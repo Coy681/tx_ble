@@ -6,3 +6,4 @@ cmake_configs
 .vscode
 CMakeLists.txt
 settings.json
+.vscode/settings.json

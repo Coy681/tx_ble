@@ -24,31 +24,31 @@ void ble_hci_send_data(ble_hci_data_type_e type,_u8* data,_u32 dataLen)
 {
 	if(type<BLE_HCI_DATA_TYPE_MAX)
 	{
-		_u8* pBuffer = hciCtrl->txBuffer.getWritePointer(&hciCtrl->txBuffer);
+		_u8* pBuffer = hciCtrl->txBuffer.getWritePtr(&hciCtrl->txBuffer);
 		U32_TO_STREAM(pBuffer,(dataLen+1));
 	    *pBuffer++ = (_u8)type;
 		txMemcpy(pBuffer,data,dataLen);
-		hciCtrl->txBuffer.wPtrIncrease(&hciCtrl->txBuffer);
+		hciCtrl->txBuffer.moveWritePtr(&hciCtrl->txBuffer);
 		tx_task_set_event(TX_TASK_ID_HCI_CONTROLLER_TX,BLE_HCI_EVENT_TX);
 	}
 }
 
 static void ble_hci_hardware_tx_irq()
 {
-	if(hciCtrl->txBuffer.blockAvailble(&hciCtrl->rxBuffer))
+	if(!hciCtrl->txBuffer.isEmpty(&hciCtrl->rxBuffer))
 	{
 		tx_task_set_event(TX_TASK_ID_HCI_CONTROLLER_TX,BLE_HCI_EVENT_TX);
 	}
 }
 static _u32 ble_hci_tx_event(_u16 taskId,_u32 event)
 {
-	if(hciCtrl->txBuffer.blockAvailble(&hciCtrl->txBuffer))
+	if(!hciCtrl->txBuffer.isEmpty(&hciCtrl->txBuffer))
 	{
-		_u8* pData = hciCtrl->txBuffer.getReadPointer(&hciCtrl->txBuffer);
+		_u8* pData = hciCtrl->txBuffer.getReadPtr(&hciCtrl->txBuffer);
 		_u32 dataLen = 0;
         STREAM_TO_U32(dataLen,pData);
         hal_uart_send_data(pData,dataLen);
-        hciCtrl->txBuffer.rPtrIncrease(&hciCtrl->txBuffer);
+        hciCtrl->txBuffer.moveReadPtr(&hciCtrl->txBuffer);
 	}
 	return event^BLE_HCI_EVENT_TX;
 }
@@ -68,12 +68,7 @@ static _u32 ble_hci_tx_evet_process(_u16 taskId,_u32 event)
 
 static void ble_hci_tx_init()
 {
-    _u8* buffer = tx_malloc(BLE_HCI_TX_BUFFER_NUM*BLE_HCI_TX_BUFFER_SIZE);
-    if(hciCtrl->txBuffer.database.pointer == NULL)
-    {
-    	//assert
-    }
-    txBuffer_init(&hciCtrl->txBuffer,buffer,BLE_HCI_TX_BUFFER_NUM,BLE_HCI_TX_BUFFER_SIZE);
+	tx_rb_init(&hciCtrl->txBuffer,BLE_HCI_TX_BUFFER_SIZE,BLE_HCI_TX_BUFFER_NUM);
 }
 
 // volatile _u8 AAA_HCI_BUFFER[16];
@@ -90,23 +85,23 @@ void ble_hci_data_distribute(_u8* data,_u32 dataLen)
 
 static void ble_hci_hardware_rx_irq(int len)
 {
-	_u8* p = hciCtrl->rxBuffer.getWritePointer(&hciCtrl->rxBuffer);
+	_u8* p = hciCtrl->rxBuffer.getWritePtr(&hciCtrl->rxBuffer);
 	U32_TO_STREAM(p,len);
 	tx_task_set_event(TX_TASK_ID_HCI_CONTROLLER_RX,BLE_HCI_EVENT_RX);
-	hciCtrl->rxBuffer.wPtrIncrease(&hciCtrl->rxBuffer);
-    _u8* pReveive = hciCtrl->rxBuffer.getWritePointer(&hciCtrl->rxBuffer);
-    hal_uart_set_receive_buffer(pReveive+4,hciCtrl->rxBuffer.database.blockSize-4);
+	hciCtrl->rxBuffer.moveWritePtr(&hciCtrl->rxBuffer);
+    _u8* pReveive = hciCtrl->rxBuffer.getWritePtr(&hciCtrl->rxBuffer);
+    hal_uart_set_receive_buffer(pReveive+4,BLE_HCI_RX_BUFFER_SIZE-4);
 }
 
 static _u32 ble_hci_rx_event(_u16 taskId,_u32 event)
 {
-	while(hciCtrl->rxBuffer.blockAvailble(&hciCtrl->rxBuffer))
+	while(!hciCtrl->rxBuffer.isEmpty(&hciCtrl->rxBuffer))
 	{
-		_u8* data = hciCtrl->rxBuffer.getReadPointer(&hciCtrl->rxBuffer);
+		_u8* data = hciCtrl->rxBuffer.getReadPtr(&hciCtrl->rxBuffer);
 		_u32 dataLen = 0;
 		STREAM_TO_U32(dataLen,data);
 		ble_hci_data_distribute(data,dataLen);
-		hciCtrl->rxBuffer.rPtrIncrease(&hciCtrl->rxBuffer);
+		hciCtrl->rxBuffer.moveReadPtr(&hciCtrl->rxBuffer);
 	}
 	return event^BLE_HCI_EVENT_RX;
 }
@@ -126,14 +121,9 @@ static _u32 ble_hci_rx_event_process(_u16 taskId,_u32 event)
 
 static void ble_hci_rx_init()
 {
-	_u8* buffer = tx_malloc(BLE_HCI_RX_BUFFER_NUM*BLE_HCI_RX_BUFFER_SIZE);
-    if(hciCtrl->rxBuffer.database.pointer == NULL)
-    {
-    	//assert
-    }
-    txBuffer_init(&hciCtrl->rxBuffer,buffer,BLE_HCI_RX_BUFFER_NUM,BLE_HCI_RX_BUFFER_SIZE);
-    _u8* pReveive = hciCtrl->rxBuffer.getWritePointer(&hciCtrl->rxBuffer);
-    hal_uart_set_receive_buffer(pReveive+4,hciCtrl->rxBuffer.database.blockSize-4);
+	tx_rb_init(&hciCtrl->rxBuffer,BLE_HCI_RX_BUFFER_SIZE,BLE_HCI_RX_BUFFER_NUM);
+    _u8* pReveive = hciCtrl->rxBuffer.getWritePtr(&hciCtrl->rxBuffer);
+    hal_uart_set_receive_buffer(pReveive+4,BLE_HCI_RX_BUFFER_SIZE-4);
 }
 
 /******************************ble hci init********************************/
@@ -152,21 +142,11 @@ static void ble_hci_init(void)
     else
     {
 		#if defined(BLE_SUPPORT_CONN)
-    	_u8* buffer = tx_malloc(HCI_LE_ACL_DATA_LENGTH*HCI_LE_NUM_OF_ACL_PACKET);
-        if(hciCtrl->leAclBuffer.database.pointer == NULL)
-        {
-        	//assert
-        }
-        txBuffer_init(&hciCtrl->leAclBuffer,buffer,HCI_LE_NUM_OF_ACL_PACKET,HCI_LE_ACL_DATA_LENGTH);
+		tx_rb_init(&hciCtrl->leAclBuffer,HCI_LE_ACL_DATA_LENGTH,HCI_LE_NUM_OF_ACL_PACKET);
 		#endif
 
 		#if defined(BLE_SUPPORT_ISO)
-    	_u8* buffer1 = tx_malloc(HCI_LE_ISO_DATA_LENGTH*HCI_LE_NUM_OF_ISO_PACKET);
-        if(hciCtrl->leIsoBuffer.database.pointer == NULL)
-        {
-        	//assert
-        }
-        txBuffer_init(&hciCtrl->leIsoBuffer,buffer1,HCI_LE_NUM_OF_ISO_PACKET,HCI_LE_ISO_DATA_LENGTH);
+		tx_rb_init(&hciCtrl->leIsoBuffer,HCI_LE_ISO_DATA_LENGTH,HCI_LE_NUM_OF_ISO_PACKET);
 		#endif
     }
 }

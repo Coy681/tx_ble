@@ -38,13 +38,13 @@ typedef enum
 
 typedef struct _PACKET
 {
-	txBuffer_t txBuffer;
-	txBuffer_t rxBuffer;
+	tx_rb_t txBuffer;
+	tx_rb_t rxBuffer;
 	#if defined(BLE_SUPPORT_CONN)
-	txBuffer_t leAclBuffer;
+	tx_rb_t leAclBuffer;
 	#endif
 	#if defined(BLE_SUPPORT_ISO)
-	txBuffer_t leIsoBuffer;
+	tx_rb_t leIsoBuffer;
 	#endif
 }ble_hci_ctrl_t;
 

@@ -7,26 +7,24 @@
 
 #ifndef TXBUFFER_H_
 #define TXBUFFER_H_
-#include"txType.h"
-#include"common/txAssert.h"
-#include"../ml/ml.h"
+#include"common/txType.h"
 /**********************define tx buffer database**************************/
-typedef struct txRb_t  txRb_t;
-typedef struct txRb_t
+typedef struct tx_rb_t  tx_rb_t;
+typedef struct tx_rb_t
 {
 	_u8* p;
 	_u16 size;
 	_u16 num;
 	_u16 wPtr;
 	_u16 rPtr;
-	int  (*isEmpty)(txRb_t*);
-	int  (*isFull)(txRb_t*);
-	_u8* (*read)(txRb_t*);
-	_u8* (*write)(txRb_t*);
-	void (*readNext)(txRb_t*);
-	void (*writeNext)(txRb_t*);
-}txRb_t;
+	int  (*isEmpty)(tx_rb_t*);
+	int  (*isFull)(tx_rb_t*);
+	_u8* (*getReadPtr)(tx_rb_t*);
+	_u8* (*getWritePtr)(tx_rb_t*);
+	void (*moveReadPtr)(tx_rb_t*);
+	void (*moveWritePtr)(tx_rb_t*);
+}tx_rb_t;
 
-void tx_rb_init(txRb_t* rb,_u16 size,_u16 num);
+void tx_rb_init(tx_rb_t* rb,_u16 size,_u16 num);
 
 #endif /* TXBUFFER_H_ */

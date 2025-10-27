@@ -11,10 +11,10 @@
 #include"system/task/event/event.h"
 #include"system/task/message/message.h"
 #include"platform/debug/debug_gpio.h"
-
+#include"common/mmu/mmu.h"
 volatile static _u8  strToHex[24] = "0123456789abcdef";
 /**************************log input process*******************************/
-txBuffer_t       logInputBuffer;
+tx_rb_t          logRbInput;
 log_receive_cb_f logRxCb;
 
 #define LOG_STATUS_BUSY         BIT(0)
@@ -30,26 +30,26 @@ void log_register_rx_callback(log_receive_cb_f cb)
 
 _RAM_CODE static void log_hardware_rx_irq(int len)
 {
-    _u8* p = logInputBuffer.getWritePointer(&logInputBuffer);
+    _u8* p = logRbInput.getWritePtr(&logRbInput);
     U32_TO_STREAM(p,len);
-    logInputBuffer.wPtrIncrease(&logInputBuffer);
+    logRbInput.moveWritePtr(&logRbInput);
     tx_task_set_event(TX_TASK_ID_LOG_RX,LOG_TASK_EVENT_RX);
-    _u8* pReveive = logInputBuffer.getWritePointer(&logInputBuffer);
-    hal_uart_set_receive_buffer(pReveive+4,logInputBuffer.database.blockSize-4);
+    _u8* pReveive = logRbInput.getWritePtr(&logRbInput);
+    hal_uart_set_receive_buffer(pReveive+4,LOG_INPUT_BUFFER_SIZE-4);
 }
 
 static _u32 log_task_event_rx(_u16 taskId,_u32 event)
 {
-    if(logInputBuffer.blockAvailble(&logInputBuffer))
+    if(!logRbInput.isEmpty(&logRbInput))
     {
         _u32 dataLen = 0;
-        _u8* data = logInputBuffer.getReadPointer(&logInputBuffer);
+        _u8* data = logRbInput.getReadPtr(&logRbInput);
         STREAM_TO_U32(dataLen,data);
         if(logRxCb)
         {
             logRxCb(data,dataLen);
         }
-        logInputBuffer.rPtrIncrease(&logInputBuffer);
+        logRbInput.moveReadPtr(&logRbInput);
     }
     return (event^LOG_TASK_EVENT_RX);
 }
@@ -87,14 +87,13 @@ static _u32 log_task_input_event_process(_u16 taskId,_u32 event)
 }
 void log_input_init(void)
 {
-	_u8* plog = tx_malloc(LOG_INPUT_BUFFER_NUMBER*LOG_INPUT_BUFFER_SIZE);
-    txBuffer_init(&logInputBuffer,plog,LOG_INPUT_BUFFER_NUMBER,LOG_INPUT_BUFFER_SIZE);
-    _u8* pReveive = logInputBuffer.getWritePointer(&logInputBuffer);
-    hal_uart_set_receive_buffer(pReveive+4,logInputBuffer.database.blockSize-4);
-}
+    tx_rb_init(&logRbInput,LOG_INPUT_BUFFER_SIZE,LOG_INPUT_BUFFER_NUMBER);
+    _u8* pReveive = logRbInput.getReadPtr(&logRbInput);
+    hal_uart_set_receive_buffer(pReveive+4,LOG_INPUT_BUFFER_SIZE-4);
+} 
 
 /**************************log output process*******************************/
-txBuffer_t       logOutputBuffer;
+tx_rb_t       logOutputRb;
 
 _RAM_CODE static int log_status_operation(_u8 operation)
 {
@@ -118,7 +117,7 @@ _RAM_CODE static int log_status_operation(_u8 operation)
 _RAM_CODE static void log_hardware_tx_irq(void)
 {
     log_status_operation(LOG_CLEAR_STATUS);
-    if(logOutputBuffer.blockAvailble(&logOutputBuffer))
+    if(!logOutputRb.isEmpty(&logOutputRb))
     {
 		tx_task_set_event(TX_TASK_ID_LOG_TX,LOG_TASK_EVENT_TX);
     }
@@ -126,23 +125,23 @@ _RAM_CODE static void log_hardware_tx_irq(void)
 
 void log_output(_u8* pString,_u8* pData,_u32 dataLen)
 {
-    if(logOutputBuffer.database.pointer == NULL)
+    if(logOutputRb.p == NULL||logOutputRb.isFull(&logOutputRb))
     {
         return;
     }
-    _u8* pLog = logOutputBuffer.getWritePointer(&logOutputBuffer);
+    _u8* pLog = logOutputRb.getWritePtr(&logOutputRb);
     _u32 calStrLen = txStringLength(pString);
     _u32 calDataLen = dataLen;
     _u32 totalLen = 0;
 
-    if(calStrLen+6 >logOutputBuffer.database.blockSize)
+    if(calStrLen+6 >LOG_OUTPUT_BUFFER_SIZE)
     {
-        calStrLen = logOutputBuffer.database.blockSize - 6;
+        calStrLen = LOG_OUTPUT_BUFFER_SIZE - 6;
         calDataLen = 0;
     }
-    else if(calStrLen+3*calDataLen+6>logOutputBuffer.database.blockSize)
+    else if(calStrLen+3*calDataLen+6>LOG_OUTPUT_BUFFER_SIZE)
     {
-        calDataLen = (logOutputBuffer.database.blockSize - calStrLen - 6)/3;
+        calDataLen = (LOG_OUTPUT_BUFFER_SIZE - calStrLen - 6)/3;
     }
 
     totalLen = calStrLen + 3*calDataLen + 2;
@@ -162,7 +161,7 @@ void log_output(_u8* pString,_u8* pData,_u32 dataLen)
     }
     *pLog++ = '\r';
 
-    logOutputBuffer.wPtrIncrease(&logOutputBuffer);
+    logOutputRb.moveWritePtr(&logOutputRb);
     tx_task_set_event(TX_TASK_ID_LOG_TX,LOG_TASK_EVENT_TX);
 }
 
@@ -177,13 +176,13 @@ static _u32 log_task_output_event_message(_u16 taskId,_u32 event)
 }
 static _u32 log_task_event_tx(_u16 taskId,_u32 event)
 {
-    if(logOutputBuffer.blockAvailble(&logOutputBuffer)&&(!log_status_operation(LOG_GET_STATUS)))
+    if(!(logOutputRb.isEmpty(&logOutputRb))&&(!log_status_operation(LOG_GET_STATUS)))
     {
         _u32 dataLen = 0;
-        _u8* pData = logOutputBuffer.getReadPointer(&logOutputBuffer);
+        _u8* pData = logOutputRb.getReadPtr(&logOutputRb);
         STREAM_TO_U32(dataLen,pData);
         hal_uart_send_data(pData,dataLen);
-        logOutputBuffer.rPtrIncrease(&logOutputBuffer);
+        logOutputRb.moveReadPtr(&logOutputRb);
         log_status_operation(LOG_SET_STATUS);
     }
     return (event^LOG_TASK_EVENT_TX);
@@ -205,8 +204,7 @@ static _u32 log_task_output_event_process(_u16 taskId,_u32 event)
 
 void log_output_init(void)
 {
-    _u8* plog = tx_malloc(LOG_OUTPUT_BUFFER_NUMBER*LOG_OUTPUT_BUFFER_SIZE);
-    txBuffer_init(&logOutputBuffer,plog,LOG_OUTPUT_BUFFER_NUMBER,LOG_OUTPUT_BUFFER_SIZE);
+    tx_rb_init(&logOutputRb,LOG_OUTPUT_BUFFER_SIZE,LOG_OUTPUT_BUFFER_NUMBER);
 }
 
 /***************************************log init**********************************************/
