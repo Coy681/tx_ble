@@ -57,7 +57,5 @@
         "unordered_map": "c",
         "vector": "c",
         "ml.h": "c"
-    },
-    "tlk.workProjectName": "tx_text",
-    "tlk.workTargetName": "all"
+    }
 }
