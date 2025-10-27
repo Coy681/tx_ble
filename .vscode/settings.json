@@ -56,6 +56,9 @@
         "string_view": "c",
         "unordered_map": "c",
         "vector": "c",
-        "ml.h": "c"
+        "ml.h": "c",
+        "mmu.h": "c",
+        "bl.h": "c",
+        "rb.h": "c"
     }
 }

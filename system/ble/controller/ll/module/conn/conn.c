@@ -150,7 +150,10 @@ int ble_ll_enter_connection_state(ble_ll_event_e event)
 		ll->conn->data.ownMaxRxOctets = BLE_PER_MAX_RX_OCTETS;
 		ll->conn->data.ownMaxRxTime   = ll_get_air_packet_time(ll->phy.mode,BLE_PER_MAX_RX_OCTETS,1);
 
-		ll->
+		tx_bl_init(&ll->conn->data.ctrlIn,BLE_PER_MAX_RX_OCTETS,BLE_MAX_CTRL_PACKET_NUM);
+		tx_bl_init(&ll->conn->data.ctrlOut,BLE_PER_MAX_TX_OCTETS,BLE_MAX_CTRL_PACKET_NUM);
+		tx_rb_init(&ll->conn->data.dataIn,BLE_PER_MAX_RX_OCTETS,BLE_PER_PACKET_NUMBER);
+		tx_rb_init(&ll->conn->data.dataOut,BLE_PER_MAX_TX_OCTETS,BLE_PER_PACKET_NUMBER);
 
 		ll->conn->role = CONN_ROLE_PERIPHERAL;
 		#endif
@@ -170,6 +173,11 @@ int ble_ll_enter_connection_state(ble_ll_event_e event)
 		ll->conn->data.ownMaxTxTime   = ll_get_air_packet_time(ll->phy.mode,BLE_CEN_MAX_TX_OCTETS,1);
 		ll->conn->data.ownMaxRxOctets = BLE_CEN_MAX_RX_OCTETS;
 		ll->conn->data.ownMaxRxTime   = ll_get_air_packet_time(ll->phy.mode,BLE_CEN_MAX_RX_OCTETS,1);
+
+		tx_bl_init(&ll->conn->data.ctrlIn,BLE_CEN_MAX_RX_OCTETS,BLE_MAX_CTRL_PACKET_NUM);
+		tx_bl_init(&ll->conn->data.ctrlOut,BLE_CEN_MAX_TX_OCTETS,BLE_MAX_CTRL_PACKET_NUM);
+		tx_rb_init(&ll->conn->data.dataIn,BLE_CEN_MAX_RX_OCTETS,BLE_CEN_PACKET_NUMBER);
+		tx_rb_init(&ll->conn->data.dataOut,BLE_CEN_MAX_TX_OCTETS,BLE_CEN_PACKET_NUMBER);
 
     	ll->conn->role = CONN_ROLE_CENTRAL;
 		#endif
