@@ -88,7 +88,7 @@ static _u32 log_task_input_event_process(_u16 taskId,_u32 event)
 void log_input_init(void)
 {
     tx_rb_init(&logRbInput,LOG_INPUT_BUFFER_SIZE,LOG_INPUT_BUFFER_NUMBER);
-    _u8* pReveive = logRbInput.getReadPtr(&logRbInput);
+    _u8* pReveive = logRbInput.getWritePtr(&logRbInput);
     hal_uart_set_receive_buffer(pReveive+4,LOG_INPUT_BUFFER_SIZE-4);
 } 
 
