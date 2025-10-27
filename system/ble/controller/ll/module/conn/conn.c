@@ -2,6 +2,7 @@
 #include"../../channel/channel.h"
 #if defined(BLE_SUPPORT_CONN)
 
+#define BLE_MAX_CTRL_PACKET_NUM       4
 
 typedef int(*conn_event_sm_cb)(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam);
 
@@ -148,6 +149,8 @@ int ble_ll_enter_connection_state(ble_ll_event_e event)
 		ll->conn->data.ownMaxTxTime   = ll_get_air_packet_time(ll->phy.mode,BLE_PER_MAX_TX_OCTETS,1);
 		ll->conn->data.ownMaxRxOctets = BLE_PER_MAX_RX_OCTETS;
 		ll->conn->data.ownMaxRxTime   = ll_get_air_packet_time(ll->phy.mode,BLE_PER_MAX_RX_OCTETS,1);
+
+		ll->
 
 		ll->conn->role = CONN_ROLE_PERIPHERAL;
 		#endif

@@ -304,8 +304,11 @@ typedef struct _PACKED
 	_u16 ownMaxTxTime;
 	_u16 ownMaxRxTime;
 
-	// txBuffer_t dataIn;
-	// txBuffer_t dataOut;
+	tx_rb_t dataIn;
+	tx_rb_t dataOut;
+
+    tx_bl_t ctrlIn;
+    tx_bl_t ctrlOut;
 }ll_conn_data_t;
 
 typedef struct _PACKED

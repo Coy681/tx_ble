@@ -61,6 +61,10 @@
 #define BLE_CEN_MAX_RX_OCTETS                         27
 #endif
 
+#ifndef BLE_CEN_PACKET_NUMBER                         
+#define BLE_CEN_PACKET_NUMBER                         8
+#endif
+
 #endif
 
 #if defined(BLE_SUPPORT_PER)
@@ -71,6 +75,10 @@
 
 #ifndef BLE_PER_MAX_RX_OCTETS
 #define BLE_PER_MAX_RX_OCTETS                         27
+#endif
+
+#ifndef BLE_PER_PACKET_NUMBER                         
+#define BLE_PER_PACKET_NUMBER                         8
 #endif
 
 #endif
