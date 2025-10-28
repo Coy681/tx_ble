@@ -116,6 +116,13 @@ enum
     LL_LLID_CONTROL_PDU            = 0x03,
 };
  _u8* ll_get_data_packet(_u8* packet,_u8 length,_u8 llid,_u8 nesn,_u8 sn,_u8 md);
+
+ _u8* ll_get_control_packet(_u8* packet,_u8 length,_u8 opcode,_u8 nesn,_u8 sn,_u8 md);
+
+ _u8* ll_get_data_raw_packet(_u8* packet,_u8 length,_u8 llid,_u8 opcode);
+
+ void ll_data_packet_fill_info(_u8* packet,_u8 nesn,_u8 sn,_u8 md);
+
 /**************************Isochronous physical channel PDU******************************/
 typedef union 
 {

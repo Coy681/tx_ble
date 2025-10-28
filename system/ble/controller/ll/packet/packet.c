@@ -63,6 +63,21 @@ _u8* ll_get_data_packet(_u8* packet,_u8 length,_u8 llid,_u8 nesn,_u8 sn,_u8 md)
 }
 
 _RAM_CODE
+_u8* ll_get_control_packet(_u8* packet,_u8 length,_u8 opcode,_u8 nesn,_u8 sn,_u8 md)
+{
+    ll_data_packet_t* pkt = (ll_data_packet_t*)packet;
+    pkt->hdr.length = length;
+    pkt->hdr.llId   = llid;
+    pkt->hdr.nesn   = nesn;
+    pkt->hdr.sn     = sn;
+    pkt->hdr.md     = md;
+    pkt->hdr.rfu    = 0;
+    pkt->hdr.cp     = 0;//not support now
+    pkt->data[0]    = opcode;
+    return &pkt->data[1];
+} 
+
+_RAM_CODE
 _u8* ll_get_iso_cis_packet(_u8* packet,_u8 length,_u8 llid,_u8 nesn,_u8 sn,_u8 cie,_u8 npi)
 {
     ll_iso_packet_hdr_t* pkt = (ll_iso_packet_hdr_t*)packet;

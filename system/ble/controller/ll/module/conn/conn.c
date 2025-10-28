@@ -33,7 +33,7 @@ typedef struct _PACKED
 #if defined (BLE_SUPPORT_PER)
 _RAM_CODE static int peri_conn_event_sch_start(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
 {
-
+	
 }
 _RAM_CODE static int peri_conn_event_sch_stop(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
 {
