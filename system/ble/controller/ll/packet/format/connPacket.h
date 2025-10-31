@@ -596,7 +596,7 @@ typedef struct _PACKED{
 
 // 2.4.2.52 LL_CTRL_PDU_CS_FAE_RSP
 typedef struct _PACKED{
-    int8_t chFae[72];
+    _u8 chFae[72];
 }ll_ctrlPdu_cs_fae_rsp_t;
 
 // 2.4.2.53 LL_CTRL_PDU_CS_CHANNEL_MAP_IND

@@ -88,6 +88,11 @@ typedef enum
 }ll_adv_connect_pdu_type_e;
 
 _u8* ll_get_adv_packet(_u8* packet,_u8 advType,_u8 chnSel,_u8 txAdd,_u8 rxAdd,_u8 length);
+
+_u8* ll_adv_packet_prepare(_u8* packet,_u8 length,_u8 advType);
+
+void ll_adv_packet_make(_u8* packe,_u8 chnSel,_u8 txAdd,_u8 rxAdd);
+
 /**************************Data physical channel PDU******************************/
 typedef union 
 {
@@ -117,12 +122,10 @@ enum
 };
  _u8* ll_get_data_packet(_u8* packet,_u8 length,_u8 llid,_u8 nesn,_u8 sn,_u8 md);
 
- _u8* ll_get_control_packet(_u8* packet,_u8 length,_u8 opcode,_u8 nesn,_u8 sn,_u8 md);
+ _u8* ll_acl_packet_prepare(_u8* packet,_u8 length,_u8 llid);
 
- _u8* ll_get_data_raw_packet(_u8* packet,_u8 length,_u8 llid,_u8 opcode);
-
- void ll_data_packet_fill_info(_u8* packet,_u8 nesn,_u8 sn,_u8 md);
-
+ void ll_acl_packet_make(_u8* packet,_u8 nesn,_u8 sn,_u8 md);
+ 
 /**************************Isochronous physical channel PDU******************************/
 typedef union 
 {

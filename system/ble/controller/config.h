@@ -8,4 +8,4 @@
 
 // #define BLE_SUPPORT_CEN  y
 
- #define BLE_SUPPORT_PER  y
+//  #define BLE_SUPPORT_PER  y
