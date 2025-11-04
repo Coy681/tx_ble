@@ -570,45 +570,51 @@ static void adv_generate_extended_header(ll_sm_t* ll,ll_internal_adv_param_t* ad
 //LL_ADV_TYPE_ADV_IND
 static void adv_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
-    _u8* packet = ll_get_adv_packet(advParam->la->phy.txAddress,6+advParam->data.len,LL_ADV_TYPE_ADV_IND,LL_CHANNEL_SUPP_CSA2,advParam->ownAddressType?1:0,0);
+    _u8* packet = ll_adv_packet_data_prepare(advParam->la->phy.txAddress,6+advParam->data.len,LL_ADV_TYPE_ADV_IND);
     txMemcpy(((adv_type_ind_t*)packet)->advA,ll_get_device_address(),6);
     txMemcpy(((adv_type_ind_t*)packet)->advData,advParam->data.addr,advParam->data.len);
+    ll_adv_packet_make(advParam->la->phy.txAddress,LL_CHANNEL_SUPP_CSA2,advParam->ownAddressType?1:0,0);
 }
 //LL_ADV_TYPE_ADV_DIRECT_IND
 static void adv_direct_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
-    _u8* packet = ll_get_adv_packet(advParam->la->phy.txAddress,12,LL_ADV_TYPE_ADV_DIRECT_IND,LL_CHANNEL_SUPP_CSA2,advParam->ownAddressType?1:0,advParam->peerAddressType?1:0);
+    _u8* packet = ll_adv_packet_data_prepare(advParam->la->phy.txAddress,12,LL_ADV_TYPE_ADV_DIRECT_IND);
     txMemcpy(((adv_type_direct_ind_t*)packet)->advA,ll_get_device_address(),6);
     txMemcpy(((adv_type_direct_ind_t*)packet)->targetA,advParam->peerAddress,6);
+    ll_adv_packet_make(advParam->la->phy.txAddress,LL_CHANNEL_SUPP_CSA2,advParam->ownAddressType?1:0,advParam->peerAddressType?1:0);
 }
 //LL_ADV_TYPE_ADV_NONCONN_IND
 static void adv_non_conn_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
-    _u8* packet = ll_get_adv_packet(advParam->la->phy.txAddress,6+advParam->data.len,LL_ADV_TYPE_ADV_NONCONN_IND,0,advParam->ownAddressType?1:0,0);
+    _u8* packet = ll_adv_packet_data_prepare(advParam->la->phy.txAddress,6+advParam->data.len,LL_ADV_TYPE_ADV_NONCONN_IND);
     txMemcpy(((adv_type_nonConn_ind_t*)packet)->advA,ll_get_device_address(),6);
     txMemcpy(((adv_type_nonConn_ind_t*)packet)->advData,advParam->data.addr,advParam->data.len);
+    ll_adv_packet_make(advParam->la->phy.txAddress,0,advParam->ownAddressType?1:0,0);
 }
 //LL_ADV_TYPE_SCAN_RSP
 static void adv_scan_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
-    _u8* packet = ll_get_adv_packet(advParam->la->phy.txAddress,6+advParam->scanRsp.len,LL_ADV_TYPE_SCAN_RSP,0,advParam->ownAddressType?1:0,0);
+    _u8* packet = ll_adv_packet_data_prepare(advParam->la->phy.txAddress,6+advParam->scanRsp.len,LL_ADV_TYPE_SCAN_RSP);
     txMemcpy(((adv_type_scan_rsp_t*)packet)->advA,ll_get_device_address(),6);
     txMemcpy(((adv_type_scan_rsp_t*)packet)->scanRsp,advParam->scanRsp.addr,advParam->scanRsp.len);
+    ll_adv_packet_make(advParam->la->phy.txAddress,0,advParam->ownAddressType?1:0,0);
 }
 //LL_ADV_TYPE_ADV_SCAN_IND
 static void adv_scan_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
 {
-    _u8* packet = ll_get_adv_packet(advParam->la->phy.txAddress,6+advParam->data.len,LL_ADV_TYPE_ADV_SCAN_IND,0,advParam->ownAddressType?1:0,0);
+    _u8* packet = ll_adv_packet_data_prepare(advParam->la->phy.txAddress,6+advParam->data.len,LL_ADV_TYPE_ADV_SCAN_IND);
     txMemcpy(((adv_type_scan_ind_t*)packet)->advA,ll_get_device_address(),6);
     txMemcpy(((adv_type_scan_ind_t*)packet)->advData,advParam->data.addr,advParam->data.len);
+    ll_adv_packet_make(advParam->la->phy.txAddress,0,advParam->ownAddressType?1:0,0);
 }
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
 //LL_ADV_TYPE_ADV_EXT_IND
 static void adv_ext_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
-    _u8* packet = ll_get_adv_packet(advParam->la->phy.txAddress,headerLen,LL_ADV_TYPE_ADV_EXT_IND,0,advParam->ownAddressType?1:0,0);
+    _u8* packet = ll_adv_packet_data_prepare(advParam->la->phy.txAddress,headerLen,LL_ADV_TYPE_ADV_EXT_IND);
     adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo,did);
+    ll_adv_packet_make(advParam->la->phy.txAddress,0,advParam->ownAddressType?1:0,0);
 }
 
 //LL_ADV_TYPE_AUX_ADV_IND
@@ -620,41 +626,45 @@ static void adv_aux_adv_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* adv
     {
     	dataLen = 0;
     }
-    _u8* packet = ll_get_adv_packet(advParam->ea->aux.phy.txAddress,headerLen+dataLen,LL_ADV_TYPE_AUX_ADV_IND,0,advParam->ownAddressType?1:0,0);
+    _u8* packet = ll_adv_packet_data_prepare(advParam->ea->aux.phy.txAddress,headerLen+dataLen,LL_ADV_TYPE_AUX_ADV_IND);
     adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo,did);
     if(dataLen!=0)
     {
         txMemcpy(packet+headerLen,advParam->ea->aux.data.addr,dataLen);
     }
+    ll_adv_packet_make(advParam->ea->aux.phy.txAddress,0,advParam->ownAddressType?1:0,0);
 }
 //LL_ADV_TYPE_AUX_SCAN_RSP
 static void adv_aux_scan_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
-    _u8* packet = ll_get_adv_packet(advParam->ea->aux.phy.txAddress,headerLen+advParam->ea->aux.data.len,LL_ADV_TYPE_AUX_SCAN_RSP,0,advParam->ownAddressType?1:0,0);
+    _u8* packet = ll_adv_packet_data_prepare(advParam->ea->aux.phy.txAddress,headerLen+advParam->ea->aux.data.len,LL_ADV_TYPE_AUX_SCAN_RSP);
     adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo,did);
     if(advParam->ea->aux.data.len!=0)
     {
         txMemcpy(packet+headerLen,advParam->ea->aux.data.addr,advParam->ea->aux.data.len);
     }
+    ll_adv_packet_make(advParam->ea->aux.phy.txAddress,0,advParam->ownAddressType?1:0,0);
 }
 //LL_ADV_TYPE_AUX_CONNECT_RSP
 static void adv_aux_conn_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
-    _u8* packet = ll_get_adv_packet(advParam->ea->aux.phy.txAddress,headerLen,LL_ADV_TYPE_AUX_CONNECT_RSP,0,advParam->ownAddressType?1:0,0);
+    _u8* packet = ll_adv_packet_data_prepare(advParam->ea->aux.phy.txAddress,headerLen,LL_ADV_TYPE_AUX_CONNECT_RSP);
     adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo,did);
+    ll_adv_packet_make(advParam->ea->aux.phy.txAddress,0,advParam->ownAddressType?1:0,0);
 }
 //LL_ADV_TYPE_AUX_CHAIN_IND
 static void adv_aux_chain_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
-    _u8* packet = ll_get_adv_packet(advParam->pChain->entry[advParam->pChain->current].phy.txAddress,headerLen+advParam->ea->chain.entry[advParam->pChain->current].data.len,LL_ADV_TYPE_AUX_CHAIN_IND,0,advParam->ownAddressType?1:0,0);
+    _u8* packet = ll_adv_packet_data_prepare(advParam->pChain->entry[advParam->pChain->current].phy.txAddress,headerLen+advParam->ea->chain.entry[advParam->pChain->current].data.len,LL_ADV_TYPE_AUX_CHAIN_IND);
     adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo,did);
     if(advParam->pChain->entry[advParam->pChain->current].data.len!=0)
     {
         txMemcpy(packet+headerLen,advParam->pChain->entry[advParam->pChain->current].data.addr,advParam->pChain->entry[advParam->pChain->current].data.len);
     }
+    ll_adv_packet_make(advParam->pChain->entry[advParam->pChain->current].phy.txAddress,0,advParam->ownAddressType?1:0,0);
 }
 #endif
 #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
@@ -662,12 +672,13 @@ static void adv_aux_chain_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* a
 static void adv_aux_sync_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
-    _u8* packet = ll_get_adv_packet(advParam->pa->sync.phy.txAddress,headerLen+advParam->pa->sync.data.len,LL_ADV_TYPE_AUX_SYNC_IND,0,advParam->ownAddressType?1:0,0);
+    _u8* packet = ll_adv_packet_data_prepare(advParam->pa->sync.phy.txAddress,headerLen+advParam->pa->sync.data.len,LL_ADV_TYPE_AUX_SYNC_IND);
     adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo,did);
     if(advParam->pa->sync.data.len!=0)
     {
         txMemcpy(packet+headerLen,advParam->pa->sync.data.addr,advParam->pa->sync.data.len);
     }
+    ll_adv_packet_make(advParam->pa->sync.phy.txAddress,0,advParam->ownAddressType?1:0,0);
 }
 #endif
 

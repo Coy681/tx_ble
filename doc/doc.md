@@ -174,6 +174,22 @@ Bluetooth LL支持多状态机的实现，支持多状态的自由组合，在�
 
 ### LL
 
+#### LL PACKET
+
+#####  Packet send and receive
+
+###### 公共收发地址
+
+LL为每个实例提供了公共的PHY收发地址，在以下情况推荐使用、
+- 每一轮PHY收发，PACKET很少变化
+例如ADV,SCAN,PDA等
+
+###### 私有收发地址
+
+LL Module内部可以自己准备PHY收发地址，在以下情况使用，
+- 每一轮收发，PACKET基本都不一样
+例如CONN,CIS,BIS等
+
 #### LL Control
 
 LL Control Procedure要点
