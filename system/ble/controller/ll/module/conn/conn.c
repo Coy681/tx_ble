@@ -29,6 +29,39 @@ typedef struct _PACKED
 	ll_event_e       event;
 }conn_event_sm_t;
 
+_RAM_CODE static void conn_prepare_new_pdu(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
+{
+	if(!connParam->ctrl.pending&&connParam->ctrl.out.nodeCnt!=0)
+	{
+		ll->phy.txAddress = ;//new control pdu
+	}
+	else
+	{
+		ll->phy.txAddress = ;//new data pdu
+	}
+}
+
+_RAM_CODE static void conn_prepare_phy(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam,_u32 timestamp,phy_dir_e phydir)
+{
+	ll->phy.accessCode = 0;
+	/**
+	 * phy parameters not assign here:
+	 *  - access code  :assigned in conn stage
+	 *  - crc init     :assigned in conn stage
+	 *  - phy mode     :assigned in conn stage,and maybe update in connection.
+	 *  -
+	 *  phy parameters assignd here:
+	 *  - chnIdx       :change each event,shall be assigned here
+	 *  - dir          :maybe change each event,so need be assigned every time
+	 *  - tx/rx address:maybe change each event,assigned in api 'conn_prepare_new_pdu'
+	 *  - timestamp    :change every time
+	 */
+}
+
+_RAM_CODE static void conn_prepare_event(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
+{
+
+}
 
 #if defined (BLE_SUPPORT_PER)
 _RAM_CODE static int peri_conn_event_sch_start(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
@@ -150,11 +183,12 @@ int ble_ll_enter_connection_state(ble_ll_event_e event)
 		ll->conn->data.ownMaxRxOctets = BLE_PER_MAX_RX_OCTETS;
 		ll->conn->data.ownMaxRxTime   = ll_get_air_packet_time(ll->phy.mode,BLE_PER_MAX_RX_OCTETS,1);
 
-		tx_bl_init(&ll->conn->data.ctrlIn,BLE_PER_MAX_RX_OCTETS,BLE_MAX_CTRL_PACKET_NUM);
-		tx_bl_init(&ll->conn->data.ctrlOut,BLE_PER_MAX_TX_OCTETS,BLE_MAX_CTRL_PACKET_NUM);
-		tx_rb_init(&ll->conn->data.dataIn,BLE_PER_MAX_RX_OCTETS,BLE_PER_PACKET_NUMBER);
-		tx_rb_init(&ll->conn->data.dataOut,BLE_PER_MAX_TX_OCTETS,BLE_PER_PACKET_NUMBER);
+		tx_bl_init(&ll->conn->ctrl.in,BLE_PER_MAX_RX_OCTETS,BLE_MAX_CTRL_PACKET_NUM);
+		tx_bl_init(&ll->conn->ctrl.out,BLE_PER_MAX_TX_OCTETS,BLE_MAX_CTRL_PACKET_NUM);
+		tx_rb_init(&ll->conn->data.in,BLE_PER_MAX_RX_OCTETS,BLE_PER_PACKET_NUMBER);
+		tx_rb_init(&ll->conn->data.out,BLE_PER_MAX_TX_OCTETS,BLE_PER_PACKET_NUMBER);
 
+		ll->conn->info = tx_malloc(sizeof(ll_conn_peri_t));
 		ll->conn->role = CONN_ROLE_PERIPHERAL;
 		#endif
     }
@@ -174,11 +208,11 @@ int ble_ll_enter_connection_state(ble_ll_event_e event)
 		ll->conn->data.ownMaxRxOctets = BLE_CEN_MAX_RX_OCTETS;
 		ll->conn->data.ownMaxRxTime   = ll_get_air_packet_time(ll->phy.mode,BLE_CEN_MAX_RX_OCTETS,1);
 
-		tx_bl_init(&ll->conn->data.ctrlIn,BLE_CEN_MAX_RX_OCTETS,BLE_MAX_CTRL_PACKET_NUM);
-		tx_bl_init(&ll->conn->data.ctrlOut,BLE_CEN_MAX_TX_OCTETS,BLE_MAX_CTRL_PACKET_NUM);
-		tx_rb_init(&ll->conn->data.dataIn,BLE_CEN_MAX_RX_OCTETS,BLE_CEN_PACKET_NUMBER);
-		tx_rb_init(&ll->conn->data.dataOut,BLE_CEN_MAX_TX_OCTETS,BLE_CEN_PACKET_NUMBER);
-
+		tx_bl_init(&ll->conn->ctrl.in,BLE_CEN_MAX_RX_OCTETS,BLE_MAX_CTRL_PACKET_NUM);
+		tx_bl_init(&ll->conn->ctrl.out,BLE_CEN_MAX_TX_OCTETS,BLE_MAX_CTRL_PACKET_NUM);
+		tx_rb_init(&ll->conn->data.in,BLE_CEN_MAX_RX_OCTETS,BLE_CEN_PACKET_NUMBER);
+		tx_rb_init(&ll->conn->data.out,BLE_CEN_MAX_TX_OCTETS,BLE_CEN_PACKET_NUMBER);
+		ll->conn->info = tx_malloc(sizeof(ll_conn_cen_t));
     	ll->conn->role = CONN_ROLE_CENTRAL;
 		#endif
 

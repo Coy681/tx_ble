@@ -99,6 +99,10 @@ void sch_stop_task_early(void);
 
 void sch_abort_current_and_process_next_task(void);
 
+_u32 sch_get_task_extended_boundary(void);
+
+void sch_task_extended(_u32 targetTime);
+
 sch_node_t* sch_get_task_list(_u8 type);
 
 #endif//TX_SCH_H_

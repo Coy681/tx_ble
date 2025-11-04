@@ -479,6 +479,37 @@ _RAM_CODE sch_node_t* sch_get_task_list(_u8 type)
     }
 }
 
+_RAM_CODE _u32 sch_get_task_extended_boundary(void)
+{
+	if(POINTER_VALID(schCtrl.pWaitingList))
+	{
+		return TASK_START_TIME(schCtrl.pWaitingList);
+	}
+	else
+	{
+		return 0xffff;
+	}
+}
+
+_RAM_CODE void sch_task_extended(_u32 targetTime)
+{
+	_u32 captureTime = system_time()+10;
+	if(txCompareTime(targetTime,captureTime))
+	{
+		captureTime = targetTime;
+	}
+	if(POINTER_VALID(schCtrl.pWaitingList))
+	{
+		_u32 taskBoundary = TASK_START_TIME(schCtrl.pWaitingList);
+		if(txCompareTime(captureTime,taskBoundary))
+		{
+			captureTime = taskBoundary;
+		}
+	}
+	hal_stimer_set_capture(captureTime);
+}
+
+
  _RAM_CODE int sch_remove_task(_u8 taskId)
 {
 	IRQ_DISABLE;
