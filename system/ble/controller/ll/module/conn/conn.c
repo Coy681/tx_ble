@@ -43,23 +43,27 @@ _RAM_CODE static void conn_prepare_new_pdu(ll_sm_t* ll,ll_internal_connection_ct
 
 _RAM_CODE static void conn_prepare_phy(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam,_u32 timestamp,phy_dir_e phydir)
 {
-	ll->phy.accessCode = 0;
 	/**
-	 * phy parameters not assign here:
-	 *  - phy mode     :assigned in conn stage,and maybe update in connection.
+	 *  phy parameters not assign here:
 	 *  - access code  :assigned in conn stage
 	 *  - crc init     :assigned in conn stage
-	 *  - rx max octets:assigned in conn stage,and maybe update in connection.
 	 *  - rx timeout   :assigned in conn stage,will not change.
-	 * 
-	 * 
+	 *  - phy mode     :assigned in conn stage,and maybe update in connection.
+	 *  - rx max octets:assigned in conn stage,and maybe update in connection.
+	 *  - tx/rx address:maybe change each event,assigned in api 'conn_prepare_new_pdu'
+	 *
 	 *  phy parameters assignd here:
 	 *  - chnIdx       :change each event,shall be assigned here
 	 *  - dir          :maybe change each event,so need be assigned every time
-	 *  - tx/rx address:maybe change each event,assigned in api 'conn_prepare_new_pdu'
 	 *  - timestamp    :change every time
 	 */
-
+	/* calculate current event channel index*/
+	connParam->csa.counter = connParam->eventCounter;
+	ll->phy.chnIdx = ll_csa_cal_channel_index(&connParam->csa);
+	/* phy tx or rx */
+	ll->phy.dir = phydir;
+	/* phy timestamp */
+	ll->phy.timestamp = timestamp;
 }
 
 _RAM_CODE static void conn_prepare_event(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)

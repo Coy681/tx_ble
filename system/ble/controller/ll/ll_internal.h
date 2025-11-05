@@ -285,7 +285,9 @@ int                      ll_extended_adv_get_current_set_number(void);
 typedef struct _PACKED
 {
 	_u8  sca:3;
-	_u8  rsvd:5;
+	_u8  sn:1;
+	_u8  nesn:1;
+	_u8  rsvd:3;
 	_u8  rsvd1;
 	_u16 rsvd2;
 
@@ -331,11 +333,15 @@ typedef struct _PACKED
 {
 	_u8  role:1;
 	_u8  state:3;
-    _u8  rsvd0:4;
+    _u8  sn:1;
+    _u8  nesn:1;
+    _u8  rsvd:2;
 	_u8  rsvd1;
-	_u16 rsvd2;
+	_u16 eventCounter;
 	_u16 latency;
 	_u16 timeout;
+
+	_u32 lastSyncTime;
 
 	ll_conn_peer_t        peer;
 	ll_conn_data_t        data;
