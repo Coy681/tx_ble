@@ -46,27 +46,35 @@ _RAM_CODE static void conn_prepare_phy(ll_sm_t* ll,ll_internal_connection_ctrl_t
 	ll->phy.accessCode = 0;
 	/**
 	 * phy parameters not assign here:
+	 *  - phy mode     :assigned in conn stage,and maybe update in connection.
 	 *  - access code  :assigned in conn stage
 	 *  - crc init     :assigned in conn stage
-	 *  - phy mode     :assigned in conn stage,and maybe update in connection.
-	 *  -
+	 *  - rx max octets:assigned in conn stage,and maybe update in connection.
+	 *  - rx timeout   :assigned in conn stage,will not change.
+	 * 
+	 * 
 	 *  phy parameters assignd here:
 	 *  - chnIdx       :change each event,shall be assigned here
 	 *  - dir          :maybe change each event,so need be assigned every time
 	 *  - tx/rx address:maybe change each event,assigned in api 'conn_prepare_new_pdu'
 	 *  - timestamp    :change every time
 	 */
+
 }
 
 _RAM_CODE static void conn_prepare_event(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
 {
-
+	//instant jumped judge,
+	//connection update?parameter update? 
 }
 
 #if defined (BLE_SUPPORT_PER)
 _RAM_CODE static int peri_conn_event_sch_start(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
 {
-	
+	conn_prepare_event();
+	conn_prepare_new_pdu();
+	conn_prepare_phy();
+
 }
 _RAM_CODE static int peri_conn_event_sch_stop(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
 {

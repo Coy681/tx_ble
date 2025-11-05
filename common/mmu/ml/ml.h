@@ -10,6 +10,8 @@
 
 #include"common/txType.h"
 #include"common/txAttribute.h"
+#include"common/txUtility.h"
+#include"common/txGeneral.h"
 typedef enum
 {
 	TX_MALLOC_FREE_SUCCESS       = 0,

@@ -701,10 +701,6 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 	return SUCCESS;
 }
 
-volatile int AAA_DATA_ADDRESS;
-volatile int AAA_RSP_ADDRESS;
-volatile int AAA_DATA_LEN;
-volatile int AAA_RSP_LEN;
 controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 														ll_advertising_data_operation_e operation,\
 														ll_advertising_data_fragment_perference_e fragPref,\
@@ -814,7 +810,6 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 		{
 			pAdv->data.addr = tx_malloc(BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH);
 		}
-		AAA_DATA_ADDRESS = pAdv->data.addr;
 	}
 	
 	if(pAdv->eventType == ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITHOUT_AUXILIARY)
@@ -897,7 +892,6 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 			}
 		}	
 	}
-	AAA_DATA_LEN = pAdv->data.len;
 	pAdv->ea->advDatafragPerf = fragPref;
 	return SUCCESS;
 }
@@ -1009,7 +1003,6 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 		{
 			pAdv->scanRsp.addr = tx_malloc(BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH);
 		}
-		AAA_RSP_ADDRESS = pAdv->scanRsp.addr;
 	}
 	switch(operation)
 	{
@@ -1076,7 +1069,6 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 		}
 	}
 	pAdv->ea->scanRspDatafragPerf = fragPref;
-	AAA_RSP_LEN = pAdv->scanRsp.len;
 	return SUCCESS;
 }
 /**

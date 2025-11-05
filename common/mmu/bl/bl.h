@@ -8,6 +8,7 @@
 #ifndef TXBLOCK_H_
 #define TXBLOCK_H_
 #include"common/txType.h"
+#include"common/txAssert.h"
 typedef enum
 {
 	TX_BL_SERIAL_NUMBER_ASCENDING  = 0,

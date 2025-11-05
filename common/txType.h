@@ -8,10 +8,19 @@
 #ifndef TXTYPE_H_
 #define TXTYPE_H_
 
+#if defined NULL
+#undef NULL
+#define NULL   (0)
+#else
+#define NULL   (0)
+#endif
 
-#define NULL 0
-
+#if defined bool
+#undef bool
 #define bool   unsigned char
+#else
+#define bool   unsigned char
+#endif
 
 typedef unsigned long long   _u64;
 typedef unsigned long        _u32;
