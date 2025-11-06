@@ -60,6 +60,7 @@ void ll_csa_init(ll_csa_ctrl_t* chnInfo)
 
 #define LL_CSA2_PERMUTATION_OPERATION(x) ((BIT_REVERSE_8((x>>8)&0xff)<<8) | BIT_REVERSE_8(x&0xFF))
 
+_RAM_CODE
 _u8  ll_csa_cal_channel_index(ll_csa_ctrl_t* chnInfo)
 {
 	if(!chnInfo->ready)

@@ -306,6 +306,8 @@ typedef struct _PACKED
 	_u16 ownMaxTxTime;
 	_u16 ownMaxRxTime;
 
+	_u8* pdu;
+
 	tx_rb_t in;
 	tx_rb_t out;
 }ll_conn_data_t;
@@ -326,7 +328,7 @@ typedef struct _PACKED
 
 typedef struct _PACKED
 {
-
+	_u32 lastSyncTime;
 }ll_conn_peri_t;
 
 typedef struct _PACKED
@@ -341,7 +343,10 @@ typedef struct _PACKED
 	_u16 latency;
 	_u16 timeout;
 
-	_u32 lastSyncTime;
+	_u32 anchor;
+	_u32 duration;
+	_u32 interval;
+
 
 	ll_conn_peer_t        peer;
 	ll_conn_data_t        data;

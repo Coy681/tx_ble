@@ -1297,9 +1297,13 @@ static int adv_event_step_phy_send_scan_rsp(ll_sm_t* ll,ll_internal_adv_param_t*
                 ll_csa_init(&ll->conn->csa);
                 //transmit window delay is 1.25ms when connect ind used
                 _u32 connIndAnchor = ll->phy.hw_get_rx_air_ts() + ll_get_air_packet_time(advParam->la->phy.mode,sizeof(init_type_connectInd_t),0);
-                ll->sch.timestamp  = connIndAnchor +1250+llData->winOffset*1250;
-                ll->sch.duration   = ll->sch.durationMin = llData->winSize*1250;
-                ll->sch.period     = llData->interval*1250;
+                ll->conn->anchor   = connIndAnchor +1250+llData->winOffset*1250;
+                ll->conn->duration = llData->winSize*1250;
+                ll->conn->interval = llData->interval*1250;
+
+                ll->sch.timestamp  = ll->conn->anchor;
+                ll->sch.duration   = ll->sch.durationMin = ll->conn->duration;
+                ll->sch.period     = ll->conn->interval;
                 ll->sch.startLatency = 100;
                 ll->sch.stopLatency  = 100;
                 ll->phy.mode       = PHY_MODE_1M;
