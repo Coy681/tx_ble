@@ -287,7 +287,8 @@ typedef struct _PACKED
 	_u8  sca:3;
 	_u8  sn:1;
 	_u8  nesn:1;
-	_u8  rsvd:3;
+	_u8  md:1;
+	_u8  rsvd:2;
 	_u8  rsvd1;
 	_u16 rsvd2;
 
@@ -337,7 +338,8 @@ typedef struct _PACKED
 	_u8  state:3;
     _u8  sn:1;
     _u8  nesn:1;
-    _u8  rsvd:2;
+    _u8  md:1;
+    _u8  rsvd:1;
 	_u8  rsvd1;
 	_u16 eventCounter;
 	_u16 latency;

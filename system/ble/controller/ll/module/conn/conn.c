@@ -29,15 +29,25 @@ typedef struct _PACKED
 	ll_event_e       event;
 }conn_event_sm_t;
 
-_RAM_CODE static void conn_prepare_new_pdu(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
+#define CONN_LAST_PDU    0
+#define CONN_NEW_PDU     1
+
+_RAM_CODE static void conn_prepare_pdu(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam,_u8 type)
 {
-	if(!connParam->ctrl.pending&&connParam->ctrl.out.nodeCnt!=0)
+	if(type == CONN_LAST_PDU)
 	{
-		ll->phy.txAddress = ;//new control pdu
+
 	}
 	else
 	{
-		ll->phy.txAddress = ;//new data pdu
+		if(!connParam->ctrl.pending&&connParam->ctrl.out.nodeCnt!=0)
+		{
+			ll->phy.txAddress = ;//new control pdu
+		}
+		else
+		{
+			ll->phy.txAddress = ;//new data pdu
+		}
 	}
 }
 
@@ -76,13 +86,24 @@ _RAM_CODE static void conn_prepare_event(ll_sm_t* ll,ll_internal_connection_ctrl
 #if defined (BLE_SUPPORT_PER)
 _RAM_CODE static int peri_conn_event_sch_start(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
 {
-	conn_prepare_event();
-	conn_prepare_new_pdu();
-	conn_prepare_phy();
-
+//	conn_prepare_event();//to put what info?
+	connParam->eventCounter++;
+	if(connParam->peer.nesn == connParam->sn)
+	{
+		conn_prepare_pdu(CONN_NEW_PDU);
+		connParam->sn = (~connParam->sn);
+	}
+	else
+	{
+		conn_prepare_pdu(CONN_LAST_PDU);
+	}
+	conn_prepare_phy(ll,connParam,ll->sch.timestamp,PHY_DIR_RX);
+	ll->phy.start();
 }
 _RAM_CODE static int peri_conn_event_sch_stop(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
 {
+	ll->phy.stop();
+
 
 }
 _RAM_CODE static int peri_conn_event_sch_passed(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
@@ -95,7 +116,7 @@ _RAM_CODE static int peri_conn_event_sch_canceled(ll_sm_t* ll,ll_internal_connec
 }
 _RAM_CODE static int peri_conn_event_phy_send_finished(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
 {
-
+	//need extended event?
 }
 _RAM_CODE static int peri_conn_event_phy_receive_finished(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
 {
@@ -103,7 +124,7 @@ _RAM_CODE static int peri_conn_event_phy_receive_finished(ll_sm_t* ll,ll_interna
 }
 _RAM_CODE static int peri_conn_event_phy_receive_timeout(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
 {
-
+	//jump to next event
 }
 _RAM_CODE static int peri_conn_event_default_process(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
 {
