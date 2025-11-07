@@ -68,7 +68,7 @@ _RAM_CODE static void conn_prepare_phy(ll_sm_t* ll,ll_internal_connection_ctrl_t
 
 _RAM_CODE static void conn_prepare_event(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
 {
-	//instant jumped judge,
+	//instant jumped info process in stop or passed or canceled
 
 	//connection update?parameter update? 
 }
