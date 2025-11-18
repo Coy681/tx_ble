@@ -29,28 +29,57 @@ typedef struct _PACKED
 	ll_event_e       event;
 }conn_event_sm_t;
 
+/************************************************ conn pdu prepare ***************************************************/
+
+/******************** conn pdu category *******************/
 #define CONN_LAST_PDU    0
 #define CONN_NEW_PDU     1
 
+/******************** conn pdu type ***********************/
+#define CONN_CTRL_PDU    0
+#define CONN_DATA_PDU    1
+#define CONN_EMPTY_PDU   2
+
 _RAM_CODE static void conn_prepare_pdu(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam,_u8 type)
 {
+	int md = 0;
 	if(type == CONN_LAST_PDU)
 	{
-
+		if(connParam->lastPduType!=CONN_EMPTY_PDU)
+		{
+			ll_acl_packet_make(ll->phy.txAddress,connParam->nesn,connParam->sn,0);
+			return;
+		}
 	}
 	else
 	{
-		if(!connParam->ctrl.pending&&connParam->ctrl.out.nodeCnt!=0)
+		if(connParam->ctrl.out.nodeCnt!=0&&(!connParam->ctrl.pending))
 		{
-			ll->phy.txAddress = ;//new control pdu
+			ll->phy.txAddress = (_u8*)connParam->ctrl.out.popNodeInOrder(&connParam->ctrl.out);
+			if((connParam->ctrl.out.nodeCnt!=0) || (connParam->data.out.rbCnt(&connParam->data.out)!=0))
+			{
+				md = 1;
+			}
+			ll_acl_packet_make(ll->phy.txAddress,connParam->nesn,connParam->sn,md);
 		}
-		else
+		else if(!connParam->data.out.isEmpty(&connParam->data.out))
 		{
-			ll->phy.txAddress = ;//new data pdu
+			conn_prepare_data_pdu(ll,connParam);;//new control pdu
+			ll->phy.txAddress = (_u8*)connParam->data.out.getReadPtr(&connParam->data.out);
+			if((connParam->ctrl.out.nodeCnt!=0&&(!connParam->ctrl.pending))\
+			|| (connParam->data.out.rbCnt(&connParam->data.out)>1))
+			{
+				md = 1;
+			}
+			ll_acl_packet_make(ll->phy.txAddress,connParam->nesn,connParam->sn,md);
 		}
 	}
+	ll->phy.txAddress = ll_get_shared_phy_tx_address();
+	ll_acl_packet_data_prepare(ll->phy.txAddress,0,LL_LLID_CONTINUE_OR_EMPTY_PDU);
+	ll_acl_packet_make(ll->phy.txAddress,connParam->nesn,connParam->sn,md);
 }
 
+/************************************************ conn pdu prepare ***************************************************/
 _RAM_CODE static void conn_prepare_phy(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam,_u32 timestamp,phy_dir_e phydir)
 {
 	/**
@@ -84,9 +113,18 @@ _RAM_CODE static void conn_prepare_event(ll_sm_t* ll,ll_internal_connection_ctrl
 }
 
 #if defined (BLE_SUPPORT_PER)
+
+_RAM_CODE static int peri_conn_update_anchor_point(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
+{
+	connParam->anchor  +=connParam->interval;
+	_u32 windowWiden   = ll_ca_cal_window_winden(LL_CA_TYPE_SLEEP,connParam->peer.sca,0,((ll_conn_peri_t*)connParam->info)->lastSyncTime,connParam->anchor+connParam->duration);
+	ll->sch.timestamp  = connParam->anchor - windowWiden;
+	ll->sch.duration   = connParam->duration + 2*windowWiden;
+	connParam->timeout = windowWiden+200;
+}
+
 _RAM_CODE static int peri_conn_event_sch_start(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
 {
-//	conn_prepare_event();//to put what info?
 	connParam->eventCounter++;
 	if(connParam->peer.nesn == connParam->sn)
 	{
@@ -103,7 +141,7 @@ _RAM_CODE static int peri_conn_event_sch_start(ll_sm_t* ll,ll_internal_connectio
 _RAM_CODE static int peri_conn_event_sch_stop(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
 {
 	ll->phy.stop();
-
+	peri_conn_update_anchor_point(ll,connParam);
 
 }
 _RAM_CODE static int peri_conn_event_sch_passed(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
@@ -207,7 +245,7 @@ int ble_ll_enter_connection_state(ble_ll_event_e event)
     	/*default tx and rx max octet is 27,and max time is 328us in 1M
     	 *before LL DATA Length Update procedure,ll can only use 27 octets and 328us
     	 */
-		ll->conn->data.maxTxOctets    = 27;
+		ll->conn->data.maxTxOctets    = 27; 	
 		ll->conn->data.maxTxTime      = 328;
 		ll->conn->data.maxRxOctets    = 27;
 		ll->conn->data.maxRxTime      = 328;

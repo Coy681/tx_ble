@@ -340,7 +340,8 @@ typedef struct _PACKED
     _u8  nesn:1;
     _u8  md:1;
     _u8  rsvd:1;
-	_u8  rsvd1;
+    _u8  lastPduType:3;
+	_u8  rsvd1:5;
 	_u16 eventCounter;
 	_u16 latency;
 	_u16 timeout;
@@ -348,6 +349,7 @@ typedef struct _PACKED
 	_u32 anchor;
 	_u32 duration;
 	_u32 interval;
+	_u32 lastSync;
 
 
 	ll_conn_peer_t        peer;

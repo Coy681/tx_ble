@@ -24,6 +24,12 @@ static int tx_rb_is_full(tx_rb_t* rb)
     return (((rb->wPtr - rb->rPtr) % rb->num) == rb->num - 1);
 }
 
+static int tx_rb_data_count(tx_rb_t* rb)
+{
+    ASSERT(rb != NULL && rb->num > 0);
+    return (rb->wPtr - rb->rPtr) % rb->num;
+}
+
 static _u8* tx_rb_get_read_pointer(tx_rb_t* rb)
 {
     ASSERT(rb != NULL);
@@ -61,6 +67,7 @@ void tx_rb_init(tx_rb_t* rb,_u16 size,_u16 num)
     rb->getWritePtr = tx_rb_get_write_pointer;
     rb->moveReadPtr = tx_rb_move_read_pointer;
     rb->moveWritePtr= tx_rb_move_write_pointer;
+    rb->rbCnt       = tx_rb_data_count;
 }
 
 #endif /* BUFFER_C_ */

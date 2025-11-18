@@ -19,6 +19,7 @@ typedef struct tx_rb_t
 	_u16 rPtr;
 	int  (*isEmpty)(tx_rb_t*);
 	int  (*isFull)(tx_rb_t*);
+	int  (*rbCnt)(tx_rb_t*);
 	_u8* (*getReadPtr)(tx_rb_t*);
 	_u8* (*getWritePtr)(tx_rb_t*);
 	void (*moveReadPtr)(tx_rb_t*);
