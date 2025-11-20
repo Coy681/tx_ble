@@ -114,10 +114,9 @@ _RAM_CODE static void conn_prepare_event(ll_sm_t* ll,ll_internal_connection_ctrl
 
 #if defined (BLE_SUPPORT_PER)
 
-_RAM_CODE static int peri_conn_update_anchor_point(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
+_RAM_CODE static int peri_conn_prepare_next_event_schedule(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam,_u32 anchor)
 {
-	connParam->anchor  +=connParam->interval;
-	_u32 windowWiden   = ll_ca_cal_window_winden(LL_CA_TYPE_SLEEP,connParam->peer.sca,0,((ll_conn_peri_t*)connParam->info)->lastSyncTime,connParam->anchor+connParam->duration);
+	_u32 windowWiden   = ll_ca_cal_window_winden(LL_CA_TYPE_SLEEP,connParam->peer.sca,0,((ll_conn_peri_t*)connParam->info)->lastSyncTime,anchor+connParam->duration);
 	ll->sch.timestamp  = connParam->anchor - windowWiden;
 	ll->sch.duration   = connParam->duration + 2*windowWiden;
 	connParam->timeout = windowWiden+200;
@@ -126,6 +125,59 @@ _RAM_CODE static int peri_conn_update_anchor_point(ll_sm_t* ll,ll_internal_conne
 _RAM_CODE static int peri_conn_event_sch_start(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
 {
 	connParam->eventCounter++;
+	conn_prepare_phy(ll,connParam,ll->sch.timestamp,PHY_DIR_RX);
+	ll->phy.start();
+	return 1;
+}
+_RAM_CODE static int peri_conn_event_sch_stop(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
+{
+	ll->phy.stop();
+	connParam->anchor  += connParam->interval;
+	peri_conn_prepare_next_event_schedule(ll,connParam,connParam->anchor);
+	return 1;
+}
+_RAM_CODE static int peri_conn_event_sch_passed(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
+{
+	_u32 currentTime        = system_time();
+    _u32 periodicInt        = (currentTime - connParam->anchor)/connParam->interval;
+    _u32 periodicRemain     = (currentTime - connParam->anchor)%connParam->interval;
+    connParam->eventCounter+=  periodicInt;
+	connParam->anchor      += (periodicInt*connParam->interval);
+    _u32 windowWiden        = ll_ca_cal_window_winden(LL_CA_TYPE_SLEEP,connParam->peer.sca,0,((ll_conn_peri_t*)connParam->info)->lastSyncTime,connParam->anchor+connParam->duration);
+	if(periodicRemain<(windowWiden+ll->sch.startLatency))
+	{
+	    connParam->eventCounter++;
+		connParam->anchor      += connParam->interval;
+	}
+	peri_conn_prepare_next_event_schedule(ll,connParam,connParam->anchor);
+	return 1;
+}
+_RAM_CODE static int peri_conn_event_sch_canceled(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
+{
+    connParam->eventCounter++;
+    connParam->anchor += connParam->interval;
+	peri_conn_prepare_next_event_schedule(ll,connParam,connParam->anchor);
+	return 1;
+}
+_RAM_CODE static int peri_conn_event_phy_send_finished(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
+{
+	//need extended event?
+	if(connParam->peer.md)
+	{
+		_u32 targetTime = system_time()+500;//need optimize
+		if(sch_task_extended(targetTime))
+		{
+			//start receive
+			return 1;
+		}
+		else
+		{
+			return 0;
+		}
+	}
+}
+_RAM_CODE static int peri_conn_event_phy_receive_finished(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
+{
 	if(connParam->peer.nesn == connParam->sn)
 	{
 		conn_prepare_pdu(CONN_NEW_PDU);
@@ -135,38 +187,18 @@ _RAM_CODE static int peri_conn_event_sch_start(ll_sm_t* ll,ll_internal_connectio
 	{
 		conn_prepare_pdu(CONN_LAST_PDU);
 	}
-	conn_prepare_phy(ll,connParam,ll->sch.timestamp,PHY_DIR_RX);
-	ll->phy.start();
-}
-_RAM_CODE static int peri_conn_event_sch_stop(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
-{
-	ll->phy.stop();
-	peri_conn_update_anchor_point(ll,connParam);
-
-}
-_RAM_CODE static int peri_conn_event_sch_passed(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
-{
-
-}
-_RAM_CODE static int peri_conn_event_sch_canceled(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
-{
-
-}
-_RAM_CODE static int peri_conn_event_phy_send_finished(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
-{
-	//need extended event?
-}
-_RAM_CODE static int peri_conn_event_phy_receive_finished(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
-{
-
+	return 1;
 }
 _RAM_CODE static int peri_conn_event_phy_receive_timeout(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
 {
-	//jump to next event
+	ll->phy.stop();
+	sch_stop_task_early();
+	return 1;
 }
 _RAM_CODE static int peri_conn_event_default_process(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
 {
-
+	ll->phy.stop();
+	return 1;
 }
 static conn_event_sm_t peri_conn_event_state_machine[] =
 {

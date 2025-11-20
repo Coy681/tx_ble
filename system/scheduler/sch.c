@@ -491,12 +491,16 @@ _RAM_CODE _u32 sch_get_task_extended_boundary(void)
 	}
 }
 
-_RAM_CODE void sch_task_extended(_u32 targetTime)
+_RAM_CODE int sch_task_extended(_u32 targetTime)
 {
-	_u32 captureTime = system_time()+10;
+	_u32 captureTime = system_time()+200;
 	if(txCompareTime(targetTime,captureTime))
 	{
 		captureTime = targetTime;
+	}
+	else
+	{
+		return 0;
 	}
 	if(POINTER_VALID(schCtrl.pWaitingList))
 	{
@@ -505,8 +509,13 @@ _RAM_CODE void sch_task_extended(_u32 targetTime)
 		{
 			captureTime = taskBoundary;
 		}
+		else
+		{
+			return 0;
+		}
 	}
 	hal_stimer_set_capture(captureTime);
+	return 1;
 }
 
 

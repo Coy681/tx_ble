@@ -349,7 +349,6 @@ typedef struct _PACKED
 	_u32 anchor;
 	_u32 duration;
 	_u32 interval;
-	_u32 lastSync;
 
 
 	ll_conn_peer_t        peer;
