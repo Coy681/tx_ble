@@ -189,19 +189,19 @@ _RAM_CODE static int peri_conn_event_phy_receive_finished(ll_sm_t* ll,ll_interna
 
 		//if there is enough space to store packet,then allow central send next packet
 		if((pdu->hdr.llId == LL_LLID_CONTROL_PDU&&(connParam->ctrl.in.freeCnt != 0))\
-	       ||(pdu->hdr.llId != LL_LLID_CONTROL_PDU &&(connParam->data.in.rbCnt != 0)))
+	     ||(pdu->hdr.llId != LL_LLID_CONTROL_PDU&&(!connParam->data.in.isFull(&connParam->data.in))))
 		{
 			connParam->nesn = (~connParam->nesn);
 		}
 		//prepare next packet
 		if(connParam->peer.nesn != connParam->sn)
 		{
-			conn_prepare_pdu(CONN_NEW_PDU);
+			conn_prepare_pdu(ll,connParam,CONN_NEW_PDU);
 			connParam->sn = (~connParam->sn);
 		}
 		else
 		{
-			conn_prepare_pdu(CONN_LAST_PDU);
+			conn_prepare_pdu(ll,connParam,CONN_LAST_PDU);
 		}
 		((ll_conn_peri_t*)connParam->info)->lastSyncTime = ll->phy.hw_get_rx_air_ts;
 		connParam->connPhyTs = ll->phy.hw_get_rx_air_ts + ll_get_air_packet_time(connParam->rxPhyMode,pdu->hdr.length,connParam->enc)+connParam->tifs_cp;
@@ -220,8 +220,7 @@ _RAM_CODE static int peri_conn_event_phy_receive_finished(ll_sm_t* ll,ll_interna
 			{
 				packetAddr = connParam->data.in.getWritePtr(&connParam->data.in);;
 			}
-			_u32 packetTotalLen = 2+pdu->hdr.length+(connParam->enc?4:0);
-			txMemcpy(packetAddr,(_u8*)pdu,packetTotalLen);
+			txMemcpy(packetAddr,(_u8*)pdu->data,pdu->hdr.length+(connParam->enc?4:0));
 		}
 		return 1;
 	}
@@ -309,6 +308,36 @@ static void conn_phy_irq_callback(_u8 type)
 
 }
 
+static int connect_update_ind_process(_u8* data)
+{
+
+}
+
+conn_ctrl_pdu_process_t ctrlPduProcess[] = 
+{
+	{LL_CTRL_PDU_CONNECTION_UPDATE_IND,connect_update_ind_process}
+};
+
+static void conn_ctrl_pdu_process(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
+{
+	if(connParam->ctrl.in.nodeCnt)
+	{
+		_u8* data = (ll_acl_packet_t*)connParam->ctrl.in.popNodeInOrder(&connParam->ctrl.in);
+		//maybe need decrypt
+		int ret = 0;
+		for(int i=0;i<(sizeof(ctrlPduProcess)/sizeof(ctrlPduProcess[0]));i++)
+		{
+			if(ctrlPduProcess[i].opcode == data[0]&&POINTER_VALID(ctrlPduProcess[i].process))
+			{
+				ret = ctrlPduProcess[i].process(data);
+			}
+		}
+		if(ret==0)
+		{
+			//unknow pdu
+		}
+	}
+}
 
 int ble_ll_enter_connection_state(ble_ll_event_e event)
 {

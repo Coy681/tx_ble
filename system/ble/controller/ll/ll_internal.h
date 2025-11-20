@@ -7,6 +7,8 @@
 #include"ll_feature.h"
 #include"ll_property.h"
 #include"channel/channel.h"
+#include"accuracy/accuracy.h"
+
  #ifndef LL_INTERNAL_H_
  #define LL_INTERNAL_H_
 
