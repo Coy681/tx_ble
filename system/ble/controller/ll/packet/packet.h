@@ -104,12 +104,12 @@ typedef union
         _u8 rfu:2;
         _u8 length;
     };
-}ll_data_packet_hdr_u;
+}ll_acl_packet_hdr_u;
 typedef struct 
 {
-    ll_data_packet_hdr_u hdr;
+	ll_acl_packet_hdr_u hdr;
     _u8 data[2];
-}ll_data_packet_t;
+}ll_acl_packet_t;
 
 enum
 {

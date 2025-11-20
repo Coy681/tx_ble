@@ -339,10 +339,13 @@ typedef struct _PACKED
     _u8  sn:1;
     _u8  nesn:1;
     _u8  md:1;
-    _u8  rsvd:1;
+    _u8  enc:1;
     _u8  lastPduType:3;
-	_u8  rsvd1:5;
+    _u8  txPhyMode:2;//phy_mode_e
+    _u8  rxPhyMode:2;//phy_mode_e
+	_u8  rsvd1:1;
 	_u16 eventCounter;
+
 	_u16 latency;
 	_u16 timeout;
 
@@ -350,6 +353,10 @@ typedef struct _PACKED
 	_u32 duration;
 	_u32 interval;
 
+	_u16 tifs_cp;
+	_u16 tifs_pc;
+
+	_u32 connPhyTs;
 
 	ll_conn_peer_t        peer;
 	ll_conn_data_t        data;

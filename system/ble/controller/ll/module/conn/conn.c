@@ -80,13 +80,13 @@ _RAM_CODE static void conn_prepare_pdu(ll_sm_t* ll,ll_internal_connection_ctrl_t
 }
 
 /************************************************ conn pdu prepare ***************************************************/
-_RAM_CODE static void conn_prepare_phy(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam,_u32 timestamp,phy_dir_e phydir)
+_RAM_CODE static void conn_prepare_phy(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam,_u32 timestamp,phy_dir_e phyDir)
 {
 	/**
 	 *  phy parameters not assign here:
 	 *  - access code  :assigned in conn stage
 	 *  - crc init     :assigned in conn stage
-	 *  - rx timeout   :assigned in conn stage,will not change.
+	 *  - rx timeout   :assigned in conn stage,maybe changed by window widen.
 	 *  - phy mode     :assigned in conn stage,and maybe update in connection.
 	 *  - rx max octets:assigned in conn stage,and maybe update in connection.
 	 *  - tx/rx address:maybe change each event,assigned in api 'conn_prepare_new_pdu'
@@ -100,16 +100,10 @@ _RAM_CODE static void conn_prepare_phy(ll_sm_t* ll,ll_internal_connection_ctrl_t
 	connParam->csa.counter = connParam->eventCounter;
 	ll->phy.chnIdx = ll_csa_cal_channel_index(&connParam->csa);
 	/* phy tx or rx */
-	ll->phy.dir = phydir;
+	ll->phy.dir = phyDir;
 	/* phy timestamp */
 	ll->phy.timestamp = timestamp;
-}
-
-_RAM_CODE static void conn_prepare_event(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
-{
-	//instant jumped info process in stop or passed or canceled
-
-	//connection update?parameter update? 
+	ll->phy.mode = (phyDir == PHY_DIR_TX?connParam->txPhyMode:connParam->rxPhyMode);
 }
 
 #if defined (BLE_SUPPORT_PER)
@@ -124,7 +118,9 @@ _RAM_CODE static int peri_conn_prepare_next_event_schedule(ll_sm_t* ll,ll_intern
 
 _RAM_CODE static int peri_conn_event_sch_start(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
 {
+    phy_obj_cast(&ll->phy);
 	connParam->eventCounter++;
+	ll->phy.rxAddress = ll_get_shared_phy_rx_address();
 	conn_prepare_phy(ll,connParam,ll->sch.timestamp,PHY_DIR_RX);
 	ll->phy.start();
 	return 1;
@@ -167,27 +163,73 @@ _RAM_CODE static int peri_conn_event_phy_send_finished(ll_sm_t* ll,ll_internal_c
 		_u32 targetTime = system_time()+500;//need optimize
 		if(sch_task_extended(targetTime))
 		{
+			//prepare phy rx schedule by last sent packet
+			ll_acl_packet_t* pdu = (ll_acl_packet_t*)(ll->phy.txAddress + ll_get_packet_header_offset_from_address(PHY_DIR_TX));
+			connParam->connPhyTs = connParam->connPhyTs + ll_get_air_packet_time(connParam->txPhyMode,pdu->hdr.length,connParam->enc)+connParam->tifs_pc;;
+			conn_prepare_phy(ll,connParam,connParam->connPhyTs,PHY_DIR_RX);
 			//start receive
+			ll->phy.start();
 			return 1;
 		}
 		else
 		{
+			sch_stop_task_early();
 			return 0;
 		}
 	}
 }
 _RAM_CODE static int peri_conn_event_phy_receive_finished(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
 {
-	if(connParam->peer.nesn == connParam->sn)
+	if(ll->phy.hw_is_rx_packet_valid())
 	{
-		conn_prepare_pdu(CONN_NEW_PDU);
-		connParam->sn = (~connParam->sn);
+		ll_acl_packet_t* pdu = (ll_acl_packet_t*)(ll->phy.rxAddress + ll_get_packet_header_offset_from_address(PHY_DIR_RX));
+		connParam->peer.sn   = pdu->hdr.sn;
+		connParam->peer.nesn = pdu->hdr.nesn;
+		connParam->peer.md   = pdu->hdr.md;
+
+		//if there is enough space to store packet,then allow central send next packet
+		if((pdu->hdr.llId == LL_LLID_CONTROL_PDU&&(connParam->ctrl.in.freeCnt != 0))\
+	       ||(pdu->hdr.llId != LL_LLID_CONTROL_PDU &&(connParam->data.in.rbCnt != 0)))
+		{
+			connParam->nesn = (~connParam->nesn);
+		}
+		//prepare next packet
+		if(connParam->peer.nesn != connParam->sn)
+		{
+			conn_prepare_pdu(CONN_NEW_PDU);
+			connParam->sn = (~connParam->sn);
+		}
+		else
+		{
+			conn_prepare_pdu(CONN_LAST_PDU);
+		}
+		((ll_conn_peri_t*)connParam->info)->lastSyncTime = ll->phy.hw_get_rx_air_ts;
+		connParam->connPhyTs = ll->phy.hw_get_rx_air_ts + ll_get_air_packet_time(connParam->rxPhyMode,pdu->hdr.length,connParam->enc)+connParam->tifs_cp;
+		//prepare phy tx schedule by receiving packet
+		conn_prepare_phy(ll,connParam,connParam->connPhyTs,PHY_DIR_TX);
+		ll->phy.start();
+		//packet push
+		if(pdu->hdr.length!=0)
+		{
+			_u8* packetAddr = NULL;
+			if(pdu->hdr.llId == LL_LLID_CONTROL_PDU)
+			{
+				packetAddr = connParam->ctrl.in.allocNode(&connParam->ctrl.in,0);
+			}
+			else
+			{
+				packetAddr = connParam->data.in.getWritePtr(&connParam->data.in);;
+			}
+			_u32 packetTotalLen = 2+pdu->hdr.length+(connParam->enc?4:0);
+			txMemcpy(packetAddr,(_u8*)pdu,packetTotalLen);
+		}
+		return 1;
 	}
 	else
 	{
-		conn_prepare_pdu(CONN_LAST_PDU);
+		sch_stop_task_early();
+		return 0;
 	}
-	return 1;
 }
 _RAM_CODE static int peri_conn_event_phy_receive_timeout(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
 {
@@ -328,6 +370,8 @@ int ble_ll_enter_connection_state(ble_ll_event_e event)
 
     ll->phy.hw_irq_cb     = conn_phy_irq_callback;
     ll->sch.cb            = conn_sch_callback;
+    ll->conn->tifs_cp     = 150;
+    ll->conn->tifs_pc     = 150;
 	LOG_TRACE(LL_LOG_TRACE,"enter connection state",0,0)
     return 1;
 }
