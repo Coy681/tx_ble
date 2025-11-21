@@ -231,7 +231,7 @@ _RAM_CODE static int peri_conn_event_phy_receive_finished(ll_sm_t* ll,ll_interna
 			{
 				packetAddr = connParam->data.in.getWritePtr(&connParam->data.in);;
 			}
-			txMemcpy(packetAddr,(_u8*)pdu->data,pdu->hdr.length+(connParam->enc?4:0));
+			txMemcpy(packetAddr,(_u8*)&pdu->hdr,2+pdu->hdr.length+(connParam->enc?4:0));
 		}
 		return 1;
 	}
@@ -319,31 +319,38 @@ static void conn_phy_irq_callback(_u8 type)
 
 }
 
+/*
+ * return 0 means analyze failed,shall send unknow pdu
+ * return 1 means analyze success
+ */
 static int connect_update_ind_process(_u8* data)
 {
-
+	ll_ctrlPdu_connection_update_ind_t *ind = (ll_ctrlPdu_connection_update_ind_t*)data;
+	return 1;
 }
 
 conn_ctrl_pdu_process_t ctrlPduProcess[] = 
 {
-	{LL_CTRL_PDU_CONNECTION_UPDATE_IND,connect_update_ind_process}
+	{LL_CTRL_PDU_CONNECTION_UPDATE_IND,sizeof(ll_ctrlPdu_connection_update_ind_t),connect_update_ind_process}
 };
 
 static void conn_ctrl_pdu_process(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam)
 {
 	if(connParam->ctrl.in.nodeCnt)
 	{
-		_u8* data = (ll_acl_packet_t*)connParam->ctrl.in.popNodeInOrder(&connParam->ctrl.in);
+		ll_acl_packet_t* pdu = (ll_acl_packet_t*)connParam->ctrl.in.popNodeInOrder(&connParam->ctrl.in);
 		//maybe need decrypt？
 		int ret = 0;
 		for(int i=0;i<(sizeof(ctrlPduProcess)/sizeof(ctrlPduProcess[0]));i++)
 		{
-			if(ctrlPduProcess[i].opcode == data[0]&&POINTER_VALID(ctrlPduProcess[i].process))
+			if(ctrlPduProcess[i].opcode == pdu->data[0]\
+			 &&POINTER_VALID(ctrlPduProcess[i].process)\
+			 &&ctrlPduProcess[i].length == (pdu->hdr.length-1))
 			{
-				ret = ctrlPduProcess[i].process(data);
+				ret = ctrlPduProcess[i].process(&pdu->data[1]);
 			}
 		}
-		connParam->ctrl.in.freeNode(&connParam->ctrl.in,data);
+		connParam->ctrl.in.freeNode(&connParam->ctrl.in,(_u8*)pdu);
 		if(ret==0)
 		{
 			//unknow pdu

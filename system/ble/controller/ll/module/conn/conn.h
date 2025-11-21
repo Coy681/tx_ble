@@ -10,7 +10,8 @@ typedef enum
 typedef int (*conn_ctrl_pdu_process_f)(_u8* data);
 typedef struct
 {
-	ll_ctrlPdu_opcode_e      opcode;
+	_u16      opcode;
+	_u16      length;
 	conn_ctrl_pdu_process_f  process;
 }conn_ctrl_pdu_process_t;
 
