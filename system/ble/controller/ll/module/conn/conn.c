@@ -61,6 +61,7 @@ _RAM_CODE static void conn_prepare_pdu(ll_sm_t* ll,ll_internal_connection_ctrl_t
 				md = 1;
 			}
 			ll_acl_packet_make(ll->phy.txAddress,connParam->nesn,connParam->sn,md);
+			connParam->lastPduType = CONN_CTRL_PDU;
 		}
 		else if(!connParam->data.out.isEmpty(&connParam->data.out))
 		{
@@ -72,11 +73,13 @@ _RAM_CODE static void conn_prepare_pdu(ll_sm_t* ll,ll_internal_connection_ctrl_t
 				md = 1;
 			}
 			ll_acl_packet_make(ll->phy.txAddress,connParam->nesn,connParam->sn,md);
+			connParam->lastPduType = CONN_DATA_PDU;
 		}
 	}
 	ll->phy.txAddress = ll_get_shared_phy_tx_address();
 	ll_acl_packet_data_prepare(ll->phy.txAddress,0,LL_LLID_CONTINUE_OR_EMPTY_PDU);
 	ll_acl_packet_make(ll->phy.txAddress,connParam->nesn,connParam->sn,md);
+	connParam->lastPduType = CONN_EMPTY_PDU;
 }
 
 /************************************************ conn pdu prepare ***************************************************/
@@ -196,8 +199,16 @@ _RAM_CODE static int peri_conn_event_phy_receive_finished(ll_sm_t* ll,ll_interna
 		//prepare next packet
 		if(connParam->peer.nesn != connParam->sn)
 		{
-			conn_prepare_pdu(ll,connParam,CONN_NEW_PDU);
+			if(connParam->lastPduType == CONN_CTRL_PDU)
+			{
+				connParam->ctrl.out.freeNode(&connParam->ctrl.out,ll->phy.txAddress);
+			}
+			else if(connParam->lastPduType == CONN_DATA_PDU)
+			{
+				connParam->data.out.moveReadPtr(&connParam->data.out);
+			}
 			connParam->sn = (~connParam->sn);
+			conn_prepare_pdu(ll,connParam,CONN_NEW_PDU);
 		}
 		else
 		{
@@ -323,7 +334,7 @@ static void conn_ctrl_pdu_process(ll_sm_t* ll,ll_internal_connection_ctrl_t* con
 	if(connParam->ctrl.in.nodeCnt)
 	{
 		_u8* data = (ll_acl_packet_t*)connParam->ctrl.in.popNodeInOrder(&connParam->ctrl.in);
-		//maybe need decrypt
+		//maybe need decrypt？
 		int ret = 0;
 		for(int i=0;i<(sizeof(ctrlPduProcess)/sizeof(ctrlPduProcess[0]));i++)
 		{
@@ -332,6 +343,7 @@ static void conn_ctrl_pdu_process(ll_sm_t* ll,ll_internal_connection_ctrl_t* con
 				ret = ctrlPduProcess[i].process(data);
 			}
 		}
+		connParam->ctrl.in.freeNode(&connParam->ctrl.in,data);
 		if(ret==0)
 		{
 			//unknow pdu
