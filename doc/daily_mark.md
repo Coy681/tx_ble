@@ -79,7 +79,29 @@ receiverAllowance悠接收机自己确定
 - ACL DATA从HOST下发会存储到Conctroller的HCI ACL DATA BUFFER里面，同理，ISO DATA从HOST下发会存储到Conctroller的HCI ISO DATA BUFFER里面
 - Host通过HCI下发的ACL DATA和ISO DATA会通过拆包拆到Controller的PHY TX FIFO里面
 
-# 20251020
+# 20251125
 
+对于Subrate和Latency的理解
 
-  
+## Subrate的意义
+
+对于连续的connection event,central和peripheral可以协商，从指定的事件开始，只再固定的事件中活动，活动的规则如下
+
+subrateBaseEvent   - 即subrate生效的起始事件
+subrateEvent       - subrate生效的连接事件，注意，只有一个事件
+subrateFactor      - 两个subrateEvent的间隔，单位是connection event，范围是1-500，为1的时候相当于subrate不生效
+continuationEvent  - 当前事件之前continuationEvent个事件中有非零数据包的事件称为continuationEvent，这个比较难以理解
+
+具体参考core sepc 6.0，page 3091
+
+## Subrate不生效的时候，peripheral latency的意义：
+
+peripheral可以忽略central的事件数(connection event)，注意是忽略,从某个sync成功的事件开始，peripheral可以忽略latency number个数量的主机事件
+
+注意：**subrate不生效的时候，peripheral latency生效的基础是connnection event**
+
+## Subrate生效的时候，和peripheral latency结合起来的意义
+
+peripheral可以忽略central的subrate事件数，相当于在基础peripheral latency的基础上叠加了一个subrateEvent的概念    
+
+注意：**subrate生效的时候，peripheral latency生效的基础是subrate event**

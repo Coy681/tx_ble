@@ -235,7 +235,7 @@ _RAM_CODE static int peri_conn_event_phy_receive_finished(ll_sm_t* ll,ll_interna
 		}
 		return 1;
 	}
-	else
+	else//even if crc invalid,peripheral shall send packet
 	{
 		sch_stop_task_early();
 		return 0;
