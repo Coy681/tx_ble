@@ -369,6 +369,8 @@ typedef struct _PACKED
 }ll_internal_connection_ctrl_t;
 
 
+
+
 /***********************ll scanning sate**********************/
 typedef struct _PACKED
 {
@@ -427,6 +429,8 @@ typedef struct _PACKED
         _u8 addrType;
         _u8 addr[6];
     }filterAcceptList[BLE_FILTER_ACCEPT_LIST_SIZE];
+    #if(LL_SUPPORT_CONNECTION_SUBRATING)
+    #endif
     ll_sm_t* sm;
 }ll_t;
 

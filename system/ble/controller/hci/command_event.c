@@ -1369,7 +1369,7 @@ controller_error_code_e le_test_end_process(_u8* data,_u8 length,bt_hci_event_t*
 }
 
 // LE_CLEAR_ADVERTISING_SETS_PROCESS
-struct le_clear_advertising_sets_process_retParam_t
+struct _PACKED le_clear_advertising_sets_process_retParam_t
 {
     _u8 status;
 };
@@ -1383,11 +1383,11 @@ controller_error_code_e le_clear_advertising_sets_process(_u8* data,_u8 length,b
 }
 
 //LE_REMOVE_ADVERTISING_SET_PROCESS
-struct le_remove_advertising_set_process_param_t
+struct _PACKED le_remove_advertising_set_process_param_t
 {
     _u8 handle;
 };
-struct le_remove_advertising_set_process_retParam_t
+struct _PACKED le_remove_advertising_set_process_retParam_t
 {
     _u8 status;
 };
@@ -1402,12 +1402,12 @@ controller_error_code_e le_remove_advertising_set_process(_u8* data,_u8 length,b
 }
 
 //LE_SET_ADVERTISING_SET_RANDOM_ADDRESS_PROCESS
-struct le_set_advertising_set_random_address_process_param_t
+struct _PACKED le_set_advertising_set_random_address_process_param_t
 {
     _u8 handle;
     _u8 address[6];
 };
-struct le_set_advertising_set_random_address_process_retParam_t
+struct _PACKED le_set_advertising_set_random_address_process_retParam_t
 {
     _u8 status;
 };
@@ -1421,7 +1421,7 @@ controller_error_code_e le_set_advertising_set_random_address_process(_u8* data,
     return status;
 }
 //LE_READ_MAXIMUM_ADVERTISING_DATA_LENGTH_PROCESS
-struct le_read_maximum_advertising_data_length_process_retParam_t
+struct _PACKED le_read_maximum_advertising_data_length_process_retParam_t
 {
     _u8  status;
     _u16 length;
@@ -1436,7 +1436,7 @@ controller_error_code_e le_read_maximum_advertising_data_length_process(_u8* dat
 }
 
 //LE_READ_NUMBER_OF_SUPPORTED_ADVERTISING_SETS_PROCESS
-struct le_read_number_of_supported_advertising_sets_process_retParam_t
+struct _PACKED le_read_number_of_supported_advertising_sets_process_retParam_t
 {
     _u8  status;
     _u8  number;
@@ -1451,7 +1451,7 @@ controller_error_code_e le_read_number_of_supported_advertising_sets_process(_u8
 }
 
 //LE_SET_EXTENDED_ADVERTISING_DATA_PROCESS
-struct le_set_extended_advertising_data_process_param_t
+struct _PACKED le_set_extended_advertising_data_process_param_t
 {
     _u8  handle;
     _u8  operation;
@@ -1459,7 +1459,7 @@ struct le_set_extended_advertising_data_process_param_t
     _u8  length;
     _u8  data[0];
 };
-struct le_set_extended_advertising_data_process_retParam_t
+struct _PACKED le_set_extended_advertising_data_process_retParam_t
 {
     _u8  status;
 };
@@ -1474,7 +1474,7 @@ controller_error_code_e le_set_extended_advertising_data_process(_u8* data,_u8 l
 }
 
 //LE_SET_EXTENDED_SCAN_RESPONSE_DATA_PROCESS
-struct le_set_extended_scan_response_data_process_param_t
+struct _PACKED le_set_extended_scan_response_data_process_param_t
 {
     _u8  handle;
     _u8  operation;
@@ -1482,7 +1482,7 @@ struct le_set_extended_scan_response_data_process_param_t
     _u8  length;
     _u8  data[0];
 };
-struct le_set_extended_scan_response_data_process_retParam_t
+struct _PACKED le_set_extended_scan_response_data_process_retParam_t
 {
     _u8  status;
 };
@@ -1497,13 +1497,13 @@ controller_error_code_e le_set_extended_scan_response_data_process(_u8* data,_u8
 }
 
 //LE_SET_EXTENDED_ADVERTISING_ENABLE_PROCESS
-struct le_set_extended_advertising_enable_process_param_t
+struct _PACKED le_set_extended_advertising_enable_process_param_t
 {
     _u8  enable;
     _u8  numSets;
     _u8  set[0];
 };
-struct le_set_extended_advertising_enable_process_retParam_t
+struct _PACKED le_set_extended_advertising_enable_process_retParam_t
 {
     _u8  status;
 };
@@ -1518,7 +1518,7 @@ controller_error_code_e le_set_extended_advertising_enable_data_process(_u8* dat
 }
 
 //LE_SET_EXTENDED_ADVERTISING_PARAMETERS_PROCESS
-struct le_set_extended_advertising_parameters_process_param_t
+struct _PACKED le_set_extended_advertising_parameters_process_param_t
 {
     _u8  handle;
     _u16 eventProperty;
@@ -1538,7 +1538,7 @@ struct le_set_extended_advertising_parameters_process_param_t
     _u8  priAdvPhyOpt;
     _u8  secAdvPhyOpt;
 };
-struct le_set_extended_advertising_parameters_process_retParam_t
+struct _PACKED le_set_extended_advertising_parameters_process_retParam_t
 {
     _u8  status;
     _u8  txPower;
@@ -1574,12 +1574,13 @@ controller_error_code_e le_set_extended_advertising_parameters_process(_u8* data
     return status;
 }
 
-struct le_read_buffer_size_retParam_t
+struct _PACKED le_read_buffer_size_retParam_t
 {
     _u8  status;
     _u16 aclDataPacketLen;
     _u8  numOfAclDataPackets;
 };
+
 
 controller_error_code_e le_read_buffer_size(_u8* data,_u8 length,bt_hci_event_t** event)
 {
@@ -1588,6 +1589,44 @@ controller_error_code_e le_read_buffer_size(_u8* data,_u8 length,bt_hci_event_t*
 	retParam->aclDataPacketLen    = HCI_LE_ACL_DATA_LENGTH ;
 	retParam->numOfAclDataPackets = HCI_LE_NUM_OF_ACL_PACKET;
 	return SUCCESS;
+}
+
+//LE_SET_DEFAULT_SUBRATE_PROCESS
+struct _PACKED le_set_default_subrate_process_param_t
+{
+    _u16 subrateMin;//0x001-0x1f4
+    _u16 subrateMax;//0x001-0x1f4
+    _u16 maxLatency;//0x000-0x1f3
+    _u16 continuationNumber;//0x000-0x1f3
+    _u16 supervisionTimeout;//0x00a-0xc80
+};
+struct _PACKED le_set_default_subrate_process_retParam_t
+{
+    _u8 status;
+};
+controller_error_code_e le_set_default_subrate_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+    struct le_set_default_subrate_process_param_t* param = (struct le_set_default_subrate_process_param_t*)data;
+    //command
+    struct le_set_default_subrate_process_retParam_t* retParam = \
+    (struct le_set_default_subrate_process_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct le_set_default_subrate_process_retParam_t),event);
+    retParam->status = 
+    return SUCCESS;
+}
+
+//LE_SUBRATE_REQUEST_PROCESS
+struct _PACKED le_subrate_request_process_param_t
+{
+    _u16 connHandle;//0x000-0xeff
+    _u16 subrateMin;//0x001-0x1f4
+    _u16 subrateMax;//0x001-0x1f4
+    _u16 maxLatency;//0x000-0x1f3
+    _u16 continuationNumber;//0x000-0x1f3
+    _u16 supervisionTimeout;//0x00a-0xc80
+};
+controller_error_code_e le_subrate_request_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+
 }
 
 //special,should put it last

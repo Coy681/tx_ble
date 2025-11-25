@@ -279,4 +279,21 @@ controller_error_code_e ll_set_periodic_advertising_enable(_u8 enable,_u8 advHan
 #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
 #endif
 
+/***********************Bluetooth LE Subrate **************************/
+#if(LL_SUPPORT_CONNECTION_SUBRATING)
+typedef struct _PACKED
+{
+    _u16 subrateMin;//0x001-0x1f4
+    _u16 subrateMax;//0x001-0x1f4
+    _u16 maxLatency;//0x000-0x1f3
+    _u16 continuationNumber;//0x000-0x1f3
+    _u16 supervisionTimeout;//0x00a-0xc80
+}ll_conn_subrate_param_t;
+
+controller_error_code_e ll_set_default_subrate(_u16 connHandle,ll_conn_subrate_param_t* param);
+
 #endif
+
+#endif//LL_H_
+
+

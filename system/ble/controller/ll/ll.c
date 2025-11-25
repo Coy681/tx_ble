@@ -1644,3 +1644,17 @@ controller_error_code_e ll_set_periodic_advertising_enable(_u8 enable,_u8 advHan
 }
 
 #endif
+
+#if(LL_SUPPORT_CONNECTION_SUBRATING)
+
+controller_error_code_e ll_subrate_request(ll_conn_subrate_param_t* param)
+{
+
+}
+
+controller_error_code_e ll_set_default_subrate(_u16 connHandle,ll_conn_subrate_param_t* param)
+{
+	
+}
+
+#endif
