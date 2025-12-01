@@ -2,96 +2,186 @@
 #include"../../ll_internal.h"
 #include"../../ll.h"
 
-#define BLE_ADV_ACCESS_CODE             0xd6be898e
-#define BLE_ADV_CRC_INIT                0x555555
-
-
-#define BLE_ADV_EXTENDED_HEADER_MAX_LEN 64
-#define BLE_ADV_INTERVAL_UNIT           1250
-
-#define BLE_ADV_DEFAULT_RX_TIMEOUT_US  (100+PACKET_DEFAULT_TIFS_TIME)
-
+/***********************Bluetooth LE Advertising **************************/
+typedef enum
+{
+    LL_ADV_IND                     = 0x00,//connectable and scannable undirected advertising,default.
+    LL_ADV_DIRECT_IND_HIGH_DUTY    = 0x01,//connectable high duty directed advertising.
+    LL_ADV_SCAN_IND                = 0x02,//scannable undirected advertising.
+    LL_ADV_NONCONN_IND             = 0x03,//none connectable undirected advertising.
+    LL_ADV_DIRECT_IND_LOW_DUTY     = 0x04,//connectable low duty directed advertising.
+}ll_advertising_type_e;
 
 typedef enum
 {
-    ADV_EVENT,
-    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
-    ADV_EXTENDED_EVENT,
-    ADV_CHAINED_EVENT,
-    #endif
-    #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
-    ADV_PERIODIC_EVENT,
-    #endif
-    #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
-    ADV_PERIODIC_WITH_RSP_EVENT,
-    #endif
-}adv_event_class_e;
+    LL_PUBLIC_DEVICE_ADDRESS              = 0x00,
+    LL_RANDOM_DEVICE_ADDRESS              = 0x01,
+    LL_RESOLVABLE_PRIVATE_PUBLIC_ADDRESS  = 0x02,
+    LL_RESOLVABLE_PRIVATE_RANDOM_ADDRESS  = 0x03,
+}ll_own_address_type_e;
 
 typedef enum
 {
-    ADV_PDU_CLASS_LEG,
-    ADV_PDU_CLASS_SCAN_RSP,
-    ADV_PDU_CLASS_CONN_RSP,
-    ADV_PDU_CLASS_EXT,
-    ADV_PDU_CLASS_AUX,
-    ADV_PDU_CLASS_CHAIN,
-    ADV_PDU_CLASS_SYNC,
-}adv_pdu_class_e;
-
+    LL_PUBLIC_DEVICE_OR_IDENTITY_ADDRESS  = 0x00,
+    LL_RANDOM_DEVICE_OR_IDENTITY_ADDRESS  = 0x01,
+}ll_peer_address_type_e;
 
 typedef enum
 {
-    ADV_SCH_MAP_PRI       = BIT(0),
-	#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
-    ADV_SCH_MAP_AUX       = BIT(1),
-    ADV_SCH_MAP_AUX_CHAIN = BIT(2),
-	#endif
-	#if (LL_SUPPORT_LE_PERIODIC_ADVERTISING)
-    ADV_SCH_MAP_PA        = BIT(3),
-    ADV_SCH_MAP_PA_CHAIN  = BIT(4),
-	#endif
-	#if (LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
-    ADV_SCH_MAP_PAWR      = BIT(5),
-	#endif
-	ADV_SCH_MAP_ALL       = ADV_SCH_MAP_PRI
-	#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
-					       |ADV_SCH_MAP_AUX
-						   |ADV_SCH_MAP_AUX_CHAIN
-	#endif
-	#if (LL_SUPPORT_LE_PERIODIC_ADVERTISING)
-						   |ADV_SCH_MAP_PA
-						   |ADV_SCH_MAP_PA_CHAIN
-	#endif
-	#if (LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
-						   |ADV_SCH_MAP_PAWR
-	#endif
-} adv_ext_sch_map_e;
-
+    LL_FILTER_LIST_NOT_USE                        = 0x00,
+    LL_FILTER_SCAN_REQUEST                        = 0x01,
+    LL_FILTER_CONNECTION_REQUEST                  = 0x02,
+    LL_FILTER_SCAN_REQUEST_AND_CONNECTION_REQUEST = 0x03,
+}ll_advertising_filter_policy_e;
 
 typedef enum
 {
-    ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED,
-    ADV_EVENT_CONNECTABLE_DIRECTED,
-    ADV_EVENT_SCANNABLE_UNDIRECTED,
-    ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED,
-    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
-    ADV_EVENT_EXTENDED_CONNECTABLE_DIRECTED,
-    ADV_EVENT_EXTENDED_CONNECTABLE_UNDIRECTED,
-    ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED,
-    ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED,
-    ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITH_AUXILIARY,
-    ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED_WITH_AUXILIARY,
-    ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITHOUT_AUXILIARY,
-    ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED_WITHOUT_AUXILIARY,
-    #endif
-    #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
-    ADV_EVENT_EXTENDED_PERIODIC,
-    #endif
-    #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
-    ADV_EVENT_EXTENDED_PERIODIC_WITH_RESPONSE,
-    #endif
-}adv_event_type_e;
+    LL_ADVERTISING_ENABLE  = 1,
+    LL_ADVERTISING_DISABLE = 0,
+}ll_advertising_enable_e;
 
-int ble_ll_enter_advertising_state(ble_ll_event_e event);
+typedef enum
+{
+    LL_ADV_CHN_37 = BIT(0),
+    LL_ADV_CHN_38 = BIT(1),
+    LL_ADV_CHN_39 = BIT(2),
+}ll_advertising_chn_e;
 
+
+controller_error_code_e ll_set_advertising_parameters(_u16 interval,\
+                                                     ll_advertising_type_e type,\
+                                                     ll_own_address_type_e ownAddressType,\
+                                                     ll_peer_address_type_e peerAddressType,\
+                                                     _u8* peerAddress,_u8 channelMap,\
+                                                     ll_advertising_filter_policy_e policy);
+
+controller_error_code_e ll_set_advertising_data(_u8* data,_u8 length);
+
+controller_error_code_e ll_set_scan_response_data(_u8* data,_u8 length);
+
+controller_error_code_e ll_set_advertising_enable(_u8 enable);
+
+#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
+/***********************Bluetooth LE Extended Advertising **************************/
+typedef enum
+{
+    LL_ADV_EVENT_PROPERTY_CONNECTED                 = BIT(0),
+    LL_ADV_EVENT_PROPERTY_SCANNABLE                 = BIT(1),
+    LL_ADV_EVENT_PROPERTY_DIRECTED                  = BIT(2),
+    LL_ADV_EVENT_PROPERTY_HIGH_DUTY_CONNECTED       = BIT(3),
+    LL_ADV_EVENT_PROPERTY_LEGACY_PDU                = BIT(4),
+    LL_ADV_EVENT_PROPERTY_ANONYMOUS_ADV             = BIT(5),
+    LL_ADV_EVENT_PROPERTY_INCLUDE_TX_POWER          = BIT(6),
+    LL_ADV_EVENT_PROPERTY_DECISION_PDU              = BIT(7),
+    LL_ADV_EVENT_PROPERTY_INCLUDE_ADVA_IN_DECISION  = BIT(8),
+    LL_ADV_EVENT_PROPERTY_INCLUDE_ADI_IN_DECISION   = BIT(9),
+}ll_advertising_event_property_e;
+
+typedef enum
+{
+    LL_ADV_PHY_1M    = 1,
+    LL_ADV_PHY_2M    = 2,
+    LL_ADV_PHY_CODED = 3,
+}ll_advertising_phy_e;
+
+typedef enum
+{
+    LL_ADV_PHY_OPTIONS_NO_PREFERENCE = 0x00,
+    LL_ADV_PHY_OPTIONS_PREFER_S2     = 0x01,
+    LL_ADV_PHY_OPTIONS_PREFER_S8     = 0x02,
+    LL_ADV_PHY_OPTIONS_REQUIRE_S2    = 0x03,
+    LL_ADV_PHY_OPTIONS_REQUIRE_S8    = 0x04,
+}ll_advertising_phy_options_e;
+
+typedef enum
+{
+    LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT= 0x00,
+    LL_ADV_DATA_OPERATION_FIRST_FRAGMENT       = 0x01,
+    LL_ADV_DATA_OPERATION_LAST_FRAGMENT        = 0x02,
+    LL_ADV_DATA_OPERATION_COMPLETE             = 0x03,
+    LL_ADV_DATA_OPERATION_UNCHANGED            = 0x04,//just update the advertising data DID
+}ll_advertising_data_operation_e;
+
+typedef enum
+{
+    LL_ADV_DATA_FEAGMENT_ALL_DATA              = 0x00,
+    LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT       = 0x01,
+}ll_advertising_data_fragment_perference_e;
+
+typedef struct
+{
+    _u8  advHandle;
+    _u16 duration;//unit is 10ms,0x0000,no max duration,continue to advertising until host disable it
+    _u8  maxEvents;//0x00:no max number,other2:max number of extended adv events number controller shall send
+}ll_extended_adv_enable_subField_e;
+
+
+typedef struct
+{
+    _u8  advHandle;//0x00->0xEF,identify an advertising set
+    _u16 advEventProperty;//search for "ll_advertising_event_property_e"
+    _u8  filterPolicy;//search for "ll_advertising_filter_policy_e"
+
+    _u8  txPower;//range is -127 to +20,unit is dBm,    0x7F:no preference
+    _u8  advSid;//0x00-0x0F,SID subfield in the ADI field.
+    _u8  ownAddrType;//search for "ll_own_address_type_e"
+    _u8  peerAddrType;//search for "ll_peer_address_type_e"
+
+    _u8  peerAddr[6];
+    _u8  scanReqNotifyEnable;//0x00:disable,0x01:enable
+    _u8  rsvd;
+
+    _u32 primaryAdvInterval;//unit is 625us
+    _u8  primaryAdvChnMap;//bit field,search for "ll_advertising_chn_e"
+    _u8  primaryAdvPhy;//LL_ADV_PHY_1M or LL_ADV_PHY_CODED,if legacy pdu,must 1M phy
+    _u8  primaryAdvphyOptions;//search for "ll_advertising_phy_options_e"
+    _u8  secondaryAdvMaxSkip;////0x00:AUX_ADV_IND shall be prior to the next advertising event.0x01-0xFF,maximum skip events
+    _u8  secondaryAdvPhy;//search for "ll_advertising_phy_e"
+    _u8  secondaryAdvphyOptions;//search for "ll_advertising_phy_options_e"
+    _u16 rsvd1;
+}ll_extended_adv_param_t;
+
+
+controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_param_t* pParam);
+
+controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
+                                                         ll_advertising_data_operation_e operation,\
+                                                         ll_advertising_data_fragment_perference_e fragPref,\
+                                                        _u8 dataLen,\
+                                                        _u8* data);
+
+controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
+                                                            ll_advertising_data_operation_e operation,\
+                                                            ll_advertising_data_fragment_perference_e fragPref,\
+                                                            _u8 dataLen,\
+                                                            _u8* data);
+
+controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
+                                                           _u8 numSets,\
+                                                           ll_extended_adv_enable_subField_e* pEnableSubFiled);
+
+controller_error_code_e ll_set_adv_set_random_address(_u8 advHandle,_u8* address);
+
+controller_error_code_e ll_read_maximum_advertising_data_length(_u16* length);
+
+controller_error_code_e ll_read_number_of_supported_advertising_sets(_u8* number);
+
+controller_error_code_e ll_remove_advertising_sets(_u8 advHandle);
+
+controller_error_code_e ll_clear_advertising_sets(void);
+
+#endif
+
+/***********************Bluetooth LE Periodic Advertising **************************/
+#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
+controller_error_code_e ll_set_periodic_advertising_paramters(_u8 advHandle,_u8 interval,_u16 property);
+
+controller_error_code_e ll_set_periodic_advertising_data(_u8 advHandle,ll_advertising_data_operation_e operation,_u8 dataLen,_u8* data);
+
+controller_error_code_e ll_set_periodic_advertising_enable(_u8 enable,_u8 advHandle);
+#endif
+
+/***********************Bluetooth LE Periodic With Response Advertising **************************/
+#if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
+#endif
 
