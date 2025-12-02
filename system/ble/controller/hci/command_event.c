@@ -727,8 +727,8 @@
 #if defined(BLE_SUPPORT_CONNECTED_ISOCHRONOUS_STREAM_CENTRAL)||defined(BLE_SUPPORT_CONNECTED_ISOCHRONOUS_STREAM_PERIPHERAL)||defined(BLE_SUPPORT_ADVERTISING_CODING_SELECTION)||defined(BLE_SUPPORT_CONNECTION_SUBRATING)||defined(BLE_SUPPORT_CHANNEL_SOUNDING)
 // C.49: Mandatory if LE Feature (Connected Isochronous Stream - Central), or LE Feature (Connected Isochronous Stream - Peripheral), or LE Feature (Connection Subrating), or LE Feature (Advertising Coding Selection), or LE Feature (Channel Sounding) is supported;
 // C.77: Optional if the LE Set Host Feature command [v1] is supported    
-#define LE_SET_HOST_FEATURE_PROCESS                                          HCI_MANDORY_PROCESS_ADDRESS
-#define LE_SET_HOST_FEATURE_V2_PROCESS                                       HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_HOST_FEATURE_PROCESS                                          le_set_host_feature_process
+#define LE_SET_HOST_FEATURE_V2_PROCESS                                       le_set_host_feature_v2_process
 #else
 #define LE_SET_HOST_FEATURE_PROCESS                                          HCI_DEFAULT_PROCESS_ADDRESS
 #define LE_SET_HOST_FEATURE_V2_PROCESS                                       HCI_DEFAULT_PROCESS_ADDRESS
@@ -1610,7 +1610,7 @@ controller_error_code_e le_set_default_subrate_process(_u8* data,_u8 length,bt_h
     //command
     struct le_set_default_subrate_process_retParam_t* retParam = \
     (struct le_set_default_subrate_process_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct le_set_default_subrate_process_retParam_t),event);
-    retParam->status = 
+    retParam->status = 0;
     return SUCCESS;
 }
 
@@ -1627,6 +1627,43 @@ struct _PACKED le_subrate_request_process_param_t
 controller_error_code_e le_subrate_request_process(_u8* data,_u8 length,bt_hci_event_t** event)
 {
 
+}
+
+//LE_SET_HOST_FEATURE_PROCESS
+struct _PACKED le_set_host_feature_param_t
+{
+	_u8 bitNum;
+	_u8 bitValue;
+};
+struct _PACKED le_set_host_feature_retParam_t
+{
+	_u8 status;
+};
+controller_error_code_e le_set_host_feature_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+	struct le_set_host_feature_param_t* param = (struct le_set_host_feature_param_t*)data;
+	struct le_set_host_feature_retParam_t* retParam = \
+	(struct le_set_host_feature_retParam_t*)(struct le_set_host_feature_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct le_set_host_feature_retParam_t),event);
+	retParam->status = ll_set_host_feature((_u16)param->bitNum,param->bitValue);
+	return SUCCESS;
+}
+//LE_SET_HOST_FEATURE_V2_PROCESS
+struct _PACKED le_set_host_feature_v2_param_t
+{
+	_u16 bitNum;//0x000-0x7bf
+	_u8  bitValue;
+};
+struct _PACKED le_set_host_feature_v2_retParam_t
+{
+	_u8 status;
+};
+controller_error_code_e le_set_host_feature_v2_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+	struct le_set_host_feature_v2_param_t* param = (struct le_set_host_feature_v2_param_t*)data;
+	struct le_set_host_feature_v2_retParam_t* retParam = \
+	(struct le_set_host_feature_v2_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct le_set_host_feature_v2_retParam_t),event);
+	retParam->status = ll_set_host_feature(param->bitNum,param->bitValue);
+	return SUCCESS;
 }
 
 //special,should put it last

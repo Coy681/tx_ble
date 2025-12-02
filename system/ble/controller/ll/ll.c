@@ -170,7 +170,12 @@ ble_ll_state_status_e ble_ll_process_event(ll_sm_t* sm,ble_ll_event_e event)
 }
 
 /*********************************ll feature implementation**********************************/
-static _u64 ll_host_support_feature;
+static _u32 ll_host_supported_feature;
+
+//bit0 -LL_FEATURE_BIT_CONNECTED_ISOCHRONOUS_STREAM_HOST_SUPPORT     FEATURE BIT(32)
+//bit1 -LL_FEATURE_BIT_CONNECTION_SUBRATING_HOST_SUPPORT			 FEATURE BIT(38)
+//bit2 -LL_FEATURE_BIT_ADVERTISING_CODING_SELECTION_HOST_SUPPORT     FEATURE BIT(41)
+//bit3 -LL_FEATURE_BIT_CHANNEL_SOUNDING_HOST_SUPPORT                 FEATURE BIT(47)
 
 void ll_get_feature(_u8* feature,_u8 len)
 {
@@ -186,15 +191,86 @@ void ll_get_feature(_u8* feature,_u8 len)
 		LL_FEATURE_SUPPORT_BYTE_7,
 		LL_FEATURE_SUPPORT_BYTE_8,
 	};
+	if(ll_host_supported_feature&BIT(0))
+	{
+		LL_FEATURE_SUPPORT_BYTE_4 |= BIT(0);//LL_FEATURE_BIT_CONNECTED_ISOCHRONOUS_STREAM_HOST_SUPPORT     FEATURE BIT(32)
+	}
+	if(ll_host_supported_feature&BIT(1))
+	{
+		LL_FEATURE_SUPPORT_BYTE_4 |= BIT(6);//LL_FEATURE_BIT_CONNECTION_SUBRATING_HOST_SUPPORT			 FEATURE BIT(38)
+	}
+	if(ll_host_supported_feature&BIT(2))
+	{
+		LL_FEATURE_SUPPORT_BYTE_5 |= BIT(2);//LL_FEATURE_BIT_ADVERTISING_CODING_SELECTION_HOST_SUPPORT     FEATURE BIT(41)
+	}
+	if(ll_host_supported_feature&BIT(3))
+	{
+		LL_FEATURE_SUPPORT_BYTE_5 |= BIT(7);//LL_FEATURE_BIT_CHANNEL_SOUNDING_HOST_SUPPORT                 FEATURE BIT(47)
+	}
 	for(int i=0;i<len;i++)
 	{
 		feature[i] = suppFea[i];
 	}
 }
 
-void ll_feature_reset(void)
+controller_error_code_e ll_set_host_feature(_u16 bitNum,bool bitValue)
 {
-	ll_host_support_feature = 0;
+	switch(BIT(bitNum))
+	{
+		case LL_FEATURE_BIT_CONNECTED_ISOCHRONOUS_STREAM_HOST_SUPPORT:
+		{
+			if(LL_SUPPORT_CONNECTED_ISOCHRONOUS_STREAM_CENTRAL||LL_SUPPORT_CONNECTED_ISOCHRONOUS_STREAM_PERIPHERAL)
+			{
+				ll_host_supported_feature|= BIT(0);
+			}
+			else
+			{
+				return UNSUPPORTED_FEATURE_OR_PARAMETER_VALUE;
+			}
+		}
+			break;
+		case LL_FEATURE_BIT_CONNECTION_SUBRATING_HOST_SUPPORT:
+		{
+			if(LL_SUPPORT_CONNECTION_SUBRATING)
+			{
+				ll_host_supported_feature|= BIT(1);
+			}
+			else
+			{
+				return UNSUPPORTED_FEATURE_OR_PARAMETER_VALUE;
+			}
+		}
+			break;
+		case LL_FEATURE_BIT_ADVERTISING_CODING_SELECTION_HOST_SUPPORT:
+		{
+			if(LL_SUPPORT_ADVERTISING_CODING_SELECTION)
+			{
+				ll_host_supported_feature|= BIT(2);
+			}
+			else
+			{
+				return UNSUPPORTED_FEATURE_OR_PARAMETER_VALUE;
+			}
+		}
+			break;
+		case LL_FEATURE_BIT_CHANNEL_SOUNDING_HOST_SUPPORT:
+		{
+			if(LL_SUPPORT_CHANNEL_SOUNDING)
+			{
+				ll_host_supported_feature|= BIT(3);
+			}
+			else
+			{
+				return UNSUPPORTED_FEATURE_OR_PARAMETER_VALUE;
+			}
+		}
+			break;
+		default:
+		{
+			return UNSUPPORTED_FEATURE_OR_PARAMETER_VALUE;
+		}
+	}
+	return SUCCESS;
 }
 /******************************ll filter accept list operation*****************************/
 controller_error_code_e ll_add_device_to_filter_accept_list(_u8 addrType,_u8* addr)
@@ -288,7 +364,8 @@ controller_error_code_e ll_clear_filter_accept_list(void)
 controller_error_code_e ll_reset(void)
 {
 	//ll feature reset
-	ll_feature_reset();
+	ll_host_supported_feature = 0;
+	//
 	sch_stop();
 	for(int i=0;i<llSmConut;i++)
 	{

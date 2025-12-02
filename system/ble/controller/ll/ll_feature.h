@@ -58,12 +58,7 @@
 #define LL_FEATURE_BIT_MONITORING_ADVERTISERS                     BIT64(0)
 #define LL_FEATURE_BIT_FRAME_SPACE_UPDATE                         BIT64(1)
 
-/***********************Bluetooth LE Supported Feature **************************/
-#define LL_HOST_CONTROLLED_FEATURE  (\
-		LL_FEATURE_BIT_CONNECTED_ISOCHRONOUS_STREAM_HOST_SUPPORT|\
-		LL_FEATURE_BIT_CONNECTION_SUBRATING_HOST_SUPPORT|\
-		LL_FEATURE_BIT_ADVERTISING_CODING_SELECTION_HOST_SUPPORT|\
-		LL_FEATURE_BIT_CHANNEL_SOUNDING_HOST_SUPPORT)
+
 
 /***********************Bluetooth LE Feature Configure**************************/
 #ifdef  BLE_SUPPORT_ENCRYPTION

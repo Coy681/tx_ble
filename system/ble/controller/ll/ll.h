@@ -84,16 +84,27 @@ typedef enum
 
 /***********************Bluetooth LE LL config **************************/
 void ll_init_state_machine(_u8 number);
+
 void ble_ll_setup_new_entity(void);
-controller_error_code_e ll_reset(void);
-controller_error_code_e ll_set_event_mask(_u64 eventMask);
-controller_error_code_e ll_set_event_mask2(_u64 eventMask);
-controller_error_code_e ll_set_le_event_mask(_u64 eventMask);
-controller_error_code_e ll_set_random_address(_u8* addr);
+
 void ll_get_feature(_u8* feature,_u8 len);
 
+controller_error_code_e ll_set_host_feature(_u16 bitNum,bool bitValue);
+
+controller_error_code_e ll_reset(void);
+
+controller_error_code_e ll_set_event_mask(_u64 eventMask);
+
+controller_error_code_e ll_set_event_mask2(_u64 eventMask);
+
+controller_error_code_e ll_set_le_event_mask(_u64 eventMask);
+
+controller_error_code_e ll_set_random_address(_u8* addr);
+
 controller_error_code_e ll_add_device_to_filter_accept_list(_u8 addrType,_u8* addr);
+
 controller_error_code_e ll_remove_device_from_filter_accept_list(_u8 addrType,_u8* addr);
+
 controller_error_code_e ll_clear_filter_accept_list(void);
 #endif//LL_H_
 

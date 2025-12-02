@@ -57,7 +57,7 @@ void ll_adv_packet_make(_u8* addr,_u8 chnSel,_u8 txAdd,_u8 rxAdd)
 _RAM_CODE
 _u8* ll_acl_packet_data_prepare(_u8* addr,_u8 length,_u8 llid)
 {
-    ll_data_packet_t* pkt = (ll_data_packet_t*)(addr+ll_get_packet_header_offset_from_address(PHY_DIR_TX));
+	ll_acl_packet_t* pkt = (ll_acl_packet_t*)(addr+ll_get_packet_header_offset_from_address(PHY_DIR_TX));
     pkt->hdr.length       = length;
     pkt->hdr.llId         = llid;
     return pkt->data;
@@ -66,7 +66,7 @@ _u8* ll_acl_packet_data_prepare(_u8* addr,_u8 length,_u8 llid)
 _RAM_CODE
 void ll_acl_packet_make(_u8* addr,_u8 nesn,_u8 sn,_u8 md)
 {
-    ll_data_packet_t* pkt = (ll_data_packet_t*)(addr+ll_get_packet_header_offset_from_address(PHY_DIR_TX));
+	ll_acl_packet_t* pkt = (ll_acl_packet_t*)(addr+ll_get_packet_header_offset_from_address(PHY_DIR_TX));
     pkt->hdr.nesn         = nesn;
     pkt->hdr.sn           = sn;
     pkt->hdr.md           = md;
