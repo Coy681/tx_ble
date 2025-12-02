@@ -1,5 +1,6 @@
 #include"common/txCommon.h"
-#include"../../ll_internal.h"
+#include"../../ll_info.h"
+#include"../../ll_feature.h"
 
 typedef enum
 {
@@ -15,7 +16,7 @@ typedef struct
 	conn_ctrl_pdu_process_f  process;
 }conn_ctrl_pdu_process_t;
 
-int ble_ll_enter_connection_state(ble_ll_event_e event);
+
 
 
 /***********************Bluetooth LE Subrate **************************/

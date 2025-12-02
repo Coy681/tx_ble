@@ -4,13 +4,13 @@
 #include"system/task/message/message.h"
 #include"system/task/task.h"
 #include"system/task/event/event.h" 
-#include"module/adv/adv.h"
-#include"module/scan/scan.h"
-#include"module/conn/conn.h"
-#include"module/init/init.h"
-#include"module/sync/sync.h"
-#include"module/brd/brd.h"
-#include"module/standby/standby.h"
+#include"module/adv/adv_internal.h"
+#include"module/scan/scan_internal.h"
+#include"module/conn/conn_internal.h"
+#include"module/init/init_internal.h"
+#include"module/sync/sync_internal.h"
+#include"module/brd/brd_internal.h"
+#include"module/standby/standby_internal.h"
 /************************************ll implementation***************************************/
 ll_t* ll;
 static _u8 llSmConut;
@@ -193,19 +193,19 @@ void ll_get_feature(_u8* feature,_u8 len)
 	};
 	if(ll_host_supported_feature&BIT(0))
 	{
-		LL_FEATURE_SUPPORT_BYTE_4 |= BIT(0);//LL_FEATURE_BIT_CONNECTED_ISOCHRONOUS_STREAM_HOST_SUPPORT     FEATURE BIT(32)
+		suppFea[4] |= BIT(0);//LL_FEATURE_BIT_CONNECTED_ISOCHRONOUS_STREAM_HOST_SUPPORT     FEATURE BIT(32)
 	}
 	if(ll_host_supported_feature&BIT(1))
 	{
-		LL_FEATURE_SUPPORT_BYTE_4 |= BIT(6);//LL_FEATURE_BIT_CONNECTION_SUBRATING_HOST_SUPPORT			 FEATURE BIT(38)
+		suppFea[4] |= BIT(6);//LL_FEATURE_BIT_CONNECTION_SUBRATING_HOST_SUPPORT			 FEATURE BIT(38)
 	}
 	if(ll_host_supported_feature&BIT(2))
 	{
-		LL_FEATURE_SUPPORT_BYTE_5 |= BIT(2);//LL_FEATURE_BIT_ADVERTISING_CODING_SELECTION_HOST_SUPPORT     FEATURE BIT(41)
+		suppFea[5] |= BIT(2);//LL_FEATURE_BIT_ADVERTISING_CODING_SELECTION_HOST_SUPPORT     FEATURE BIT(41)
 	}
 	if(ll_host_supported_feature&BIT(3))
 	{
-		LL_FEATURE_SUPPORT_BYTE_5 |= BIT(7);//LL_FEATURE_BIT_CHANNEL_SOUNDING_HOST_SUPPORT                 FEATURE BIT(47)
+		suppFea[5] |= BIT(7);//LL_FEATURE_BIT_CHANNEL_SOUNDING_HOST_SUPPORT                 FEATURE BIT(47)
 	}
 	for(int i=0;i<len;i++)
 	{
@@ -213,9 +213,9 @@ void ll_get_feature(_u8* feature,_u8 len)
 	}
 }
 
-controller_error_code_e ll_set_host_feature(_u16 bitNum,bool bitValue)
+controller_error_code_e ll_set_host_feature(_u16 bitNum,_u8 bitValue)
 {
-	switch(BIT(bitNum))
+	switch(BIT64(bitNum))
 	{
 		case LL_FEATURE_BIT_CONNECTED_ISOCHRONOUS_STREAM_HOST_SUPPORT:
 		{

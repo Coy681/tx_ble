@@ -1,4 +1,5 @@
 #include"standby.h"
+#include"standby_internal.h"
 int ble_ll_enter_standby_state(ble_ll_event_e event)
 {
     ll_sm_t* ll = ll_get_current_state_machine();

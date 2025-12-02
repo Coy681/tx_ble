@@ -1,4 +1,5 @@
 #include"conn.h"
+#include"conn_internal.h"
 #include"../../channel/channel.h"
 #if defined(BLE_SUPPORT_CONN)
 

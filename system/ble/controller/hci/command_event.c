@@ -3,7 +3,7 @@
 #include"hci.h"
 #include"../info.h"
 #include"../ll/ll_config.h"
-
+#include"../ll/ll.h"
 /************************************ hci supported command config ****************************************/
 #define HCI_DEFAULT_PROCESS_ADDRESS                                          0
 /***************************************** mandory cmd process start **************************************************************/

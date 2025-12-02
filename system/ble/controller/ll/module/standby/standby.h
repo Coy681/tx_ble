@@ -1,4 +1,4 @@
 #include"common/txCommon.h"
-#include"../../ll_internal.h"
+#include"../../ll_info.h"
+#include"../../ll_feature.h"
 
-int ble_ll_enter_standby_state(ble_ll_event_e event);

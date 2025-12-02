@@ -1,6 +1,6 @@
 #include"common/txCommon.h"
-#include"../../ll_internal.h"
-#include"../../ll.h"
+#include"../../ll_info.h"
+#include"../../ll_feature.h"
 
 /***********************Bluetooth LE Advertising **************************/
 typedef enum
