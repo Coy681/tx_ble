@@ -430,6 +430,11 @@ typedef struct _PACKED
         _u8 addr[6];
     }filterAcceptList[BLE_FILTER_ACCEPT_LIST_SIZE];
     #if(LL_SUPPORT_CONNECTION_SUBRATING)
+	_u16 srMin;//0x01-0x01f4(1-500)
+	_u16 srMax;//0x01-0x01f4(1-500)
+	_u16 srLatency;//0x00-0x1f3(0-499)
+	_u16 srConNum;//0x00-0x1f3(0-499)
+	_u16 srTimeout;//0x0a-0xc80,time = N*10ms,from 100ms to 32s
     #endif
     ll_sm_t* sm;
 }ll_t;
@@ -441,7 +446,6 @@ ll_sm_t* ll_get_current_state_machine(void);
 _u8*     ll_get_device_address(void);
 _u8*     ll_get_shared_phy_tx_address(void);
 _u8*     ll_get_shared_phy_rx_address(void);
-
 
 ble_ll_state_status_e ble_ll_process_event(ll_sm_t* sm,ble_ll_event_e event);
 

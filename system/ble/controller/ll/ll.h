@@ -34,6 +34,13 @@ controller_error_code_e ll_add_device_to_filter_accept_list(_u8 addrType,_u8* ad
 controller_error_code_e ll_remove_device_from_filter_accept_list(_u8 addrType,_u8* addr);
 
 controller_error_code_e ll_clear_filter_accept_list(void);
+
+
+#if(LL_SUPPORT_CONNECTION_SUBRATING)
+controller_error_code_e ll_set_default_subrate(_u16 subrateMin,_u16 subrateMax,_u16 maxLatency,_u16 continuation,_u16 timeout);
+#endif
+
+
 #endif//LL_H_
 
 
