@@ -27,6 +27,14 @@
 
 #endif 
 
+#if defined(BLE_SUPPORT_CEN)||defined(BLE_SUPPORT_PER)
+#define BLE_SUPPORT_CONN             y
+#endif
+
+#if defined(BLE_SUPPORT_CONN)
+#define BLE_SUPPORT_CONNECTION_SUBRATING y
+#endif
+
 #if defined(BLE_SUPPORT_PDA) 
 
 #ifndef BLE_SUPPORT_ADV
@@ -86,9 +94,7 @@
 
 #endif 
 
-#if defined(BLE_SUPPORT_CEN)||defined(BLE_SUPPORT_PER)
-#define BLE_SUPPORT_CONN             y
-#endif
+
 
 #if defined(BLE_SUPPORT_ISO_CEN)||defined(BLE_SUPPORT_ISO_PER)||defined(BLE_SUPPORT_ISO_BRD)||defined(BLE_SUPPORT_ISO_SYNC)
 #define BLE_SUPPORT_ISO

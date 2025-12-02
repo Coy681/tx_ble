@@ -467,6 +467,24 @@ controller_error_code_e ll_set_random_address(_u8* addr)
 #if(LL_SUPPORT_CONNECTION_SUBRATING)
 controller_error_code_e ll_set_default_subrate(_u16 subrateMin,_u16 subrateMax,_u16 maxLatency,_u16 continuation,_u16 timeout)
 {
-
+	if(subrateMin>500||subrateMin==0\
+	 ||subrateMax>500||subrateMax==0\
+	 ||subrateMax<subrateMin\
+	 ||maxLatency>0x1f3||continuation>0x1f3\
+	 ||timeout<0x0a||timeout>0xc80\
+     ||((subrateMax*(maxLatency+1))>500)\
+	 ||continuation>subrateMax)
+	{
+		return IVALID_HCI_COMMAND_PARAMETERS;
+	}
+	else
+	{
+		ll->srMin     = subrateMin;
+		ll->srMax     = subrateMax;
+		ll->srLatency = maxLatency;
+		ll->srConNum  = continuation;
+		ll->srTimeout = timeout;
+		return SUCCESS;
+	}
 }
 #endif

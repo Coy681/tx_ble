@@ -336,6 +336,14 @@ typedef struct _PACKED
 
 typedef struct _PACKED
 {
+	_u16 factor;//0x01-0x1f4(1-500)
+	_u16 latency;//0x00-0x1f3(0-499)
+	_u16 conNum;//0x00-0x1f3(0-499)
+	_u16 timeout;//0x0a-0xc80,time = N*10ms,from 100ms to 32s
+}ll_conn_subrate_t;
+
+typedef struct _PACKED
+{
 	_u8  role:1;
 	_u8  state:3;
     _u8  sn:1;
@@ -360,6 +368,10 @@ typedef struct _PACKED
 
 	_u32 connPhyTs;
 
+
+	#if(LL_SUPPORT_CONNECTION_SUBRATING)
+	ll_conn_subrate_t     sr;//subrate
+	#endif
 	ll_conn_peer_t        peer;
 	ll_conn_data_t        data;
     ll_conn_ctrl_t        ctrl;

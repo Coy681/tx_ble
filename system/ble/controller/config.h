@@ -6,6 +6,6 @@
 //#define BLE_SUPPORT_PERIODIC_ADVERTISING y
 // #define BLE_SUPPORT_SCAN  y
 
-// #define BLE_SUPPORT_CEN  y
+ #define BLE_SUPPORT_CEN  y
 
-// #define BLE_SUPPORT_PER  y
+ #define BLE_SUPPORT_PER  y

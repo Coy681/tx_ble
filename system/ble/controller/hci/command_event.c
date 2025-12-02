@@ -1591,6 +1591,7 @@ controller_error_code_e le_read_buffer_size(_u8* data,_u8 length,bt_hci_event_t*
 	return SUCCESS;
 }
 
+#if(LL_SUPPORT_CONNECTION_SUBRATING)
 //LE_SET_DEFAULT_SUBRATE_PROCESS
 struct _PACKED le_set_default_subrate_process_param_t
 {
@@ -1607,10 +1608,9 @@ struct _PACKED le_set_default_subrate_process_retParam_t
 controller_error_code_e le_set_default_subrate_process(_u8* data,_u8 length,bt_hci_event_t** event)
 {
     struct le_set_default_subrate_process_param_t* param = (struct le_set_default_subrate_process_param_t*)data;
-    //command
     struct le_set_default_subrate_process_retParam_t* retParam = \
     (struct le_set_default_subrate_process_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct le_set_default_subrate_process_retParam_t),event);
-    retParam->status = 0;
+    retParam->status = ll_set_default_subrate(param->subrateMin,param->subrateMax,param->maxLatency,param->continuationNumber,param->supervisionTimeout);
     return SUCCESS;
 }
 
@@ -1626,8 +1626,10 @@ struct _PACKED le_subrate_request_process_param_t
 };
 controller_error_code_e le_subrate_request_process(_u8* data,_u8 length,bt_hci_event_t** event)
 {
-
+    struct le_subrate_request_process_param_t* param = (struct le_subrate_request_process_param_t*)data;
+    return ll_subrate_request(param->connHandle,param->subrateMin,param->subrateMax,param->maxLatency,param->continuationNumber,param->supervisionTimeout);
 }
+#endif
 
 //LE_SET_HOST_FEATURE_PROCESS
 struct _PACKED le_set_host_feature_param_t
