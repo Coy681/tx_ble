@@ -111,7 +111,6 @@ _RAM_CODE static void conn_prepare_phy(ll_sm_t* ll,ll_internal_connection_ctrl_t
 }
 
 #if defined (BLE_SUPPORT_PER)
-
 _RAM_CODE static int peri_conn_prepare_next_event_schedule(ll_sm_t* ll,ll_internal_connection_ctrl_t* connParam,_u32 anchor)
 {
 	_u32 windowWiden   = ll_ca_cal_window_winden(LL_CA_TYPE_SLEEP,connParam->peer.sca,0,((ll_conn_peri_t*)connParam->info)->lastSyncTime,anchor+connParam->duration);
@@ -433,7 +432,7 @@ controller_error_code_e ll_subrate_request(_u16 connHandle,\
 										   _u16 continuation,
 										   _u16 timeout)
 {
-	//send packet
+	//send ll ctrl packet
 	return SUCCESS;
 }
 #endif

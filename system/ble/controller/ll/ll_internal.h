@@ -276,6 +276,8 @@ typedef struct
 {
 	reset_f reset;
     ll_internal_adv_param_t param[BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS];
+    phy_obj_t  phy;
+    sch_node_t sch;
 }ll_internal_adv_ctrl_t;
 
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
@@ -356,6 +358,9 @@ typedef struct _PACKED
 	_u8  rsvd1:1;
 	_u16 eventCounter;
 
+	_u16 handle;
+	_u16 rsvd2;
+
 	_u16 latency;
 	_u16 timeout;
 
@@ -378,6 +383,8 @@ typedef struct _PACKED
 	ll_csa_ctrl_t         csa;
 	_u8*                  info;
 	reset_f reset;
+    phy_obj_t  phy;
+    sch_node_t sch;
 }ll_internal_connection_ctrl_t;
 
 
@@ -387,42 +394,62 @@ typedef struct _PACKED
 typedef struct _PACKED
 {
 	reset_f reset;
+    phy_obj_t  phy;
+    sch_node_t sch;
 }ll_internal_scan_ctrl_t;
 
 /***********************ll initiating sate**********************/
 typedef struct _PACKED
 {
 	reset_f reset;
+    phy_obj_t  phy;
+    sch_node_t sch;
 }ll_internal_initiating_ctrl_t;
 
 /***********************ll synchronization sate**********************/
 typedef struct _PACKED
 {
+	_u16 handle;
+	_u16 rsvd;
 	reset_f reset;
+    phy_obj_t  phy;
+    sch_node_t sch;
 }ll_internal_synchronous_ctrl_t;
 
 /***********************ll broadcasting sate**********************/
 typedef struct _PACKED
 {
+	_u16 handle;
+	_u16 rsvd;
 	reset_f reset;
+    phy_obj_t  phy;
+    sch_node_t sch;
 }ll_internal_broadcast_ctrl_t;
 
 /***********************ll sate**********************/
 
+//typedef struct _PACKED
+//{
+//    _u8  id;
+//    _u8  state;
+//    _u16 rsvd;
+//    phy_obj_t  phy;
+//    sch_node_t sch;
+//    ll_internal_standby_ctrl_t*         standby;
+//    ll_internal_adv_ctrl_t*             adv;
+//    ll_internal_connection_ctrl_t*      conn;
+//    ll_internal_scan_ctrl_t*            scan;
+//    ll_internal_initiating_ctrl_t*      initiating;
+//    ll_internal_synchronous_ctrl_t*     synchronous;
+//    ll_internal_broadcast_ctrl_t*       broadcast;
+//}ll_sm_t;
+
 typedef struct _PACKED
 {
-    _u8  id;
-    _u8  state;
-    _u16 rsvd;
-    phy_obj_t  phy;
-    sch_node_t sch;
-    ll_internal_standby_ctrl_t*         standby;
-    ll_internal_adv_ctrl_t*             adv;
-    ll_internal_connection_ctrl_t*      conn;
-    ll_internal_scan_ctrl_t*            scan;
-    ll_internal_initiating_ctrl_t*      initiating;
-    ll_internal_synchronous_ctrl_t*     synchronous;
-    ll_internal_broadcast_ctrl_t*       broadcast;
+	_u8  state;
+	_u8  rsvd0;
+	_u16 rsvd1;
+    _u8* entity;//maybe standby/adv/conn/scan/initiating/synchronous/broadcast
 }ll_sm_t;
 
 typedef struct _PACKED
@@ -431,7 +458,7 @@ typedef struct _PACKED
     _u8      rxAddr[256];
     _u8      addr[6];
     _u8      addrType;
-    _u8      rsvd;
+    _u8      smNum;
     _u64     eventMask;
     _u64     eventMask2;
     _u64     leEventMask;
@@ -452,12 +479,14 @@ typedef struct _PACKED
 }ll_t;
 
 /************************get state machine****************************/
-ll_sm_t* ll_get_idle_state_machine(void);
-ll_sm_t* ll_get_state_machine_by_id(_u8 id);
-ll_sm_t* ll_get_current_state_machine(void);
-_u8*     ll_get_device_address(void);
-_u8*     ll_get_shared_phy_tx_address(void);
-_u8*     ll_get_shared_phy_rx_address(void);
+//ll_sm_t* ll_get_idle_state_machine(void);
+//ll_sm_t* ll_get_state_machine_by_id(_u8 id);
+//ll_sm_t* ll_get_current_state_machine(void);
+
+_u8* ll_get_entity_by_state(ble_ll_state_e state,_u16 handle);
+_u8* ll_get_device_address(void);
+_u8* ll_get_shared_phy_tx_address(void);
+_u8* ll_get_shared_phy_rx_address(void);
 
 ble_ll_state_status_e ble_ll_process_event(ll_sm_t* sm,ble_ll_event_e event);
 

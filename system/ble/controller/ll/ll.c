@@ -13,8 +13,6 @@
 #include"module/standby/standby_internal.h"
 /************************************ll implementation***************************************/
 ll_t* ll;
-static _u8 llSmConut;
-static _u8 llCurrentSm;
 
 typedef struct _PACKED
 {
@@ -24,13 +22,12 @@ typedef struct _PACKED
 	ble_ll_event_cb      cb;
 }ble_ll_state_table_t;
 
-
 void ll_init_state_machine(_u8 number)
 {
-	llSmConut = number;
+	ll->smNum = number;
 	if(number==0)
 	{
-		llSmConut = 1;
+		ll->smNum = 1;
 	}
 
 	ll = (ll_t*)tx_malloc(sizeof(ll_t));
@@ -39,53 +36,95 @@ void ll_init_state_machine(_u8 number)
 		ll->addr[i] = 0x12+i;//todo,temporary value
 	}
 	ll->sm = (ll_sm_t*)tx_malloc(number*sizeof(ll_sm_t));
-	for(_u8 i=0;i<llSmConut;i++)
+	for(_u8 i=0;i<ll->smNum;i++)
 	{
-		ll->sm[i].id  = i;
 		ll->sm[i].state =  (_u8)BLE_LL_STATE_STANDBY;
 	}
-	llCurrentSm = ll->sm[0].id;
 	phy_init();
 
 }
 
-_RAM_CODE
-ll_sm_t* ll_get_idle_state_machine(void)
+//_RAM_CODE
+//ll_sm_t* ll_get_idle_state_machine(void)
+//{
+//	for(_u8 i=0;i<llSmConut;i++)
+//	{
+//		if(ll->sm[i].state == (_u8)BLE_LL_STATE_STANDBY)
+//		{
+//			llCurrentSm = i;
+//			return &ll->sm[i];
+//		}
+//	}
+//	return NULL;
+//}
+
+_u8* ll_get_entity_by_state(ble_ll_state_e state,_u16 handle)
 {
-	for(_u8 i=0;i<llSmConut;i++)
+	for(_u8 i=0;i<ll->smNum;i++)
 	{
-		if(ll->sm[i].state == (_u8)BLE_LL_STATE_STANDBY)
+		if(state == ll->sm[i].state)
 		{
-			llCurrentSm = i;
-			return &ll->sm[i];
+			switch(state)
+			{
+				case BLE_LL_STATE_CONNECTION://maybe multiple entity
+				{
+					if(handle==((ll_internal_connection_ctrl_t*)ll->sm[i].entity)->handle)
+					{
+						return ll->sm[i].entity;
+					}
+				}
+					break;
+				case BLE_LL_STATE_SYNCHRONIZATION://maybe multiple entity
+				{
+					if(handle==((ll_internal_synchronous_ctrl_t*)ll->sm[i].entity)->handle)
+					{
+						return ll->sm[i].entity;
+					}
+				}
+					break;
+				case BLE_LL_STATE_BROADCASTING://maybe multiple entity
+				{
+					if(handle==((ll_internal_broadcast_ctrl_t*)ll->sm[i].entity)->handle)
+					{
+						return ll->sm[i].entity;
+					}
+				}
+					break;
+//				case BLE_LL_STATE_ADVERTISING://only one entity
+//				{
+//
+//				}
+//					break;
+//				case BLE_LL_STATE_SCANNING://only one entity
+//				{
+//
+//				}
+//					break;
+//				case BLE_LL_STATE_INITIATING://only one entity
+//				{
+//
+//				}
+//					break;
+				default:
+					return ll->sm[i].entity;
+			}
 		}
 	}
 	return NULL;
 }
 
-_RAM_CODE
-ll_sm_t* ll_get_state_machine_by_id(_u8 id)
+_u8* ll_get_standby_entity(ble_ll_state_e state)
 {
-	for(_u8 i=0;i<llSmConut;i++)
+	ASSERT(state<=BLE_LL_STATE_BROADCASTING);
+	for(_u8 i=0;i<ll->smNum;i++)
 	{
-		if(ll->sm[i].id == id)
+		if(BLE_LL_STATE_STANDBY == ll->sm[i].state)
 		{
-			llCurrentSm = i;
-			return &ll->sm[i];
+			ll->sm[i].state = state;
+			return ll->sm[i].entity;
 		}
 	}
 	return NULL;
-}
-
-_RAM_CODE
-ll_sm_t* ll_get_current_state_machine(void)
-{
-	return &ll->sm[llCurrentSm];
-}
-
-void ble_ll_setup_new_entity(void)
-{
-	ll_get_idle_state_machine();
 }
 
 _RAM_CODE
@@ -171,7 +210,6 @@ ble_ll_state_status_e ble_ll_process_event(ll_sm_t* sm,ble_ll_event_e event)
 
 /*********************************ll feature implementation**********************************/
 static _u32 ll_host_supported_feature;
-
 //bit0 -LL_FEATURE_BIT_CONNECTED_ISOCHRONOUS_STREAM_HOST_SUPPORT     FEATURE BIT(32)
 //bit1 -LL_FEATURE_BIT_CONNECTION_SUBRATING_HOST_SUPPORT			 FEATURE BIT(38)
 //bit2 -LL_FEATURE_BIT_ADVERTISING_CODING_SELECTION_HOST_SUPPORT     FEATURE BIT(41)

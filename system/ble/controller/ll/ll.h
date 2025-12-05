@@ -13,8 +13,6 @@
 /***********************Bluetooth LE LL config **************************/
 void ll_init_state_machine(_u8 number);
 
-void ble_ll_setup_new_entity(void);
-
 void ll_get_feature(_u8* feature,_u8 len);
 
 controller_error_code_e ll_set_host_feature(_u16 bitNum,_u8 bitValue);
