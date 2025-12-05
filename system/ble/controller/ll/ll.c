@@ -41,24 +41,10 @@ void ll_init_state_machine(_u8 number)
 		ll->sm[i].state =  (_u8)BLE_LL_STATE_STANDBY;
 	}
 	phy_init();
-
 }
 
-//_RAM_CODE
-//ll_sm_t* ll_get_idle_state_machine(void)
-//{
-//	for(_u8 i=0;i<llSmConut;i++)
-//	{
-//		if(ll->sm[i].state == (_u8)BLE_LL_STATE_STANDBY)
-//		{
-//			llCurrentSm = i;
-//			return &ll->sm[i];
-//		}
-//	}
-//	return NULL;
-//}
 
-_u8* ll_get_entity_by_state(ble_ll_state_e state,_u16 handle)
+_u8* ll_get_sm_entity(ble_ll_state_e state,_u16 handle,_u8 allocate)
 {
 	for(_u8 i=0;i<ll->smNum;i++)
 	{
@@ -90,32 +76,18 @@ _u8* ll_get_entity_by_state(ble_ll_state_e state,_u16 handle)
 					}
 				}
 					break;
-//				case BLE_LL_STATE_ADVERTISING://only one entity
-//				{
-//
-//				}
-//					break;
-//				case BLE_LL_STATE_SCANNING://only one entity
-//				{
-//
-//				}
-//					break;
-//				case BLE_LL_STATE_INITIATING://only one entity
-//				{
-//
-//				}
-//					break;
+				case BLE_LL_STATE_ADVERTISING://only one entity
+				case BLE_LL_STATE_SCANNING://only one entity
+				case BLE_LL_STATE_INITIATING://only one entity
 				default:
 					return ll->sm[i].entity;
 			}
 		}
 	}
-	return NULL;
-}
-
-_u8* ll_get_standby_entity(ble_ll_state_e state)
-{
-	ASSERT(state<=BLE_LL_STATE_BROADCASTING);
+	if(allocate == 0)
+	{
+		return NULL;
+	}
 	for(_u8 i=0;i<ll->smNum;i++)
 	{
 		if(BLE_LL_STATE_STANDBY == ll->sm[i].state)

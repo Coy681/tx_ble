@@ -479,17 +479,12 @@ typedef struct _PACKED
 }ll_t;
 
 /************************get state machine****************************/
-//ll_sm_t* ll_get_idle_state_machine(void);
-//ll_sm_t* ll_get_state_machine_by_id(_u8 id);
-//ll_sm_t* ll_get_current_state_machine(void);
+_u8* ll_get_sm_entity(ble_ll_state_e state,_u16 handle,_u8 allocate);
 
-_u8* ll_get_entity_by_state(ble_ll_state_e state,_u16 handle);
 _u8* ll_get_device_address(void);
 _u8* ll_get_shared_phy_tx_address(void);
 _u8* ll_get_shared_phy_rx_address(void);
 
 ble_ll_state_status_e ble_ll_process_event(ll_sm_t* sm,ble_ll_event_e event);
-
-
 
 #endif//LL_INTERNAL_H_
