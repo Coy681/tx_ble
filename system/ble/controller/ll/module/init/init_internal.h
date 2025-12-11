@@ -1,0 +1,14 @@
+/*
+ * init_internal.h
+ *
+ *  Created on: 2025年12月1日
+ *      Author: Admin
+ */
+
+#ifndef BLE_CONTROLLER_LL_MODULE_INIT_INIT_INTERNAL_H_
+#define BLE_CONTROLLER_LL_MODULE_INIT_INIT_INTERNAL_H_
+
+#include"../../ll_internal.h"
+
+int ble_ll_enter_initiating_state(ble_ll_event_e event);
+#endif /* BLE_CONTROLLER_LL_MODULE_INIT_INIT_INTERNAL_H_ */
