@@ -5,7 +5,7 @@ int ble_ll_enter_standby_state(ble_ll_event_e event)
     ll_sm_t* ll = ll_get_current_state_machine();
     if(BLE_LL_EVENT_STOP_ADVERTISING == event)
     {
-    	sch_remove_task(ll->sch.llId);
+    	sch_remove_task(ll->sch.id);
     	LOG_TRACE(LL_LOG_TRACE,"advertising state to standby state",0,0)
     }
     if(BLE_LL_EVENT_STOP_SCANNING == event)

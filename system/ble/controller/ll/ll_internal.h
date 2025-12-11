@@ -446,8 +446,8 @@ typedef struct _PACKED
 
 typedef struct _PACKED
 {
+	_u8  id;
 	_u8  state;
-	_u8  rsvd0;
 	_u16 rsvd1;
     _u8* entity;//maybe standby/adv/conn/scan/initiating/synchronous/broadcast
 }ll_sm_t;
@@ -479,7 +479,8 @@ typedef struct _PACKED
 }ll_t;
 
 /************************get state machine****************************/
-_u8* ll_get_sm_entity(ble_ll_state_e state,_u16 handle,_u8 allocate);
+_u8* ll_get_sm_entity_by_id(u8 id);
+_u8* ll_get_sm_entity_by_state(ble_ll_state_e state,_u16 handle,_u8 allocate);
 
 _u8* ll_get_device_address(void);
 _u8* ll_get_shared_phy_tx_address(void);

@@ -5,7 +5,6 @@
 #include"../../channel/channel.h"
 /*****************************************ADV State Machine***********************************************/
 
-
 typedef enum
 {
     ADV_SM_STATE_IDLE,
@@ -68,9 +67,8 @@ typedef struct
 #define ADV_SEQUENCE_LIST_LENGTH(adv_sequence_list)        (sizeof(adv_sequence_list)/sizeof(adv_sequence_list[0]))
 #define ADV_SM_LIST_LENGTH(adv_sm_list)                    (sizeof(adv_sm_list)/sizeof(adv_sm_list[0]))
 
-
-static ll_internal_adv_param_t* currentAdvSet;
 static int currentEventClass;
+ll_internal_adv_ctrl_t* advCtrl;
 
 _RAM_CODE
 static void adv_sub_node_remap(ll_sm_t* ll,ll_adv_sch_entry_t* advSch)
@@ -205,7 +203,7 @@ int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_
         {
             while(POINTER_VALID(schNode))
             {
-            	if(schNode->llId == ll->sch.llId)
+            	if(schNode->id == ll->sch.id)
             	{
                     schNode = schNode->next;
 
@@ -1973,7 +1971,7 @@ int ble_ll_enter_advertising_state(ble_ll_event_e event)
         }
         adv_get_next_event(ll);
         //ll entity sch init
-        ll->sch.llId         = ll->id;
+        ll->sch.id           = ll->id;
         ll->sch.type         = SCH_PERIODIC_TASK;
         ll->sch.priority     = LL_ADV_PRIORITY;
         ll->sch.timestamp    = currentAdvSet->la->sch.anchorPoint;//maybe need planner

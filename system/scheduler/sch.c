@@ -155,7 +155,7 @@ sch_ctrl_t schCtrl;
     sch_node_t* scan = list;
     while(TASK_VALID(scan))
     {
-        if(scan->llId == id)
+        if(scan->id == id)
         {
             return scan;
         }
@@ -200,9 +200,9 @@ sch_ctrl_t schCtrl;
         return SCH_STATUS_TASK_NULL;
     }
     IRQ_DISABLE;
-    if(sch_serach_node_in_list(schCtrl.pWaitingList,task->llId)||\
-	   sch_serach_node_in_list(schCtrl.pRunningTask,task->llId)||\
-	   sch_serach_node_in_list(schCtrl.pCanceledList,task->llId))
+    if(sch_serach_node_in_list(schCtrl.pWaitingList,task->id)||\
+	   sch_serach_node_in_list(schCtrl.pRunningTask,task->id)||\
+	   sch_serach_node_in_list(schCtrl.pCanceledList,task->id))
     {
         IRQ_RESTORE;
     	return SCH_STATUS_REJECTED;
@@ -330,25 +330,16 @@ _RAM_CODE void sch_start(void)
 	sch_node_t* scan = *list;
 	while(scan!=NULL)
 	{
-		if(scan->delete)
-		{
-
-			sch_node_t* deleteNode = scan;
-			scan = scan->next;
-			deleteNode->delete = 0;
-			sch_delete_node_from_list(list,deleteNode);
-			continue;
-		}
 		_u32 startTime = TASK_START_TIME(scan);
 		if(txCompareTime(currentTime,startTime))
 		{
 			if(taskType == SCH_CANCELED_TASK)
 			{
-				scan->cb(SCH_TASK_CANCELED);;
+				scan->cb(SCH_TASK_CANCELED,scan->id);;
 			}
 			else
 			{
-				scan->cb(SCH_TASK_PASSED);
+				scan->cb(SCH_TASK_PASSED,scan->id);
 			}
 			sch_node_t* task = scan;
 			scan = scan->next;
@@ -426,7 +417,7 @@ _RAM_CODE void sch_start(void)
 	DEBUG_GPIO_HIGH(GPIO_3);
     if(TASK_VALID(schCtrl.pRunningTask))
     {
-        schCtrl.pRunningTask->cb(SCH_TASK_STOP);
+        schCtrl.pRunningTask->cb(SCH_TASK_STOP,schCtrl.pRunningTask->id);
         if(schCtrl.pRunningTask->type == SCH_PERIODIC_TASK)
         {
         	sch_node_t* pTask = schCtrl.pRunningTask;
@@ -438,7 +429,7 @@ _RAM_CODE void sch_start(void)
 
     if(TASK_VALID(schCtrl.pRunningTask))
     {
-        schCtrl.pRunningTask->cb(SCH_TASK_START);
+        schCtrl.pRunningTask->cb(SCH_TASK_START,schCtrl.pRunningTask->id);
     }
     sch_program_timer();
 	DEBUG_GPIO_LOW(GPIO_3);
@@ -544,9 +535,9 @@ _RAM_CODE int sch_task_extended(_u32 targetTime)
     }
     if(TASK_VALID(schCtrl.pRunningTask))
     {
-        if(schCtrl.pRunningTask->llId == taskId)
+        if(schCtrl.pRunningTask->id == taskId)
         {
-            schCtrl.pRunningTask->cb(SCH_TASK_STOP);
+            schCtrl.pRunningTask->cb(SCH_TASK_STOP,schCtrl.pRunningTask->id);
             schCtrl.pRunningTask = NULL;
         	IRQ_RESTORE;
         	hal_stimer_set_capture(system_time()+20);
@@ -561,7 +552,7 @@ _RAM_CODE int sch_task_extended(_u32 targetTime)
 {
 	if(TASK_VALID(schCtrl.pRunningTask))
 	{
-		schCtrl.pRunningTask->cb(SCH_TASK_STOP);
+		schCtrl.pRunningTask->cb(SCH_TASK_STOP,schCtrl.pRunningTask->id);
 	}
 	 schCtrl.pWaitingList  = NULL;
 	 schCtrl.pRunningTask  = NULL;
@@ -586,7 +577,7 @@ TASK_INIT(sche_init);
 //void task1_callback(_u8 type);
 //sch_node_t aTask1=
 //{
-//	.llId = 0x00,
+//	.id = 0x00,
 //	.type = SCH_PERIODIC_TASK,
 //    .priority = SCH_TASK_PRIORITY_A,
 //	.update = 0,
@@ -631,7 +622,7 @@ TASK_INIT(sche_init);
 //
 //sch_node_t aTask2=
 //{
-//	.llId = 0x01,
+//	.id = 0x01,
 //	.type = SCH_PERIODIC_TASK,
 //    .priority = SCH_TASK_PRIORITY_A,
 //	.update = 0,
@@ -673,7 +664,7 @@ TASK_INIT(sche_init);
 //_RAM_CODE void task3_callback(_u8 type);
 //sch_node_t aTask3=
 //{
-//	.llId = 0x02,
+//	.id = 0x02,
 //	.type = SCH_PERIODIC_TASK,
 //    .priority = SCH_TASK_PRIORITY_A,
 //	.update = 0,

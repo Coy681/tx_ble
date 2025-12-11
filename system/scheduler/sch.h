@@ -55,14 +55,14 @@ typedef enum
     SCH_ASAP_TASK      = 0x03,  //no anchor point,as soon as possible.
 }sch_task_type_e;
 
-typedef void(*sch_cb_f)(_u8);
+typedef void(*sch_cb_f)(_u8,_u8);
 typedef struct sch_node_t  sch_node_t;
 typedef struct _PACKED sch_node_t 
 {
-    _u8  llId;
+    _u8  id;
     _u8  type;//sch_task_type_e
     _u8  priority;//sch_task_priority_e
-    _u8  delete;
+    _u8  rsvd;
     _u32 timestamp;//us
     _u32 period;//us
     _u32 durationMin;//min duraiton,us

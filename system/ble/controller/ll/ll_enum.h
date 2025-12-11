@@ -5,8 +5,8 @@
  *      Author: Admin
  */
 
-#ifndef BLE_CONTROLLER_LL_LL_INFO_H_
-#define BLE_CONTROLLER_LL_LL_INFO_H_
+#ifndef BLE_CONTROLLER_LL_LL_ENUM_H_
+#define BLE_CONTROLLER_LL_LL_ENUM_H_
 
 /***********************Bluetooth LE Controller code**************************/
 typedef enum
@@ -88,4 +88,4 @@ typedef enum
 
 
 
-#endif /* BLE_CONTROLLER_LL_LL_INFO_H_ */
+#endif /* BLE_CONTROLLER_LL_LL_ENUM_H_ */

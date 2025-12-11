@@ -47,7 +47,7 @@ volatile _u32 AAA_FREE_LIST_LEN = 0;
 void task1_callback(_u8 type);
 sch_node_t aTask1=
 {
-	.llId = 0x66,
+	.id = 0x66,
 	.type = SCH_PERIODIC_TASK,
     .priority = SCH_TASK_PRIORITY_A,
 	.timestamp = 0,
@@ -97,7 +97,7 @@ void task2_callback(_u8 type);
 
 sch_node_t aTask2=
 {
-	.llId = 0x67,
+	.id = 0x67,
 	.type = SCH_PERIODIC_TASK,
     .priority = SCH_TASK_PRIORITY_A,
 	.timestamp = 0,
