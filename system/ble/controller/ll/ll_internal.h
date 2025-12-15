@@ -9,12 +9,11 @@
 #include"channel/channel.h"
 #include"accuracy/accuracy.h"
 
- #ifndef LL_INTERNAL_H_
- #define LL_INTERNAL_H_
+#ifndef LL_INTERNAL_H_
+#define LL_INTERNAL_H_
 
-#ifndef LL_LOG_TRACE
-#define LL_LOG_TRACE 1
-#endif
+
+#define LL_SM_UNVALID_HANDLE    0xFFFF
 
 /**
  * BLE Link Layer States
@@ -26,12 +25,6 @@
  * synchronization state            - synchronized receiver(isochronous)
  * isochronous broadcasting state   - isochronous broadcaster
  */
-
-
-
-/**
- * link layer state machine maybe have multiple instances,and only one state to be active at a time.
- */
 typedef enum
 {
     BLE_LL_STATE_STANDBY,
@@ -42,38 +35,6 @@ typedef enum
     BLE_LL_STATE_SYNCHRONIZATION,
     BLE_LL_STATE_BROADCASTING,
 }ble_ll_state_e;
-
-typedef enum
-{
-    BLE_LL_STATE_SUCCESS,
-    BLE_LL_STATE_INVALID_PARAMETER,
-    BLE_LL_STATE_TRANSITION_NOT_ALLOWED,
-}ble_ll_state_status_e;
-
-typedef enum
-{
-    BLE_LL_EVENT_START_ADVERTISING,
-    BLE_LL_EVENT_STOP_ADVERTISING,
-
-    BLE_LL_EVENT_START_SCANNING,
-    BLE_LL_EVENT_STOP_SCANNING,
-
-    BLE_LL_EVENT_START_INITIATING,
-    BLE_LL_EVENT_STOP_INITIATING,
-
-    BLE_LL_EVENT_START_SYNCHRONIZATION,
-    BLE_LL_EVENT_STOP_SYNCHRONIZATION,
-
-    BLE_LL_EVENT_START_BROADCASTING,
-    BLE_LL_EVENT_STOP_BROADCASTING,
-
-    BLE_LL_EVENT_START_CONNECTION,
-    BLE_LL_EVENT_STOP_CONNECTION,
-
-	BLE_LL_EVENT_MAX,
-}ble_ll_event_e;
-
-typedef int(*ble_ll_event_cb)(ble_ll_event_e);
 
 typedef enum
 {
@@ -276,8 +237,7 @@ typedef struct
 {
 	reset_f reset;
     ll_internal_adv_param_t param[BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS];
-    phy_obj_t  phy;
-    sch_node_t sch;
+
 }ll_internal_adv_ctrl_t;
 
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
@@ -383,8 +343,6 @@ typedef struct _PACKED
 	ll_csa_ctrl_t         csa;
 	_u8*                  info;
 	reset_f reset;
-    phy_obj_t  phy;
-    sch_node_t sch;
 }ll_internal_connection_ctrl_t;
 
 
@@ -394,16 +352,12 @@ typedef struct _PACKED
 typedef struct _PACKED
 {
 	reset_f reset;
-    phy_obj_t  phy;
-    sch_node_t sch;
 }ll_internal_scan_ctrl_t;
 
 /***********************ll initiating sate**********************/
 typedef struct _PACKED
 {
 	reset_f reset;
-    phy_obj_t  phy;
-    sch_node_t sch;
 }ll_internal_initiating_ctrl_t;
 
 /***********************ll synchronization sate**********************/
@@ -412,8 +366,6 @@ typedef struct _PACKED
 	_u16 handle;
 	_u16 rsvd;
 	reset_f reset;
-    phy_obj_t  phy;
-    sch_node_t sch;
 }ll_internal_synchronous_ctrl_t;
 
 /***********************ll broadcasting sate**********************/
@@ -422,8 +374,6 @@ typedef struct _PACKED
 	_u16 handle;
 	_u16 rsvd;
 	reset_f reset;
-    phy_obj_t  phy;
-    sch_node_t sch;
 }ll_internal_broadcast_ctrl_t;
 
 /***********************ll sate**********************/
@@ -449,6 +399,9 @@ typedef struct _PACKED
 	_u8  id;
 	_u8  state;
 	_u16 rsvd1;
+	//the reason why put phy and sch object here:coupling common object and specific module
+    phy_obj_t  phy;
+    sch_node_t sch;
     _u8* entity;//maybe standby/adv/conn/scan/initiating/synchronous/broadcast
 }ll_sm_t;
 
@@ -485,7 +438,5 @@ _u8* ll_get_sm_entity_by_state(ble_ll_state_e state,_u16 handle,_u8 allocate);
 _u8* ll_get_device_address(void);
 _u8* ll_get_shared_phy_tx_address(void);
 _u8* ll_get_shared_phy_rx_address(void);
-
-ble_ll_state_status_e ble_ll_process_event(ll_sm_t* sm,ble_ll_event_e event);
 
 #endif//LL_INTERNAL_H_

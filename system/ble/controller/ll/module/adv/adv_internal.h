@@ -100,7 +100,9 @@ typedef enum
     #endif
 }adv_event_type_e;
 
-int ble_ll_enter_advertising_state(ble_ll_event_e event);
+void ble_ll_enter_advertising_state(void);
+
+void ble_ll_exit_advertising_state(void);
 
 
 #endif /* BLE_CONTROLLER_LL_MODULE_ADV_ADV_INTERNAL_H_ */

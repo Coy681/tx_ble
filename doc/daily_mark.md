@@ -105,3 +105,11 @@ peripheral可以忽略central的事件数(connection event)，注意是忽略,�
 peripheral可以忽略central的subrate事件数，相当于在基础peripheral latency的基础上叠加了一个subrateEvent的概念    
 
 注意：**subrate生效的时候，peripheral latency生效的基础是subrate event**
+
+# 20251213
+
+phy channel在ACL和CIS/BIS/PDA事件当中的不同
+
+跳频算法1只能计算事件的phy channel，无法计算子事件的phy channel，所以ACL如果有more data，都是在当前事件的phy channel当中完成的，即channel不变
+
+跳频算法2既能计算事件的phy channel，也能计算子事件的phy channel，所以CIS/BIS/PDA的每个subevent的channel都不一样，既channel会变化，而且跳频算法2的特性会使得每两个相邻的subevent phy channel不同。
