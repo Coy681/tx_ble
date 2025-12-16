@@ -1931,7 +1931,7 @@ static void adv_sch_callback(_u8 type,_u8 id)
 /*************************************LL APIs Define*******************************************/
 static void ble_ll_adv_reset(void)
 {
-	LLSM = ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_UNVALID_HANDLE,0);
+	LLSM = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_UNVALID_HANDLE,0);
 	ASSERT(POINTER_VALID(LLSM));
 	advCtrl = (ll_internal_adv_ctrl_t*)LLSM->entity;
 	ASSERT(POINTER_VALID(advCtrl));
@@ -1973,7 +1973,7 @@ static void ble_ll_adv_reset(void)
 
 void ble_ll_enter_advertising_state(void)
 {
-	LLSM = ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_UNVALID_HANDLE,0);
+	LLSM = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_UNVALID_HANDLE,0);
 	ASSERT(POINTER_VALID(LLSM));
 	advCtrl = (ll_internal_adv_ctrl_t*)LLSM->entity;
 	ASSERT(POINTER_VALID(advCtrl));
@@ -2011,10 +2011,180 @@ void ble_ll_enter_advertising_state(void)
 
 void ble_ll_exit_advertising_state(void)
 {
-	LLSM = ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_UNVALID_HANDLE,0);
+	LLSM = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_UNVALID_HANDLE,0);
 	ASSERT(POINTER_VALID(LLSM));
 	advCtrl = (ll_internal_adv_ctrl_t*)LLSM->entity;
 	ASSERT(POINTER_VALID(advCtrl));
 
 	//todo
+}
+
+/*************************************Bluetooth LE Advertising LL APIS******************************/
+
+controller_error_code_e ll_set_advertising_parameters(_u16 interval,\
+	                                                  ll_advertising_type_e type,\
+													  ll_own_address_type_e ownAddressType,\
+	                                                  ll_peer_address_type_e peerAddressType,\
+													  _u8* peerAddress,_u8 channelMap,\
+	                                                  ll_advertising_filter_policy_e policy)
+{
+
+	ll_sm_t* llsm = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_UNVALID_HANDLE,0);
+	ASSERT(POINTER_VALID(llsm));
+
+    ll_internal_adv_ctrl_t* adv = NULL;
+	_u8 index = 0;//only one legacy adv set is allowed 
+	if(POINTER_NOT_VALID(llsm->entity))
+	{
+		llsm->entity = tx_malloc(sizeof(ll_internal_adv_ctrl_t));
+        ASSERT(POINTER_VALID(llsm->entity));
+        adv = (ll_internal_adv_ctrl_t*)llsm->entity;
+		adv->param[index].la = (ll_adv_set_t*)tx_malloc(sizeof(ll_adv_set_t));
+        ASSERT(POINTER_VALID(adv->param[index].la));
+	}
+	adv->param[index].ownAddressType  = ownAddressType;
+	adv->param[index].peerAddressType = peerAddressType;
+	adv->param[index].filterPolicy = policy;
+	txMemcpy(adv->param[index].peerAddress,peerAddress,6);
+
+	adv->param[index].la->sch.interval = interval*625;
+	adv->param[index].la->channelCnt   = 0;
+    for(int i=0;i<3;i++)
+    {
+    	if(channelMap&BIT(i))
+    	{
+    		adv->param[index].la->chnTable[adv->param[index].la->channelCnt++] = 37+i;
+    	}
+    }
+	switch(type)
+	{
+		case LL_ADV_IND:
+		{
+			adv->param[index].eventType = ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED;
+		}break;
+		case LL_ADV_DIRECT_IND_HIGH_DUTY:
+		case LL_ADV_DIRECT_IND_LOW_DUTY:
+		{
+			adv->param[index].eventType = ADV_EVENT_CONNECTABLE_DIRECTED;
+		}break;
+		case LL_ADV_SCAN_IND:
+		{
+			adv->param[index].eventType = ADV_EVENT_SCANNABLE_UNDIRECTED;
+		}break;
+		case LL_ADV_NONCONN_IND:
+		{
+			adv->param[index].eventType = ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED;
+		}break;
+	}
+	LOG_TRACE(1,"set adv param",0,0)
+	return SUCCESS;
+}
+
+controller_error_code_e ll_set_advertising_data(_u8* data,_u8 length)
+{
+	ll_sm_t* llsm = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_UNVALID_HANDLE,0);
+	ASSERT(POINTER_VALID(llsm));
+
+    ll_internal_adv_ctrl_t* adv = NULL;
+	_u8 index = 0;//only one legacy adv set is allowed    
+	if(POINTER_NOT_VALID(llsm->entity))
+	{
+		llsm->entity = tx_malloc(sizeof(ll_internal_adv_ctrl_t));
+        ASSERT(POINTER_VALID(llsm->entity));
+        adv = (ll_internal_adv_ctrl_t*)llsm->entity;
+		adv->param[index].la = (ll_adv_set_t*)tx_malloc(sizeof(ll_adv_set_t));
+        ASSERT(POINTER_VALID(adv->param[index].la));
+	}
+
+    if(adv->param[index].data.addr)
+	{
+		tx_free(adv->param[index].data.addr);
+	}
+    adv->param[index].data.len  = length;
+    adv->param[index].data.addr = tx_malloc(length);
+	txMemcpy(adv->param[index].data.addr,data,length);
+	LOG_TRACE(1,"set adv data",0,0)
+	return SUCCESS;
+}
+controller_error_code_e ll_set_scan_response_data(_u8* data,_u8 length)
+{
+	ll_sm_t* llsm = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_UNVALID_HANDLE,0);
+	ASSERT(POINTER_VALID(llsm));
+
+    ll_internal_adv_ctrl_t* adv = NULL;
+	_u8 index = 0;//only one legacy adv set is allowed    
+	if(POINTER_NOT_VALID(llsm->entity))
+	{
+		llsm->entity = tx_malloc(sizeof(ll_internal_adv_ctrl_t));
+        ASSERT(POINTER_VALID(llsm->entity));
+        adv = (ll_internal_adv_ctrl_t*)llsm->entity;
+		adv->param[index].la = (ll_adv_set_t*)tx_malloc(sizeof(ll_adv_set_t));
+        ASSERT(POINTER_VALID(adv->param[index].la));
+	}
+    if(adv->param[index].scanRsp.addr)
+	{
+		tx_free(adv->param[index].scanRsp.addr);
+	}
+    adv->param[index].scanRsp.len  = length;
+    adv->param[index].scanRsp.addr = tx_malloc(length);
+	txMemcpy(adv->param[index].scanRsp.addr,data,length);
+	LOG_TRACE(1,"set scan rsp data",0,0)
+	return SUCCESS;
+}
+controller_error_code_e ll_set_advertising_enable(_u8 enable)
+{
+	ll_sm_t* llsm = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_UNVALID_HANDLE,0);
+	ASSERT(POINTER_VALID(llsm));
+	ASSERT(POINTER_VALID(llsm->entity));
+    ll_internal_adv_ctrl_t* adv = (ll_internal_adv_ctrl_t*)llsm->entity;
+	_u8 index = 0;
+	//assert ll->adv == NULL
+    if(adv->param[index].enable == enable)
+	{
+		return SUCCESS;
+	}
+	LOG_TRACE(1,"set scan enable",&enable,1)
+	if(adv->param[index].enable!=enable)
+	{
+		adv->param[index].enable = enable;
+		if(adv->param[index].enable == LL_ADVERTISING_ENABLE)
+		{
+	        phy_obj_cast(&llsm->phy);
+	        phy_obj_init(&llsm->phy);
+	        ll_internal_adv_param_t* advParam = &adv->param[0];
+			//sch init
+			advParam->la->availableChnCnt     = advParam->la->channelCnt;
+			advParam->la->eventCnt        = 0;
+			advParam->la->sch.anchorPoint     = system_time() + 500;
+			if(advParam->eventType == ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED)
+			{
+				advParam->la->sch.duration = llsm->phy.hw_get_prepare_time()+ll_get_air_packet_time(PHY_MODE_1M,BLE_ADV_PRI_PHY_MAX_TX_LEN,0);
+			}
+			else
+			{
+				advParam->la->sch.duration = llsm->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(PHY_MODE_1M,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+2*PACKET_DEFAULT_TIFS_TIME;
+			}
+			advParam->la->sch.startMargin     = 100;
+			advParam->la->sch.stopMargin      = 75;
+			//phy init
+			advParam->la->phy.mode            = PHY_MODE_1M;
+			advParam->la->phy.crcInit         = BLE_ADV_CRC_INIT;
+			advParam->la->phy.accessCode      = BLE_ADV_ACCESS_CODE;
+			advParam->la->phy.rxMaxOctets     = BLE_ADV_PRI_PHY_MAX_RX_LEN;
+			advParam->la->phy.rxAddress       = ll_get_shared_phy_rx_address();
+			advParam->la->phy.txAddress       = ll_get_shared_phy_tx_address();
+			if(BLE_LL_STATE_SUCCESS!=ble_ll_process_event(ll,BLE_LL_EVENT_START_ADVERTISING))
+			{
+				return IVALID_HCI_COMMAND_PARAMETERS;
+			}
+		}
+		else//LL_ADVERTISING_DISABLE
+		{
+			if(BLE_LL_STATE_SUCCESS!=ble_ll_process_event(ll,BLE_LL_EVENT_STOP_ADVERTISING))
+			{
+				return IVALID_HCI_COMMAND_PARAMETERS;
+			}
+		}
+	}
+	return SUCCESS;
 }

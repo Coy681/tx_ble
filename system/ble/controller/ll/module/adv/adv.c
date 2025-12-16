@@ -1991,97 +1991,97 @@ static adv_procedure_list_t adv_extended_non_con_non_scan_directed_procedure_wit
 /*************************************Bluetooth LE Advertising ******************************/
 
 
-controller_error_code_e ll_set_advertising_parameters(_u16 interval,\
-	                                                  ll_advertising_type_e type,\
-													  ll_own_address_type_e ownAddressType,\
-	                                                  ll_peer_address_type_e peerAddressType,\
-													  _u8* peerAddress,_u8 channelMap,\
-	                                                  ll_advertising_filter_policy_e policy)
-{
-	ll_sm_t* ll = ll_get_current_state_machine();
-	_u8 index = 0;
-	if(ll->adv == NULL)
-	{
-		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_ctrl_t));
-		ll->adv->param[index].la = (ll_adv_set_t*)tx_malloc(sizeof(ll_adv_set_t));
-	}
-	ll->adv->param[index].ownAddressType  = ownAddressType;
-	ll->adv->param[index].peerAddressType = peerAddressType;
-	ll->adv->param[index].filterPolicy = policy;
-	txMemcpy(ll->adv->param[index].peerAddress,peerAddress,6);
+// controller_error_code_e ll_set_advertising_parameters(_u16 interval,\
+// 	                                                  ll_advertising_type_e type,\
+// 													  ll_own_address_type_e ownAddressType,\
+// 	                                                  ll_peer_address_type_e peerAddressType,\
+// 													  _u8* peerAddress,_u8 channelMap,\
+// 	                                                  ll_advertising_filter_policy_e policy)
+// {
+// 	ll_sm_t* ll = ll_get_current_state_machine();
+// 	_u8 index = 0;
+// 	if(ll->adv == NULL)
+// 	{
+// 		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_ctrl_t));
+// 		ll->adv->param[index].la = (ll_adv_set_t*)tx_malloc(sizeof(ll_adv_set_t));
+// 	}
+// 	ll->adv->param[index].ownAddressType  = ownAddressType;
+// 	ll->adv->param[index].peerAddressType = peerAddressType;
+// 	ll->adv->param[index].filterPolicy = policy;
+// 	txMemcpy(ll->adv->param[index].peerAddress,peerAddress,6);
 
-	ll->adv->param[index].la->sch.interval = interval*625;
-	ll->adv->param[index].la->channelCnt   = 0;
-    for(int i=0;i<3;i++)
-    {
-    	if(channelMap&BIT(i))
-    	{
-    		ll->adv->param[index].la->chnTable[ll->adv->param[index].la->channelCnt++] = 37+i;
-    	}
-    }
-	switch(type)
-	{
-		case LL_ADV_IND:
-		{
-			ll->adv->param[index].eventType = ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED;
-		}break;
-		case LL_ADV_DIRECT_IND_HIGH_DUTY:
-		case LL_ADV_DIRECT_IND_LOW_DUTY:
-		{
-			ll->adv->param[index].eventType = ADV_EVENT_CONNECTABLE_DIRECTED;
-		}break;
-		case LL_ADV_SCAN_IND:
-		{
-			ll->adv->param[index].eventType = ADV_EVENT_SCANNABLE_UNDIRECTED;
-		}break;
-		case LL_ADV_NONCONN_IND:
-		{
-			ll->adv->param[index].eventType = ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED;
-		}break;
-	}
-	LOG_TRACE(1,"set adv param",0,0)
-	return SUCCESS;
-}
+// 	ll->adv->param[index].la->sch.interval = interval*625;
+// 	ll->adv->param[index].la->channelCnt   = 0;
+//     for(int i=0;i<3;i++)
+//     {
+//     	if(channelMap&BIT(i))
+//     	{
+//     		ll->adv->param[index].la->chnTable[ll->adv->param[index].la->channelCnt++] = 37+i;
+//     	}
+//     }
+// 	switch(type)
+// 	{
+// 		case LL_ADV_IND:
+// 		{
+// 			ll->adv->param[index].eventType = ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED;
+// 		}break;
+// 		case LL_ADV_DIRECT_IND_HIGH_DUTY:
+// 		case LL_ADV_DIRECT_IND_LOW_DUTY:
+// 		{
+// 			ll->adv->param[index].eventType = ADV_EVENT_CONNECTABLE_DIRECTED;
+// 		}break;
+// 		case LL_ADV_SCAN_IND:
+// 		{
+// 			ll->adv->param[index].eventType = ADV_EVENT_SCANNABLE_UNDIRECTED;
+// 		}break;
+// 		case LL_ADV_NONCONN_IND:
+// 		{
+// 			ll->adv->param[index].eventType = ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED;
+// 		}break;
+// 	}
+// 	LOG_TRACE(1,"set adv param",0,0)
+// 	return SUCCESS;
+// }
 
-controller_error_code_e ll_set_advertising_data(_u8* data,_u8 length)
-{
-	ll_sm_t* ll = ll_get_current_state_machine();
-	_u8 index = 0;
-	if(ll->adv == NULL)
-	{
-		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_ctrl_t));
-		ll->adv->param[index].la = (ll_adv_set_t*)tx_malloc(sizeof(ll_adv_set_t));
-	}
-    if(ll->adv->param[index].data.addr)
-	{
-		tx_free(ll->adv->param[index].data.addr);
-	}
-    ll->adv->param[index].data.len  = length;
-    ll->adv->param[index].data.addr = tx_malloc(length);
-	txMemcpy(ll->adv->param[index].data.addr,data,length);
-	LOG_TRACE(1,"set adv data",0,0)
-	return SUCCESS;
-}
+// controller_error_code_e ll_set_advertising_data(_u8* data,_u8 length)
+// {
+// 	ll_sm_t* ll = ll_get_current_state_machine();
+// 	_u8 index = 0;
+// 	if(ll->adv == NULL)
+// 	{
+// 		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_ctrl_t));
+// 		ll->adv->param[index].la = (ll_adv_set_t*)tx_malloc(sizeof(ll_adv_set_t));
+// 	}
+//     if(ll->adv->param[index].data.addr)
+// 	{
+// 		tx_free(ll->adv->param[index].data.addr);
+// 	}
+//     ll->adv->param[index].data.len  = length;
+//     ll->adv->param[index].data.addr = tx_malloc(length);
+// 	txMemcpy(ll->adv->param[index].data.addr,data,length);
+// 	LOG_TRACE(1,"set adv data",0,0)
+// 	return SUCCESS;
+// }
 
-controller_error_code_e ll_set_scan_response_data(_u8* data,_u8 length)
-{
-	ll_sm_t* ll = ll_get_current_state_machine();
-	_u8 index = 0;
-	if(ll->adv == NULL)
-	{
-		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_ctrl_t));
-		ll->adv->param[index].la = (ll_adv_set_t*)tx_malloc(sizeof(ll_adv_set_t));
-	}
-    if(ll->adv->param[index].scanRsp.addr)
-	{
-		tx_free(ll->adv->param[index].scanRsp.addr);
-	}
-    ll->adv->param[index].scanRsp.len  = length;
-    ll->adv->param[index].scanRsp.addr = tx_malloc(length);
-	txMemcpy(ll->adv->param[index].scanRsp.addr,data,length);
-	LOG_TRACE(1,"set scan rsp data",0,0)
-	return SUCCESS;
-}
+// controller_error_code_e ll_set_scan_response_data(_u8* data,_u8 length)
+// {
+// 	ll_sm_t* ll = ll_get_current_state_machine();
+// 	_u8 index = 0;
+// 	if(ll->adv == NULL)
+// 	{
+// 		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_ctrl_t));
+// 		ll->adv->param[index].la = (ll_adv_set_t*)tx_malloc(sizeof(ll_adv_set_t));
+// 	}
+//     if(ll->adv->param[index].scanRsp.addr)
+// 	{
+// 		tx_free(ll->adv->param[index].scanRsp.addr);
+// 	}
+//     ll->adv->param[index].scanRsp.len  = length;
+//     ll->adv->param[index].scanRsp.addr = tx_malloc(length);
+// 	txMemcpy(ll->adv->param[index].scanRsp.addr,data,length);
+// 	LOG_TRACE(1,"set scan rsp data",0,0)
+// 	return SUCCESS;
+// }
 
 controller_error_code_e ll_set_advertising_enable(_u8 enable)
 {
