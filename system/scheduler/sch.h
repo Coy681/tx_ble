@@ -55,7 +55,7 @@ typedef enum
     SCH_ASAP_TASK      = 0x03,  //no anchor point,as soon as possible.
 }sch_task_type_e;
 
-typedef void(*sch_cb_f)(_u8,_u8);
+typedef void(*sch_cb_f)(_u8,_u8);//type,id
 typedef struct sch_node_t  sch_node_t;
 typedef struct _PACKED sch_node_t 
 {

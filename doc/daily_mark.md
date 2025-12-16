@@ -113,3 +113,65 @@ phy channel在ACL和CIS/BIS/PDA事件当中的不同
 跳频算法1只能计算事件的phy channel，无法计算子事件的phy channel，所以ACL如果有more data，都是在当前事件的phy channel当中完成的，即channel不变
 
 跳频算法2既能计算事件的phy channel，也能计算子事件的phy channel，所以CIS/BIS/PDA的每个subevent的channel都不一样，既channel会变化，而且跳频算法2的特性会使得每两个相邻的subevent phy channel不同。
+
+# 20251216
+
+读Bluetooeh Core有感
+
+## Host架构
+
+### Channel manager
+
+channel manager主要用来创建，管理，关闭L2CAP Channel,主要职责
+
+ - 和对端设备写作，创建L2CAP Channel
+ - 和本地logic link manager写作，创建新的logic link,从而为当前需要传输的数据进行服务质量保障
+
+### L2CAP Resource Manager
+
+负责管理L2CAP PDU分片向Baseband的提交顺序，确保各个L2CAP Channel得到应有的服务质量保障。
+  - 由于controller的缓冲不是无限的，L2CAP Resource Manager需要为多个L2CAP Channel提供带宽和时序协调，确保某个L2CAP的数据不会被Controller拒绝
+  - HCI通道的流量不是无限的，不能承载无限的数据流量
+  - 提供流量合规性校验，确保L2CAP Channel的SDU符合规定的Qos范围
+
+### Security Maganer Protocol
+
+SMP是一个对等协议，没有主从之分。主要用来产生encryption keys和identity keys，在一个固定的L2CAP Channel之上，主要职责
+
+ - 存储encryption keys和identity keys
+ - 产生随机地址(random address)
+ - 将随机地址解析为已知设备
+ - 与controller协调，在加密和认证过程中提供预存密钥
+
+ SMP在LE 系统里面存在于Host，为了减少单LE Controller的资源开销
+ SMP在BR/EDR系统里面存在于controller
+
+ ### Attribute Protocol
+
+ ATT协议是ATT Client和ATT Server之间的一个对等协议，ATT Client可以通过固定的L2CAP通道访问ATT Server
+
+  - ATT Client可以发送命令(commands)，请求(request)，确认(confirmation)
+  - ATT Server可以发送响应(response)，通知(notification)，指示(indication)
+
+### Generic Attribute Profile
+
+GATT协议定义了ATT Server中Services，Characteristics,Attributes的层级结构，并且提供了基于service characteristics和attributes的发现，读写，指示等功能接口
+GATT只用于LE设备
+
+### Generic Access Profile
+
+GAP承载了所有蓝牙设备的基础功能，例如传输层，协议，应用配置使用的工作模式和流程，主要功能包括
+ - 设备发现
+ - 连接模式配置
+ - 安全管控
+ - 身份认证
+ - 关键模型建立
+ - 服务发现
+
+# 20251216
+
+疑问，传统广播和扩展广播，成功建立连接之后，是否都要退出广播状态，广播需要停止，直到手动开启？
+
+答案：
+
+读Bluetooeh Core有感
