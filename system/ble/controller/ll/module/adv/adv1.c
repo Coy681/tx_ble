@@ -481,7 +481,7 @@ _u16 adv_calculate_extended_header_length(_u8 flags)
     return extHdLen;
 }
 
-static void adv_generate_extended_header(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8* packet,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
+static void adv_generate_extended_header(_u8* packet,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
 {
     adv_extended_header_t* extHeader = (adv_extended_header_t*)packet;
     extHeader->advMode = advMode;
@@ -494,7 +494,7 @@ static void adv_generate_extended_header(ll_sm_t* ll,ll_internal_adv_param_t* ad
     }
     if(flags & ADV_EXTENDED_HEADER_FLAG_TARGET_A)
     {
-        txMemcpy(extHeader->param+offset,advParam->peerAddress,6);
+        txMemcpy(extHeader->param+offset,currentSet->peerAddress,6);
         offset+=sizeof(adv_extended_header_subfield_targetA_t);
     }
     if(flags & ADV_EXTENDED_HEADER_FLAG_CTE_INFO)
@@ -505,7 +505,7 @@ static void adv_generate_extended_header(ll_sm_t* ll,ll_internal_adv_param_t* ad
     if(flags & ADV_EXTENDED_HEADER_FLAG_ADI)
     {
         ((adv_extended_header_subfield_adi_t*)(extHeader->param+offset))->did = did;
-        ((adv_extended_header_subfield_adi_t*)(extHeader->param+offset))->sid = advParam->sid;
+        ((adv_extended_header_subfield_adi_t*)(extHeader->param+offset))->sid = currentSet->sid;
         offset+=sizeof(adv_extended_header_subfield_adi_t);
     }
     if(flags & ADV_EXTENDED_HEADER_FLAG_AUX_PTR)
@@ -537,7 +537,7 @@ static void adv_generate_extended_header(ll_sm_t* ll,ll_internal_adv_param_t* ad
     if(flags & ADV_EXTENDED_HEADER_FLAG_SYNC_INFO)
     {
 		#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
-    	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->interval   = advParam->pa->sync.sch.interval;
+    	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->interval   = currentSet->pa->sync.sch.interval;
     	//todo with access code,crc init,sca
     	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->chMH       = 0x1f;
     	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->chML       = 0xffffffff;
@@ -547,13 +547,13 @@ static void adv_generate_extended_header(ll_sm_t* ll,ll_internal_adv_param_t* ad
     	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->crcInit[2] = 0x76;
     	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->sca        = 3;
     	_u32 stepCnt = 0;
-    	_u32 anchorTime = advParam->ea->aux.sch.anchorPoint;
-    	_u32 targetTime = advParam->pa->sync.sch.anchorPoint;
+    	_u32 anchorTime = currentSet->ea->aux.sch.anchorPoint;
+    	_u32 targetTime = currentSet->pa->sync.sch.anchorPoint;
     	if(txCompare(anchorTime,targetTime))
     	{
-    		stepCnt = (anchorTime-targetTime)/advParam->pa->sync.sch.interval;
+    		stepCnt = (anchorTime-targetTime)/currentSet->pa->sync.sch.interval;
     		stepCnt++;
-    		targetTime+=(stepCnt*advParam->pa->sync.sch.interval);
+    		targetTime+=(stepCnt*currentSet->pa->sync.sch.interval);
     	}
         _u32 anchorDiff = targetTime - anchorTime;
         if(anchorDiff>(30*0x1fff))
@@ -568,7 +568,7 @@ static void adv_generate_extended_header(ll_sm_t* ll,ll_internal_adv_param_t* ad
         	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->offsetBase     = anchorDiff/30;
         	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->offsetAdjust   = 0;
         }
-        ((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->eventCounter   = advParam->pa->eventCnt+stepCnt;
+        ((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->eventCounter   = currentSet->pa->eventCnt+stepCnt;
 		#endif
         offset+=sizeof(adv_extended_header_subfield_syncInfo_t);
     }
@@ -581,194 +581,194 @@ static void adv_generate_extended_header(ll_sm_t* ll,ll_internal_adv_param_t* ad
 #endif//LL_SUPPORT_LE_EXTENDED_ADVERTISING
 
 //LL_ADV_TYPE_ADV_IND
-static void adv_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static void adv_ind_pdu_prepare(void)
 {
-    _u8* packet = ll_adv_packet_data_prepare(advParam->la->phy.txAddress,6+advParam->data.len,LL_ADV_TYPE_ADV_IND);
+    _u8* packet = ll_adv_packet_data_prepare(currentSet->la->phy.txAddress,6+currentSet->data.len,LL_ADV_TYPE_ADV_IND);
     txMemcpy(((adv_type_ind_t*)packet)->advA,ll_get_device_address(),6);
-    txMemcpy(((adv_type_ind_t*)packet)->advData,advParam->data.addr,advParam->data.len);
-    ll_adv_packet_make(advParam->la->phy.txAddress,LL_CHANNEL_SUPP_CSA2,advParam->ownAddressType?1:0,0);
+    txMemcpy(((adv_type_ind_t*)packet)->advData,currentSet->data.addr,currentSet->data.len);
+    ll_adv_packet_make(currentSet->la->phy.txAddress,LL_CHANNEL_SUPP_CSA2,currentSet->ownAddressType?1:0,0);
 }
 //LL_ADV_TYPE_ADV_DIRECT_IND
-static void adv_direct_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static void adv_direct_ind_pdu_prepare(void)
 {
-    _u8* packet = ll_adv_packet_data_prepare(advParam->la->phy.txAddress,12,LL_ADV_TYPE_ADV_DIRECT_IND);
+    _u8* packet = ll_adv_packet_data_prepare(currentSet->la->phy.txAddress,12,LL_ADV_TYPE_ADV_DIRECT_IND);
     txMemcpy(((adv_type_direct_ind_t*)packet)->advA,ll_get_device_address(),6);
-    txMemcpy(((adv_type_direct_ind_t*)packet)->targetA,advParam->peerAddress,6);
-    ll_adv_packet_make(advParam->la->phy.txAddress,LL_CHANNEL_SUPP_CSA2,advParam->ownAddressType?1:0,advParam->peerAddressType?1:0);
+    txMemcpy(((adv_type_direct_ind_t*)packet)->targetA,currentSet->peerAddress,6);
+    ll_adv_packet_make(currentSet->la->phy.txAddress,LL_CHANNEL_SUPP_CSA2,currentSet->ownAddressType?1:0,currentSet->peerAddressType?1:0);
 }
 //LL_ADV_TYPE_ADV_NONCONN_IND
-static void adv_non_conn_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static void adv_non_conn_pdu_prepare(void)
 {
-    _u8* packet = ll_adv_packet_data_prepare(advParam->la->phy.txAddress,6+advParam->data.len,LL_ADV_TYPE_ADV_NONCONN_IND);
+    _u8* packet = ll_adv_packet_data_prepare(currentSet->la->phy.txAddress,6+currentSet->data.len,LL_ADV_TYPE_ADV_NONCONN_IND);
     txMemcpy(((adv_type_nonConn_ind_t*)packet)->advA,ll_get_device_address(),6);
-    txMemcpy(((adv_type_nonConn_ind_t*)packet)->advData,advParam->data.addr,advParam->data.len);
-    ll_adv_packet_make(advParam->la->phy.txAddress,0,advParam->ownAddressType?1:0,0);
+    txMemcpy(((adv_type_nonConn_ind_t*)packet)->advData,currentSet->data.addr,currentSet->data.len);
+    ll_adv_packet_make(currentSet->la->phy.txAddress,0,currentSet->ownAddressType?1:0,0);
 }
 //LL_ADV_TYPE_SCAN_RSP
-static void adv_scan_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static void adv_scan_rsp_pdu_prepare(void)
 {
-    _u8* packet = ll_adv_packet_data_prepare(advParam->la->phy.txAddress,6+advParam->scanRsp.len,LL_ADV_TYPE_SCAN_RSP);
+    _u8* packet = ll_adv_packet_data_prepare(currentSet->la->phy.txAddress,6+currentSet->scanRsp.len,LL_ADV_TYPE_SCAN_RSP);
     txMemcpy(((adv_type_scan_rsp_t*)packet)->advA,ll_get_device_address(),6);
-    txMemcpy(((adv_type_scan_rsp_t*)packet)->scanRsp,advParam->scanRsp.addr,advParam->scanRsp.len);
-    ll_adv_packet_make(advParam->la->phy.txAddress,0,advParam->ownAddressType?1:0,0);
+    txMemcpy(((adv_type_scan_rsp_t*)packet)->scanRsp,currentSet->scanRsp.addr,currentSet->scanRsp.len);
+    ll_adv_packet_make(currentSet->la->phy.txAddress,0,currentSet->ownAddressType?1:0,0);
 }
 //LL_ADV_TYPE_ADV_SCAN_IND
-static void adv_scan_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static void adv_scan_ind_pdu_prepare(void)
 {
-    _u8* packet = ll_adv_packet_data_prepare(advParam->la->phy.txAddress,6+advParam->data.len,LL_ADV_TYPE_ADV_SCAN_IND);
+    _u8* packet = ll_adv_packet_data_prepare(currentSet->la->phy.txAddress,6+currentSet->data.len,LL_ADV_TYPE_ADV_SCAN_IND);
     txMemcpy(((adv_type_scan_ind_t*)packet)->advA,ll_get_device_address(),6);
-    txMemcpy(((adv_type_scan_ind_t*)packet)->advData,advParam->data.addr,advParam->data.len);
-    ll_adv_packet_make(advParam->la->phy.txAddress,0,advParam->ownAddressType?1:0,0);
+    txMemcpy(((adv_type_scan_ind_t*)packet)->advData,currentSet->data.addr,currentSet->data.len);
+    ll_adv_packet_make(currentSet->la->phy.txAddress,0,currentSet->ownAddressType?1:0,0);
 }
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
 //LL_ADV_TYPE_ADV_EXT_IND
-static void adv_ext_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
+static void adv_ext_ind_pdu_prepare(_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
-    _u8* packet = ll_adv_packet_data_prepare(advParam->la->phy.txAddress,headerLen,LL_ADV_TYPE_ADV_EXT_IND);
-    adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo,did);
-    ll_adv_packet_make(advParam->la->phy.txAddress,0,advParam->ownAddressType?1:0,0);
+    _u8* packet = ll_adv_packet_data_prepare(currentSet->la->phy.txAddress,headerLen,LL_ADV_TYPE_ADV_EXT_IND);
+    adv_generate_extended_header(packet,advMode,flags,auxInfo,did);
+    ll_adv_packet_make(currentSet->la->phy.txAddress,0,currentSet->ownAddressType?1:0,0);
 }
 
 //LL_ADV_TYPE_AUX_ADV_IND
-static void adv_aux_adv_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
+static void adv_aux_adv_ind_pdu_prepare(_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
-    _u16 dataLen = advParam->ea->aux.data.len;
-    if(advParam->eventProperty&LL_ADV_EVENT_PROPERTY_SCANNABLE)
+    _u16 dataLen = currentSet->ea->aux.data.len;
+    if(currentSet->eventProperty&LL_ADV_EVENT_PROPERTY_SCANNABLE)
     {
     	dataLen = 0;
     }
-    _u8* packet = ll_adv_packet_data_prepare(advParam->ea->aux.phy.txAddress,headerLen+dataLen,LL_ADV_TYPE_AUX_ADV_IND);
-    adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo,did);
+    _u8* packet = ll_adv_packet_data_prepare(currentSet->ea->aux.phy.txAddress,headerLen+dataLen,LL_ADV_TYPE_AUX_ADV_IND);
+    adv_generate_extended_header(packet,advMode,flags,auxInfo,did);
     if(dataLen!=0)
     {
-        txMemcpy(packet+headerLen,advParam->ea->aux.data.addr,dataLen);
+        txMemcpy(packet+headerLen,currentSet->ea->aux.data.addr,dataLen);
     }
-    ll_adv_packet_make(advParam->ea->aux.phy.txAddress,0,advParam->ownAddressType?1:0,0);
+    ll_adv_packet_make(currentSet->ea->aux.phy.txAddress,0,currentSet->ownAddressType?1:0,0);
 }
 //LL_ADV_TYPE_AUX_SCAN_RSP
-static void adv_aux_scan_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
+static void adv_aux_scan_rsp_pdu_prepare(_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
-    _u8* packet = ll_adv_packet_data_prepare(advParam->ea->aux.phy.txAddress,headerLen+advParam->ea->aux.data.len,LL_ADV_TYPE_AUX_SCAN_RSP);
-    adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo,did);
-    if(advParam->ea->aux.data.len!=0)
+    _u8* packet = ll_adv_packet_data_prepare(currentSet->ea->aux.phy.txAddress,headerLen+currentSet->ea->aux.data.len,LL_ADV_TYPE_AUX_SCAN_RSP);
+    adv_generate_extended_header(packet,advMode,flags,auxInfo,did);
+    if(currentSet->ea->aux.data.len!=0)
     {
-        txMemcpy(packet+headerLen,advParam->ea->aux.data.addr,advParam->ea->aux.data.len);
+        txMemcpy(packet+headerLen,currentSet->ea->aux.data.addr,currentSet->ea->aux.data.len);
     }
-    ll_adv_packet_make(advParam->ea->aux.phy.txAddress,0,advParam->ownAddressType?1:0,0);
+    ll_adv_packet_make(currentSet->ea->aux.phy.txAddress,0,currentSet->ownAddressType?1:0,0);
 }
 //LL_ADV_TYPE_AUX_CONNECT_RSP
-static void adv_aux_conn_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
+static void adv_aux_conn_rsp_pdu_prepare(_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
-    _u8* packet = ll_adv_packet_data_prepare(advParam->ea->aux.phy.txAddress,headerLen,LL_ADV_TYPE_AUX_CONNECT_RSP);
-    adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo,did);
-    ll_adv_packet_make(advParam->ea->aux.phy.txAddress,0,advParam->ownAddressType?1:0,0);
+    _u8* packet = ll_adv_packet_data_prepare(currentSet->ea->aux.phy.txAddress,headerLen,LL_ADV_TYPE_AUX_CONNECT_RSP);
+    adv_generate_extended_header(packet,advMode,flags,auxInfo,did);
+    ll_adv_packet_make(currentSet->ea->aux.phy.txAddress,0,currentSet->ownAddressType?1:0,0);
 }
 //LL_ADV_TYPE_AUX_CHAIN_IND
-static void adv_aux_chain_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
+static void adv_aux_chain_ind_pdu_prepare(_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
-    _u8* packet = ll_adv_packet_data_prepare(advParam->pChain->entry[advParam->pChain->current].phy.txAddress,headerLen+advParam->ea->chain.entry[advParam->pChain->current].data.len,LL_ADV_TYPE_AUX_CHAIN_IND);
-    adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo,did);
-    if(advParam->pChain->entry[advParam->pChain->current].data.len!=0)
+    _u8* packet = ll_adv_packet_data_prepare(currentSet->pChain->entry[currentSet->pChain->current].phy.txAddress,headerLen+currentSet->ea->chain.entry[currentSet->pChain->current].data.len,LL_ADV_TYPE_AUX_CHAIN_IND);
+    adv_generate_extended_header(packet,advMode,flags,auxInfo,did);
+    if(currentSet->pChain->entry[currentSet->pChain->current].data.len!=0)
     {
-        txMemcpy(packet+headerLen,advParam->pChain->entry[advParam->pChain->current].data.addr,advParam->pChain->entry[advParam->pChain->current].data.len);
+        txMemcpy(packet+headerLen,currentSet->pChain->entry[currentSet->pChain->current].data.addr,currentSet->pChain->entry[currentSet->pChain->current].data.len);
     }
-    ll_adv_packet_make(advParam->pChain->entry[advParam->pChain->current].phy.txAddress,0,advParam->ownAddressType?1:0,0);
+    ll_adv_packet_make(currentSet->pChain->entry[currentSet->pChain->current].phy.txAddress,0,currentSet->ownAddressType?1:0,0);
 }
 #endif
 #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
 //LL_ADV_TYPE_AUX_SYNC_IND
-static void adv_aux_sync_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
+static void adv_aux_sync_ind_pdu_prepare(_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
-    _u8* packet = ll_adv_packet_data_prepare(advParam->pa->sync.phy.txAddress,headerLen+advParam->pa->sync.data.len,LL_ADV_TYPE_AUX_SYNC_IND);
-    adv_generate_extended_header(ll,advParam,packet,advMode,flags,auxInfo,did);
-    if(advParam->pa->sync.data.len!=0)
+    _u8* packet = ll_adv_packet_data_prepare(currentSet->pa->sync.phy.txAddress,headerLen+currentSet->pa->sync.data.len,LL_ADV_TYPE_AUX_SYNC_IND);
+    adv_generate_extended_header(packet,advMode,flags,auxInfo,did);
+    if(currentSet->pa->sync.data.len!=0)
     {
-        txMemcpy(packet+headerLen,advParam->pa->sync.data.addr,advParam->pa->sync.data.len);
+        txMemcpy(packet+headerLen,currentSet->pa->sync.data.addr,currentSet->pa->sync.data.len);
     }
-    ll_adv_packet_make(advParam->pa->sync.phy.txAddress,0,advParam->ownAddressType?1:0,0);
+    ll_adv_packet_make(currentSet->pa->sync.phy.txAddress,0,currentSet->ownAddressType?1:0,0);
 }
 #endif
 
 #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
 //LL_ADV_TYPE_AUX_SYNC_SUBEVENT_IND
-static void adv_aux_sync_subevent_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static void adv_aux_sync_subevent_ind_pdu_prepare(void)
 {
 
 }
 //LL_ADV_TYPE_AUX_SYNC_SUBEVENT_RSP
-static void adv_aux_sync_subevent_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static void adv_aux_sync_subevent_rsp_pdu_prepare(void)
 {
 
 }
 #endif
 
 _RAM_CODE
-static void adv_event_connectable_scannable_undirected_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+static void adv_event_connectable_scannable_undirected_packet_prapare(adv_pdu_class_e pduClass)
 {
     _u8* packet = NULL;
     switch(pduClass)
     {
         case ADV_PDU_CLASS_LEG:
         {
-            adv_ind_pdu_prepare(ll,advParam);
+            adv_ind_pdu_prepare();
         }
         break;
         case ADV_PDU_CLASS_SCAN_RSP:
         {   
-            adv_scan_rsp_pdu_prepare(ll,advParam);
+            adv_scan_rsp_pdu_prepare();
         } 
         break;
     }
 }
 //ADV_EVENT_CONNECTABLE_DIRECTED
 _RAM_CODE
-static void adv_event_connectable_directed_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+static void adv_event_connectable_directed_packet_prapare(adv_pdu_class_e pduClass)
 {
     _u8* packet = NULL;
     switch(pduClass)
     {
         case ADV_PDU_CLASS_LEG:
         {
-            adv_direct_ind_pdu_prepare(ll,advParam);
+            adv_direct_ind_pdu_prepare();
         }
         break;
     }
 }
 //ADV_EVENT_SCANNABLE_UNDIRECTED
 _RAM_CODE
-static void adv_event_scannable_undirected_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+static void adv_event_scannable_undirected_packet_prapare(adv_pdu_class_e pduClass)
 {
     _u8* packet = NULL;
     switch(pduClass)
     {
         case ADV_PDU_CLASS_LEG:
         {
-            adv_scan_ind_pdu_prepare(ll,advParam);
+            adv_scan_ind_pdu_prepare();
         }
         break;
         case ADV_PDU_CLASS_SCAN_RSP:
         {   
-            adv_scan_rsp_pdu_prepare(ll,advParam);
+            adv_scan_rsp_pdu_prepare();
         } 
         break;
     }
 }
 //ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED
 _RAM_CODE
-static void adv_event_non_connectable_non_scannable_undirected_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+static void adv_event_non_connectable_non_scannable_undirected_packet_prapare(adv_pdu_class_e pduClass)
 {
     _u8* packet = NULL;
     switch(pduClass)
     {
         case ADV_PDU_CLASS_LEG:
         {
-            adv_non_conn_pdu_prepare(ll,advParam);
+            adv_non_conn_pdu_prepare();
         }
         break;
     }
@@ -776,7 +776,7 @@ static void adv_event_non_connectable_non_scannable_undirected_packet_prapare(ll
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
 //ADV_EVENT_EXTENDED_CONNECTABLE_DIRECTED
 _RAM_CODE
-static void adv_event_extended_connectable_directed_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+static void adv_event_extended_connectable_directed_packet_prapare(adv_pdu_class_e pduClass)
 {
     _u8 flags = 0;
     _u8 advMode = 0;
@@ -788,28 +788,28 @@ static void adv_event_extended_connectable_directed_packet_prapare(ll_sm_t* ll,l
         {
             flags   = ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
             advMode = 1; 
-            auxInfo.anchorPoint       = advParam->la->sch.anchorPoint;
-            auxInfo.targetAnchorPoint = advParam->ea->aux.sch.anchorPoint;
-            auxInfo.channel           = advParam->ea->aux.phy.chn;
-            auxInfo.phy               = advParam->ea->aux.phy.mode;
-            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo,advParam->ea->did);
+            auxInfo.anchorPoint       = currentSet->la->sch.anchorPoint;
+            auxInfo.targetAnchorPoint = currentSet->ea->aux.sch.anchorPoint;
+            auxInfo.channel           = currentSet->ea->aux.phy.chn;
+            auxInfo.phy               = currentSet->ea->aux.phy.mode;
+            adv_ext_ind_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);
         }
         break;
         case ADV_PDU_CLASS_AUX:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_TARGET_A|ADV_EXTENDED_HEADER_FLAG_ADI;
-            if(advParam->ea->power!=0x7f)
+            if(currentSet->ea->power!=0x7f)
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
             advMode = 1; 
-            adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo,advParam->ea->did);
+            adv_aux_adv_ind_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);
         }
         break;
         case ADV_PDU_CLASS_CONN_RSP:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_TARGET_A;
-            adv_aux_conn_rsp_pdu_prepare(ll,advParam,advMode,flags,&auxInfo,advParam->ea->did);
+            adv_aux_conn_rsp_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);
         }
         break;
     }
@@ -818,7 +818,7 @@ static void adv_event_extended_connectable_directed_packet_prapare(ll_sm_t* ll,l
 volatile _u8 AAVV_PACKET[50];
 //ADV_EVENT_EXTENDED_CONNECTABLE_UNDIRECTED
 _RAM_CODE
-static void adv_event_extended_connectable_undirected_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+static void adv_event_extended_connectable_undirected_packet_prapare(adv_pdu_class_e pduClass)
 {
     _u8 flags = 0;
     _u8 advMode = 0;
@@ -830,35 +830,35 @@ static void adv_event_extended_connectable_undirected_packet_prapare(ll_sm_t* ll
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
             advMode = 1;
-            auxInfo.anchorPoint       = advParam->la->sch.anchorPoint;
-            auxInfo.targetAnchorPoint = advParam->ea->aux.sch.anchorPoint;
-            auxInfo.channel           = advParam->ea->aux.phy.chn;
-            auxInfo.phy               = advParam->ea->aux.phy.mode;
-            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo,advParam->ea->did);
+            auxInfo.anchorPoint       = currentSet->la->sch.anchorPoint;
+            auxInfo.targetAnchorPoint = currentSet->ea->aux.sch.anchorPoint;
+            auxInfo.channel           = currentSet->ea->aux.phy.chn;
+            auxInfo.phy               = currentSet->ea->aux.phy.mode;
+            adv_ext_ind_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);
         }
         break;
         case ADV_PDU_CLASS_AUX:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_ADI;
             advMode = 1;
-            if(advParam->ea->power!=0x7f)
+            if(currentSet->ea->power!=0x7f)
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo,advParam->ea->did);
+            adv_aux_adv_ind_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);
         }
         break;
         case ADV_PDU_CLASS_CONN_RSP:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_TARGET_A;
-            adv_aux_conn_rsp_pdu_prepare(ll,advParam,advMode,flags,&auxInfo,advParam->ea->did);
+            adv_aux_conn_rsp_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);
         }
         break;
     }
 }
 //ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED
 _RAM_CODE
-static void adv_event_extended_scannable_directed_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+static void adv_event_extended_scannable_directed_packet_prapare(adv_pdu_class_e pduClass)
 {
     _u8 flags = 0;
     _u8 advMode = 0;
@@ -870,61 +870,61 @@ static void adv_event_extended_scannable_directed_packet_prapare(ll_sm_t* ll,ll_
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
             advMode = 2;
-            auxInfo.anchorPoint       = advParam->la->sch.anchorPoint;
-            auxInfo.targetAnchorPoint = advParam->ea->aux.sch.anchorPoint;
-            auxInfo.channel           = advParam->ea->aux.phy.chn;
-            auxInfo.phy               = advParam->ea->aux.phy.mode;
-            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo,advParam->ea->did);
+            auxInfo.anchorPoint       = currentSet->la->sch.anchorPoint;
+            auxInfo.targetAnchorPoint = currentSet->ea->aux.sch.anchorPoint;
+            auxInfo.channel           = currentSet->ea->aux.phy.chn;
+            auxInfo.phy               = currentSet->ea->aux.phy.mode;
+            adv_ext_ind_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);
         }
         break;
         case ADV_PDU_CLASS_AUX:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_TARGET_A|ADV_EXTENDED_HEADER_FLAG_ADI;
-            if(advParam->ea->power!=0x7f)
+            if(currentSet->ea->power!=0x7f)
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
             advMode = 2;
-            adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo,advParam->ea->did);
+            adv_aux_adv_ind_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);
         }
         break;
         case ADV_PDU_CLASS_SCAN_RSP:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_ADI;
-            if(advParam->ea->power!=0x7f)
+            if(currentSet->ea->power!=0x7f)
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            if(advParam->pChain->cnt!=0)
+            if(currentSet->pChain->cnt!=0)
             {
                 flags|= ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-                auxInfo.anchorPoint       = advParam->ea->aux.sch.anchorPoint;
-                auxInfo.targetAnchorPoint = advParam->pChain->entry[0].sch.anchorPoint;
-                auxInfo.channel           = advParam->pChain->entry[0].phy.chn;
-                auxInfo.phy               = advParam->pChain->entry[0].phy.mode;
+                auxInfo.anchorPoint       = currentSet->ea->aux.sch.anchorPoint;
+                auxInfo.targetAnchorPoint = currentSet->pChain->entry[0].sch.anchorPoint;
+                auxInfo.channel           = currentSet->pChain->entry[0].phy.chn;
+                auxInfo.phy               = currentSet->pChain->entry[0].phy.mode;
             }
-            adv_aux_scan_rsp_pdu_prepare(ll,advParam,advMode,flags,&auxInfo,advParam->ea->did);
+            adv_aux_scan_rsp_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);
         }
         break;
         case ADV_PDU_CLASS_CHAIN:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI;
-            if(advParam->pChain->cnt>(advParam->pChain->current+1))
+            if(currentSet->pChain->cnt>(currentSet->pChain->current+1))
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-                auxInfo.anchorPoint       = advParam->pChain->entry[advParam->pChain->current].sch.anchorPoint;
-                auxInfo.targetAnchorPoint = advParam->pChain->entry[advParam->pChain->current+1].sch.anchorPoint;
-                auxInfo.channel           = advParam->pChain->entry[advParam->pChain->current+1].phy.chn;
-                auxInfo.phy               = advParam->pChain->entry[advParam->pChain->current+1].phy.mode;
+                auxInfo.anchorPoint       = currentSet->pChain->entry[currentSet->pChain->current].sch.anchorPoint;
+                auxInfo.targetAnchorPoint = currentSet->pChain->entry[currentSet->pChain->current+1].sch.anchorPoint;
+                auxInfo.channel           = currentSet->pChain->entry[currentSet->pChain->current+1].phy.chn;
+                auxInfo.phy               = currentSet->pChain->entry[currentSet->pChain->current+1].phy.mode;
             }
-            adv_aux_chain_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo,advParam->ea->did);
+            adv_aux_chain_ind_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);
         }
         break;
     }
 }
 //ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED
 _RAM_CODE
-static void adv_event_extended_scannable_undirected_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+static void adv_event_extended_scannable_undirected_packet_prapare(adv_pdu_class_e pduClass)
 {
     _u8 flags = 0;
     _u8 advMode = 0;
@@ -936,61 +936,61 @@ static void adv_event_extended_scannable_undirected_packet_prapare(ll_sm_t* ll,l
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
             advMode = 2;
-            auxInfo.anchorPoint       = advParam->la->sch.anchorPoint;
-            auxInfo.targetAnchorPoint = advParam->ea->aux.sch.anchorPoint;
-            auxInfo.channel           = advParam->ea->aux.phy.chn;
-            auxInfo.phy               = advParam->ea->aux.phy.mode;
-            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo,advParam->ea->did);
+            auxInfo.anchorPoint       = currentSet->la->sch.anchorPoint;
+            auxInfo.targetAnchorPoint = currentSet->ea->aux.sch.anchorPoint;
+            auxInfo.channel           = currentSet->ea->aux.phy.chn;
+            auxInfo.phy               = currentSet->ea->aux.phy.mode;
+            adv_ext_ind_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);
         }
         break;
         case ADV_PDU_CLASS_AUX:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_ADI;
             advMode = 2;
-            if(advParam->ea->power!=0x7f)
+            if(currentSet->ea->power!=0x7f)
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo,advParam->ea->did);
+            adv_aux_adv_ind_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);
         }
         break;
         case ADV_PDU_CLASS_SCAN_RSP:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_ADI;
-            if(advParam->ea->power!=0x7f)
+            if(currentSet->ea->power!=0x7f)
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            if(advParam->pChain->cnt!=0)
+            if(currentSet->pChain->cnt!=0)
             {
                 flags|= ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-                auxInfo.anchorPoint       = advParam->ea->aux.sch.anchorPoint;
-                auxInfo.targetAnchorPoint = advParam->pChain->entry[0].sch.anchorPoint;
-                auxInfo.channel           = advParam->pChain->entry[0].phy.chn;
-                auxInfo.phy               = advParam->pChain->entry[0].phy.mode;
+                auxInfo.anchorPoint       = currentSet->ea->aux.sch.anchorPoint;
+                auxInfo.targetAnchorPoint = currentSet->pChain->entry[0].sch.anchorPoint;
+                auxInfo.channel           = currentSet->pChain->entry[0].phy.chn;
+                auxInfo.phy               = currentSet->pChain->entry[0].phy.mode;
             }
-            adv_aux_scan_rsp_pdu_prepare(ll,advParam,advMode,flags,&auxInfo,advParam->ea->did);
+            adv_aux_scan_rsp_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);
         }
         break;
         case ADV_PDU_CLASS_CHAIN:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI;
-            if(advParam->pChain->cnt>(advParam->pChain->current+1))
+            if(currentSet->pChain->cnt>(currentSet->pChain->current+1))
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-                auxInfo.anchorPoint       = advParam->pChain->entry[advParam->pChain->current].sch.anchorPoint;
-                auxInfo.targetAnchorPoint = advParam->pChain->entry[advParam->pChain->current+1].sch.anchorPoint;
-                auxInfo.channel           = advParam->pChain->entry[advParam->pChain->current+1].phy.chn;
-                auxInfo.phy               = advParam->pChain->entry[advParam->pChain->current+1].phy.mode;
+                auxInfo.anchorPoint       = currentSet->pChain->entry[currentSet->pChain->current].sch.anchorPoint;
+                auxInfo.targetAnchorPoint = currentSet->pChain->entry[currentSet->pChain->current+1].sch.anchorPoint;
+                auxInfo.channel           = currentSet->pChain->entry[currentSet->pChain->current+1].phy.chn;
+                auxInfo.phy               = currentSet->pChain->entry[currentSet->pChain->current+1].phy.mode;
             }
-            adv_aux_chain_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo,advParam->ea->did);
+            adv_aux_chain_ind_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);
         }
         break;
     }
 }
 //ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITH_AUXILIARY
 _RAM_CODE
-static void adv_event_extended_non_connectable_non_scannable_directed_with_auxiliary_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+static void adv_event_extended_non_connectable_non_scannable_directed_with_auxiliary_packet_prapare(adv_pdu_class_e pduClass)
 {
     _u8 flags = 0;
     _u8 advMode = 0;
@@ -1001,55 +1001,55 @@ static void adv_event_extended_non_connectable_non_scannable_directed_with_auxil
         case ADV_PDU_CLASS_EXT:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-            auxInfo.anchorPoint       = advParam->la->sch.anchorPoint;
-            auxInfo.targetAnchorPoint = advParam->ea->aux.sch.anchorPoint;
-            auxInfo.channel           = advParam->ea->aux.phy.chn;
-            auxInfo.phy               = advParam->ea->aux.phy.mode;
-            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo,advParam->ea->did);
+            auxInfo.anchorPoint       = currentSet->la->sch.anchorPoint;
+            auxInfo.targetAnchorPoint = currentSet->ea->aux.sch.anchorPoint;
+            auxInfo.channel           = currentSet->ea->aux.phy.chn;
+            auxInfo.phy               = currentSet->ea->aux.phy.mode;
+            adv_ext_ind_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);
         }
         break;
         case ADV_PDU_CLASS_AUX:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_TARGET_A|ADV_EXTENDED_HEADER_FLAG_ADI;
-            if(advParam->ea->power!=0x7f)
+            if(currentSet->ea->power!=0x7f)
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            if(advParam->pChain->cnt!=0)
+            if(currentSet->pChain->cnt!=0)
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-                auxInfo.anchorPoint       = advParam->ea->aux.sch.anchorPoint;
-                auxInfo.targetAnchorPoint = advParam->pChain->entry[0].sch.anchorPoint;
-                auxInfo.channel           = advParam->pChain->entry[0].phy.chn;
-                auxInfo.phy               = advParam->pChain->entry[0].phy.mode;
+                auxInfo.anchorPoint       = currentSet->ea->aux.sch.anchorPoint;
+                auxInfo.targetAnchorPoint = currentSet->pChain->entry[0].sch.anchorPoint;
+                auxInfo.channel           = currentSet->pChain->entry[0].phy.chn;
+                auxInfo.phy               = currentSet->pChain->entry[0].phy.mode;
             }
             //sync info optional
-            adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo,advParam->ea->did);
+            adv_aux_adv_ind_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);
         }
         break;
         case ADV_PDU_CLASS_CHAIN:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI;
-            if(advParam->ea->power!=0x7f)
+            if(currentSet->ea->power!=0x7f)
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            if(advParam->pChain->cnt>(advParam->pChain->current+1))
+            if(currentSet->pChain->cnt>(currentSet->pChain->current+1))
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-                auxInfo.anchorPoint       = advParam->pChain->entry[advParam->pChain->current].sch.anchorPoint;
-                auxInfo.targetAnchorPoint = advParam->pChain->entry[advParam->pChain->current+1].sch.anchorPoint;
-                auxInfo.channel           = advParam->pChain->entry[advParam->pChain->current+1].phy.chn;
-                auxInfo.phy               = advParam->pChain->entry[advParam->pChain->current+1].phy.mode;
+                auxInfo.anchorPoint       = currentSet->pChain->entry[currentSet->pChain->current].sch.anchorPoint;
+                auxInfo.targetAnchorPoint = currentSet->pChain->entry[currentSet->pChain->current+1].sch.anchorPoint;
+                auxInfo.channel           = currentSet->pChain->entry[currentSet->pChain->current+1].phy.chn;
+                auxInfo.phy               = currentSet->pChain->entry[currentSet->pChain->current+1].phy.mode;
             }
-            adv_aux_chain_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo,advParam->ea->did);
+            adv_aux_chain_ind_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);
         }
         break;
     }
 }
 //ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED_WITH_AUXILIARY
 _RAM_CODE
-static void adv_event_extended_non_connectable_non_scannable_undirected_with_auxiliary_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+static void adv_event_extended_non_connectable_non_scannable_undirected_with_auxiliary_packet_prapare(adv_pdu_class_e pduClass)
 {
     _u8 flags = 0;
     _u8 advMode = 0;
@@ -1060,55 +1060,55 @@ static void adv_event_extended_non_connectable_non_scannable_undirected_with_aux
         case ADV_PDU_CLASS_EXT:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI|ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-            auxInfo.anchorPoint       = advParam->la->sch.anchorPoint;
-            auxInfo.targetAnchorPoint = advParam->ea->aux.sch.anchorPoint;
-            auxInfo.channel           = advParam->ea->aux.phy.chn;
-            auxInfo.phy               = advParam->ea->aux.phy.mode;
-            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo,advParam->ea->did);
+            auxInfo.anchorPoint       = currentSet->la->sch.anchorPoint;
+            auxInfo.targetAnchorPoint = currentSet->ea->aux.sch.anchorPoint;
+            auxInfo.channel           = currentSet->ea->aux.phy.chn;
+            auxInfo.phy               = currentSet->ea->aux.phy.mode;
+            adv_ext_ind_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);
         }
         break;
         case ADV_PDU_CLASS_AUX:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_ADI;
-            if(advParam->ea->power!=0x7f)
+            if(currentSet->ea->power!=0x7f)
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            if(advParam->pChain->cnt!=0)
+            if(currentSet->pChain->cnt!=0)
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-                auxInfo.anchorPoint       = advParam->ea->aux.sch.anchorPoint;
-                auxInfo.targetAnchorPoint = advParam->pChain->entry[0].sch.anchorPoint;
-                auxInfo.channel           = advParam->pChain->entry[0].phy.chn;
-                auxInfo.phy               = advParam->pChain->entry[0].phy.mode;
+                auxInfo.anchorPoint       = currentSet->ea->aux.sch.anchorPoint;
+                auxInfo.targetAnchorPoint = currentSet->pChain->entry[0].sch.anchorPoint;
+                auxInfo.channel           = currentSet->pChain->entry[0].phy.chn;
+                auxInfo.phy               = currentSet->pChain->entry[0].phy.mode;
             }   
             //sync info optional
-            adv_aux_adv_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo,advParam->ea->did);
+            adv_aux_adv_ind_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);
         }
         break;
         case ADV_PDU_CLASS_CHAIN:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI;
-            if(advParam->ea->power!=0x7f)
+            if(currentSet->ea->power!=0x7f)
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            if(advParam->pChain->cnt>(advParam->pChain->current+1))
+            if(currentSet->pChain->cnt>(currentSet->pChain->current+1))
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-                auxInfo.anchorPoint       = advParam->pChain->entry[advParam->pChain->current].sch.anchorPoint;
-                auxInfo.targetAnchorPoint = advParam->pChain->entry[advParam->pChain->current+1].sch.anchorPoint;
-                auxInfo.channel           = advParam->pChain->entry[advParam->pChain->current+1].phy.chn;
-                auxInfo.phy               = advParam->pChain->entry[advParam->pChain->current+1].phy.mode;
+                auxInfo.anchorPoint       = currentSet->pChain->entry[currentSet->pChain->current].sch.anchorPoint;
+                auxInfo.targetAnchorPoint = currentSet->pChain->entry[currentSet->pChain->current+1].sch.anchorPoint;
+                auxInfo.channel           = currentSet->pChain->entry[currentSet->pChain->current+1].phy.chn;
+                auxInfo.phy               = currentSet->pChain->entry[currentSet->pChain->current+1].phy.mode;
             }
-            adv_aux_chain_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo,advParam->ea->did);
+            adv_aux_chain_ind_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);
         }
         break;
     }
 }
 //ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITHOUT_AUXILIARY
 _RAM_CODE
-static void adv_event_extended_non_connectable_non_scannable_directed_without_auxiliary_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+static void adv_event_extended_non_connectable_non_scannable_directed_without_auxiliary_packet_prapare(adv_pdu_class_e pduClass)
 {
     _u8 flags = 0;
     _u8 advMode = 0;
@@ -1119,17 +1119,17 @@ static void adv_event_extended_non_connectable_non_scannable_directed_without_au
         case ADV_PDU_CLASS_EXT:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADV_A|ADV_EXTENDED_HEADER_FLAG_TARGET_A;
-            if(advParam->ea->power!=0x7f)
+            if(currentSet->ea->power!=0x7f)
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo,advParam->ea->did);
+            adv_ext_ind_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);
         }
     }
 }
 //ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED_WITHOUT_AUXILIARY
 _RAM_CODE
-static void adv_event_extended_non_connectable_non_scannable_undirected_without_auxiliary_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+static void adv_event_extended_non_connectable_non_scannable_undirected_without_auxiliary_packet_prapare(adv_pdu_class_e pduClass)
 {
     _u8 flags = 0;
     _u8 advMode = 0;
@@ -1140,11 +1140,11 @@ static void adv_event_extended_non_connectable_non_scannable_undirected_without_
         case ADV_PDU_CLASS_EXT:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADV_A;
-            if(advParam->ea->power!=0x7f)
+            if(currentSet->ea->power!=0x7f)
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            adv_ext_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo,advParam->ea->did);
+            adv_ext_ind_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);
         }
     }
 }
@@ -1152,7 +1152,7 @@ static void adv_event_extended_non_connectable_non_scannable_undirected_without_
 #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
 //ADV_EVENT_EXTENDED_PERIODIC
 _RAM_CODE
-static void adv_event_extended_periodic_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+static void adv_event_extended_periodic_packet_prapare(adv_pdu_class_e pduClass)
 {
     _u8 flags = 0;
     _u8 advMode = 0;
@@ -1162,23 +1162,23 @@ static void adv_event_extended_periodic_packet_prapare(ll_sm_t* ll,ll_internal_a
     {
         case ADV_PDU_CLASS_SYNC:
         {
-        	if(advParam->pa->includeAdi)
+        	if(currentSet->pa->includeAdi)
         	{
                 flags |= ADV_EXTENDED_HEADER_FLAG_ADI;
         	}
-        	if(advParam->pa->includeTxPower)
+        	if(currentSet->pa->includeTxPower)
         	{
                 flags |= ADV_EXTENDED_HEADER_FLAG_TX_POWER;
         	}
-        	if(advParam->schMap&ADV_SCH_MAP_PA_CHAIN)
+        	if(currentSet->schMap&ADV_SCH_MAP_PA_CHAIN)
         	{
         		flags |= ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-        		auxInfo.anchorPoint       = advParam->pa->sync.sch.anchorPoint;
-        		auxInfo.targetAnchorPoint = advParam->pa->chain.entry[0].sch.anchorPoint;
-          		auxInfo.phy               = advParam->pa->chain.entry[0].phy.mode;
-          		auxInfo.channel           = advParam->pa->chain.entry[0].phy.chn;
+        		auxInfo.anchorPoint       = currentSet->pa->sync.sch.anchorPoint;
+        		auxInfo.targetAnchorPoint = currentSet->pa->chain.entry[0].sch.anchorPoint;
+          		auxInfo.phy               = currentSet->pa->chain.entry[0].phy.mode;
+          		auxInfo.channel           = currentSet->pa->chain.entry[0].phy.chn;
         	}
-        	adv_aux_sync_ind_pdu_prepare(ll,advParam,advMode,flags,&auxInfo,advParam->pa->did);
+        	adv_aux_sync_ind_pdu_prepare(advMode,flags,&auxInfo,currentSet->pa->did);
         }
     }
 }
@@ -1187,7 +1187,7 @@ static void adv_event_extended_periodic_packet_prapare(ll_sm_t* ll,ll_internal_a
 #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
 //ADV_EVENT_EXTENDED_PERIODIC_WITH_RESPONSE
 _RAM_CODE
-static void adv_event_extended_periodic_with_response_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+static void adv_event_extended_periodic_with_response_packet_prapare(adv_pdu_class_e pduClass)
 {
     
 }
@@ -1219,65 +1219,65 @@ void(*adv_prepare_packet[])(adv_pdu_class_e pduClass)  =
 
 /********* ADV EVENT PROCESS *********/
 _RAM_CODE
-static int adv_event_step_phy_send_advertising(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_event_step_phy_send_advertising(void)
 {
-    if(advParam->la->availableChnCnt==0)
+    if(currentSet->la->availableChnCnt==0)
     {
         return 0;
     }
-    phy_obj_cast(&ll->phy);
-    advParam->la->eventCnt++;
-    advParam->la->phy.chn = advParam->la->chnTable[(advParam->la->eventCnt%advParam->la->channelCnt)];
+    phy_obj_cast(&LLSM->phy);
+    currentSet->la->eventCnt++;
+    currentSet->la->phy.chn = currentSet->la->chnTable[(currentSet->la->eventCnt%currentSet->la->channelCnt)];
     #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
-    if(POINTER_VALID(advParam->ea))
+    if(POINTER_VALID(currentSet->ea))
     {
-        if(advParam->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU)
+        if(currentSet->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU)
         {
-            adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_LEG);
+            adv_prepare_packet[currentSet->eventType](ADV_PDU_CLASS_LEG);
         } 
         else
         {
-            adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_EXT);
+            adv_prepare_packet[currentSet->eventType](ADV_PDU_CLASS_EXT);
         }
     }
     else
     {
-        adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_LEG); 
+        adv_prepare_packet[currentSet->eventType](ADV_PDU_CLASS_LEG); 
     }
     #else
-    adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_LEG);
+    adv_prepare_packet[currentSet->eventType](ADV_PDU_CLASS_LEG);
     #endif
-    adv_prepare_phy(&advParam->la->phy,advParam->la->sch.anchorPoint,PHY_DIR_TX);
-    ll->phy.start();
+    adv_prepare_phy(&currentSet->la->phy,currentSet->la->sch.anchorPoint,PHY_DIR_TX);
+    LLSM->phy.start();
     return 1;
 }
 
 _RAM_CODE
-static int adv_event_step_phy_start_listen(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_event_step_phy_start_listen(void)
 {
-    phy_obj_cast(&ll->phy);
+    phy_obj_cast(&LLSM->phy);
 //    	_u32 timestamp = advParam->la->sch.anchorPoint + ll_get_air_packet_time(advParam->la->phy.mode,6+advParam->data.len,0)+PACKET_DEFAULT_TIFS_TIME;
-	adv_prepare_phy(&advParam->la->phy,0,PHY_DIR_RX);
-	ll->phy.start();
+	adv_prepare_phy(&currentSet->la->phy,0,PHY_DIR_RX);
+	LLSM->phy.start();
 	return 1;
 }
 
 
 _RAM_CODE
-static int adv_event_step_phy_send_scan_rsp(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_event_step_phy_send_scan_rsp(void)
 {
-	if(ll->phy.hw_is_rx_packet_valid())//packet analyze shall be execute first
+	if(LLSM->phy.hw_is_rx_packet_valid())//packet analyze shall be execute first
 	{
-		ll_adv_packet_t* packet = (ll_adv_packet_t*)(ll->phy.rxAddress + ll_get_packet_header_offset_from_address(PHY_DIR_RX));
+		ll_adv_packet_t* packet = (ll_adv_packet_t*)(LLSM->phy.rxAddress + ll_get_packet_header_offset_from_address(PHY_DIR_RX));
 		if(packet->hdr.pduType == LL_ADV_TYPE_SCAN_REQ && packet->hdr.length == sizeof(scan_type_scan_req_t))
 		{
 			 scan_type_scan_req_t* scanReq = (scan_type_scan_req_t*)(packet->data);
 			 if((txMemcmp(ll_get_device_address(),scanReq->advA,6) == 0))
 			 {
-				adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_SCAN_RSP);
-				_u32 timestamp = ll->phy.hw_get_rx_air_ts() + ll_get_air_packet_time(advParam->la->phy.mode,sizeof(scan_type_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME;
-				adv_prepare_phy(&advParam->la->phy,timestamp,PHY_DIR_TX);
-				ll->phy.start();
+				adv_prepare_packet[currentSet->eventType](ADV_PDU_CLASS_SCAN_RSP);
+				_u32 timestamp = LLSM->phy.hw_get_rx_air_ts() + ll_get_air_packet_time(currentSet->la->phy.mode,sizeof(scan_type_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME;
+				adv_prepare_phy(&currentSet->la->phy,timestamp,PHY_DIR_TX);
+				LLSM->phy.start();
 				return 1;
 			 }
 		}
@@ -1334,52 +1334,52 @@ static int adv_event_step_phy_send_scan_rsp(ll_sm_t* ll,ll_internal_adv_param_t*
 }
 
 _RAM_CODE
-static int adv_event_step_default_process(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_event_step_default_process(void)
 {
-	ll->phy.stop();
+	LLSM->phy.stop();
 	return 1;
 }
 
 _RAM_CODE
-static int adv_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_event_step_sch_stop(void)
 {
-	ll->phy.stop();
-    if(advParam->la->availableChnCnt)
+	LLSM->phy.stop();
+    if(currentSet->la->availableChnCnt)
     {
-    	advParam->la->availableChnCnt--;
+    	currentSet->la->availableChnCnt--;
     }
-    if(advParam->la->availableChnCnt)
+    if(currentSet->la->availableChnCnt)
     {
-        advParam->la->sch.anchorPoint += (advParam->la->sch.duration+advParam->la->sch.stopMargin + advParam->la->sch.startMargin);
+        currentSet->la->sch.anchorPoint += (currentSet->la->sch.duration+currentSet->la->sch.stopMargin + currentSet->la->sch.startMargin);
 
     }
     else
     {
-        advParam->la->availableChnCnt = advParam->la->channelCnt;
-        advParam->la->sch.anchorPoint += (advParam->la->sch.interval + 30*(random_byte()|0x0f));
+        currentSet->la->availableChnCnt = currentSet->la->channelCnt;
+        currentSet->la->sch.anchorPoint += (currentSet->la->sch.interval + 30*(random_byte()|0x0f));
         #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
-        if((!(advParam->schMap&ADV_SCH_MAP_AUX))\
-          ||((advParam->schMap&ADV_SCH_MAP_AUX)&&txCompareTime(advParam->ea->anchor,advParam->la->sch.anchorPoint+advParam->la->sch.interval)))
+        if((!(currentSet->schMap&ADV_SCH_MAP_AUX))\
+          ||((currentSet->schMap&ADV_SCH_MAP_AUX)&&txCompareTime(currentSet->ea->anchor,currentSet->la->sch.anchorPoint+currentSet->la->sch.interval)))
         #endif
         {
-            ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI);
+            ll_extended_adv_map_out_task(currentSet,currentSet->la->sch.anchorPoint,currentSet->la->sch.anchorPoint+currentSet->la->sch.interval,ADV_SCH_MAP_PRI);
         }
     }
     return 1;
 }
 
 _RAM_CODE
-static int adv_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_event_step_sch_passed(void)
 {
      _u32 systemTime = system_time();
-     _u32 periodicDiff = (systemTime - advParam->la->sch.anchorPoint)/advParam->la->sch.interval;
-     advParam->la->sch.anchorPoint += (periodicDiff+1)*advParam->la->sch.interval;
-     advParam->la->availableChnCnt = advParam->la->channelCnt;
+     _u32 periodicDiff = (systemTime - currentSet->la->sch.anchorPoint)/currentSet->la->sch.interval;
+     currentSet->la->sch.anchorPoint += (periodicDiff+1)*currentSet->la->sch.interval;
+     currentSet->la->availableChnCnt = currentSet->la->channelCnt;
      #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
-     if((!(advParam->schMap&ADV_SCH_MAP_AUX))||((advParam->schMap&ADV_SCH_MAP_AUX)&&txCompareTime(advParam->ea->anchor,advParam->la->sch.anchorPoint+advParam->la->sch.interval)))
+     if((!(currentSet->schMap&ADV_SCH_MAP_AUX))||((currentSet->schMap&ADV_SCH_MAP_AUX)&&txCompareTime(currentSet->ea->anchor,currentSet->la->sch.anchorPoint+currentSet->la->sch.interval)))
      #endif
      {
-         ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI);
+         ll_extended_adv_map_out_task(currentSet,currentSet->la->sch.anchorPoint,currentSet->la->sch.anchorPoint+currentSet->la->sch.interval,ADV_SCH_MAP_PRI);
      }
      return 1;
 }
@@ -1387,18 +1387,18 @@ static int adv_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_t* advPar
 
 
 _RAM_CODE
-static int adv_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_event_step_sch_canceled(void)
 {
     _u32 systemTime = system_time();
-    _u32 periodicDiff = (systemTime - advParam->la->sch.anchorPoint)/advParam->la->sch.interval;
-    advParam->la->sch.anchorPoint += (periodicDiff+1)*advParam->la->sch.interval;
-    advParam->la->availableChnCnt = advParam->la->channelCnt;
+    _u32 periodicDiff = (systemTime - currentSet->la->sch.anchorPoint)/currentSet->la->sch.interval;
+    currentSet->la->sch.anchorPoint += (periodicDiff+1)*currentSet->la->sch.interval;
+    currentSet->la->availableChnCnt = currentSet->la->channelCnt;
 
     #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
-    if((!(advParam->schMap&ADV_SCH_MAP_AUX))||((advParam->schMap&ADV_SCH_MAP_AUX)&&txCompareTime(advParam->ea->anchor,advParam->la->sch.anchorPoint+advParam->la->sch.interval)))
+    if((!(currentSet->schMap&ADV_SCH_MAP_AUX))||((currentSet->schMap&ADV_SCH_MAP_AUX)&&txCompareTime(currentSet->ea->anchor,currentSet->la->sch.anchorPoint+currentSet->la->sch.interval)))
     #endif
     {
-        ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI);
+        ll_extended_adv_map_out_task(currentSet,currentSet->la->sch.anchorPoint,currentSet->la->sch.anchorPoint+currentSet->la->sch.interval,ADV_SCH_MAP_PRI);
     }
     return 1;
 }
@@ -1592,13 +1592,13 @@ static int adv_extended_event_step_sch_stop(void)
     ll_extended_adv_map_out_task(currentSet,currentSet->la->sch.anchorPoint,currentSet->la->sch.anchorPoint+currentSet->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX);
 	return 1;
 }
-static int adv_extended_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_extended_event_step_sch_canceled(void)
 {
     ll_extended_adv_map_out_task(currentSet,currentSet->la->sch.anchorPoint,currentSet->la->sch.anchorPoint+currentSet->la->sch.interval,ADV_SCH_MAP_ALL);
     //todo
 	return 1;
 }
-static int adv_extended_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_extended_event_step_sch_passed(void)
 {
     ll_extended_adv_map_out_task(currentSet,currentSet->la->sch.anchorPoint,currentSet->la->sch.anchorPoint+currentSet->la->sch.interval,ADV_SCH_MAP_ALL);
     //todo
@@ -1624,44 +1624,44 @@ static adv_event_sm_t adv_extended_event_state_machine[]=
 };
 
 
-static int adv_chained_event_step_phy_send_chain_advertising(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_chained_event_step_phy_send_chain_advertising(void)
 {
-    phy_obj_cast(&ll->phy);
+    phy_obj_cast(&LLSM->phy);
     //prepare packet
-    adv_prepare_packet[advParam->eventType](ll,advParam,ADV_PDU_CLASS_CHAIN);
-    advParam->pChain->entry[advParam->pChain->current].phy.chn = 35;//todo
+    adv_prepare_packet[currentSet->eventType](ADV_PDU_CLASS_CHAIN);
+    currentSet->pChain->entry[currentSet->pChain->current].phy.chn = 35;//todo
     //prepare phy
-    adv_prepare_phy(&advParam->pChain->entry[advParam->pChain->current].phy,advParam->pChain->entry[advParam->pChain->current].sch.anchorPoint,PHY_DIR_TX);
-    ll->phy.start();
+    adv_prepare_phy(&currentSet->pChain->entry[currentSet->pChain->current].phy,currentSet->pChain->entry[currentSet->pChain->current].sch.anchorPoint,PHY_DIR_TX);
+    LLSM->phy.start();
 	return 1;
 }
 
-static int adv_chained_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_chained_event_step_sch_stop(void)
 {
-    ll->phy.stop();
-    advParam->pChain->current++;
-    if(advParam->pChain->current==advParam->pChain->cnt)
+    LLSM->phy.stop();
+    currentSet->pChain->current++;
+    if(currentSet->pChain->current==currentSet->pChain->cnt)
     {
-    	advParam->pChain->current = 0;
-        ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
+    	currentSet->pChain->current = 0;
+        ll_extended_adv_map_out_task(currentSet,currentSet->la->sch.anchorPoint,currentSet->la->sch.anchorPoint+currentSet->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
     }
     else
     {
-        advParam->ea->anchor = advParam->ea->chain.entry[advParam->pChain->current].sch.anchorPoint;
+        currentSet->ea->anchor = currentSet->ea->chain.entry[currentSet->pChain->current].sch.anchorPoint;
     }
 }
-static int adv_chained_event_step_default_process(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_chained_event_step_default_process(void)
 {
 	return 1;
 }
-static int adv_chained_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_chained_event_step_sch_canceled(void)
 {
-    ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
+    ll_extended_adv_map_out_task(currentSet,currentSet->la->sch.anchorPoint,currentSet->la->sch.anchorPoint+currentSet->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
 }
 
-static int adv_chained_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_chained_event_step_sch_passed(void)
 {
-    ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
+    ll_extended_adv_map_out_task(currentSet,currentSet->la->sch.anchorPoint,currentSet->la->sch.anchorPoint+currentSet->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
 }
 
 _DATA
@@ -1729,32 +1729,32 @@ static adv_procedure_list_t adv_extended_non_con_non_scan_directed_procedure_wit
 
 /************* ADV Periodic Event Process **********/
 #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
-static int adv_periodic_event_step_phy_send_sync_advertising(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_periodic_event_step_phy_send_sync_advertising(void)
 {
-    phy_obj_cast(&ll->phy);
+    phy_obj_cast(&LLSM->phy);
     //prepare packet
-    adv_prepare_packet[ADV_EVENT_EXTENDED_PERIODIC](ll,advParam,ADV_PDU_CLASS_SYNC);
-    advParam->pa->sync.phy.chn = 35;//todo
+    adv_prepare_packet[ADV_EVENT_EXTENDED_PERIODIC](ADV_PDU_CLASS_SYNC);
+    currentSet->pa->sync.phy.chn = 35;//todo
     //prepare phy
-    adv_prepare_phy(ll,&advParam->pa->sync.phy,advParam->pa->sync.sch.anchorPoint,PHY_DIR_TX);
-    ll->phy.start();
-    advParam->pa->eventCnt++;
+    adv_prepare_phy(&currentSet->pa->sync.phy,currentSet->pa->sync.sch.anchorPoint,PHY_DIR_TX);
+    LLSM->phy.start();
+    currentSet->pa->eventCnt++;
 	return 1;
 }
-static int adv_periodic_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_periodic_event_step_sch_stop(void)
 {
-    ll->phy.stop();
-    advParam->pa->sync.sch.anchorPoint+=advParam->pa->sync.sch.interval;
+    LLSM->phy.stop();
+    currentSet->pa->sync.sch.anchorPoint+=currentSet->pa->sync.sch.interval;
 }
-static int adv_periodic_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_periodic_event_step_sch_passed(void)
 {
-    advParam->pa->eventCnt++;
-    advParam->pa->sync.sch.anchorPoint+=advParam->pa->sync.sch.interval;
+    currentSet->pa->eventCnt++;
+    currentSet->pa->sync.sch.anchorPoint+=currentSet->pa->sync.sch.interval;
 }
-static int adv_periodic_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_periodic_event_step_sch_canceled(void)
 {
-    advParam->pa->eventCnt++;
-    advParam->pa->sync.sch.anchorPoint+=advParam->pa->sync.sch.interval;
+    currentSet->pa->eventCnt++;
+    currentSet->pa->sync.sch.anchorPoint+=currentSet->pa->sync.sch.interval;
 }
 static adv_event_sm_t adv_periodic_event_state_machine[]= 
 {
@@ -1777,19 +1777,15 @@ static adv_procedure_list_t adv_extended_periodic_procedure[]=
 
 /**************ADV Periodic With Rsp Process ************/
 #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
-typedef enum
-{
-    ADV_PERIODIC_WITH_RSP_EVENT_NONE,
-}adv_periodic_with_rsp_event_property_e;
 static adv_event_sm_t adv_periodic_with_rsp_event_state_machine[]= 
 {
 
 };
 static adv_procedure_list_t adv_extended_periodic_with_rsp_procedure[]=
 {
-    {ADV_EVENT,                  adv_event_state_machine,                  ADV_SM_LIST_LENGTH(adv_event_state_machine),                  ADV_EVENT_NONE},
-    {ADV_EXTENDED_EVENT,         adv_extended_event_state_machine,         ADV_SM_LIST_LENGTH(adv_extended_event_state_machine),         ADV_EXTENDED_EVENT_NONE},
-    {ADV_PERIODIC_WITH_RSP_EVENT,adv_periodic_with_rsp_event_state_machine,ADV_SM_LIST_LENGTH(adv_periodic_with_rsp_event_state_machine),ADV_PERIODIC_WITH_RSP_EVENT_NONE},
+    {ADV_EVENT,                  adv_event_state_machine,                  ADV_SM_LIST_LENGTH(adv_event_state_machine),                  ADV_CONTEXT_DEFAULT},
+    {ADV_EXTENDED_EVENT,         adv_extended_event_state_machine,         ADV_SM_LIST_LENGTH(adv_extended_event_state_machine),         ADV_CONTEXT_DEFAULT},
+    {ADV_PERIODIC_WITH_RSP_EVENT,adv_periodic_with_rsp_event_state_machine,ADV_SM_LIST_LENGTH(adv_periodic_with_rsp_event_state_machine),ADV_CONTEXT_DEFAULT},
 };
 #endif
 
@@ -1847,7 +1843,7 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
                 if(advSequence[eventType].procedureList[eventClass].sm[i].cb != NULL)
                 {
                 	currentSet->processingEvent = smEventType;//use member value to avoid many entity conflict
-                    int ret = advSequence[eventType].procedureList[eventClass].sm[i].cb(ll,currentSet);
+                    int ret = advSequence[eventType].procedureList[eventClass].sm[i].cb();
                     if(ret)
                     {
                     	currentSet->state = advSequence[eventType].procedureList[eventClass].sm[i].transSuccessState;
