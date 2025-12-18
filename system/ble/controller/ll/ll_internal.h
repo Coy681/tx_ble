@@ -81,9 +81,6 @@ typedef struct _PACKED
 /***********************ll advertising sate**********************/
 #define LL_EXTENDED_ADV_INVALID_HANDLE   0xFF
 
-/**
- * sch entry,phy entry,data entry maybe can expand to all ll state.
- */
 typedef struct
 {
     _u32 anchorPoint;
@@ -126,7 +123,7 @@ typedef struct
     _u32 eventCnt;
     ll_adv_sch_entry_t  sch;
     ll_adv_phy_entry_t  phy;
-}ll_adv_set_t;
+}ll_adv_type_la_t;
 
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
 typedef struct
@@ -157,7 +154,7 @@ typedef struct
     _u32 eventCnt;
     ll_adv_entry_t        aux;
     ll_adv_chain_entry_t  chain;
-}ll_adv_ea_set_t;
+}ll_adv_type_ea_t;
 #endif
 
 #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
@@ -178,14 +175,14 @@ typedef struct
 
     ll_adv_entry_t        sync;
     ll_adv_chain_entry_t  chain;
-}ll_adv_pa_set_t;
+}ll_adv_type_pa_t;
 #endif
 
 #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
 typedef struct 
 {
 
-}ll_adv_pawr_set_t;
+}ll_adv_type_pawr_t;
 #endif
 
 
@@ -221,27 +218,26 @@ typedef struct
     ll_adv_data_entry_t data;
     ll_adv_data_entry_t scanRsp;
 
-    ll_adv_set_t*      la;//legacy advertising
+    ll_adv_type_la_t    la;//advertising
     #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
-    ll_adv_ea_set_t*   ea;//extended advertising
+    ll_adv_type_ea_t*   ea;//extended advertising
     #endif
     #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
-    ll_adv_pa_set_t*   pa;//periodic advertising
+    ll_adv_type_pa_t*   pa;//periodic advertising
     #endif
     #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
-    ll_adv_pawr_set_t* pawr//periodic advertising with response
+    ll_adv_type_pawr_t* pawr;//periodic advertising with response
     #endif
-}ll_internal_adv_param_t;
+}ll_internal_adv_set_t;
 
 typedef struct
 {
 	reset_f reset;
-    ll_internal_adv_param_t param[BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS];
-
+	ll_internal_adv_set_t set[BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS];
 }ll_internal_adv_ctrl_t;
 
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
-ll_internal_adv_param_t* ll_extended_adv_get_entity(_u8 handle,_u8 allocate);
+ll_internal_adv_set_t*   ll_extended_adv_get_adv_set(_u8 handle,_u8 allocate);
 int                      ll_extended_adv_get_current_active_set_number(void);
 int                      ll_extended_adv_get_current_set_number(void);
 #endif

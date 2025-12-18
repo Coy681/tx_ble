@@ -35,7 +35,7 @@
 //     ADV_CONTEXT_CHAINED     = BIT(4),
 // }adv_context_e;
 
-// typedef int(*adv_event_sm_cb)(ll_sm_t* ll,ll_internal_adv_param_t* advParam);
+// typedef int(*adv_event_sm_cb)(ll_sm_t* ll,ll_internal_adv_set_t* advParam);
 // typedef struct _PACKED
 // {
 //     adv_event_sm_cb cb;
@@ -182,7 +182,7 @@
 // }
 
 // _RAM_CODE
-// int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u32 refStart,_u32 refEnd,_u8 mapType)
+// int ll_extended_adv_map_out_task(ll_sm_t* ll,ll_internal_adv_set_t* advParam,_u32 refStart,_u32 refEnd,_u8 mapType)
 // {
 
 //     _u8  nodeNum    = 0;
@@ -462,7 +462,7 @@
 //     _u8  channel;
 // }adv_extended_header_auxInfo_t;
 
-// static void adv_generate_extended_header(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8* packet,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
+// static void adv_generate_extended_header(ll_sm_t* ll,ll_internal_adv_set_t* advParam,_u8* packet,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
 // {
 //     adv_extended_header_t* extHeader = (adv_extended_header_t*)packet;
 //     extHeader->advMode = advMode;
@@ -564,7 +564,7 @@
 //ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED
 
 //LL_ADV_TYPE_ADV_IND
-static void adv_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static void adv_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 {
     _u8* packet = ll_adv_packet_data_prepare(advParam->la->phy.txAddress,6+advParam->data.len,LL_ADV_TYPE_ADV_IND);
     txMemcpy(((adv_type_ind_t*)packet)->advA,ll_get_device_address(),6);
@@ -572,7 +572,7 @@ static void adv_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
     ll_adv_packet_make(advParam->la->phy.txAddress,LL_CHANNEL_SUPP_CSA2,advParam->ownAddressType?1:0,0);
 }
 //LL_ADV_TYPE_ADV_DIRECT_IND
-static void adv_direct_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static void adv_direct_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 {
     _u8* packet = ll_adv_packet_data_prepare(advParam->la->phy.txAddress,12,LL_ADV_TYPE_ADV_DIRECT_IND);
     txMemcpy(((adv_type_direct_ind_t*)packet)->advA,ll_get_device_address(),6);
@@ -580,7 +580,7 @@ static void adv_direct_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advP
     ll_adv_packet_make(advParam->la->phy.txAddress,LL_CHANNEL_SUPP_CSA2,advParam->ownAddressType?1:0,advParam->peerAddressType?1:0);
 }
 //LL_ADV_TYPE_ADV_NONCONN_IND
-static void adv_non_conn_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static void adv_non_conn_pdu_prepare(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 {
     _u8* packet = ll_adv_packet_data_prepare(advParam->la->phy.txAddress,6+advParam->data.len,LL_ADV_TYPE_ADV_NONCONN_IND);
     txMemcpy(((adv_type_nonConn_ind_t*)packet)->advA,ll_get_device_address(),6);
@@ -588,7 +588,7 @@ static void adv_non_conn_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advPar
     ll_adv_packet_make(advParam->la->phy.txAddress,0,advParam->ownAddressType?1:0,0);
 }
 //LL_ADV_TYPE_SCAN_RSP
-static void adv_scan_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static void adv_scan_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 {
     _u8* packet = ll_adv_packet_data_prepare(advParam->la->phy.txAddress,6+advParam->scanRsp.len,LL_ADV_TYPE_SCAN_RSP);
     txMemcpy(((adv_type_scan_rsp_t*)packet)->advA,ll_get_device_address(),6);
@@ -596,7 +596,7 @@ static void adv_scan_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advPar
     ll_adv_packet_make(advParam->la->phy.txAddress,0,advParam->ownAddressType?1:0,0);
 }
 //LL_ADV_TYPE_ADV_SCAN_IND
-static void adv_scan_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static void adv_scan_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 {
     _u8* packet = ll_adv_packet_data_prepare(advParam->la->phy.txAddress,6+advParam->data.len,LL_ADV_TYPE_ADV_SCAN_IND);
     txMemcpy(((adv_type_scan_ind_t*)packet)->advA,ll_get_device_address(),6);
@@ -605,7 +605,7 @@ static void adv_scan_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advPar
 }
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
 //LL_ADV_TYPE_ADV_EXT_IND
-static void adv_ext_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
+static void adv_ext_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_set_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
     _u8* packet = ll_adv_packet_data_prepare(advParam->la->phy.txAddress,headerLen,LL_ADV_TYPE_ADV_EXT_IND);
@@ -614,7 +614,7 @@ static void adv_ext_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advPara
 }
 
 //LL_ADV_TYPE_AUX_ADV_IND
-static void adv_aux_adv_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
+static void adv_aux_adv_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_set_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
     _u16 dataLen = advParam->ea->aux.data.len;
@@ -631,7 +631,7 @@ static void adv_aux_adv_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* adv
     ll_adv_packet_make(advParam->ea->aux.phy.txAddress,0,advParam->ownAddressType?1:0,0);
 }
 //LL_ADV_TYPE_AUX_SCAN_RSP
-static void adv_aux_scan_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
+static void adv_aux_scan_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_set_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
     _u8* packet = ll_adv_packet_data_prepare(advParam->ea->aux.phy.txAddress,headerLen+advParam->ea->aux.data.len,LL_ADV_TYPE_AUX_SCAN_RSP);
@@ -643,7 +643,7 @@ static void adv_aux_scan_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* ad
     ll_adv_packet_make(advParam->ea->aux.phy.txAddress,0,advParam->ownAddressType?1:0,0);
 }
 //LL_ADV_TYPE_AUX_CONNECT_RSP
-static void adv_aux_conn_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
+static void adv_aux_conn_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_set_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
     _u8* packet = ll_adv_packet_data_prepare(advParam->ea->aux.phy.txAddress,headerLen,LL_ADV_TYPE_AUX_CONNECT_RSP);
@@ -651,7 +651,7 @@ static void adv_aux_conn_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* ad
     ll_adv_packet_make(advParam->ea->aux.phy.txAddress,0,advParam->ownAddressType?1:0,0);
 }
 //LL_ADV_TYPE_AUX_CHAIN_IND
-static void adv_aux_chain_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
+static void adv_aux_chain_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_set_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
     _u8* packet = ll_adv_packet_data_prepare(advParam->pChain->entry[advParam->pChain->current].phy.txAddress,headerLen+advParam->ea->chain.entry[advParam->pChain->current].data.len,LL_ADV_TYPE_AUX_CHAIN_IND);
@@ -665,7 +665,7 @@ static void adv_aux_chain_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* a
 #endif
 #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
 //LL_ADV_TYPE_AUX_SYNC_IND
-static void adv_aux_sync_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
+static void adv_aux_sync_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_set_t* advParam,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
     _u8* packet = ll_adv_packet_data_prepare(advParam->pa->sync.phy.txAddress,headerLen+advParam->pa->sync.data.len,LL_ADV_TYPE_AUX_SYNC_IND);
@@ -680,18 +680,18 @@ static void adv_aux_sync_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* ad
 
 #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
 //LL_ADV_TYPE_AUX_SYNC_SUBEVENT_IND
-static void adv_aux_sync_subevent_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static void adv_aux_sync_subevent_ind_pdu_prepare(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 {
 
 }
 //LL_ADV_TYPE_AUX_SYNC_SUBEVENT_RSP
-static void adv_aux_sync_subevent_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static void adv_aux_sync_subevent_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 {
 
 }
 #endif
 // _RAM_CODE
-// static void adv_event_connectable_scannable_undirected_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+// static void adv_event_connectable_scannable_undirected_packet_prapare(ll_sm_t* ll,ll_internal_adv_set_t* advParam,adv_pdu_class_e pduClass)
 // {
 //     _u8* packet = NULL;
 //     switch(pduClass)
@@ -710,7 +710,7 @@ static void adv_aux_sync_subevent_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_pa
 // }
 // //ADV_EVENT_CONNECTABLE_DIRECTED
 // _RAM_CODE
-// static void adv_event_connectable_directed_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+// static void adv_event_connectable_directed_packet_prapare(ll_sm_t* ll,ll_internal_adv_set_t* advParam,adv_pdu_class_e pduClass)
 // {
 //     _u8* packet = NULL;
 //     switch(pduClass)
@@ -724,7 +724,7 @@ static void adv_aux_sync_subevent_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_pa
 // }
 // //ADV_EVENT_SCANNABLE_UNDIRECTED
 // _RAM_CODE
-// static void adv_event_scannable_undirected_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+// static void adv_event_scannable_undirected_packet_prapare(ll_sm_t* ll,ll_internal_adv_set_t* advParam,adv_pdu_class_e pduClass)
 // {
 //     _u8* packet = NULL;
 //     switch(pduClass)
@@ -743,7 +743,7 @@ static void adv_aux_sync_subevent_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_pa
 // }
 // //ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED
 // _RAM_CODE
-// static void adv_event_non_connectable_non_scannable_undirected_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+// static void adv_event_non_connectable_non_scannable_undirected_packet_prapare(ll_sm_t* ll,ll_internal_adv_set_t* advParam,adv_pdu_class_e pduClass)
 // {
 //     _u8* packet = NULL;
 //     switch(pduClass)
@@ -758,7 +758,7 @@ static void adv_aux_sync_subevent_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_pa
 // #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
 // //ADV_EVENT_EXTENDED_CONNECTABLE_DIRECTED
 // _RAM_CODE
-// static void adv_event_extended_connectable_directed_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+// static void adv_event_extended_connectable_directed_packet_prapare(ll_sm_t* ll,ll_internal_adv_set_t* advParam,adv_pdu_class_e pduClass)
 // {
 //     _u8 flags = 0;
 //     _u8 advMode = 0;
@@ -800,7 +800,7 @@ static void adv_aux_sync_subevent_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_pa
 // volatile _u8 AAVV_PACKET[50];
 // //ADV_EVENT_EXTENDED_CONNECTABLE_UNDIRECTED
 // _RAM_CODE
-// static void adv_event_extended_connectable_undirected_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+// static void adv_event_extended_connectable_undirected_packet_prapare(ll_sm_t* ll,ll_internal_adv_set_t* advParam,adv_pdu_class_e pduClass)
 // {
 //     _u8 flags = 0;
 //     _u8 advMode = 0;
@@ -840,7 +840,7 @@ static void adv_aux_sync_subevent_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_pa
 // }
 // //ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED
 // _RAM_CODE
-// static void adv_event_extended_scannable_directed_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+// static void adv_event_extended_scannable_directed_packet_prapare(ll_sm_t* ll,ll_internal_adv_set_t* advParam,adv_pdu_class_e pduClass)
 // {
 //     _u8 flags = 0;
 //     _u8 advMode = 0;
@@ -906,7 +906,7 @@ static void adv_aux_sync_subevent_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_pa
 // }
 // //ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED
 // _RAM_CODE
-// static void adv_event_extended_scannable_undirected_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+// static void adv_event_extended_scannable_undirected_packet_prapare(ll_sm_t* ll,ll_internal_adv_set_t* advParam,adv_pdu_class_e pduClass)
 // {
 //     _u8 flags = 0;
 //     _u8 advMode = 0;
@@ -972,7 +972,7 @@ static void adv_aux_sync_subevent_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_pa
 // }
 // //ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITH_AUXILIARY
 // _RAM_CODE
-// static void adv_event_extended_non_connectable_non_scannable_directed_with_auxiliary_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+// static void adv_event_extended_non_connectable_non_scannable_directed_with_auxiliary_packet_prapare(ll_sm_t* ll,ll_internal_adv_set_t* advParam,adv_pdu_class_e pduClass)
 // {
 //     _u8 flags = 0;
 //     _u8 advMode = 0;
@@ -1031,7 +1031,7 @@ static void adv_aux_sync_subevent_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_pa
 // }
 // //ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED_WITH_AUXILIARY
 // _RAM_CODE
-// static void adv_event_extended_non_connectable_non_scannable_undirected_with_auxiliary_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+// static void adv_event_extended_non_connectable_non_scannable_undirected_with_auxiliary_packet_prapare(ll_sm_t* ll,ll_internal_adv_set_t* advParam,adv_pdu_class_e pduClass)
 // {
 //     _u8 flags = 0;
 //     _u8 advMode = 0;
@@ -1090,7 +1090,7 @@ static void adv_aux_sync_subevent_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_pa
 // }
 // //ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITHOUT_AUXILIARY
 // _RAM_CODE
-// static void adv_event_extended_non_connectable_non_scannable_directed_without_auxiliary_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+// static void adv_event_extended_non_connectable_non_scannable_directed_without_auxiliary_packet_prapare(ll_sm_t* ll,ll_internal_adv_set_t* advParam,adv_pdu_class_e pduClass)
 // {
 //     _u8 flags = 0;
 //     _u8 advMode = 0;
@@ -1111,7 +1111,7 @@ static void adv_aux_sync_subevent_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_pa
 // }
 // //ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED_WITHOUT_AUXILIARY
 // _RAM_CODE
-// static void adv_event_extended_non_connectable_non_scannable_undirected_without_auxiliary_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+// static void adv_event_extended_non_connectable_non_scannable_undirected_without_auxiliary_packet_prapare(ll_sm_t* ll,ll_internal_adv_set_t* advParam,adv_pdu_class_e pduClass)
 // {
 //     _u8 flags = 0;
 //     _u8 advMode = 0;
@@ -1134,7 +1134,7 @@ static void adv_aux_sync_subevent_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_pa
 // #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
 // //ADV_EVENT_EXTENDED_PERIODIC
 // _RAM_CODE
-// static void adv_event_extended_periodic_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+// static void adv_event_extended_periodic_packet_prapare(ll_sm_t* ll,ll_internal_adv_set_t* advParam,adv_pdu_class_e pduClass)
 // {
 //     _u8 flags = 0;
 //     _u8 advMode = 0;
@@ -1169,13 +1169,13 @@ static void adv_aux_sync_subevent_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_pa
 // #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
 // //ADV_EVENT_EXTENDED_PERIODIC_WITH_RESPONSE
 // _RAM_CODE
-// static void adv_event_extended_periodic_with_response_packet_prapare(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)
+// static void adv_event_extended_periodic_with_response_packet_prapare(ll_sm_t* ll,ll_internal_adv_set_t* advParam,adv_pdu_class_e pduClass)
 // {
     
 // }
 // #endif
 
-// void(*adv_prepare_packet[])(ll_sm_t* ll,ll_internal_adv_param_t* advParam,adv_pdu_class_e pduClass)  =
+// void(*adv_prepare_packet[])(ll_sm_t* ll,ll_internal_adv_set_t* advParam,adv_pdu_class_e pduClass)  =
 // {
 //     adv_event_connectable_scannable_undirected_packet_prapare,
 //     adv_event_connectable_directed_packet_prapare,
@@ -1202,7 +1202,7 @@ static void adv_aux_sync_subevent_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_pa
 
 /*****************************************ADV Event Process ***********************************************/
 // _RAM_CODE
-// static int adv_event_step_phy_send_advertising(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+// static int adv_event_step_phy_send_advertising(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 // {
 //     if(advParam->la->availableChnCnt==0)
 //     {
@@ -1236,7 +1236,7 @@ static void adv_aux_sync_subevent_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_pa
 // }
 
 // _RAM_CODE
-// static int adv_event_step_phy_start_listen(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+// static int adv_event_step_phy_start_listen(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 // {
 //     phy_obj_cast(&ll->phy);
 // //    	_u32 timestamp = advParam->la->sch.anchorPoint + ll_get_air_packet_time(advParam->la->phy.mode,6+advParam->data.len,0)+PACKET_DEFAULT_TIFS_TIME;
@@ -1247,7 +1247,7 @@ static void adv_aux_sync_subevent_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_pa
 
 
 // _RAM_CODE
-// static int adv_event_step_phy_send_scan_rsp(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+// static int adv_event_step_phy_send_scan_rsp(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 // {
 // 	if(ll->phy.hw_is_rx_packet_valid())//packet analyze shall be execute first
 // 	{
@@ -1317,14 +1317,14 @@ static void adv_aux_sync_subevent_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_pa
 // }
 
 // _RAM_CODE
-// static int adv_event_step_default_process(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+// static int adv_event_step_default_process(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 // {
 // 	ll->phy.stop();
 // 	return 1;
 // }
 
 // _RAM_CODE
-// static int adv_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+// static int adv_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 // {
 // 	ll->phy.stop();
 //     if(advParam->la->availableChnCnt)
@@ -1352,7 +1352,7 @@ static void adv_aux_sync_subevent_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_pa
 // }
 
 // _RAM_CODE
-// static int adv_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+// static int adv_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 // {
 //      _u32 systemTime = system_time();
 //      _u32 periodicDiff = (systemTime - advParam->la->sch.anchorPoint)/advParam->la->sch.interval;
@@ -1370,7 +1370,7 @@ static void adv_aux_sync_subevent_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_pa
 
 
 // _RAM_CODE
-// static int adv_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+// static int adv_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 // {
 //     _u32 systemTime = system_time();
 //     _u32 periodicDiff = (systemTime - advParam->la->sch.anchorPoint)/advParam->la->sch.interval;
@@ -1428,7 +1428,7 @@ static void adv_aux_sync_subevent_rsp_pdu_prepare(ll_sm_t* ll,ll_internal_adv_pa
 /*****************************************ADV Extended Event Process ***********************************************/
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
 
-ll_internal_adv_param_t* ll_extended_adv_get_entity(_u8 handle,_u8 allocate)
+ll_internal_adv_set_t* ll_extended_adv_get_adv_set(_u8 handle,_u8 allocate)
 {
     ll_sm_t* ll     = ll_get_current_state_machine();
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
@@ -1450,7 +1450,7 @@ ll_internal_adv_param_t* ll_extended_adv_get_entity(_u8 handle,_u8 allocate)
         	ll->adv->param[i].handle = handle;
             if(POINTER_NOT_VALID(ll->adv->param[i].la))
             {
-                ll->adv->param[i].la = (ll_adv_set_t*)tx_malloc(sizeof(ll_adv_set_t));
+                ll->adv->param[i].la = (ll_adv_type_la_t*)tx_malloc(sizeof(ll_adv_type_la_t));
             }
             return &ll->adv->param[i];
         }
@@ -1486,7 +1486,7 @@ int ll_extended_adv_get_current_set_number(void)
     return count;
 }
 
-static int adv_extended_event_step_phy_send_aux_advertising(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_extended_event_step_phy_send_aux_advertising(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 {
     phy_obj_cast(&ll->phy);
     //prepare packet
@@ -1497,7 +1497,7 @@ static int adv_extended_event_step_phy_send_aux_advertising(ll_sm_t* ll,ll_inter
     ll->phy.start();
 	return 1;
 }
-static int adv_extended_event_step_phy_start_listen_aux(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_extended_event_step_phy_start_listen_aux(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 {
     phy_obj_cast(&ll->phy);
     // _u32 timestamp = advParam->ea->sch.anchor + ll_get_air_packet_time(advParam->la->phy.mode,6+advParam->data.len,0)+PACKET_DEFAULT_TIFS_TIME;
@@ -1505,7 +1505,7 @@ static int adv_extended_event_step_phy_start_listen_aux(ll_sm_t* ll,ll_internal_
 	ll->phy.start();
 	return 1;
 }
-static int adv_extended_event_step_phy_send_aux_scan_rsp(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_extended_event_step_phy_send_aux_scan_rsp(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 {
 	if(ll->phy.hw_is_rx_packet_valid())
 	{
@@ -1531,7 +1531,7 @@ static int adv_extended_event_step_phy_send_aux_scan_rsp(ll_sm_t* ll,ll_internal
 
 	return 0;
 }
-static int adv_extended_event_step_phy_send_aux_connect_rsp(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_extended_event_step_phy_send_aux_connect_rsp(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 {
 	if(ll->phy.hw_is_rx_packet_valid())
 	{
@@ -1552,11 +1552,11 @@ static int adv_extended_event_step_phy_send_aux_connect_rsp(ll_sm_t* ll,ll_inter
 	}
 	return 0;
 }
-static int adv_extended_event_step_default_process(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_extended_event_step_default_process(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 {
 	return 1;
 }
-static int adv_extended_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_extended_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 {
     if(advParam->state == ADV_SM_STATE_SENDING_AUX_SCAN_RSP)
     {
@@ -1574,13 +1574,13 @@ static int adv_extended_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t*
     ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX);
 	return 1;
 }
-static int adv_extended_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_extended_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 {
     ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_ALL);
     //todo
 	return 1;
 }
-static int adv_extended_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_extended_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 {
     ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_ALL);
     //todo
@@ -1606,7 +1606,7 @@ static adv_event_sm_t adv_extended_event_state_machine[]=
 };
 
 
-static int adv_chained_event_step_phy_send_chain_advertising(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_chained_event_step_phy_send_chain_advertising(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 {
     phy_obj_cast(&ll->phy);
     //prepare packet
@@ -1618,7 +1618,7 @@ static int adv_chained_event_step_phy_send_chain_advertising(ll_sm_t* ll,ll_inte
 	return 1;
 }
 
-static int adv_chained_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_chained_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 {
     ll->phy.stop();
     advParam->pChain->current++;
@@ -1632,16 +1632,16 @@ static int adv_chained_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* 
         advParam->ea->anchor = advParam->ea->chain.entry[advParam->pChain->current].sch.anchorPoint;
     }
 }
-static int adv_chained_event_step_default_process(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_chained_event_step_default_process(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 {
 	return 1;
 }
-static int adv_chained_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_chained_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 {
     ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
 }
 
-static int adv_chained_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+static int adv_chained_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 {
     ll_extended_adv_map_out_task(ll,advParam,advParam->la->sch.anchorPoint,advParam->la->sch.anchorPoint+advParam->la->sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
 }
@@ -1710,7 +1710,7 @@ static adv_procedure_list_t adv_extended_non_con_non_scan_directed_procedure_wit
 #endif
 /*****************************************ADV Periodic Event Process ***********************************************/
 // #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
-// static int adv_periodic_event_step_phy_send_sync_advertising(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+// static int adv_periodic_event_step_phy_send_sync_advertising(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 // {
 //     phy_obj_cast(&ll->phy);
 //     //prepare packet
@@ -1722,17 +1722,17 @@ static adv_procedure_list_t adv_extended_non_con_non_scan_directed_procedure_wit
 //     advParam->pa->eventCnt++;
 // 	return 1;
 // }
-// static int adv_periodic_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+// static int adv_periodic_event_step_sch_stop(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 // {
 //     ll->phy.stop();
 //     advParam->pa->sync.sch.anchorPoint+=advParam->pa->sync.sch.interval;
 // }
-// static int adv_periodic_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+// static int adv_periodic_event_step_sch_passed(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 // {
 //     advParam->pa->eventCnt++;
 //     advParam->pa->sync.sch.anchorPoint+=advParam->pa->sync.sch.interval;
 // }
-// static int adv_periodic_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_param_t* advParam)
+// static int adv_periodic_event_step_sch_canceled(ll_sm_t* ll,ll_internal_adv_set_t* advParam)
 // {
 //     advParam->pa->eventCnt++;
 //     advParam->pa->sync.sch.anchorPoint+=advParam->pa->sync.sch.interval;
@@ -1960,7 +1960,7 @@ static adv_procedure_list_t adv_extended_non_con_non_scan_directed_procedure_wit
 //         {
 //             if(ll->adv->param[i].enable)
 //             {
-//                 ll_internal_adv_param_t* advParam = &ll->adv->param[i];
+//                 ll_internal_adv_set_t* advParam = &ll->adv->param[i];
 //                 //sm init
 //                 advParam->state = ADV_SM_STATE_IDLE;
 //                 ll_extended_adv_map_out_task(ll,&ll->adv->param[i],system_time()+500,system_time()+500+ll->adv->param[i].la->sch.interval,ADV_SCH_MAP_ALL);
@@ -2003,7 +2003,7 @@ static adv_procedure_list_t adv_extended_non_con_non_scan_directed_procedure_wit
 // 	if(ll->adv == NULL)
 // 	{
 // 		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_ctrl_t));
-// 		ll->adv->param[index].la = (ll_adv_set_t*)tx_malloc(sizeof(ll_adv_set_t));
+// 		ll->adv->param[index].la = (ll_adv_type_la_t*)tx_malloc(sizeof(ll_adv_type_la_t));
 // 	}
 // 	ll->adv->param[index].ownAddressType  = ownAddressType;
 // 	ll->adv->param[index].peerAddressType = peerAddressType;
@@ -2050,7 +2050,7 @@ static adv_procedure_list_t adv_extended_non_con_non_scan_directed_procedure_wit
 // 	if(ll->adv == NULL)
 // 	{
 // 		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_ctrl_t));
-// 		ll->adv->param[index].la = (ll_adv_set_t*)tx_malloc(sizeof(ll_adv_set_t));
+// 		ll->adv->param[index].la = (ll_adv_type_la_t*)tx_malloc(sizeof(ll_adv_type_la_t));
 // 	}
 //     if(ll->adv->param[index].data.addr)
 // 	{
@@ -2070,7 +2070,7 @@ static adv_procedure_list_t adv_extended_non_con_non_scan_directed_procedure_wit
 // 	if(ll->adv == NULL)
 // 	{
 // 		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_ctrl_t));
-// 		ll->adv->param[index].la = (ll_adv_set_t*)tx_malloc(sizeof(ll_adv_set_t));
+// 		ll->adv->param[index].la = (ll_adv_type_la_t*)tx_malloc(sizeof(ll_adv_type_la_t));
 // 	}
 //     if(ll->adv->param[index].scanRsp.addr)
 // 	{
@@ -2083,63 +2083,63 @@ static adv_procedure_list_t adv_extended_non_con_non_scan_directed_procedure_wit
 // 	return SUCCESS;
 // }
 
-controller_error_code_e ll_set_advertising_enable(_u8 enable)
-{
-	ll_sm_t* ll = ll_get_current_state_machine();
-	_u8 index = 0;
-	//assert ll->adv == NULL
-    if(ll->adv->param[index].enable == enable)
-	{
-		return SUCCESS;
-	}
-	LOG_TRACE(1,"set scan enable",&enable,1)
-	if(ll->adv->param[index].enable!=enable)
-	{
-		ll->adv->param[index].enable = enable;
-		if(ll->adv->param[index].enable == LL_ADVERTISING_ENABLE)
-		{
-	        phy_obj_cast(&ll->phy);
-	        phy_obj_init(&ll->phy);
-	        ll_internal_adv_param_t* advParam = &ll->adv->param[0];
-			//sch init
-			advParam->la->availableChnCnt     = advParam->la->channelCnt;
-			advParam->la->eventCnt        = 0;
-			advParam->la->sch.anchorPoint     = system_time() + 500;
-			if(advParam->eventType == ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED)
-			{
-				advParam->la->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(PHY_MODE_1M,BLE_ADV_PRI_PHY_MAX_TX_LEN,0);
-			}
-			else
-			{
-				advParam->la->sch.duration = ll->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(PHY_MODE_1M,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+2*PACKET_DEFAULT_TIFS_TIME;
-			}
-			advParam->la->sch.startMargin     = 100;
-			advParam->la->sch.stopMargin      = 75;
-			//phy init
-			advParam->la->phy.mode            = PHY_MODE_1M;
-			advParam->la->phy.crcInit         = BLE_ADV_CRC_INIT;
-			advParam->la->phy.accessCode      = BLE_ADV_ACCESS_CODE;
-			advParam->la->phy.rxMaxOctets     = BLE_ADV_PRI_PHY_MAX_RX_LEN;
-			advParam->la->phy.rxAddress       = ll_get_shared_phy_rx_address();
-			advParam->la->phy.txAddress       = ll_get_shared_phy_tx_address();
-			if(BLE_LL_STATE_SUCCESS!=ble_ll_process_event(ll,BLE_LL_EVENT_START_ADVERTISING))
-			{
-				return IVALID_HCI_COMMAND_PARAMETERS;
-			}
-		}
-		else//LL_ADVERTISING_DISABLE
-		{
-			IRQ_DISABLE;
-			ll->sch.delete=1;
-			IRQ_RESTORE;
-			if(BLE_LL_STATE_SUCCESS!=ble_ll_process_event(ll,BLE_LL_EVENT_STOP_ADVERTISING))
-			{
-				return IVALID_HCI_COMMAND_PARAMETERS;
-			}
-		}
-	}
-	return SUCCESS;
-}
+//controller_error_code_e ll_set_advertising_enable(_u8 enable)
+//{
+//	ll_sm_t* ll = ll_get_current_state_machine();
+//	_u8 index = 0;
+//	//assert ll->adv == NULL
+//    if(ll->adv->param[index].enable == enable)
+//	{
+//		return SUCCESS;
+//	}
+//	LOG_TRACE(1,"set scan enable",&enable,1)
+//	if(ll->adv->param[index].enable!=enable)
+//	{
+//		ll->adv->param[index].enable = enable;
+//		if(ll->adv->param[index].enable == LL_ADVERTISING_ENABLE)
+//		{
+//	        phy_obj_cast(&ll->phy);
+//	        phy_obj_init(&ll->phy);
+//	        ll_internal_adv_set_t* advParam = &ll->adv->param[0];
+//			//sch init
+//			advParam->la->availableChnCnt     = advParam->la->channelCnt;
+//			advParam->la->eventCnt        = 0;
+//			advParam->la->sch.anchorPoint     = system_time() + 500;
+//			if(advParam->eventType == ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED)
+//			{
+//				advParam->la->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(PHY_MODE_1M,BLE_ADV_PRI_PHY_MAX_TX_LEN,0);
+//			}
+//			else
+//			{
+//				advParam->la->sch.duration = ll->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(PHY_MODE_1M,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+2*PACKET_DEFAULT_TIFS_TIME;
+//			}
+//			advParam->la->sch.startMargin     = 100;
+//			advParam->la->sch.stopMargin      = 75;
+//			//phy init
+//			advParam->la->phy.mode            = PHY_MODE_1M;
+//			advParam->la->phy.crcInit         = BLE_ADV_CRC_INIT;
+//			advParam->la->phy.accessCode      = BLE_ADV_ACCESS_CODE;
+//			advParam->la->phy.rxMaxOctets     = BLE_ADV_PRI_PHY_MAX_RX_LEN;
+//			advParam->la->phy.rxAddress       = ll_get_shared_phy_rx_address();
+//			advParam->la->phy.txAddress       = ll_get_shared_phy_tx_address();
+//			if(BLE_LL_STATE_SUCCESS!=ble_ll_process_event(ll,BLE_LL_EVENT_START_ADVERTISING))
+//			{
+//				return IVALID_HCI_COMMAND_PARAMETERS;
+//			}
+//		}
+//		else//LL_ADVERTISING_DISABLE
+//		{
+//			IRQ_DISABLE;
+//			ll->sch.delete=1;
+//			IRQ_RESTORE;
+//			if(BLE_LL_STATE_SUCCESS!=ble_ll_process_event(ll,BLE_LL_EVENT_STOP_ADVERTISING))
+//			{
+//				return IVALID_HCI_COMMAND_PARAMETERS;
+//			}
+//		}
+//	}
+//	return SUCCESS;
+//}
 
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
 controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_param_t* pParam)
@@ -2147,7 +2147,7 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 	ll_sm_t* ll = ll_get_current_state_machine();
 	if(POINTER_NOT_VALID(ll->adv))
 	{
-		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_param_t)*BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS);
+		ll->adv = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_set_t)*BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS);
 		ASSERT(ll->adv != NULL);
 		for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 		{
@@ -2156,7 +2156,7 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 		}
 	}
 
-	ll_internal_adv_param_t* pAdv = ll_extended_adv_get_entity(pParam->advHandle,1);
+	ll_internal_adv_set_t* pAdv = ll_extended_adv_get_adv_set(pParam->advHandle,1);
 	if(POINTER_NOT_VALID(pAdv))
 	{
 		return MEMORY_CAPACITY_EXCEEDED;
@@ -2309,7 +2309,7 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 														_u8 dataLen,\
 														_u8* data)
 {
-	ll_internal_adv_param_t* pAdv = ll_extended_adv_get_entity(advHandle,0);
+	ll_internal_adv_set_t* pAdv = ll_extended_adv_get_adv_set(advHandle,0);
 	if(POINTER_NOT_VALID(pAdv))
 	{
 		return UNKNOWN_ADVERTISING_IDENTIFIER;
@@ -2505,7 +2505,7 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 															_u8 dataLen,\
 															_u8* data)
 {
-	ll_internal_adv_param_t* pAdv = ll_extended_adv_get_entity(advHandle,0);
+	ll_internal_adv_set_t* pAdv = ll_extended_adv_get_adv_set(advHandle,0);
 	if(POINTER_NOT_VALID(pAdv))
 	{
 		return UNKNOWN_ADVERTISING_IDENTIFIER;
@@ -2728,7 +2728,7 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 	{
 		for(_u8 i=0;i<numSets;i++)
 		{
-			ll_internal_adv_param_t* pAdv = ll_extended_adv_get_entity(pEnableSubFiled[i].advHandle,0);
+			ll_internal_adv_set_t* pAdv = ll_extended_adv_get_adv_set(pEnableSubFiled[i].advHandle,0);
 			if(POINTER_NOT_VALID(pAdv))
 			{
 				return IVALID_HCI_COMMAND_PARAMETERS;
@@ -2778,7 +2778,7 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 	{
 		for(_u8 i=0;i<numSets;i++)
 		{
-			ll_internal_adv_param_t* pAdv = ll_extended_adv_get_entity(pEnableSubFiled[i].advHandle,0);
+			ll_internal_adv_set_t* pAdv = ll_extended_adv_get_adv_set(pEnableSubFiled[i].advHandle,0);
 			if(pEnableSubFiled[i].duration!=0)
 			{
 				pAdv->ea->expireTime =  system_time() + pAdv->la->sch.interval + pEnableSubFiled[i].duration*10000;
@@ -2930,7 +2930,7 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 
 controller_error_code_e ll_set_adv_set_random_address(_u8 advHandle,_u8* address)
 {
-	ll_internal_adv_param_t* pAdv = ll_extended_adv_get_entity(advHandle,0);
+	ll_internal_adv_set_t* pAdv = ll_extended_adv_get_adv_set(advHandle,0);
 
 	if(POINTER_NOT_VALID(pAdv))
 	{
@@ -2959,7 +2959,7 @@ controller_error_code_e ll_read_number_of_supported_advertising_sets(_u8* number
 
 controller_error_code_e ll_remove_advertising_sets(_u8 advHandle)
 {
-	ll_internal_adv_param_t* pAdv = ll_extended_adv_get_entity(advHandle,0);
+	ll_internal_adv_set_t* pAdv = ll_extended_adv_get_adv_set(advHandle,0);
 	if(POINTER_NOT_VALID(pAdv))
 	{
 		return IVALID_HCI_COMMAND_PARAMETERS;
@@ -2988,7 +2988,7 @@ controller_error_code_e ll_remove_advertising_sets(_u8 advHandle)
 	{
 		tx_free((_u8*)pAdv->ea);
 	}
-	txMemsetByte((_u8*)pAdv,0,sizeof(ll_internal_adv_param_t));
+	txMemsetByte((_u8*)pAdv,0,sizeof(ll_internal_adv_set_t));
 	pAdv->handle = LL_EXTENDED_ADV_INVALID_HANDLE;
 
 	if(ll_extended_adv_get_current_set_number()==0)
@@ -3007,7 +3007,7 @@ controller_error_code_e ll_clear_advertising_sets(void)
 	{
 		if(ll->adv->param[i].handle!=LL_EXTENDED_ADV_INVALID_HANDLE)
 		{
-			ll_internal_adv_param_t* pAdv = &ll->adv->param[i];
+			ll_internal_adv_set_t* pAdv = &ll->adv->param[i];
 			if(ll->adv->param[i].enable)
 			{
 				return COMMAND_DISALLOWED;
@@ -3044,7 +3044,7 @@ controller_error_code_e ll_clear_advertising_sets(void)
 
 controller_error_code_e ll_set_periodic_advertising_paramters(_u8 advHandle,_u8 interval,_u16 property)
 {
-	ll_internal_adv_param_t* pAdv = ll_extended_adv_get_entity(advHandle,0);
+	ll_internal_adv_set_t* pAdv = ll_extended_adv_get_adv_set(advHandle,0);
 	if(POINTER_NOT_VALID(pAdv))
 	{
 		return UNKNOWN_ADVERTISING_IDENTIFIER;
@@ -3063,7 +3063,7 @@ controller_error_code_e ll_set_periodic_advertising_paramters(_u8 advHandle,_u8 
 
 controller_error_code_e ll_set_periodic_advertising_data(_u8 advHandle,ll_advertising_data_operation_e operation,_u8 dataLen,_u8* data)
 {
-	ll_internal_adv_param_t* pAdv = ll_extended_adv_get_entity(advHandle,0);
+	ll_internal_adv_set_t* pAdv = ll_extended_adv_get_adv_set(advHandle,0);
 	if(POINTER_NOT_VALID(pAdv))
 	{
 		return UNKNOWN_ADVERTISING_IDENTIFIER;
@@ -3195,7 +3195,7 @@ controller_error_code_e ll_set_periodic_advertising_data(_u8 advHandle,ll_advert
 
 controller_error_code_e ll_set_periodic_advertising_enable(_u8 enable,_u8 advHandle)
 {
-	ll_internal_adv_param_t* pAdv = ll_extended_adv_get_entity(advHandle,0);
+	ll_internal_adv_set_t* pAdv = ll_extended_adv_get_adv_set(advHandle,0);
 	ll_sm_t* ll = ll_get_current_state_machine();
 	if(POINTER_NOT_VALID(pAdv))
 	{

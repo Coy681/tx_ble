@@ -90,7 +90,7 @@ static ll_sm_t* LLSM;
 //adv ctrl pointer,point to current adv struct
 static ll_internal_adv_ctrl_t* advCtrl;
 //currrent used adv set
-static ll_internal_adv_param_t* currentSet;
+static ll_internal_adv_set_t* currentSet;
 //current event class,search for 'adv_event_class_e'
 static int currentEventClass;
 
@@ -113,31 +113,31 @@ void adv_get_next_event(void)
     _u32 timestamp = 0;
     for(_u8 i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
     {
-        if(advCtrl->param[i].enable)
+        if(advCtrl->set[i].enable)
         {
-            if(POINTER_VALID(advCtrl->param[i].la))
+            if(POINTER_VALID(advCtrl->set[i].la))
             {
-                if((timestamp == 0)||txCompareTime(timestamp,advCtrl->param[i].la->sch.anchorPoint))
+                if((timestamp == 0)||txCompareTime(timestamp,advCtrl->set[i].la->sch.anchorPoint))
                 {
-                    timestamp = advCtrl->param[i].la->sch.anchorPoint|1;
-                    currentSet = &advCtrl->param[i];
+                    timestamp = advCtrl->set[i].la->sch.anchorPoint|1;
+                    currentSet = &advCtrl->set[i];
                     currentEventClass = ADV_EVENT;
                     adv_sub_node_remap(&currentSet->la->sch);
                 }
             }
-            if(advCtrl->param[i].schMap&ADV_SCH_MAP_AUX)
+            if(advCtrl->set[i].schMap&ADV_SCH_MAP_AUX)
             {
-                if((timestamp == 0)||txCompareTime(timestamp,advCtrl->param[i].ea->anchor))
+                if((timestamp == 0)||txCompareTime(timestamp,advCtrl->set[i].ea->anchor))
                 {
-                    timestamp = advCtrl->param[i].ea->anchor|1;
-                    currentSet = &advCtrl->param[i];
+                    timestamp = advCtrl->set[i].ea->anchor|1;
+                    currentSet = &advCtrl->set[i];
                     currentSet->pChain = &currentSet->ea->chain;
-                    if(advCtrl->param[i].ea->anchor == advCtrl->param[i].ea->aux.sch.anchorPoint)
+                    if(advCtrl->set[i].ea->anchor == advCtrl->set[i].ea->aux.sch.anchorPoint)
                     {
                         adv_sub_node_remap(&currentSet->ea->aux.sch);
                         currentEventClass = ADV_EXTENDED_EVENT;
                     }
-                    else if(advCtrl->param[i].schMap&ADV_SCH_MAP_AUX_CHAIN)
+                    else if(advCtrl->set[i].schMap&ADV_SCH_MAP_AUX_CHAIN)
                     {
                         adv_sub_node_remap(&currentSet->ea->chain.entry[currentSet->ea->chain.current].sch);
                         currentEventClass = ADV_CHAINED_EVENT;
@@ -146,19 +146,19 @@ void adv_get_next_event(void)
             }
         }
 		#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
-		if((advCtrl->param[i].schMap&ADV_SCH_MAP_PA)&&advCtrl->param[i].pa->active)
+		if((advCtrl->set[i].schMap&ADV_SCH_MAP_PA)&&advCtrl->set[i].pa->active)
 		{
-			if((timestamp == 0)||txCompareTime(timestamp,advCtrl->param[i].pa->anchor))
+			if((timestamp == 0)||txCompareTime(timestamp,advCtrl->set[i].pa->anchor))
 			{
-				timestamp = advCtrl->param[i].pa->anchor|1;
-				currentSet = &advCtrl->param[i];
+				timestamp = advCtrl->set[i].pa->anchor|1;
+				currentSet = &advCtrl->set[i];
                 currentSet->pChain = &currentSet->pa->chain;
-				if(advCtrl->param[i].pa->anchor == advCtrl->param[i].pa->sync.sch.anchorPoint)
+				if(advCtrl->set[i].pa->anchor == advCtrl->set[i].pa->sync.sch.anchorPoint)
 				{
 					currentEventClass = ADV_PERIODIC_EVENT;
 					adv_sub_node_remap(&currentSet->pa->sync.sch);
 				}
-				else if(advCtrl->param[i].schMap&ADV_SCH_MAP_PA_CHAIN)
+				else if(advCtrl->set[i].schMap&ADV_SCH_MAP_PA_CHAIN)
 				{
 					currentEventClass = ADV_CHAINED_EVENT;
 					adv_sub_node_remap(&currentSet->pa->chain.entry[currentSet->pa->chain.current].sch);
@@ -171,7 +171,7 @@ void adv_get_next_event(void)
     #endif/*(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)*/
 
 	#else/*(!LL_SUPPORT_LE_EXTENDED_ADVERTISING)*/
-    currentSet = &advCtrl->param[0];
+    currentSet = &advCtrl->set[0];
     currentEventClass = ADV_EVENT;
     adv_sub_node_remap(&currentSet->la->sch);
 	#endif/*(LL_SUPPORT_LE_EXTENDED_ADVERTISING)*/
@@ -211,7 +211,7 @@ static void adv_prepare_phy(ll_adv_phy_entry_t* phy,_u32 timestamp,phy_dir_e phy
 }
 
 _RAM_CODE
-int ll_extended_adv_map_out_task(ll_internal_adv_param_t* advSet,_u32 refStart,_u32 refEnd,_u8 mapType)
+int ll_extended_adv_map_out_task(ll_internal_adv_set_t* advSet,_u32 refStart,_u32 refEnd,_u8 mapType)
 {
 
     _u8  nodeNum    = 0;
@@ -264,16 +264,16 @@ int ll_extended_adv_map_out_task(ll_internal_adv_param_t* advSet,_u32 refStart,_
 	    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
         for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
         {
-            if((advCtrl->param[i].handle == advSet[i].handle) || (advCtrl->param[i].enable == 0))
+            if((advCtrl->set[i].handle == advSet[i].handle) || (advCtrl->set[i].enable == 0))
             {
                 continue;
             }
-            if(advCtrl->param[i].enable)
+            if(advCtrl->set[i].enable)
             {
-                if(txCompareTime(refEnd,advCtrl->param[i].la->sch.anchorPoint))
+                if(txCompareTime(refEnd,advCtrl->set[i].la->sch.anchorPoint))
                 {
-                    node[nodeNum].start = advCtrl->param[i].la->sch.anchorPoint - advCtrl->param[i].la->sch.startMargin;
-                    node[nodeNum].end   = node[nodeNum].start+3*(advCtrl->param[i].la->sch.duration + advCtrl->param[i].la->sch.startMargin+advCtrl->param[i].la->sch.stopMargin);
+                    node[nodeNum].start = advCtrl->set[i].la->sch.anchorPoint - advCtrl->set[i].la->sch.startMargin;
+                    node[nodeNum].end   = node[nodeNum].start+3*(advCtrl->set[i].la->sch.duration + advCtrl->set[i].la->sch.startMargin+advCtrl->set[i].la->sch.stopMargin);
                     node[nodeNum].type  = SCH_SPORADIC_TASK;
                     nodeNum++;
                     if(nodeNum>nodeCount)
@@ -281,12 +281,12 @@ int ll_extended_adv_map_out_task(ll_internal_adv_param_t* advSet,_u32 refStart,_
                         goto reCal;
                     }
                 }
-                if(advCtrl->param[i].schMap&ADV_SCH_MAP_AUX)
+                if(advCtrl->set[i].schMap&ADV_SCH_MAP_AUX)
                 {
-                    if(txCompareTime(refEnd,advCtrl->param[i].ea->aux.sch.anchorPoint))
+                    if(txCompareTime(refEnd,advCtrl->set[i].ea->aux.sch.anchorPoint))
                     {
-                        node[nodeNum].start = advCtrl->param[i].ea->aux.sch.anchorPoint - advCtrl->param[i].ea->aux.sch.startMargin;
-                        node[nodeNum].end   = advCtrl->param[i].ea->aux.sch.anchorPoint + advCtrl->param[i].ea->aux.sch.duration + advCtrl->param[i].ea->aux.sch.stopMargin;
+                        node[nodeNum].start = advCtrl->set[i].ea->aux.sch.anchorPoint - advCtrl->set[i].ea->aux.sch.startMargin;
+                        node[nodeNum].end   = advCtrl->set[i].ea->aux.sch.anchorPoint + advCtrl->set[i].ea->aux.sch.duration + advCtrl->set[i].ea->aux.sch.stopMargin;
                         node[nodeNum].type  = SCH_SPORADIC_TASK;
                         nodeNum++;
                         if(nodeNum>nodeCount)
@@ -294,18 +294,18 @@ int ll_extended_adv_map_out_task(ll_internal_adv_param_t* advSet,_u32 refStart,_
                             goto reCal;
                         }
                     }
-                    if(advCtrl->param[i].schMap&ADV_SCH_MAP_AUX_CHAIN)
+                    if(advCtrl->set[i].schMap&ADV_SCH_MAP_AUX_CHAIN)
                     {
-                        for(int j=0;j<advCtrl->param[i].ea->chain.cnt;j++)
+                        for(int j=0;j<advCtrl->set[i].ea->chain.cnt;j++)
                         {
-                            if(txCompareTime(refEnd,advCtrl->param[i].ea->chain.entry[j].sch.anchorPoint))
+                            if(txCompareTime(refEnd,advCtrl->set[i].ea->chain.entry[j].sch.anchorPoint))
                             {
-                                node[nodeNum].start = advCtrl->param[i].ea->chain.entry[j].sch.anchorPoint\
-                                                    - advCtrl->param[i].ea->chain.entry[j].sch.startMargin;
+                                node[nodeNum].start = advCtrl->set[i].ea->chain.entry[j].sch.anchorPoint\
+                                                    - advCtrl->set[i].ea->chain.entry[j].sch.startMargin;
 
-                                node[nodeNum].end   = advCtrl->param[i].ea->chain.entry[j].sch.anchorPoint\
-                                                    + advCtrl->param[i].ea->chain.entry[j].sch.duration\
-                                                    + advCtrl->param[i].ea->chain.entry[j].sch.stopMargin;
+                                node[nodeNum].end   = advCtrl->set[i].ea->chain.entry[j].sch.anchorPoint\
+                                                    + advCtrl->set[i].ea->chain.entry[j].sch.duration\
+                                                    + advCtrl->set[i].ea->chain.entry[j].sch.stopMargin;
                                 node[nodeNum].type  = SCH_SPORADIC_TASK;
                                 nodeNum++;
                                 if(nodeNum>nodeCount)
@@ -318,14 +318,14 @@ int ll_extended_adv_map_out_task(ll_internal_adv_param_t* advSet,_u32 refStart,_
                 }
             }
 			#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
-    		if(POINTER_VALID(advCtrl->param[i].pa)&&advCtrl->param[i].pa->active)
+    		if(POINTER_VALID(advCtrl->set[i].pa)&&advCtrl->set[i].pa->active)
             {
-    			if(advCtrl->param[i].schMap&ADV_SCH_MAP_PA)
+    			if(advCtrl->set[i].schMap&ADV_SCH_MAP_PA)
     			{
-    				if(txCompareTime(refEnd,advCtrl->param[i].pa->sync.sch.anchorPoint))
+    				if(txCompareTime(refEnd,advCtrl->set[i].pa->sync.sch.anchorPoint))
     				{
-                        node[nodeNum].start = advCtrl->param[i].pa->sync.sch.anchorPoint - advCtrl->param[i].pa->sync.sch.startMargin;
-                        node[nodeNum].end   = advCtrl->param[i].pa->sync.sch.anchorPoint + advCtrl->param[i].pa->sync.sch.duration + advCtrl->param[i].pa->sync.sch.stopMargin;
+                        node[nodeNum].start = advCtrl->set[i].pa->sync.sch.anchorPoint - advCtrl->set[i].pa->sync.sch.startMargin;
+                        node[nodeNum].end   = advCtrl->set[i].pa->sync.sch.anchorPoint + advCtrl->set[i].pa->sync.sch.duration + advCtrl->set[i].pa->sync.sch.stopMargin;
                         node[nodeNum].type  = SCH_PERIODIC_TASK;
                         nodeNum++;
                         if(nodeNum>nodeCount)
@@ -333,18 +333,18 @@ int ll_extended_adv_map_out_task(ll_internal_adv_param_t* advSet,_u32 refStart,_
                             goto reCal;
                         }
     				}
-    				if(advCtrl->param[i].schMap&ADV_SCH_MAP_PA_CHAIN)
+    				if(advCtrl->set[i].schMap&ADV_SCH_MAP_PA_CHAIN)
     				{
-                        for(int j=0;j<advCtrl->param[i].pa->chain.cnt;j++)
+                        for(int j=0;j<advCtrl->set[i].pa->chain.cnt;j++)
                         {
-                            if(txCompareTime(refEnd,advCtrl->param[i].pa->chain.entry[j].sch.anchorPoint))
+                            if(txCompareTime(refEnd,advCtrl->set[i].pa->chain.entry[j].sch.anchorPoint))
                             {
-                                node[nodeNum].start = advCtrl->param[i].pa->chain.entry[j].sch.anchorPoint\
-                                                    - advCtrl->param[i].pa->chain.entry[j].sch.startMargin;
+                                node[nodeNum].start = advCtrl->set[i].pa->chain.entry[j].sch.anchorPoint\
+                                                    - advCtrl->set[i].pa->chain.entry[j].sch.startMargin;
 
-                                node[nodeNum].end   = advCtrl->param[i].pa->chain.entry[j].sch.anchorPoint\
-                                                    + advCtrl->param[i].pa->chain.entry[j].sch.duration\
-                                                    + advCtrl->param[i].pa->chain.entry[j].sch.stopMargin;
+                                node[nodeNum].end   = advCtrl->set[i].pa->chain.entry[j].sch.anchorPoint\
+                                                    + advCtrl->set[i].pa->chain.entry[j].sch.duration\
+                                                    + advCtrl->set[i].pa->chain.entry[j].sch.stopMargin;
                                 node[nodeNum].type  = SCH_SPORADIC_TASK;
                                 nodeNum++;
                                 if(nodeNum>nodeCount)
@@ -1446,14 +1446,18 @@ static adv_procedure_list_t adv_non_con_non_scan_undirected_procedure[]=
 /********* ADV EXTENDED EVENT PROCESS *********/
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
 
-ll_internal_adv_param_t* ll_extended_adv_get_entity(_u8 handle,_u8 allocate)
+ll_internal_adv_set_t* ll_extended_adv_get_adv_set(_u8 handle,_u8 allocate)
 {
-    ll_sm_t* ll     = ll_get_current_state_machine();
+	ll_sm_t* llsm = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_UNVALID_HANDLE,0);
+	ASSERT(POINTER_VALID(llsm));
+	ASSERT(POINTER_VALID(llsm->entity));
+	ll_internal_adv_ctrl_t* adv = (ll_internal_adv_ctrl_t*)llsm->entity;
+
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
-		if(POINTER_VALID(advCtrl->param[i].la)&&advCtrl->param[i].handle == handle)
+		if(POINTER_VALID(adv->set[i].la)&&adv->set[i].handle == handle)
 		{
-			return &advCtrl->param[i];
+			return &adv->set[i];
 		}
 	}
 	if(allocate==0)
@@ -1463,14 +1467,14 @@ ll_internal_adv_param_t* ll_extended_adv_get_entity(_u8 handle,_u8 allocate)
 
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
-        if(advCtrl->param[i].handle == LL_EXTENDED_ADV_INVALID_HANDLE)
+        if(adv->set[i].handle == LL_EXTENDED_ADV_INVALID_HANDLE)
         {
-        	advCtrl->param[i].handle = handle;
-            if(POINTER_NOT_VALID(advCtrl->param[i].la))
+        	adv->set[i].handle = handle;
+            if(POINTER_NOT_VALID(adv->set[i].la))
             {
-                advCtrl->param[i].la = (ll_adv_set_t*)tx_malloc(sizeof(ll_adv_set_t));
+            	adv->set[i].la = (ll_adv_type_la_t*)tx_malloc(sizeof(ll_adv_type_la_t));
             }
-            return &advCtrl->param[i];
+            return &adv->set[i];
         }
     }
     return NULL;
@@ -1478,11 +1482,15 @@ ll_internal_adv_param_t* ll_extended_adv_get_entity(_u8 handle,_u8 allocate)
 
 int ll_extended_adv_get_current_active_set_number(void)
 {
-    ll_sm_t* ll = ll_get_current_state_machine();
+	ll_sm_t* llsm = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_UNVALID_HANDLE,0);
+	ASSERT(POINTER_VALID(llsm));
+	ASSERT(POINTER_VALID(llsm->entity));
+	ll_internal_adv_ctrl_t* adv = (ll_internal_adv_ctrl_t*)llsm->entity;
+
     _u8 count = 0;
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
-        if(advCtrl->param[i].handle!=LL_EXTENDED_ADV_INVALID_HANDLE && advCtrl->param[i].enable == 1)
+        if(adv->set[i].handle!=LL_EXTENDED_ADV_INVALID_HANDLE && adv->set[i].enable == 1)
         {
             count++;
         }
@@ -1492,11 +1500,15 @@ int ll_extended_adv_get_current_active_set_number(void)
 
 int ll_extended_adv_get_current_set_number(void)
 {
-    ll_sm_t* ll = ll_get_current_state_machine();
+	ll_sm_t* llsm = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_UNVALID_HANDLE,0);
+	ASSERT(POINTER_VALID(llsm));
+	ASSERT(POINTER_VALID(llsm->entity));
+	ll_internal_adv_ctrl_t* adv = (ll_internal_adv_ctrl_t*)llsm->entity;
+
     _u8 count = 0;
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
-        if(advCtrl->param[i].handle!=LL_EXTENDED_ADV_INVALID_HANDLE)
+        if(adv->set[i].handle!=LL_EXTENDED_ADV_INVALID_HANDLE)
         {
             count++;
         }
@@ -1937,31 +1949,31 @@ static void ble_ll_adv_reset(void)
 	ASSERT(POINTER_VALID(advCtrl));
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
-		if(POINTER_VALID(advCtrl->param[i].la))
+		if(POINTER_VALID(advCtrl->set[i].la))
 		{
-			tx_free((_u8*)advCtrl->param[i].la);
-			advCtrl->param[i].la = NULL;
+			tx_free((_u8*)advCtrl->set[i].la);
+			advCtrl->set[i].la = NULL;
 		}
-		if(POINTER_VALID(advCtrl->param[i].data.addr))
+		if(POINTER_VALID(advCtrl->set[i].data.addr))
 		{
-			tx_free(advCtrl->param[i].data.addr);
-			advCtrl->param[i].data.addr = NULL;
+			tx_free(advCtrl->set[i].data.addr);
+			advCtrl->set[i].data.addr = NULL;
 		}
-		if(POINTER_VALID(advCtrl->param[i].scanRsp.addr))
+		if(POINTER_VALID(advCtrl->set[i].scanRsp.addr))
 		{
-			tx_free(advCtrl->param[i].scanRsp.addr);
-			advCtrl->param[i].scanRsp.addr = NULL;
+			tx_free(advCtrl->set[i].scanRsp.addr);
+			advCtrl->set[i].scanRsp.addr = NULL;
 		}
 		#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
-		if(POINTER_VALID(advCtrl->param[i].ea))
+		if(POINTER_VALID(advCtrl->set[i].ea))
 		{
-			if(POINTER_VALID(advCtrl->param[i].ea->chain.entry))
+			if(POINTER_VALID(advCtrl->set[i].ea->chain.entry))
 			{
-				tx_free((_u8*)advCtrl->param[i].ea->chain.entry);
-				advCtrl->param[i].ea->chain.entry = NULL;
+				tx_free((_u8*)advCtrl->set[i].ea->chain.entry);
+				advCtrl->set[i].ea->chain.entry = NULL;
 			}
-			tx_free((_u8*)advCtrl->param[i].ea);
-			advCtrl->param[i].ea = NULL;
+			tx_free((_u8*)advCtrl->set[i].ea);
+			advCtrl->set[i].ea = NULL;
 		}
 		#endif
 		#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
@@ -1971,7 +1983,7 @@ static void ble_ll_adv_reset(void)
 	}
 }
 
-void ble_ll_enter_advertising_state(void)
+int ble_ll_enter_advertising_state(void)
 {
 	LLSM = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_UNVALID_HANDLE,0);
 	ASSERT(POINTER_VALID(LLSM));
@@ -1984,12 +1996,12 @@ void ble_ll_enter_advertising_state(void)
 	LLSM->phy.hw_irq_cb  = adv_phy_irq_callback;
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
-		if(advCtrl->param[i].enable)
+		if(advCtrl->set[i].enable)
 		{
-			ll_internal_adv_param_t* advParam = &advCtrl->param[i];
+			ll_internal_adv_set_t* advParam = &advCtrl->set[i];
 			//sm init
 			advParam->state = ADV_SM_STATE_IDLE;
-			ll_extended_adv_map_out_task(&advCtrl->param[i],system_time()+500,system_time()+500+advCtrl->param[i].la->sch.interval,ADV_SCH_MAP_ALL);
+			ll_extended_adv_map_out_task(&advCtrl->set[i],system_time()+500,system_time()+500+advCtrl->set[i].la->sch.interval,ADV_SCH_MAP_ALL);
 		}
 	}
 	adv_get_next_event();
@@ -2007,15 +2019,16 @@ void ble_ll_enter_advertising_state(void)
 	{
 		sch_start();
 	}
+	return 0;
 }
 
-void ble_ll_exit_advertising_state(void)
+int ble_ll_exit_advertising_state(void)
 {
 	LLSM = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_UNVALID_HANDLE,0);
 	ASSERT(POINTER_VALID(LLSM));
 	advCtrl = (ll_internal_adv_ctrl_t*)LLSM->entity;
 	ASSERT(POINTER_VALID(advCtrl));
-
+	return 0;
 	//todo
 }
 
@@ -2039,44 +2052,44 @@ controller_error_code_e ll_set_advertising_parameters(_u16 interval,\
 		llsm->entity = tx_malloc(sizeof(ll_internal_adv_ctrl_t));
         ASSERT(POINTER_VALID(llsm->entity));
         adv = (ll_internal_adv_ctrl_t*)llsm->entity;
-		adv->param[index].la = (ll_adv_set_t*)tx_malloc(sizeof(ll_adv_set_t));
-        ASSERT(POINTER_VALID(adv->param[index].la));
+		adv->set[index].la = (ll_adv_type_la_t*)tx_malloc(sizeof(ll_adv_type_la_t));
+        ASSERT(POINTER_VALID(adv->set[index].la));
 	}
-	adv->param[index].ownAddressType  = ownAddressType;
-	adv->param[index].peerAddressType = peerAddressType;
-	adv->param[index].filterPolicy = policy;
-	txMemcpy(adv->param[index].peerAddress,peerAddress,6);
+	adv->set[index].ownAddressType  = ownAddressType;
+	adv->set[index].peerAddressType = peerAddressType;
+	adv->set[index].filterPolicy = policy;
+	txMemcpy(adv->set[index].peerAddress,peerAddress,6);
 
-	adv->param[index].la->sch.interval = interval*625;
-	adv->param[index].la->channelCnt   = 0;
+	adv->set[index].la->sch.interval = interval*625;
+	adv->set[index].la->channelCnt   = 0;
     for(int i=0;i<3;i++)
     {
     	if(channelMap&BIT(i))
     	{
-    		adv->param[index].la->chnTable[adv->param[index].la->channelCnt++] = 37+i;
+    		adv->set[index].la->chnTable[adv->set[index].la->channelCnt++] = 37+i;
     	}
     }
 	switch(type)
 	{
 		case LL_ADV_IND:
 		{
-			adv->param[index].eventType = ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED;
+			adv->set[index].eventType = ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED;
 		}break;
 		case LL_ADV_DIRECT_IND_HIGH_DUTY:
 		case LL_ADV_DIRECT_IND_LOW_DUTY:
 		{
-			adv->param[index].eventType = ADV_EVENT_CONNECTABLE_DIRECTED;
+			adv->set[index].eventType = ADV_EVENT_CONNECTABLE_DIRECTED;
 		}break;
 		case LL_ADV_SCAN_IND:
 		{
-			adv->param[index].eventType = ADV_EVENT_SCANNABLE_UNDIRECTED;
+			adv->set[index].eventType = ADV_EVENT_SCANNABLE_UNDIRECTED;
 		}break;
 		case LL_ADV_NONCONN_IND:
 		{
-			adv->param[index].eventType = ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED;
+			adv->set[index].eventType = ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED;
 		}break;
 	}
-	LOG_TRACE(1,"set adv param",0,0)
+	LOG_TRACE(BLE_ADV_TRACE_ENABLE,"set adv param",0,0)
 	return SUCCESS;
 }
 
@@ -2092,18 +2105,18 @@ controller_error_code_e ll_set_advertising_data(_u8* data,_u8 length)
 		llsm->entity = tx_malloc(sizeof(ll_internal_adv_ctrl_t));
         ASSERT(POINTER_VALID(llsm->entity));
         adv = (ll_internal_adv_ctrl_t*)llsm->entity;
-		adv->param[index].la = (ll_adv_set_t*)tx_malloc(sizeof(ll_adv_set_t));
-        ASSERT(POINTER_VALID(adv->param[index].la));
+		adv->set[index].la = (ll_adv_type_la_t*)tx_malloc(sizeof(ll_adv_type_la_t));
+        ASSERT(POINTER_VALID(adv->set[index].la));
 	}
 
-    if(adv->param[index].data.addr)
+    if(adv->set[index].data.addr)
 	{
-		tx_free(adv->param[index].data.addr);
+		tx_free(adv->set[index].data.addr);
 	}
-    adv->param[index].data.len  = length;
-    adv->param[index].data.addr = tx_malloc(length);
-	txMemcpy(adv->param[index].data.addr,data,length);
-	LOG_TRACE(1,"set adv data",0,0)
+    adv->set[index].data.len  = length;
+    adv->set[index].data.addr = tx_malloc(length);
+	txMemcpy(adv->set[index].data.addr,data,length);
+	LOG_TRACE(BLE_ADV_TRACE_ENABLE,"set adv data",0,0)
 	return SUCCESS;
 }
 controller_error_code_e ll_set_scan_response_data(_u8* data,_u8 length)
@@ -2118,17 +2131,17 @@ controller_error_code_e ll_set_scan_response_data(_u8* data,_u8 length)
 		llsm->entity = tx_malloc(sizeof(ll_internal_adv_ctrl_t));
         ASSERT(POINTER_VALID(llsm->entity));
         adv = (ll_internal_adv_ctrl_t*)llsm->entity;
-		adv->param[index].la = (ll_adv_set_t*)tx_malloc(sizeof(ll_adv_set_t));
-        ASSERT(POINTER_VALID(adv->param[index].la));
+		adv->set[index].la = (ll_adv_type_la_t*)tx_malloc(sizeof(ll_adv_type_la_t));
+        ASSERT(POINTER_VALID(adv->set[index].la));
 	}
-    if(adv->param[index].scanRsp.addr)
+    if(adv->set[index].scanRsp.addr)
 	{
-		tx_free(adv->param[index].scanRsp.addr);
+		tx_free(adv->set[index].scanRsp.addr);
 	}
-    adv->param[index].scanRsp.len  = length;
-    adv->param[index].scanRsp.addr = tx_malloc(length);
-	txMemcpy(adv->param[index].scanRsp.addr,data,length);
-	LOG_TRACE(1,"set scan rsp data",0,0)
+    adv->set[index].scanRsp.len  = length;
+    adv->set[index].scanRsp.addr = tx_malloc(length);
+	txMemcpy(adv->set[index].scanRsp.addr,data,length);
+	LOG_TRACE(BLE_ADV_TRACE_ENABLE,"set scan rsp data",0,0)
 	return SUCCESS;
 }
 controller_error_code_e ll_set_advertising_enable(_u8 enable)
@@ -2138,49 +2151,48 @@ controller_error_code_e ll_set_advertising_enable(_u8 enable)
 	ASSERT(POINTER_VALID(llsm->entity));
     ll_internal_adv_ctrl_t* adv = (ll_internal_adv_ctrl_t*)llsm->entity;
 	_u8 index = 0;
-	//assert ll->adv == NULL
-    if(adv->param[index].enable == enable)
+    if(adv->set[index].enable == enable)
 	{
 		return SUCCESS;
 	}
-	LOG_TRACE(1,"set scan enable",&enable,1)
-	if(adv->param[index].enable!=enable)
+	LOG_TRACE(BLE_ADV_TRACE_ENABLE,"set scan enable",&enable,1)
+	if(adv->set[index].enable!=enable)
 	{
-		adv->param[index].enable = enable;
-		if(adv->param[index].enable == LL_ADVERTISING_ENABLE)
+		adv->set[index].enable = enable;
+		if(adv->set[index].enable == LL_ADVERTISING_ENABLE)
 		{
 	        phy_obj_cast(&llsm->phy);
 	        phy_obj_init(&llsm->phy);
-	        ll_internal_adv_param_t* advParam = &adv->param[0];
+	        ll_internal_adv_set_t* advSet = &adv->set[0];
 			//sch init
-			advParam->la->availableChnCnt     = advParam->la->channelCnt;
-			advParam->la->eventCnt        = 0;
-			advParam->la->sch.anchorPoint     = system_time() + 500;
-			if(advParam->eventType == ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED)
+	        advSet->la->availableChnCnt     = advSet->la->channelCnt;
+	        advSet->la->eventCnt            = 0;
+	        advSet->la->sch.anchorPoint     = system_time() + 500;
+			if(advSet->eventType == ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED)
 			{
-				advParam->la->sch.duration = llsm->phy.hw_get_prepare_time()+ll_get_air_packet_time(PHY_MODE_1M,BLE_ADV_PRI_PHY_MAX_TX_LEN,0);
+				advSet->la->sch.duration = llsm->phy.hw_get_prepare_time()+ll_get_air_packet_time(PHY_MODE_1M,BLE_ADV_PRI_PHY_MAX_TX_LEN,0);
 			}
 			else
 			{
-				advParam->la->sch.duration = llsm->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(PHY_MODE_1M,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+2*PACKET_DEFAULT_TIFS_TIME;
+				advSet->la->sch.duration = llsm->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(PHY_MODE_1M,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+2*PACKET_DEFAULT_TIFS_TIME;
 			}
-			advParam->la->sch.startMargin     = 100;
-			advParam->la->sch.stopMargin      = 75;
+			advSet->la->sch.startMargin     = 100;
+			advSet->la->sch.stopMargin      = 75;
 			//phy init
-			advParam->la->phy.mode            = PHY_MODE_1M;
-			advParam->la->phy.crcInit         = BLE_ADV_CRC_INIT;
-			advParam->la->phy.accessCode      = BLE_ADV_ACCESS_CODE;
-			advParam->la->phy.rxMaxOctets     = BLE_ADV_PRI_PHY_MAX_RX_LEN;
-			advParam->la->phy.rxAddress       = ll_get_shared_phy_rx_address();
-			advParam->la->phy.txAddress       = ll_get_shared_phy_tx_address();
-			if(BLE_LL_STATE_SUCCESS!=ble_ll_process_event(ll,BLE_LL_EVENT_START_ADVERTISING))
+			advSet->la->phy.mode            = PHY_MODE_1M;
+			advSet->la->phy.crcInit         = BLE_ADV_CRC_INIT;
+			advSet->la->phy.accessCode      = BLE_ADV_ACCESS_CODE;
+			advSet->la->phy.rxMaxOctets     = BLE_ADV_PRI_PHY_MAX_RX_LEN;
+			advSet->la->phy.rxAddress       = ll_get_shared_phy_rx_address();
+			advSet->la->phy.txAddress       = ll_get_shared_phy_tx_address();
+			if(ble_ll_enter_advertising_state())
 			{
 				return IVALID_HCI_COMMAND_PARAMETERS;
 			}
 		}
 		else//LL_ADVERTISING_DISABLE
 		{
-			if(BLE_LL_STATE_SUCCESS!=ble_ll_process_event(ll,BLE_LL_EVENT_STOP_ADVERTISING))
+			if(ble_ll_exit_advertising_state())
 			{
 				return IVALID_HCI_COMMAND_PARAMETERS;
 			}
@@ -2188,3 +2200,171 @@ controller_error_code_e ll_set_advertising_enable(_u8 enable)
 	}
 	return SUCCESS;
 }
+
+#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
+controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_param_t* pParam)
+{
+	ll_sm_t* llsm = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_UNVALID_HANDLE,0);
+//	ASSERT(POINTER_VALID(llsm));
+	if(POINTER_NOT_VALID(llsm))
+	{
+		return MEMORY_CAPACITY_EXCEEDED;
+	}
+	if(POINTER_NOT_VALID(llsm->entity))
+	{
+		llsm->entity = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_ctrl_t));
+		ASSERT(POINTER_VALID(llsm->entity));
+		for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+		{
+			((ll_internal_adv_ctrl_t*)llsm->entity)->set[i].handle = LL_EXTENDED_ADV_INVALID_HANDLE;
+			((ll_internal_adv_ctrl_t*)llsm->entity)->set[i].sid = i;
+		}
+	}
+
+	ll_internal_adv_set_t* advSet = ll_extended_adv_get_adv_set(pParam->advHandle,1);
+	if(POINTER_NOT_VALID(advSet))
+	{
+		return MEMORY_CAPACITY_EXCEEDED;
+	}
+	advSet->eventProperty     = pParam->advEventProperty;
+	advSet->filterPolicy      = pParam->filterPolicy;
+	advSet->ownAddressType    = pParam->ownAddrType;
+	advSet->peerAddressType   = pParam->peerAddrType;
+	advSet->la.sch.interval   = pParam->primaryAdvInterval * 625;
+	advSet->la.channelCnt     = 0;
+    for(int i=0;i<3;i++)
+    {
+    	if(pParam->primaryAdvChnMap&BIT(i))
+    	{
+    		advSet->la->chnTable[advSet->la->channelCnt++] = 37+i;
+    	}
+    }
+	if(pParam->advEventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU)
+	{
+		switch(pParam->advEventProperty)
+		{
+			case (LL_ADV_EVENT_PROPERTY_LEGACY_PDU|LL_ADV_EVENT_PROPERTY_CONNECTED|LL_ADV_EVENT_PROPERTY_SCANNABLE):
+			{
+				advSet->eventType = ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED;
+			}
+				break;
+			case (LL_ADV_EVENT_PROPERTY_LEGACY_PDU|LL_ADV_EVENT_PROPERTY_CONNECTED|LL_ADV_EVENT_PROPERTY_DIRECTED):
+			case (LL_ADV_EVENT_PROPERTY_LEGACY_PDU|LL_ADV_EVENT_PROPERTY_CONNECTED|LL_ADV_EVENT_PROPERTY_DIRECTED|LL_ADV_EVENT_PROPERTY_HIGH_DUTY_CONNECTED):
+			{
+				//todo,high duty cycle
+				advSet->eventType = ADV_EVENT_CONNECTABLE_DIRECTED;
+			}
+				break;
+			case (LL_ADV_EVENT_PROPERTY_LEGACY_PDU|LL_ADV_EVENT_PROPERTY_SCANNABLE):
+			{
+				advSet->eventType = ADV_EVENT_SCANNABLE_UNDIRECTED;
+			}
+				break;
+			case (LL_ADV_EVENT_PROPERTY_LEGACY_PDU):
+			{
+				advSet->eventType = ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED;
+			}
+		}
+	}
+	else
+	{
+		if(POINTER_NOT_VALID(advSet->ea))
+		{
+			advSet->ea = (ll_adv_type_ea_t*)tx_malloc(sizeof(ll_adv_type_ea_t));
+		}
+
+		switch(pParam->advEventProperty&(LL_ADV_EVENT_PROPERTY_CONNECTED|LL_ADV_EVENT_PROPERTY_SCANNABLE|LL_ADV_EVENT_PROPERTY_DIRECTED))
+		{
+			case(LL_ADV_EVENT_PROPERTY_CONNECTED|LL_ADV_EVENT_PROPERTY_DIRECTED):
+			{
+				pAdv->eventType = ADV_EVENT_EXTENDED_CONNECTABLE_DIRECTED;
+				pAdv->schMap |= ADV_SCH_MAP_AUX;
+			}
+				break;
+			case(LL_ADV_EVENT_PROPERTY_CONNECTED):
+			{
+				pAdv->eventType = ADV_EVENT_EXTENDED_CONNECTABLE_UNDIRECTED;
+				pAdv->schMap |= ADV_SCH_MAP_AUX;
+			}
+				break;
+			case(LL_ADV_EVENT_PROPERTY_SCANNABLE|LL_ADV_EVENT_PROPERTY_DIRECTED):
+			{
+				pAdv->eventType = ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED;
+				pAdv->schMap |= ADV_SCH_MAP_AUX;
+			}
+				break;
+			case(LL_ADV_EVENT_PROPERTY_SCANNABLE):
+			{
+				pAdv->eventType = ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED;
+				pAdv->schMap |= ADV_SCH_MAP_AUX;
+			}
+				break;
+			case(LL_ADV_EVENT_PROPERTY_DIRECTED):
+			{
+				pAdv->eventType = ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITHOUT_AUXILIARY;
+			}
+				break;
+			case(0):
+			{
+				pAdv->eventType = ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED_WITHOUT_AUXILIARY;
+			}
+				break;
+		}
+		pAdv->sid                      = pParam->advSid;
+		pAdv->ea->scanReqNotifyEnable  = pParam->scanReqNotifyEnable;
+		pAdv->ea->secondaryMaxSkip     = pParam->secondaryAdvMaxSkip;
+		pAdv->ea->power  = 0;
+		if(pParam->txPower!=0x7F)
+		{
+			pAdv->ea->power = pParam->txPower;
+		}
+		if(pParam->secondaryAdvPhy == LL_ADV_PHY_CODED)
+		{
+			if(pParam->secondaryAdvphyOptions == LL_ADV_PHY_OPTIONS_PREFER_S2||\
+			pParam->secondaryAdvphyOptions == LL_ADV_PHY_OPTIONS_REQUIRE_S2)
+			{
+				pAdv->ea->phyMode = PHY_MODE_CODED_S2;
+			}
+			else if(pParam->secondaryAdvphyOptions == LL_ADV_PHY_OPTIONS_PREFER_S8||\
+					pParam->secondaryAdvphyOptions == LL_ADV_PHY_OPTIONS_REQUIRE_S8)
+			{
+				pAdv->ea->phyMode = (_u8)PHY_MODE_CODED_S8;
+			}
+			else
+			{
+				pAdv->ea->phyMode = (_u8)PHY_MODE_CODED_S8;
+			}
+		}
+		else if(pParam->secondaryAdvPhy == LL_ADV_PHY_1M)
+		{
+			pAdv->ea->phyMode = PHY_MODE_1M;
+		}
+		else
+		{
+			pAdv->ea->phyMode = PHY_MODE_2M;
+		}
+	}
+	if(pParam->primaryAdvPhy == LL_ADV_PHY_CODED)
+	{
+		if(pParam->primaryAdvphyOptions == LL_ADV_PHY_OPTIONS_PREFER_S2||\
+	       pParam->primaryAdvphyOptions == LL_ADV_PHY_OPTIONS_REQUIRE_S2)
+		{
+			pAdv->la->phy.mode = PHY_MODE_CODED_S2;
+		}
+		else if(pParam->primaryAdvphyOptions == LL_ADV_PHY_OPTIONS_PREFER_S8||\
+	            pParam->primaryAdvphyOptions == LL_ADV_PHY_OPTIONS_REQUIRE_S8)
+		{
+			pAdv->la->phy.mode = (_u8)PHY_MODE_CODED_S8;
+		}
+		else
+		{
+			pAdv->la->phy.mode = (_u8)PHY_MODE_CODED_S8;
+		}
+	}
+	else
+	{
+		pAdv->la->phy.mode = PHY_MODE_1M;
+	}
+	return SUCCESS;
+}
+#endif//LL_SUPPORT_LE_EXTENDED_ADVERTISING

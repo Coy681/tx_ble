@@ -20,6 +20,10 @@
 #define BLE_ADV_DEFAULT_RX_TIMEOUT_US  (100+PACKET_DEFAULT_TIFS_TIME)
 
 
+#ifndef BLE_ADV_TRACE_ENABLE
+#define BLE_ADV_TRACE_ENABLE 1
+#endif
+
 typedef enum
 {
     ADV_EVENT,
@@ -100,9 +104,19 @@ typedef enum
     #endif
 }adv_event_type_e;
 
-void ble_ll_enter_advertising_state(void);
+/**
+ * @brief  - ll enter advertising state
+ * @return - 0      - ll enter advertising state success
+ *           others - ll enter advertising state fail
+ */
+int ble_ll_enter_advertising_state(void);
 
-void ble_ll_exit_advertising_state(void);
+/**
+ * @brief  - ll exit advertising state
+ * @return - 0      - ll exit advertising state success
+ *           others - ll exit advertising state fail
+ */
+int ble_ll_exit_advertising_state(void);
 
 
 #endif /* BLE_CONTROLLER_LL_MODULE_ADV_ADV_INTERNAL_H_ */

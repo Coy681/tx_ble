@@ -168,10 +168,142 @@ GAP承载了所有蓝牙设备的基础功能，例如传输层，协议，应�
  - 关键模型建立
  - 服务发现
 
-# 20251216
+ ### Service Discovery Protocol
 
-疑问，传统广播和扩展广播，成功建立连接之后，是否都要退出广播状态，广播需要停止，直到手动开启？
+ SDP协议提供了一种机制，允许Client根据服务的特定属性搜索所需服务，包括基于服务类型的检索以及对完整数据库的遍历。该服务用于BR/EDR设备
 
-答案：
+ 值得注意的是，SDP并未定义发现服务之后访问具体服务数据的方法-具体的访问方式应该由服务自身来规定。
 
-读Bluetooeh Core有感
+## Controller架构
+
+### Device manager
+
+设备管理是baseband中负责控制蓝牙设备整体行为的功能模块，承担与数据传输无关的操作，例如
+
+- 查询附近设备的存在状态
+- 与蓝牙设备建立连接
+- 配置本地蓝牙设备状态，如可连接或者可被发现
+
+device manager 需要向baseband resource controller申请控制权限，以执行自身功能
+
+### Link manager
+
+Link Manager负责创建，修改和释放logic link。Link manager通过使用BR/EDR系统中的LMP和LE系统中的LL来实现。
+
+### Baseband resource manager
+
+Baseband resource manager负责管控对射频介质的所有访问，主要有两项核心功能
+
+- 调度器，为所有约定的交互(连接)分配物理层信道的时隙，可以理解为调度器
+- 为所有实体协商访问质量，以便实现所有实体预期的服务质量，可以理解为优先级分配
+
+### Link Controller
+
+主要负责对physical channel,logical transport,logical link层的蓝牙数据包进行加解密
+
+### PHY
+
+主要负责在Physical channel中传输和收包、
+
+### Isochronous adaptation layer
+
+IAL可以使上层通过一个灵活的方式向链路层发送或者收取数据包，上层数据的size和interval可以和LL层的数据size和Interval不同
+
+ISO使用数据分片重组以及分段重装操作，将上层数据单元转换为下层数据单元。
+
+### Channel Sounding 
+
+Channel Sounding 模块负责创建，修改，释放channel sounding physical links。
+
+
+## 今日问答
+问：传统广播和扩展广播，成功建立连接之后，是否都要退出广播状态，广播需要停止，直到手动开启？
+
+答：LL状态机有个状态上的改变，即从广播态转向连接态，在这个状态的改变过程中，设备应该退出广播态。无论是传统广播还是扩展广播，设备在进入连接态时都应该退出广播态。
+
+# 20251217 
+
+方向和努力同样重要，认知能力是衡量世界的尺子，知道好坏对错要比单纯的做事更重要
+
+认知！！！
+认知！！！
+认知！！！
+
+# 20251218
+
+Bluetooth Core Traffic Bears:
+
+BR/EDR ACL可以承载
+  - ACL-C:ACL的控制数据
+  - ACL-U:ACL的用户数据
+    - L2CAP PDU：L2CAP层数据
+    - User DATA：用户数据
+
+LE可以承载
+
+  - LE-C:LE的控制数据
+  - LE-U:LE的用户数据
+    - L2CAP PDU：L2CAP层数据
+    - User DATA: 用户数据
+
+SCO/ESCO可以承载
+  - SCO-S:恒定速率的用户同步数据
+  - ESCO-S：恒定速率的用户同步数据
+
+CIS可以承载
+ 
+  - LE-S: unframed同步数据
+  - LE-F：framed同步数据
+
+BIS可以承载
+
+  - LE-S: unframed同步数据
+  - LE-F：framed同步数据
+  - LEB-C：LE Broadcast 控制数据
+
+
+在用户角度来看，数据分为以下类型
+
+  - 高层协议数据 - Higher Layer Protocol Signalling，可以理解为Profile协议数据
+  - 异步可靠用户数据 - Reliable Asynchronous Framed User Data，可以理解为用户数据
+  - 高层同步数据- Higher Layer Framed Isochronous User Data，可以理解为用户的framed音频数据
+  - 恒定速率同步数据 - Constant Rate Isochronous User Data，可以理解为unframed音频数据
+
+
+## framed data traffic
+
+L2CAP层提供了一种供同步和异步数据面向帧的传输方式，这种方式不限制每帧的具体帧长，且不需要应用额外添加额外帧信息
+
+## unframed data traffic
+
+应用层不需要使用framed方式传输的情况
+
+ - 流内帧界定 - 数据是在帧内嵌入特定标识，用以区分数据段边界，不需要L2CAP层的帧封装功能。
+ - 纯流式数据 - 例如音频流，数据没有明显的边界
+
+ 这种情况应用层可以绕过L2CAP层直接使用baseband逻辑链路
+
+ 注意：CIS里面的framed数据是在IAL层进行的，不通过L2CAP层。
+
+ LE不支持unframed data traffic的模式
+
+
+## 传输可靠性
+
+### BR/EDR传输可靠性
+
+#### Baseband传输可靠性
+
+     - 包头使用FEC(前向纠错码)
+     - 使用HEC(头部差错校验)
+     - 部分Baseband包还使用了CRC校验
+     - ESCO使用重传来保证传输可靠性
+ 
+#### L2CAP传输可靠性
+
+     - L2CAP层使用了额外的差错控制功能
+
+
+### LE传输可靠性
+
+使用24-bit的CRC来提供差错检测，由于CRC的长度足够，不需要L2CAP层额外提供差错检测
