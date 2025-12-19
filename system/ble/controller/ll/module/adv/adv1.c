@@ -1449,8 +1449,10 @@ static adv_procedure_list_t adv_non_con_non_scan_undirected_procedure[]=
 ll_internal_adv_set_t* ll_extended_adv_get_adv_set(_u8 handle,_u8 allocate)
 {
 	ll_sm_t* llsm = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_UNVALID_HANDLE,0);
-	ASSERT(POINTER_VALID(llsm));
-	ASSERT(POINTER_VALID(llsm->entity));
+	if(POINTER_NOT_VALID(llsm)||POINTER_NOT_VALID(llsm->entity))
+	{
+		return NULL;
+	}
 	ll_internal_adv_ctrl_t* adv = (ll_internal_adv_ctrl_t*)llsm->entity;
 
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
@@ -2201,11 +2203,12 @@ controller_error_code_e ll_set_advertising_enable(_u8 enable)
 	return SUCCESS;
 }
 
+#error"la don't need malloc,need process"
+
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
 controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_param_t* pParam)
 {
 	ll_sm_t* llsm = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_UNVALID_HANDLE,0);
-//	ASSERT(POINTER_VALID(llsm));
 	if(POINTER_NOT_VALID(llsm))
 	{
 		return MEMORY_CAPACITY_EXCEEDED;
@@ -2277,71 +2280,71 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 		{
 			case(LL_ADV_EVENT_PROPERTY_CONNECTED|LL_ADV_EVENT_PROPERTY_DIRECTED):
 			{
-				pAdv->eventType = ADV_EVENT_EXTENDED_CONNECTABLE_DIRECTED;
-				pAdv->schMap |= ADV_SCH_MAP_AUX;
+				advSet->eventType = ADV_EVENT_EXTENDED_CONNECTABLE_DIRECTED;
+				advSet->schMap |= ADV_SCH_MAP_AUX;
 			}
 				break;
 			case(LL_ADV_EVENT_PROPERTY_CONNECTED):
 			{
-				pAdv->eventType = ADV_EVENT_EXTENDED_CONNECTABLE_UNDIRECTED;
-				pAdv->schMap |= ADV_SCH_MAP_AUX;
+				advSet->eventType = ADV_EVENT_EXTENDED_CONNECTABLE_UNDIRECTED;
+				advSet->schMap |= ADV_SCH_MAP_AUX;
 			}
 				break;
 			case(LL_ADV_EVENT_PROPERTY_SCANNABLE|LL_ADV_EVENT_PROPERTY_DIRECTED):
 			{
-				pAdv->eventType = ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED;
-				pAdv->schMap |= ADV_SCH_MAP_AUX;
+				advSet->eventType = ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED;
+				advSet->schMap |= ADV_SCH_MAP_AUX;
 			}
 				break;
 			case(LL_ADV_EVENT_PROPERTY_SCANNABLE):
 			{
-				pAdv->eventType = ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED;
-				pAdv->schMap |= ADV_SCH_MAP_AUX;
+				advSet->eventType = ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED;
+				advSet->schMap |= ADV_SCH_MAP_AUX;
 			}
 				break;
 			case(LL_ADV_EVENT_PROPERTY_DIRECTED):
 			{
-				pAdv->eventType = ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITHOUT_AUXILIARY;
+				advSet->eventType = ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITHOUT_AUXILIARY;
 			}
 				break;
 			case(0):
 			{
-				pAdv->eventType = ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED_WITHOUT_AUXILIARY;
+				advSet->eventType = ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED_WITHOUT_AUXILIARY;
 			}
 				break;
 		}
-		pAdv->sid                      = pParam->advSid;
-		pAdv->ea->scanReqNotifyEnable  = pParam->scanReqNotifyEnable;
-		pAdv->ea->secondaryMaxSkip     = pParam->secondaryAdvMaxSkip;
-		pAdv->ea->power  = 0;
+		advSet->sid                      = pParam->advSid;
+		advSet->ea->scanReqNotifyEnable  = pParam->scanReqNotifyEnable;
+		advSet->ea->secondaryMaxSkip     = pParam->secondaryAdvMaxSkip;
+		advSet->ea->power  = 0;
 		if(pParam->txPower!=0x7F)
 		{
-			pAdv->ea->power = pParam->txPower;
+			advSet->ea->power = pParam->txPower;
 		}
 		if(pParam->secondaryAdvPhy == LL_ADV_PHY_CODED)
 		{
 			if(pParam->secondaryAdvphyOptions == LL_ADV_PHY_OPTIONS_PREFER_S2||\
 			pParam->secondaryAdvphyOptions == LL_ADV_PHY_OPTIONS_REQUIRE_S2)
 			{
-				pAdv->ea->phyMode = PHY_MODE_CODED_S2;
+				advSet->ea->phyMode = PHY_MODE_CODED_S2;
 			}
 			else if(pParam->secondaryAdvphyOptions == LL_ADV_PHY_OPTIONS_PREFER_S8||\
 					pParam->secondaryAdvphyOptions == LL_ADV_PHY_OPTIONS_REQUIRE_S8)
 			{
-				pAdv->ea->phyMode = (_u8)PHY_MODE_CODED_S8;
+				advSet->ea->phyMode = (_u8)PHY_MODE_CODED_S8;
 			}
 			else
 			{
-				pAdv->ea->phyMode = (_u8)PHY_MODE_CODED_S8;
+				advSet->ea->phyMode = (_u8)PHY_MODE_CODED_S8;
 			}
 		}
 		else if(pParam->secondaryAdvPhy == LL_ADV_PHY_1M)
 		{
-			pAdv->ea->phyMode = PHY_MODE_1M;
+			advSet->ea->phyMode = PHY_MODE_1M;
 		}
 		else
 		{
-			pAdv->ea->phyMode = PHY_MODE_2M;
+			advSet->ea->phyMode = PHY_MODE_2M;
 		}
 	}
 	if(pParam->primaryAdvPhy == LL_ADV_PHY_CODED)
@@ -2349,22 +2352,397 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 		if(pParam->primaryAdvphyOptions == LL_ADV_PHY_OPTIONS_PREFER_S2||\
 	       pParam->primaryAdvphyOptions == LL_ADV_PHY_OPTIONS_REQUIRE_S2)
 		{
-			pAdv->la->phy.mode = PHY_MODE_CODED_S2;
+			advSet->la->phy.mode = PHY_MODE_CODED_S2;
 		}
 		else if(pParam->primaryAdvphyOptions == LL_ADV_PHY_OPTIONS_PREFER_S8||\
 	            pParam->primaryAdvphyOptions == LL_ADV_PHY_OPTIONS_REQUIRE_S8)
 		{
-			pAdv->la->phy.mode = (_u8)PHY_MODE_CODED_S8;
+			advSet->la->phy.mode = (_u8)PHY_MODE_CODED_S8;
 		}
 		else
 		{
-			pAdv->la->phy.mode = (_u8)PHY_MODE_CODED_S8;
+			advSet->la->phy.mode = (_u8)PHY_MODE_CODED_S8;
 		}
 	}
 	else
 	{
-		pAdv->la->phy.mode = PHY_MODE_1M;
+		advSet->la->phy.mode = PHY_MODE_1M;
 	}
 	return SUCCESS;
 }
+
+
+
+controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
+														ll_advertising_data_operation_e operation,\
+														ll_advertising_data_fragment_perference_e fragPref,\
+														_u8 dataLen,\
+														_u8* data)
+{
+
+	ll_internal_adv_set_t* advSet = ll_extended_adv_get_adv_set(advHandle,0);
+	if(POINTER_NOT_VALID(advSet))
+	{
+		return UNKNOWN_ADVERTISING_IDENTIFIER;
+	}
+	if(advSet->eventProperty & LL_ADV_EVENT_PROPERTY_LEGACY_PDU)
+	{
+		if(dataLen > 31||\
+		   operation!=LL_ADV_DATA_OPERATION_COMPLETE||\
+		   advSet->eventType == ADV_EVENT_CONNECTABLE_DIRECTED)//direct pdu don't have advertising data
+		{
+			return IVALID_HCI_COMMAND_PARAMETERS;
+		}
+	}
+
+	if(operation == LL_ADV_DATA_OPERATION_UNCHANGED)
+	{
+		if(advSet->enable == 0||\
+		   advSet->data.len == 0||\
+		   dataLen != 0)
+		{
+			return IVALID_HCI_COMMAND_PARAMETERS;
+		}
+	}
+
+	if(operation!=LL_ADV_DATA_OPERATION_COMPLETE&&\
+	   operation!=LL_ADV_DATA_OPERATION_UNCHANGED&&\
+	   dataLen == 0)
+	{
+		return IVALID_HCI_COMMAND_PARAMETERS;
+	}
+
+	if(advSet->enable)
+	{
+		if(operation!=LL_ADV_DATA_OPERATION_COMPLETE&&\
+		   operation!=LL_ADV_DATA_OPERATION_UNCHANGED)
+		{
+			return COMMAND_DISALLOWED;
+		}
+	}
+
+	if(advSet->eventType == ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED||\
+	   advSet->eventType == ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED)
+	{
+		return IVALID_HCI_COMMAND_PARAMETERS;//mode don't have advertising data
+	}
+
+	if(dataLen > BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH)
+	{
+		return MEMORY_CAPACITY_EXCEEDED;
+	}
+
+	static _u32 dataFillOffset = 0;
+	if(operation == LL_ADV_DATA_OPERATION_FIRST_FRAGMENT||\
+	   operation == LL_ADV_DATA_OPERATION_COMPLETE||\
+	   operation == LL_ADV_DATA_OPERATION_UNCHANGED)
+	{
+		dataFillOffset = 0;
+	}
+	if(!(advSet->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU))
+	{
+		if(ll_get_air_packet_time(advSet->ea->phyMode,dataLen,0)>(advSet->la->sch.interval*3/4))
+		{
+			return PACKET_TOO_LONG;
+		}
+		if(advSet->eventProperty & (LL_ADV_EVENT_PROPERTY_CONNECTED))
+		{
+			if((dataFillOffset+dataLen)>BLE_ADV_SEC_PHY_MAX_TX_LEN)
+			{
+				dataFillOffset = 0;
+				return MEMORY_CAPACITY_EXCEEDED;
+			}
+		}
+	}
+
+	if((operation == LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT) || (operation == LL_ADV_DATA_OPERATION_LAST_FRAGMENT))
+	{
+		if((dataFillOffset+dataLen)>BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH)
+		{
+			dataFillOffset = 0;
+			return MEMORY_CAPACITY_EXCEEDED;
+		}
+		if(ll_get_air_packet_time(advSet->ea->phyMode,dataFillOffset+dataLen,0)>(advSet->la->sch.interval*3/4))
+		{
+			dataFillOffset = 0;
+			return PACKET_TOO_LONG;
+		}
+		if(dataFillOffset == 0)
+		{
+			return COMMAND_DISALLOWED;
+		}
+	}
+
+	if(POINTER_NOT_VALID(advSet->data.addr))
+	{
+		if(operation == LL_ADV_DATA_OPERATION_COMPLETE)
+		{
+			advSet->data.addr = tx_malloc(dataLen);
+		}
+		else
+		{
+			advSet->data.addr = tx_malloc(BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH);
+		}
+	}
+
+	if(advSet->eventType == ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITHOUT_AUXILIARY)
+	{
+		advSet->eventType = ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITH_AUXILIARY;
+		advSet->schMap |= ADV_SCH_MAP_AUX;
+	}
+	else if(advSet->eventType == ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED_WITHOUT_AUXILIARY)
+	{
+		advSet->eventType = ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED_WITH_AUXILIARY;
+		advSet->schMap |= ADV_SCH_MAP_AUX;
+	}
+
+	switch(operation)
+	{
+		case LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT:
+		{
+			txMemcpy4(advSet->data.addr+dataFillOffset,data,dataLen);
+			dataFillOffset+=dataLen;
+		}
+			break;
+		case LL_ADV_DATA_OPERATION_FIRST_FRAGMENT:
+		{
+			txMemcpy4(advSet->data.addr,data,dataLen);
+			dataFillOffset = dataLen;
+		}
+			break;
+		case LL_ADV_DATA_OPERATION_LAST_FRAGMENT:
+		{
+			txMemcpy4(advSet->data.addr+dataFillOffset,data,dataLen);
+			advSet->ea->did++;
+			advSet->data.len = dataFillOffset + dataLen;
+		}
+			break;
+		case LL_ADV_DATA_OPERATION_COMPLETE:
+		{
+			txMemcpy(advSet->data.addr,data,dataLen);
+			advSet->ea->did++;
+			advSet->data.len = dataLen;
+		}
+			break;
+		case LL_ADV_DATA_OPERATION_UNCHANGED:
+		{
+			advSet->ea->did++;
+		}
+			break;
+	}
+	if((!(advSet->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU))&&(operation == LL_ADV_DATA_OPERATION_LAST_FRAGMENT||operation == LL_ADV_DATA_OPERATION_COMPLETE))
+	{
+		if(POINTER_VALID(advSet->ea->chain.entry))
+		{
+			tx_free((_u8*)advSet->ea->chain.entry);
+		}
+		advSet->ea->aux.data.addr= advSet->data.addr;
+		//process data fragment
+		if(advSet->data.len<=(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN))
+		{
+			advSet->ea->chain.cnt    = 0;//only aux packet exist
+			advSet->ea->aux.data.len = advSet->data.len;
+		}
+		else
+		{
+			_u8 remainLen          = ((advSet->data.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))%BLE_ADV_SEC_PHY_MAX_TX_LEN;
+			_u8 chainCnt           = ((advSet->data.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))/BLE_ADV_SEC_PHY_MAX_TX_LEN + (remainLen==0?0:1);
+			advSet->schMap          |= ADV_SCH_MAP_AUX_CHAIN;
+			advSet->ea->chain.entry  = (ll_adv_entry_t*)tx_malloc(chainCnt*sizeof(ll_adv_entry_t));
+			advSet->ea->chain.cnt    = chainCnt;
+			advSet->ea->aux.data.len = BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN;
+			_u16 offset            = advSet->ea->aux.data.len;
+			for(_u8 i=0;i<chainCnt-1;i++)
+			{
+				advSet->ea->chain.entry[i].data.len = BLE_ADV_SEC_PHY_MAX_TX_LEN;
+				advSet->ea->chain.entry[i].data.addr= (advSet->data.addr+offset);
+				offset+=BLE_ADV_SEC_PHY_MAX_TX_LEN;
+			}
+			if(remainLen!=0)
+			{
+				advSet->ea->chain.entry[chainCnt-1].data.len = remainLen;
+				advSet->ea->chain.entry[chainCnt-1].data.addr= (advSet->data.addr+offset);
+			}
+		}
+	}
+	advSet->ea->advDatafragPerf = fragPref;
+	return SUCCESS;
+}
+
+
+controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
+															ll_advertising_data_operation_e operation,\
+															ll_advertising_data_fragment_perference_e fragPref,\
+															_u8 dataLen,\
+															_u8* data)
+{
+	ll_internal_adv_set_t* pAdv = ll_extended_adv_get_adv_set(advHandle,0);
+	if(POINTER_NOT_VALID(pAdv))
+	{
+		return UNKNOWN_ADVERTISING_IDENTIFIER;
+	}
+
+	if(pAdv->eventProperty & LL_ADV_EVENT_PROPERTY_LEGACY_PDU)
+	{
+		if(dataLen > 31||\
+		   operation!=LL_ADV_DATA_OPERATION_COMPLETE||\
+		   ((pAdv->eventType != ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED)&&(pAdv->eventType != ADV_EVENT_SCANNABLE_UNDIRECTED)))
+		{
+			return IVALID_HCI_COMMAND_PARAMETERS;
+		}
+	}
+	else
+	{
+		if(pAdv->eventType != ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED&&\
+		   pAdv->eventType != ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED&&\
+		   pAdv->eventType != ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED&&\
+		   pAdv->eventType != ADV_EVENT_SCANNABLE_UNDIRECTED)
+		{
+			return IVALID_HCI_COMMAND_PARAMETERS;
+		}
+	}
+
+	if(operation!=LL_ADV_DATA_OPERATION_COMPLETE)
+	{
+		if(dataLen == 0)
+		{
+			return IVALID_HCI_COMMAND_PARAMETERS;
+		}
+		if(pAdv->enable)
+		{
+			return COMMAND_DISALLOWED;
+		}
+	}
+
+	if(pAdv->enable)
+	{
+		if(dataLen == 0)
+		{
+			return COMMAND_DISALLOWED;
+		}
+	}
+
+	if(dataLen > BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH)
+	{
+		return MEMORY_CAPACITY_EXCEEDED;
+	}
+
+	static _u32 dataFillOffset = 0;
+	if(operation == LL_ADV_DATA_OPERATION_FIRST_FRAGMENT||\
+	   operation == LL_ADV_DATA_OPERATION_COMPLETE||\
+	   operation == LL_ADV_DATA_OPERATION_UNCHANGED)
+	{
+		dataFillOffset = 0;
+	}
+
+	if(!(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU))
+	{
+		if(ll_get_air_packet_time(pAdv->ea->phyMode,dataLen,0)>(pAdv->la->sch.interval*3/4))
+		{
+			return PACKET_TOO_LONG;
+		}
+		if(pAdv->eventProperty & (LL_ADV_EVENT_PROPERTY_SCANNABLE))
+		{
+			if((dataFillOffset+dataLen)>BLE_ADV_SEC_PHY_MAX_TX_LEN)
+			{
+				dataFillOffset = 0;
+				return MEMORY_CAPACITY_EXCEEDED;
+			}
+		}
+	}
+	if((operation == LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT) || (operation == LL_ADV_DATA_OPERATION_LAST_FRAGMENT))
+	{
+		if((dataFillOffset+dataLen)>BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH)
+		{
+			dataFillOffset = 0;
+			return MEMORY_CAPACITY_EXCEEDED;
+		}
+		if(ll_get_air_packet_time(pAdv->ea->phyMode,dataFillOffset+dataLen,0)>(pAdv->la->sch.interval*3/4))
+		{
+			return PACKET_TOO_LONG;
+		}
+		if(dataFillOffset == 0)
+		{
+			return COMMAND_DISALLOWED;
+		}
+	}
+	if(POINTER_NOT_VALID(pAdv->scanRsp.addr))
+	{
+		if(operation == LL_ADV_DATA_OPERATION_COMPLETE)
+		{
+			pAdv->scanRsp.addr = tx_malloc(dataLen);
+		}
+		else
+		{
+			pAdv->scanRsp.addr = tx_malloc(BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH);
+		}
+	}
+	switch(operation)
+	{
+		case LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT:
+		{
+			txMemcpy4(pAdv->scanRsp.addr+dataFillOffset,data,dataLen);
+			dataFillOffset+=dataLen;
+		}
+			break;
+		case LL_ADV_DATA_OPERATION_FIRST_FRAGMENT:
+		{
+			txMemcpy4(pAdv->scanRsp.addr,data,dataLen);
+			dataFillOffset=dataLen;
+		}
+			break;
+		case LL_ADV_DATA_OPERATION_LAST_FRAGMENT:
+		{
+			txMemcpy4(pAdv->scanRsp.addr+dataFillOffset,data,dataLen);
+			pAdv->scanRsp.len = dataFillOffset+dataLen;
+			dataFillOffset = 0;
+
+		}
+			break;
+		case LL_ADV_DATA_OPERATION_COMPLETE:
+		{
+			txMemcpy(pAdv->scanRsp.addr,data,dataLen);
+			pAdv->scanRsp.len = dataLen;
+		}
+			break;
+	}
+	if(!(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU)&&(operation == LL_ADV_DATA_OPERATION_LAST_FRAGMENT||operation == LL_ADV_DATA_OPERATION_COMPLETE))
+	{
+		if(POINTER_VALID(pAdv->ea->chain.entry))
+		{
+			tx_free((_u8*)pAdv->ea->chain.entry);
+		}
+		pAdv->ea->aux.data.addr= pAdv->scanRsp.addr;
+		//process data fragment
+		if(pAdv->scanRsp.len<=(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN))
+		{
+			pAdv->ea->chain.cnt= 0;//only aux packet exist
+			pAdv->ea->aux.data.len = pAdv->scanRsp.len;
+		}
+		else
+		{
+			_u8 remainLen         = ((pAdv->scanRsp.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))%BLE_ADV_SEC_PHY_MAX_TX_LEN;
+			_u8 chainCnt          = ((pAdv->scanRsp.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))/BLE_ADV_SEC_PHY_MAX_TX_LEN + (remainLen==0?0:1);
+			pAdv->schMap         |= ADV_SCH_MAP_AUX_CHAIN;
+			pAdv->ea->chain.entry = (ll_adv_entry_t*)tx_malloc(chainCnt*sizeof(ll_adv_entry_t));
+			pAdv->ea->chain.cnt   = chainCnt;
+			pAdv->ea->aux.data.len = BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN;
+			_u16 offset           = pAdv->ea->aux.data.len;
+			for(_u8 i=0;i<chainCnt-1;i++)
+			{
+				pAdv->ea->chain.entry[i].data.len = BLE_ADV_SEC_PHY_MAX_TX_LEN;
+				pAdv->ea->chain.entry[i].data.addr= (pAdv->scanRsp.addr+offset);
+				offset+=BLE_ADV_SEC_PHY_MAX_TX_LEN;
+			}
+			if(remainLen!=0)
+			{
+				pAdv->ea->chain.entry[chainCnt-1].data.len = remainLen;
+				pAdv->ea->chain.entry[chainCnt-1].data.addr= (pAdv->scanRsp.addr+offset);
+			}
+		}
+	}
+	pAdv->ea->scanRspDatafragPerf = fragPref;
+	return SUCCESS;
+}
+
 #endif//LL_SUPPORT_LE_EXTENDED_ADVERTISING
