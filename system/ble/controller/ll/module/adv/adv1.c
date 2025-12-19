@@ -2006,6 +2006,7 @@ int ble_ll_enter_advertising_state(void)
 			ll_extended_adv_map_out_task(&advCtrl->set[i],system_time()+500,system_time()+500+advCtrl->set[i].la->sch.interval,ADV_SCH_MAP_ALL);
 		}
 	}
+	#error"multiple adv shall process,sch remap?"
 	adv_get_next_event();
 	//ll entity sch init
 	LLSM->sch.id           = LLSM->id;
@@ -2576,27 +2577,27 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 															_u8 dataLen,\
 															_u8* data)
 {
-	ll_internal_adv_set_t* pAdv = ll_extended_adv_get_adv_set(advHandle,0);
-	if(POINTER_NOT_VALID(pAdv))
+	ll_internal_adv_set_t* advSet = ll_extended_adv_get_adv_set(advHandle,0);
+	if(POINTER_NOT_VALID(advSet))
 	{
 		return UNKNOWN_ADVERTISING_IDENTIFIER;
 	}
 
-	if(pAdv->eventProperty & LL_ADV_EVENT_PROPERTY_LEGACY_PDU)
+	if(advSet->eventProperty & LL_ADV_EVENT_PROPERTY_LEGACY_PDU)
 	{
 		if(dataLen > 31||\
 		   operation!=LL_ADV_DATA_OPERATION_COMPLETE||\
-		   ((pAdv->eventType != ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED)&&(pAdv->eventType != ADV_EVENT_SCANNABLE_UNDIRECTED)))
+		   ((advSet->eventType != ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED)&&(advSet->eventType != ADV_EVENT_SCANNABLE_UNDIRECTED)))
 		{
 			return IVALID_HCI_COMMAND_PARAMETERS;
 		}
 	}
 	else
 	{
-		if(pAdv->eventType != ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED&&\
-		   pAdv->eventType != ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED&&\
-		   pAdv->eventType != ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED&&\
-		   pAdv->eventType != ADV_EVENT_SCANNABLE_UNDIRECTED)
+		if(advSet->eventType != ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED&&\
+		   advSet->eventType != ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED&&\
+		   advSet->eventType != ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED&&\
+		   advSet->eventType != ADV_EVENT_SCANNABLE_UNDIRECTED)
 		{
 			return IVALID_HCI_COMMAND_PARAMETERS;
 		}
@@ -2608,13 +2609,13 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 		{
 			return IVALID_HCI_COMMAND_PARAMETERS;
 		}
-		if(pAdv->enable)
+		if(advSet->enable)
 		{
 			return COMMAND_DISALLOWED;
 		}
 	}
 
-	if(pAdv->enable)
+	if(advSet->enable)
 	{
 		if(dataLen == 0)
 		{
@@ -2635,13 +2636,13 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 		dataFillOffset = 0;
 	}
 
-	if(!(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU))
+	if(!(advSet->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU))
 	{
-		if(ll_get_air_packet_time(pAdv->ea->phyMode,dataLen,0)>(pAdv->la->sch.interval*3/4))
+		if(ll_get_air_packet_time(advSet->ea->phyMode,dataLen,0)>(advSet->la->sch.interval*3/4))
 		{
 			return PACKET_TOO_LONG;
 		}
-		if(pAdv->eventProperty & (LL_ADV_EVENT_PROPERTY_SCANNABLE))
+		if(advSet->eventProperty & (LL_ADV_EVENT_PROPERTY_SCANNABLE))
 		{
 			if((dataFillOffset+dataLen)>BLE_ADV_SEC_PHY_MAX_TX_LEN)
 			{
@@ -2657,7 +2658,7 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 			dataFillOffset = 0;
 			return MEMORY_CAPACITY_EXCEEDED;
 		}
-		if(ll_get_air_packet_time(pAdv->ea->phyMode,dataFillOffset+dataLen,0)>(pAdv->la->sch.interval*3/4))
+		if(ll_get_air_packet_time(advSet->ea->phyMode,dataFillOffset+dataLen,0)>(advSet->la->sch.interval*3/4))
 		{
 			return PACKET_TOO_LONG;
 		}
@@ -2666,83 +2667,654 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 			return COMMAND_DISALLOWED;
 		}
 	}
-	if(POINTER_NOT_VALID(pAdv->scanRsp.addr))
+	if(POINTER_NOT_VALID(advSet->scanRsp.addr))
 	{
 		if(operation == LL_ADV_DATA_OPERATION_COMPLETE)
 		{
-			pAdv->scanRsp.addr = tx_malloc(dataLen);
+			advSet->scanRsp.addr = tx_malloc(dataLen);
 		}
 		else
 		{
-			pAdv->scanRsp.addr = tx_malloc(BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH);
+			advSet->scanRsp.addr = tx_malloc(BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH);
 		}
 	}
 	switch(operation)
 	{
 		case LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT:
 		{
-			txMemcpy4(pAdv->scanRsp.addr+dataFillOffset,data,dataLen);
+			txMemcpy4(advSet->scanRsp.addr+dataFillOffset,data,dataLen);
 			dataFillOffset+=dataLen;
 		}
 			break;
 		case LL_ADV_DATA_OPERATION_FIRST_FRAGMENT:
 		{
-			txMemcpy4(pAdv->scanRsp.addr,data,dataLen);
+			txMemcpy4(advSet->scanRsp.addr,data,dataLen);
 			dataFillOffset=dataLen;
 		}
 			break;
 		case LL_ADV_DATA_OPERATION_LAST_FRAGMENT:
 		{
-			txMemcpy4(pAdv->scanRsp.addr+dataFillOffset,data,dataLen);
-			pAdv->scanRsp.len = dataFillOffset+dataLen;
+			txMemcpy4(advSet->scanRsp.addr+dataFillOffset,data,dataLen);
+			advSet->scanRsp.len = dataFillOffset+dataLen;
 			dataFillOffset = 0;
 
 		}
 			break;
 		case LL_ADV_DATA_OPERATION_COMPLETE:
 		{
-			txMemcpy(pAdv->scanRsp.addr,data,dataLen);
-			pAdv->scanRsp.len = dataLen;
+			txMemcpy(advSet->scanRsp.addr,data,dataLen);
+			advSet->scanRsp.len = dataLen;
 		}
 			break;
 	}
-	if(!(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU)&&(operation == LL_ADV_DATA_OPERATION_LAST_FRAGMENT||operation == LL_ADV_DATA_OPERATION_COMPLETE))
+	if(!(advSet->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU)&&(operation == LL_ADV_DATA_OPERATION_LAST_FRAGMENT||operation == LL_ADV_DATA_OPERATION_COMPLETE))
 	{
-		if(POINTER_VALID(pAdv->ea->chain.entry))
+		if(POINTER_VALID(advSet->ea->chain.entry))
 		{
-			tx_free((_u8*)pAdv->ea->chain.entry);
+			tx_free((_u8*)advSet->ea->chain.entry);
 		}
-		pAdv->ea->aux.data.addr= pAdv->scanRsp.addr;
+		advSet->ea->aux.data.addr= advSet->scanRsp.addr;
 		//process data fragment
-		if(pAdv->scanRsp.len<=(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN))
+		if(advSet->scanRsp.len<=(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN))
 		{
-			pAdv->ea->chain.cnt= 0;//only aux packet exist
-			pAdv->ea->aux.data.len = pAdv->scanRsp.len;
+			advSet->ea->chain.cnt= 0;//only aux packet exist
+			advSet->ea->aux.data.len = advSet->scanRsp.len;
 		}
 		else
 		{
-			_u8 remainLen         = ((pAdv->scanRsp.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))%BLE_ADV_SEC_PHY_MAX_TX_LEN;
-			_u8 chainCnt          = ((pAdv->scanRsp.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))/BLE_ADV_SEC_PHY_MAX_TX_LEN + (remainLen==0?0:1);
-			pAdv->schMap         |= ADV_SCH_MAP_AUX_CHAIN;
-			pAdv->ea->chain.entry = (ll_adv_entry_t*)tx_malloc(chainCnt*sizeof(ll_adv_entry_t));
-			pAdv->ea->chain.cnt   = chainCnt;
-			pAdv->ea->aux.data.len = BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN;
-			_u16 offset           = pAdv->ea->aux.data.len;
+			_u8 remainLen         = ((advSet->scanRsp.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))%BLE_ADV_SEC_PHY_MAX_TX_LEN;
+			_u8 chainCnt          = ((advSet->scanRsp.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))/BLE_ADV_SEC_PHY_MAX_TX_LEN + (remainLen==0?0:1);
+			advSet->schMap         |= ADV_SCH_MAP_AUX_CHAIN;
+			advSet->ea->chain.entry = (ll_adv_entry_t*)tx_malloc(chainCnt*sizeof(ll_adv_entry_t));
+			advSet->ea->chain.cnt   = chainCnt;
+			advSet->ea->aux.data.len = BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN;
+			_u16 offset           = advSet->ea->aux.data.len;
 			for(_u8 i=0;i<chainCnt-1;i++)
 			{
-				pAdv->ea->chain.entry[i].data.len = BLE_ADV_SEC_PHY_MAX_TX_LEN;
-				pAdv->ea->chain.entry[i].data.addr= (pAdv->scanRsp.addr+offset);
+				advSet->ea->chain.entry[i].data.len = BLE_ADV_SEC_PHY_MAX_TX_LEN;
+				advSet->ea->chain.entry[i].data.addr= (advSet->scanRsp.addr+offset);
 				offset+=BLE_ADV_SEC_PHY_MAX_TX_LEN;
 			}
 			if(remainLen!=0)
 			{
-				pAdv->ea->chain.entry[chainCnt-1].data.len = remainLen;
-				pAdv->ea->chain.entry[chainCnt-1].data.addr= (pAdv->scanRsp.addr+offset);
+				advSet->ea->chain.entry[chainCnt-1].data.len = remainLen;
+				advSet->ea->chain.entry[chainCnt-1].data.addr= (advSet->scanRsp.addr+offset);
 			}
 		}
 	}
-	pAdv->ea->scanRspDatafragPerf = fragPref;
+	advSet->ea->scanRspDatafragPerf = fragPref;
+	return SUCCESS;
+}
+
+/**
+ * Advertising disabled condition
+ * 1.Host send "ll_set_extended_advertising_enable" with 'enable' field set to 0
+ * 2.A connection is created using the advertising set.
+ * 3.The duration field expires
+ * 4.The number of extended advertising events for the set exceed the MAX_EXTENDED_ADVERTISING_EVENT.
+ */
+controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
+														   _u8 numSets,\
+														   ll_extended_adv_enable_subField_e* pEnableSubFiled)
+{
+	//if the ll_set_extended_advertising_enable set again when the adv set is enabled,the timer for duration
+	//and the number of events counter are reset,any change to random address shall take effect
+
+
+	//disable advertising set will not disable periodic advertising
+
+	//disable a disabled advertising set have no effect
+
+	//if adv set is marked by more than one advHandle[i] parameter,should return error code 0x12
+	if((enable != 0) && (numSets == 0))
+	{
+		return IVALID_HCI_COMMAND_PARAMETERS;
+	}
+	if(numSets>BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS)
+	{
+		return IVALID_HCI_COMMAND_PARAMETERS;
+	}
+	ll_sm_t* llsm = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_UNVALID_HANDLE,0);
+	if(POINTER_NOT_VALID(llsm)||POINTER_NOT_VALID(llsm->entity))
+	{
+		return MEMORY_CAPACITY_EXCEEDED;
+	}
+    ll_internal_adv_ctrl_t* adv = (ll_internal_adv_ctrl_t*)llsm->entity;
+	if((enable == 0) && (numSets == 0))
+	{
+		for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+		{
+			if(adv->set[i].handle <= 0xEF)
+			{
+				if((adv->set[i].eventProperty & LL_ADV_EVENT_PROPERTY_SCANNABLE)&&adv->set[i].scanRsp.len == 0)
+				{
+					return COMMAND_DISALLOWED;
+				}
+				if((adv->set[i].eventProperty & LL_ADV_EVENT_PROPERTY_CONNECTED)&&adv->set[i].data.len == 0)
+				{
+					return IVALID_HCI_COMMAND_PARAMETERS;//?,need check if valid
+				}
+			}
+		}
+	}
+	else
+	{
+		for(_u8 i=0;i<numSets;i++)
+		{
+			ll_internal_adv_set_t* advSet = ll_extended_adv_get_adv_set(pEnableSubFiled[i].advHandle,0);
+			if(POINTER_NOT_VALID(advSet))
+			{
+				return IVALID_HCI_COMMAND_PARAMETERS;
+			}
+			if((advSet->eventProperty & LL_ADV_EVENT_PROPERTY_SCANNABLE)&&advSet->scanRsp.len == 0)
+			{
+				return COMMAND_DISALLOWED;
+			}
+			if((advSet->eventProperty & LL_ADV_EVENT_PROPERTY_CONNECTED)&&advSet->data.len == 0)
+			{
+				return IVALID_HCI_COMMAND_PARAMETERS;//?,need check if valid
+			}
+		}
+	}
+	if((enable == 0) && (numSets == 0))
+	{
+		for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+		{
+			if(adv->set[i].handle <= 0xEF)
+			{
+				adv->set[i].enable   = enable;
+				if(POINTER_VALID(adv->set[i].ea))
+				{
+					if(pEnableSubFiled[i].duration!=0)
+					{
+						adv->set[i].ea->expireTime =  system_time() + adv->set[i].la->sch.interval + pEnableSubFiled[i].duration*10000;
+					}
+					else
+					{
+						adv->set[i].ea->expireTime = 0;
+					}
+
+					if(pEnableSubFiled[i].maxEvents!=0)
+					{
+						adv->set[i].ea->maxEvents    = pEnableSubFiled[i].maxEvents;
+						adv->set[i].ea->eventCnt = 0;
+					}
+					else
+					{
+						adv->set[i].ea->maxEvents = 0;
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		for(_u8 i=0;i<numSets;i++)
+		{
+			ll_internal_adv_set_t* advSet = ll_extended_adv_get_adv_set(pEnableSubFiled[i].advHandle,0);
+			if(pEnableSubFiled[i].duration!=0)
+			{
+				advSet->ea->expireTime =  system_time() + advSet->la->sch.interval + pEnableSubFiled[i].duration*10000;
+			}
+			else
+			{
+				advSet->ea->expireTime = 0;
+			}
+
+			if(pEnableSubFiled[i].maxEvents!=0)
+			{
+				advSet->ea->maxEvents    = pEnableSubFiled[i].maxEvents;
+				advSet->ea->eventCnt = 0;
+			}
+			else
+			{
+				advSet->ea->maxEvents = 0;
+			}
+			if(!advSet->enable && enable)
+			{
+				advSet->enable = enable;
+				advSet->schMap|=ADV_SCH_MAP_PRI;
+				//la phy init
+				advSet->la->phy.crcInit         = BLE_ADV_CRC_INIT;
+				advSet->la->phy.accessCode      = BLE_ADV_ACCESS_CODE;
+				advSet->la->phy.rxMaxOctets     = BLE_ADV_SEC_PHY_MAX_TX_LEN;
+				advSet->la->phy.rxAddress       = ll_get_shared_phy_rx_address();
+				advSet->la->phy.txAddress       = ll_get_shared_phy_tx_address();
+				//la sch init
+				advSet->la->availableChnCnt = 0;
+				advSet->la->availableChnCnt = advSet->la->channelCnt;
+				advSet->la->eventCnt    = 0;
+				advSet->la->sch.startMargin = 100;
+				advSet->la->sch.stopMargin  = 100;
+		        phy_obj_cast(&llsm->phy);
+		        phy_obj_init(&llsm->phy);
+                if(advSet->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU)
+                {
+                    if(advSet->eventType == ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED)
+                    {
+                    	advSet->la->sch.duration = llsm->phy.hw_get_prepare_time()+ll_get_air_packet_time(advSet->la->phy.mode,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+PACKET_DEFAULT_TIFS_TIME;
+                    }
+                    else
+                    {
+                    	advSet->la->sch.duration = llsm->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(advSet->la->phy.mode,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+2*PACKET_DEFAULT_TIFS_TIME;
+                    }
+                }
+                else
+                {
+					if(POINTER_NOT_VALID(advSet->ea->chain.entry))
+					{
+						advSet->ea->chain.cnt = 0;
+					}
+					advSet->la->sch.duration = llsm->phy.hw_get_prepare_time()+ll_get_air_packet_time(advSet->la->phy.mode,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+PACKET_DEFAULT_TIFS_TIME;
+					advSet->ea->aux.phy.crcInit         = BLE_ADV_CRC_INIT;
+					advSet->ea->aux.phy.accessCode      = BLE_ADV_ACCESS_CODE;
+					advSet->ea->aux.phy.rxMaxOctets     = BLE_ADV_SEC_PHY_MAX_TX_LEN;
+					advSet->ea->aux.phy.rxAddress       = ll_get_shared_phy_rx_address();
+					advSet->ea->aux.phy.txAddress       = ll_get_shared_phy_tx_address();
+					advSet->ea->eventCnt = 0;
+					advSet->ea->aux.phy.mode            = advSet->ea->phyMode;
+                    //ea sch and phy init
+                	if(advSet->eventProperty&LL_ADV_EVENT_PROPERTY_CONNECTED)
+                	{
+                		advSet->ea->aux.sch.duration = llsm->phy.hw_get_prepare_time()+ll_get_air_packet_time(advSet->ea->aux.phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN+advSet->ea->aux.data.len,0)+PACKET_DEFAULT_TIFS_TIME\
+												        + ll_get_air_packet_time(advSet->ea->aux.phy.mode,3+sizeof(scan_type_aux_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME\
+												        + ll_get_air_packet_time(advSet->ea->aux.phy.mode,3+sizeof(init_type_auxConnectRsp_t),0);
+					}
+					else if(advSet->eventProperty&LL_ADV_EVENT_PROPERTY_SCANNABLE)
+                	{
+						advSet->ea->aux.sch.duration = llsm->phy.hw_get_prepare_time()+ll_get_air_packet_time(advSet->ea->aux.phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN,0)+PACKET_DEFAULT_TIFS_TIME\
+											            + ll_get_air_packet_time(advSet->ea->aux.phy.mode,3+sizeof(scan_type_aux_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME\
+												        + ll_get_air_packet_time(advSet->ea->aux.phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN+advSet->ea->aux.data.len,0);
+					}
+					else
+					{
+						advSet->ea->aux.sch.duration = llsm->phy.hw_get_prepare_time()+ll_get_air_packet_time(advSet->ea->aux.phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN+advSet->ea->aux.data.len,0);
+					}
+
+                    if(advSet->schMap&ADV_SCH_MAP_AUX_CHAIN)
+                    {
+                        for(int i=0;i<advSet->ea->chain.cnt;i++)
+                        {
+                        	advSet->ea->chain.entry[i].sch.startMargin = 100;
+                            if(i==advSet->ea->chain.cnt)
+                            {
+                            	advSet->ea->chain.entry[i].sch.stopMargin  = 200;
+                            }
+                            else
+                            {
+                            	advSet->ea->chain.entry[i].sch.stopMargin  = 100;
+                            }
+                            advSet->ea->chain.entry[i].phy.crcInit    = BLE_ADV_CRC_INIT;
+                            advSet->ea->chain.entry[i].phy.accessCode = BLE_ADV_ACCESS_CODE;
+                            advSet->ea->chain.entry[i].phy.mode       = advSet->ea->phyMode;
+                            advSet->ea->chain.entry[i].phy.txAddress  = ll_get_shared_phy_tx_address();
+                            advSet->ea->chain.entry[i].sch.duration   = llsm->phy.hw_get_prepare_time()+ll_get_air_packet_time(advSet->ea->chain.entry[i].phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN+advSet->ea->chain.entry[i].data.len,0)+PACKET_DEFAULT_TIFS_TIME;
+                        }
+                        advSet->ea->aux.sch.startMargin     = 100;
+                        advSet->ea->aux.sch.stopMargin      = 100;//shall location the next event
+                    }
+                    else
+                    {
+                    	advSet->ea->aux.sch.startMargin     = 100;
+                    	advSet->ea->aux.sch.stopMargin      = 200;//shall location the next event
+                    }
+                }
+				#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
+                if(POINTER_VALID(advSet->pa))
+                {
+                	if(advSet->pa->enable&&(!advSet->pa->active))
+                	{
+                		advSet->pa->active = 1;
+                	}
+                }
+				#endif
+			}
+			else if(advSet->enable && !enable)
+			{
+				advSet->enable = enable;
+			}
+		}
+	}
+	_u8 gEnable = 0;
+	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+	{
+		if(adv->set[i].handle!=LL_EXTENDED_ADV_INVALID_HANDLE)
+		{
+			if(adv->set[i].enable)
+			{
+				gEnable = 1;
+			}
+		}
+	}
+	if(gEnable)
+	{
+		if(ble_ll_enter_advertising_state())
+		{
+			return IVALID_HCI_COMMAND_PARAMETERS;
+		}
+	}
+	else
+	{
+		if(ble_ll_exit_advertising_state())
+		{
+			return IVALID_HCI_COMMAND_PARAMETERS;
+		}
+	}
+
+	return SUCCESS;
+}
+controller_error_code_e ll_set_adv_set_random_address(_u8 advHandle,_u8* address)
+{
+	ll_internal_adv_set_t* advSet = ll_extended_adv_get_adv_set(advHandle,0);
+
+	if(POINTER_NOT_VALID(advSet))
+	{
+		return UNKNOWN_ADVERTISING_IDENTIFIER;
+	}
+	if(advSet->enable &&\
+	  (advSet->eventProperty&LL_ADV_EVENT_PROPERTY_CONNECTED))
+	{
+		return COMMAND_DISALLOWED;
+	}
+	txMemcpy(advSet->randomAddress,address,6);
+	return SUCCESS;
+}
+
+controller_error_code_e ll_read_maximum_advertising_data_length(_u16* length)
+{
+	*length = BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH;
+	return SUCCESS;
+}
+
+controller_error_code_e ll_read_number_of_supported_advertising_sets(_u8* number)
+{
+	*number = BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;
+	return SUCCESS;
+}
+
+controller_error_code_e ll_remove_advertising_sets(_u8 advHandle)
+{
+	ll_internal_adv_set_t* advSet = ll_extended_adv_get_adv_set(advHandle,0);
+	if(POINTER_NOT_VALID(advSet))
+	{
+		return IVALID_HCI_COMMAND_PARAMETERS;
+	}
+	if(advSet->enable)
+	{
+		return COMMAND_DISALLOWED;
+	}
+	#error"check detaily,if more or less"
+	if(POINTER_VALID(advSet->data.addr))
+	{
+		tx_free(advSet->data.addr);
+	}
+	if(POINTER_VALID(advSet->scanRsp.addr))
+	{
+		tx_free(advSet->scanRsp.addr);
+	}
+	if(POINTER_VALID(advSet->ea->chain.entry))
+	{
+		tx_free((_u8*)advSet->ea->chain.entry);
+	}
+	if(POINTER_VALID(advSet->ea))
+	{
+		tx_free((_u8*)advSet->ea);
+	}
+	txMemsetByte((_u8*)advSet,0,sizeof(ll_internal_adv_set_t));
+	advSet->handle = LL_EXTENDED_ADV_INVALID_HANDLE;
+
+	if(ll_extended_adv_get_current_set_number()==0)
+	{
+		ble_ll_exit_advertising_state();
+	}
+	return SUCCESS;
+}
+
+controller_error_code_e ll_clear_advertising_sets(void)
+{
+	ll_sm_t* llsm = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_UNVALID_HANDLE,0);
+	if(POINTER_NOT_VALID(llsm)||POINTER_NOT_VALID(llsm->entity))
+	{
+		return MEMORY_CAPACITY_EXCEEDED;
+	}
+	ll_internal_adv_ctrl_t* adv = (ll_internal_adv_ctrl_t*)llsm->entity;
+	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+	{
+		if(adv->set[i].handle!=LL_EXTENDED_ADV_INVALID_HANDLE)
+		{
+			ll_internal_adv_set_t* advSet = &adv->set[i];
+			if(adv->set[i].enable)
+			{
+				return COMMAND_DISALLOWED;
+			}
+			#error"need check if more or less"
+			if(POINTER_VALID(advSet->data.addr))
+			{
+				tx_free(advSet->data.addr);
+			}
+			if(POINTER_VALID(advSet->scanRsp.addr))
+			{
+				tx_free(advSet->scanRsp.addr);
+			}
+			if(POINTER_VALID(advSet->ea->chain.entry))
+			{
+				tx_free((_u8*)advSet->ea->chain.entry);
+			}
+			if(POINTER_VALID(advSet->ea))
+			{
+				tx_free((_u8*)advSet->ea);
+			}
+		}
+	}
+	ble_ll_exit_advertising_state();
 	return SUCCESS;
 }
 
 #endif//LL_SUPPORT_LE_EXTENDED_ADVERTISING
+
+#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
+
+controller_error_code_e ll_set_periodic_advertising_paramters(_u8 advHandle,_u8 interval,_u16 property)
+{
+	ll_internal_adv_set_t* advSet = ll_extended_adv_get_adv_set(advHandle,0);
+	if(POINTER_NOT_VALID(advSet))
+	{
+		return UNKNOWN_ADVERTISING_IDENTIFIER;
+	}
+	if(POINTER_NOT_VALID(advSet->pa))
+	{
+		advSet->pa = (ll_adv_type_pa_t*)tx_malloc(sizeof(ll_adv_type_pa_t));
+	}
+	if(property&LL_ADV_EVENT_PROPERTY_INCLUDE_TX_POWER)
+	{
+		advSet->pa->includeTxPower = 1;
+	}
+	advSet->pa->sync.sch.interval = 1250*interval;
+	return SUCCESS;
+}
+
+controller_error_code_e ll_set_periodic_advertising_data(_u8 advHandle,ll_advertising_data_operation_e operation,_u8 dataLen,_u8* data)
+{
+	ll_internal_adv_set_t* advSet = ll_extended_adv_get_adv_set(advHandle,0);
+	if(POINTER_NOT_VALID(advSet))
+	{
+		return UNKNOWN_ADVERTISING_IDENTIFIER;
+	}
+	if((!advSet->schMap&ADV_SCH_MAP_PA))
+	{
+		return COMMAND_DISALLOWED;
+	}
+	#if (LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
+	if(advSet->schMap&ADV_SCH_MAP_PAWR)
+	{
+		return COMMAND_DISALLOWED;
+	}
+	#endif
+	static _u32 dataFillOffset = 0;
+	if(dataLen > BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH || (dataLen+dataFillOffset>BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH))
+	{
+		return MEMORY_CAPACITY_EXCEEDED;
+	}
+	if(ll_get_air_packet_time(advSet->ea->phyMode,dataFillOffset+dataLen,0)>(advSet->pa->sync.sch.interval*3/4))
+	{
+		return PACKET_TOO_LONG;
+	}
+	if(operation == LL_ADV_DATA_OPERATION_UNCHANGED)
+	{
+		if(advSet->pa->enable == 0\
+		||POINTER_NOT_VALID(advSet->pa->data.addr)\
+	    ||advSet->pa->data.len==0\
+	    ||dataLen!=0)
+		{
+			return IVALID_HCI_COMMAND_PARAMETERS;
+		}
+	}
+	if(dataLen==0\
+	&&(operation!=LL_ADV_DATA_OPERATION_COMPLETE)\
+	&&(operation!=LL_ADV_DATA_OPERATION_UNCHANGED))
+	{
+		return IVALID_HCI_COMMAND_PARAMETERS;
+	}
+	if(advSet->pa->enable\
+	&&(operation!=LL_ADV_DATA_OPERATION_COMPLETE)\
+	&&(operation!=LL_ADV_DATA_OPERATION_UNCHANGED))
+	{
+		return COMMAND_DISALLOWED;
+	}
+	if(POINTER_NOT_VALID(advSet->pa->data.addr))
+	{
+		if(operation == LL_ADV_DATA_OPERATION_COMPLETE)
+		{
+			advSet->pa->data.addr = tx_malloc(dataLen);
+		}
+		else
+		{
+			advSet->pa->data.addr = tx_malloc(BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH);
+		}
+	}
+	switch(operation)
+	{
+		case LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT:
+		{
+			txMemcpy4(advSet->pa->data.addr+dataFillOffset,data,dataLen);
+			dataFillOffset+=dataLen;
+		}
+			break;
+		case LL_ADV_DATA_OPERATION_FIRST_FRAGMENT:
+		{
+			txMemcpy4(advSet->pa->data.addr,data,dataLen);
+			dataFillOffset=dataLen;
+		}
+			break;
+		case LL_ADV_DATA_OPERATION_LAST_FRAGMENT:
+		{
+			txMemcpy4(advSet->pa->data.addr+dataFillOffset,data,dataLen);
+			advSet->pa->data.len = dataFillOffset+dataLen;
+			advSet->pa->did++;
+			dataFillOffset = 0;
+		}
+			break;
+		case LL_ADV_DATA_OPERATION_COMPLETE:
+		{
+			txMemcpy(advSet->pa->data.addr,data,dataLen);
+			advSet->pa->did++;
+			advSet->pa->data.len = dataLen;
+		}
+			break;
+		case LL_ADV_DATA_OPERATION_UNCHANGED:
+		{
+			advSet->pa->did++;
+		}
+			break;
+	}
+	if(operation == LL_ADV_DATA_OPERATION_LAST_FRAGMENT||operation == LL_ADV_DATA_OPERATION_COMPLETE)
+	{
+		if(POINTER_VALID(advSet->pa->chain.entry))
+		{
+			tx_free((_u8*)advSet->pa->chain.entry);
+		}
+		advSet->pa->sync.data.addr= advSet->pa->data.addr;
+		//process data fragment
+		if(advSet->pa->data.len<=(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN))
+		{
+			advSet->pa->chain.cnt= 0;//only aux packet exist
+			advSet->pa->sync.data.len = advSet->pa->data.len;
+		}
+		else
+		{
+			_u8 remainLen         = ((advSet->pa->data.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))%BLE_ADV_SEC_PHY_MAX_TX_LEN;
+			_u8 chainCnt          = ((advSet->pa->data.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))/BLE_ADV_SEC_PHY_MAX_TX_LEN + (remainLen==0?0:1);
+			advSet->schMap         |= ADV_SCH_MAP_PA_CHAIN;
+			advSet->pa->chain.entry = (ll_adv_entry_t*)tx_malloc(chainCnt*sizeof(ll_adv_entry_t));
+			advSet->pa->chain.cnt   = chainCnt;
+			advSet->pa->sync.data.len = BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN;
+			_u16 offset           = advSet->pa->sync.data.len;
+			for(_u8 i=0;i<chainCnt-1;i++)
+			{
+				advSet->pa->chain.entry[i].data.len = BLE_ADV_SEC_PHY_MAX_TX_LEN;
+				advSet->pa->chain.entry[i].data.addr= (advSet->pa->data.addr+offset);
+				offset+=BLE_ADV_SEC_PHY_MAX_TX_LEN;
+			}
+			if(remainLen!=0)
+			{
+				advSet->pa->chain.entry[chainCnt-1].data.len = remainLen;
+				advSet->pa->chain.entry[chainCnt-1].data.addr= (advSet->pa->data.addr+offset);
+			}
+		}
+	}
+	return SUCCESS;
+}
+
+controller_error_code_e ll_set_periodic_advertising_enable(_u8 enable,_u8 advHandle)
+{
+	ll_internal_adv_set_t* advSet = ll_extended_adv_get_adv_set(advHandle,0);
+	ll_sm_t* ll = ll_get_current_state_machine();
+	if(POINTER_NOT_VALID(advSet))
+	{
+		return UNKNOWN_ADVERTISING_IDENTIFIER;
+	}
+	if((!advSet->schMap&ADV_SCH_MAP_PA))
+	{
+		return COMMAND_DISALLOWED;
+	}
+	if(advSet->eventProperty&(LL_ADV_EVENT_PROPERTY_LEGACY_PDU|LL_ADV_EVENT_PROPERTY_CONNECTED|LL_ADV_EVENT_PROPERTY_SCANNABLE|LL_ADV_EVENT_PROPERTY_ANONYMOUS_ADV))
+	{
+		return COMMAND_DISALLOWED;
+	}
+	if(advSet->pa->enable&&(enable&BIT(0)))
+	{
+		//random address change
+	}
+	if((advSet->pa->enable == 0)&&(enable&BIT(0)))
+	{
+		advSet->pa->enable = 1;
+		if(advSet->enable)
+		{
+			advSet->pa->active = 1;
+		}
+		advSet->pa->includeAdi = (enable&BIT(1)==0?0:1);
+		advSet->schMap |= ADV_SCH_MAP_PA;
+		phy_obj_cast(&ll->phy);
+		advSet->pa->sync.phy.mode       = advSet->ea->phyMode;
+		advSet->pa->sync.phy.rxMaxOctets= BLE_ADV_PRI_PHY_MAX_RX_LEN;
+		advSet->pa->sync.phy.accessCode = 0x89762349;
+		advSet->pa->sync.phy.crcInit    = 0x192874;
+		advSet->pa->sync.phy.txAddress  = ll_get_shared_phy_tx_address();;
+		advSet->pa->sync.phy.rxAddress  = ll_get_shared_phy_rx_address();
+
+
+		advSet->pa->sync.sch.startMargin= 100;
+		advSet->pa->sync.sch.stopMargin = 100;
+		advSet->pa->sync.sch.duration   = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(advSet->pa->sync.phy.mode,2+BLE_ADV_SEC_PHY_MAX_TX_LEN,0);
+		advSet->pa->sync.sch.anchorPoint= system_time()+2000;//todo,periodic task get anchor point from planner
+	}
+	if((advSet->pa->enable == 1)&&(!(enable&BIT(0))))
+	{
+		advSet->pa->enable = 0;
+		advSet->pa->active = 0;
+		advSet->schMap &= (~ADV_SCH_MAP_PA);
+		//disable
+	}
+}
+
+#endif//LL_SUPPORT_LE_PERIODIC_ADVERTISING

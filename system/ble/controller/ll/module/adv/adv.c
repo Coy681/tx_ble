@@ -2499,544 +2499,544 @@
 //}
 
 
-controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
-															ll_advertising_data_operation_e operation,\
-															ll_advertising_data_fragment_perference_e fragPref,\
-															_u8 dataLen,\
-															_u8* data)
-{
-	ll_internal_adv_set_t* pAdv = ll_extended_adv_get_adv_set(advHandle,0);
-	if(POINTER_NOT_VALID(pAdv))
-	{
-		return UNKNOWN_ADVERTISING_IDENTIFIER;
-	}
+//controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
+//															ll_advertising_data_operation_e operation,\
+//															ll_advertising_data_fragment_perference_e fragPref,\
+//															_u8 dataLen,\
+//															_u8* data)
+//{
+//	ll_internal_adv_set_t* pAdv = ll_extended_adv_get_adv_set(advHandle,0);
+//	if(POINTER_NOT_VALID(pAdv))
+//	{
+//		return UNKNOWN_ADVERTISING_IDENTIFIER;
+//	}
+//
+//	if(pAdv->eventProperty & LL_ADV_EVENT_PROPERTY_LEGACY_PDU)
+//	{
+//		if(dataLen > 31||\
+//		   operation!=LL_ADV_DATA_OPERATION_COMPLETE||\
+//		   ((pAdv->eventType != ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED)&&(pAdv->eventType != ADV_EVENT_SCANNABLE_UNDIRECTED)))
+//		{
+//			return IVALID_HCI_COMMAND_PARAMETERS;
+//		}
+//	}
+//	else
+//	{
+//		if(pAdv->eventType != ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED&&\
+//		   pAdv->eventType != ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED&&\
+//		   pAdv->eventType != ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED&&\
+//		   pAdv->eventType != ADV_EVENT_SCANNABLE_UNDIRECTED)
+//		{
+//			return IVALID_HCI_COMMAND_PARAMETERS;
+//		}
+//	}
+//
+//	if(operation!=LL_ADV_DATA_OPERATION_COMPLETE)
+//	{
+//		if(dataLen == 0)
+//		{
+//			return IVALID_HCI_COMMAND_PARAMETERS;
+//		}
+//		if(pAdv->enable)
+//		{
+//			return COMMAND_DISALLOWED;
+//		}
+//	}
+//
+//	if(pAdv->enable)
+//	{
+//		if(dataLen == 0)
+//		{
+//			return COMMAND_DISALLOWED;
+//		}
+//	}
+//
+//	if(dataLen > BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH)
+//	{
+//		return MEMORY_CAPACITY_EXCEEDED;
+//	}
+//
+//	static _u32 dataFillOffset = 0;
+//	if(operation == LL_ADV_DATA_OPERATION_FIRST_FRAGMENT||\
+//	   operation == LL_ADV_DATA_OPERATION_COMPLETE||\
+//	   operation == LL_ADV_DATA_OPERATION_UNCHANGED)
+//	{
+//		dataFillOffset = 0;
+//	}
+//
+//	if(!(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU))
+//	{
+//		if(ll_get_air_packet_time(pAdv->ea->phyMode,dataLen,0)>(pAdv->la->sch.interval*3/4))
+//		{
+//			return PACKET_TOO_LONG;
+//		}
+//		if(pAdv->eventProperty & (LL_ADV_EVENT_PROPERTY_SCANNABLE))
+//		{
+//			if((dataFillOffset+dataLen)>BLE_ADV_SEC_PHY_MAX_TX_LEN)
+//			{
+//				dataFillOffset = 0;
+//				return MEMORY_CAPACITY_EXCEEDED;
+//			}
+//		}
+//	}
+//	if((operation == LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT) || (operation == LL_ADV_DATA_OPERATION_LAST_FRAGMENT))
+//	{
+//		if((dataFillOffset+dataLen)>BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH)
+//		{
+//			dataFillOffset = 0;
+//			return MEMORY_CAPACITY_EXCEEDED;
+//		}
+//		if(ll_get_air_packet_time(pAdv->ea->phyMode,dataFillOffset+dataLen,0)>(pAdv->la->sch.interval*3/4))
+//		{
+//			return PACKET_TOO_LONG;
+//		}
+//		if(dataFillOffset == 0)
+//		{
+//			return COMMAND_DISALLOWED;
+//		}
+//	}
+//	if(POINTER_NOT_VALID(pAdv->scanRsp.addr))
+//	{
+//		if(operation == LL_ADV_DATA_OPERATION_COMPLETE)
+//		{
+//			pAdv->scanRsp.addr = tx_malloc(dataLen);
+//		}
+//		else
+//		{
+//			pAdv->scanRsp.addr = tx_malloc(BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH);
+//		}
+//	}
+//	switch(operation)
+//	{
+//		case LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT:
+//		{
+//			txMemcpy4(pAdv->scanRsp.addr+dataFillOffset,data,dataLen);
+//			dataFillOffset+=dataLen;
+//		}
+//			break;
+//		case LL_ADV_DATA_OPERATION_FIRST_FRAGMENT:
+//		{
+//			txMemcpy4(pAdv->scanRsp.addr,data,dataLen);
+//			dataFillOffset=dataLen;
+//		}
+//			break;
+//		case LL_ADV_DATA_OPERATION_LAST_FRAGMENT:
+//		{
+//			txMemcpy4(pAdv->scanRsp.addr+dataFillOffset,data,dataLen);
+//			pAdv->scanRsp.len = dataFillOffset+dataLen;
+//			dataFillOffset = 0;
+//
+//		}
+//			break;
+//		case LL_ADV_DATA_OPERATION_COMPLETE:
+//		{
+//			txMemcpy(pAdv->scanRsp.addr,data,dataLen);
+//			pAdv->scanRsp.len = dataLen;
+//		}
+//			break;
+//	}
+//	if(!(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU)&&(operation == LL_ADV_DATA_OPERATION_LAST_FRAGMENT||operation == LL_ADV_DATA_OPERATION_COMPLETE))
+//	{
+//		if(POINTER_VALID(pAdv->ea->chain.entry))
+//		{
+//			tx_free((_u8*)pAdv->ea->chain.entry);
+//		}
+//		pAdv->ea->aux.data.addr= pAdv->scanRsp.addr;
+//		//process data fragment
+//		if(pAdv->scanRsp.len<=(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN))
+//		{
+//			pAdv->ea->chain.cnt= 0;//only aux packet exist
+//			pAdv->ea->aux.data.len = pAdv->scanRsp.len;
+//		}
+//		else
+//		{
+//			_u8 remainLen         = ((pAdv->scanRsp.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))%BLE_ADV_SEC_PHY_MAX_TX_LEN;
+//			_u8 chainCnt          = ((pAdv->scanRsp.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))/BLE_ADV_SEC_PHY_MAX_TX_LEN + (remainLen==0?0:1);
+//			pAdv->schMap         |= ADV_SCH_MAP_AUX_CHAIN;
+//			pAdv->ea->chain.entry = (ll_adv_entry_t*)tx_malloc(chainCnt*sizeof(ll_adv_entry_t));
+//			pAdv->ea->chain.cnt   = chainCnt;
+//			pAdv->ea->aux.data.len = BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN;
+//			_u16 offset           = pAdv->ea->aux.data.len;
+//			for(_u8 i=0;i<chainCnt-1;i++)
+//			{
+//				pAdv->ea->chain.entry[i].data.len = BLE_ADV_SEC_PHY_MAX_TX_LEN;
+//				pAdv->ea->chain.entry[i].data.addr= (pAdv->scanRsp.addr+offset);
+//				offset+=BLE_ADV_SEC_PHY_MAX_TX_LEN;
+//			}
+//			if(remainLen!=0)
+//			{
+//				pAdv->ea->chain.entry[chainCnt-1].data.len = remainLen;
+//				pAdv->ea->chain.entry[chainCnt-1].data.addr= (pAdv->scanRsp.addr+offset);
+//			}
+//		}
+//	}
+//	pAdv->ea->scanRspDatafragPerf = fragPref;
+//	return SUCCESS;
+//}
+///**
+// * Advertising disabled condition
+// * 1.Host send "ll_set_extended_advertising_enable" with 'enable' field set to 0
+// * 2.A connection is created using the advertising set.
+// * 3.The duration field expires
+// * 4.The number of extended advertising events for the set exceed the MAX_EXTENDED_ADVERTISING_EVENT.
+// */
+//controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
+//														   _u8 numSets,\
+//														   ll_extended_adv_enable_subField_e* pEnableSubFiled)
+//{
+//	//if the ll_set_extended_advertising_enable set again when the adv set is enabled,the timer for duration
+//	//and the number of events counter are reset,any change to random address shall take effect
+//
+//
+//	//disable advertising set will not disable periodic advertising
+//
+//	//disable a disabled advertising set have no effect
+//
+//	//if adv set is marked by more than one advHandle[i] parameter,should return error code 0x12
+//	if((enable != 0) && (numSets == 0))
+//	{
+//		return IVALID_HCI_COMMAND_PARAMETERS;
+//	}
+//	if(numSets>BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS)
+//	{
+//		return IVALID_HCI_COMMAND_PARAMETERS;
+//	}
+//	ll_sm_t* ll = ll_get_current_state_machine();
+//
+//	if(POINTER_NOT_VALID(ll->adv))
+//	{
+//		return COMMAND_DISALLOWED;
+//	}
+//	if((enable == 0) && (numSets == 0))
+//	{
+//		for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+//		{
+//			if(ll->adv->param[i].handle <= 0xEF)
+//			{
+//				if((ll->adv->param[i].eventProperty & LL_ADV_EVENT_PROPERTY_SCANNABLE)&&ll->adv->param[i].scanRsp.len == 0)
+//				{
+//					return COMMAND_DISALLOWED;
+//				}
+//				if((ll->adv->param[i].eventProperty & LL_ADV_EVENT_PROPERTY_CONNECTED)&&ll->adv->param[i].data.len == 0)
+//				{
+//					return IVALID_HCI_COMMAND_PARAMETERS;//?,need check if valid
+//				}
+//			}
+//		}
+//	}
+//	else
+//	{
+//		for(_u8 i=0;i<numSets;i++)
+//		{
+//			ll_internal_adv_set_t* pAdv = ll_extended_adv_get_adv_set(pEnableSubFiled[i].advHandle,0);
+//			if(POINTER_NOT_VALID(pAdv))
+//			{
+//				return IVALID_HCI_COMMAND_PARAMETERS;
+//			}
+//			if((pAdv->eventProperty & LL_ADV_EVENT_PROPERTY_SCANNABLE)&&pAdv->scanRsp.len == 0)
+//			{
+//				return COMMAND_DISALLOWED;
+//			}
+//			if((pAdv->eventProperty & LL_ADV_EVENT_PROPERTY_CONNECTED)&&pAdv->data.len == 0)
+//			{
+//				return IVALID_HCI_COMMAND_PARAMETERS;//?,need check if valid
+//			}
+//		}
+//	}
+//	if((enable == 0) && (numSets == 0))
+//	{
+//		for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+//		{
+//			if(ll->adv->param[i].handle <= 0xEF)
+//			{
+//				ll->adv->param[i].enable   = enable;
+//				if(POINTER_VALID(ll->adv->param[i].ea))
+//				{
+//					if(pEnableSubFiled[i].duration!=0)
+//					{
+//						ll->adv->param[i].ea->expireTime =  system_time() + ll->adv->param[i].la->sch.interval + pEnableSubFiled[i].duration*10000;
+//					}
+//					else
+//					{
+//						ll->adv->param[i].ea->expireTime = 0;
+//					}
+//
+//					if(pEnableSubFiled[i].maxEvents!=0)
+//					{
+//						ll->adv->param[i].ea->maxEvents    = pEnableSubFiled[i].maxEvents;
+//						ll->adv->param[i].ea->eventCnt = 0;
+//					}
+//					else
+//					{
+//						ll->adv->param[i].ea->maxEvents = 0;
+//					}
+//				}
+//			}
+//		}
+//	}
+//	else
+//	{
+//		for(_u8 i=0;i<numSets;i++)
+//		{
+//			ll_internal_adv_set_t* pAdv = ll_extended_adv_get_adv_set(pEnableSubFiled[i].advHandle,0);
+//			if(pEnableSubFiled[i].duration!=0)
+//			{
+//				pAdv->ea->expireTime =  system_time() + pAdv->la->sch.interval + pEnableSubFiled[i].duration*10000;
+//			}
+//			else
+//			{
+//				pAdv->ea->expireTime = 0;
+//			}
+//
+//			if(pEnableSubFiled[i].maxEvents!=0)
+//			{
+//				pAdv->ea->maxEvents    = pEnableSubFiled[i].maxEvents;
+//				pAdv->ea->eventCnt = 0;
+//			}
+//			else
+//			{
+//				pAdv->ea->maxEvents = 0;
+//			}
+//			if(!pAdv->enable && enable)
+//			{
+//				pAdv->enable = enable;
+//				pAdv->schMap|=ADV_SCH_MAP_PRI;
+//				//la phy init
+//				pAdv->la->phy.crcInit         = BLE_ADV_CRC_INIT;
+//				pAdv->la->phy.accessCode      = BLE_ADV_ACCESS_CODE;
+//				pAdv->la->phy.rxMaxOctets     = BLE_ADV_SEC_PHY_MAX_TX_LEN;
+//                pAdv->la->phy.rxAddress       = ll_get_shared_phy_rx_address();
+//                pAdv->la->phy.txAddress       = ll_get_shared_phy_tx_address();
+//				//la sch init
+//				pAdv->la->availableChnCnt = 0;
+//				pAdv->la->availableChnCnt = pAdv->la->channelCnt;
+//				pAdv->la->eventCnt    = 0;
+//				pAdv->la->sch.startMargin = 100;
+//				pAdv->la->sch.stopMargin  = 100;
+//		        phy_obj_cast(&ll->phy);
+//		        phy_obj_init(&ll->phy);
+//                if(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU)
+//                {
+//                    if(pAdv->eventType == ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED)
+//                    {
+//                    	pAdv->la->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(pAdv->la->phy.mode,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+PACKET_DEFAULT_TIFS_TIME;
+//                    }
+//                    else
+//                    {
+//                    	pAdv->la->sch.duration = ll->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(pAdv->la->phy.mode,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+2*PACKET_DEFAULT_TIFS_TIME;
+//                    }
+//                }
+//                else
+//                {
+//					if(POINTER_NOT_VALID(pAdv->ea->chain.entry))
+//					{
+//						pAdv->ea->chain.cnt = 0;
+//					}
+//					pAdv->la->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(pAdv->la->phy.mode,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+PACKET_DEFAULT_TIFS_TIME;
+//                	pAdv->ea->aux.phy.crcInit         = BLE_ADV_CRC_INIT;
+//                	pAdv->ea->aux.phy.accessCode      = BLE_ADV_ACCESS_CODE;
+//                	pAdv->ea->aux.phy.rxMaxOctets     = BLE_ADV_SEC_PHY_MAX_TX_LEN;
+//                	pAdv->ea->aux.phy.rxAddress       = ll_get_shared_phy_rx_address();
+//                	pAdv->ea->aux.phy.txAddress       = ll_get_shared_phy_tx_address();
+//					pAdv->ea->eventCnt = 0;
+//					pAdv->ea->aux.phy.mode            = pAdv->ea->phyMode;
+//                    //ea sch and phy init
+//                	if(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_CONNECTED)
+//                	{
+//						pAdv->ea->aux.sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(pAdv->ea->aux.phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN+pAdv->ea->aux.data.len,0)+PACKET_DEFAULT_TIFS_TIME\
+//												        + ll_get_air_packet_time(pAdv->ea->aux.phy.mode,3+sizeof(scan_type_aux_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME\
+//												        + ll_get_air_packet_time(pAdv->ea->aux.phy.mode,3+sizeof(init_type_auxConnectRsp_t),0);
+//					}
+//					else if(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_SCANNABLE)
+//                	{
+//						pAdv->ea->aux.sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(pAdv->ea->aux.phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN,0)+PACKET_DEFAULT_TIFS_TIME\
+//											            + ll_get_air_packet_time(pAdv->ea->aux.phy.mode,3+sizeof(scan_type_aux_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME\
+//												        + ll_get_air_packet_time(pAdv->ea->aux.phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN+pAdv->ea->aux.data.len,0);
+//					}
+//					else
+//					{
+//						pAdv->ea->aux.sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(pAdv->ea->aux.phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN+pAdv->ea->aux.data.len,0);
+//					}
+//
+//                    if(pAdv->schMap&ADV_SCH_MAP_AUX_CHAIN)
+//                    {
+//                        for(int i=0;i<pAdv->ea->chain.cnt;i++)
+//                        {
+//                        	pAdv->ea->chain.entry[i].sch.startMargin = 100;
+//                            if(i==pAdv->ea->chain.cnt)
+//                            {
+//                            	pAdv->ea->chain.entry[i].sch.stopMargin  = 200;
+//                            }
+//                            else
+//                            {
+//                            	pAdv->ea->chain.entry[i].sch.stopMargin  = 100;
+//                            }
+//                            pAdv->ea->chain.entry[i].phy.crcInit    = BLE_ADV_CRC_INIT;
+//                            pAdv->ea->chain.entry[i].phy.accessCode = BLE_ADV_ACCESS_CODE;
+//                            pAdv->ea->chain.entry[i].phy.mode       = pAdv->ea->phyMode;
+//                            pAdv->ea->chain.entry[i].phy.txAddress  = ll_get_shared_phy_tx_address();
+//							pAdv->ea->chain.entry[i].sch.duration   = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(pAdv->ea->chain.entry[i].phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN+pAdv->ea->chain.entry[i].data.len,0)+PACKET_DEFAULT_TIFS_TIME;
+//                        }
+//                    	pAdv->ea->aux.sch.startMargin     = 100;
+//                    	pAdv->ea->aux.sch.stopMargin      = 100;//shall location the next event
+//                    }
+//                    else
+//                    {
+//                    	pAdv->ea->aux.sch.startMargin     = 100;
+//                    	pAdv->ea->aux.sch.stopMargin      = 200;//shall location the next event
+//                    }
+//                }
+//				#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
+//                if(POINTER_VALID(pAdv->pa))
+//                {
+//                	if(pAdv->pa->enable&&(!pAdv->pa->active))
+//                	{
+//                		pAdv->pa->active = 1;
+//                	}
+//                }
+//				#endif
+//			}
+//			else if(pAdv->enable && !enable)
+//			{
+//				pAdv->enable = enable;
+//			}
+//		}
+//	}
+//	_u8 gEnable = 0;
+//	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+//	{
+//		if(ll->adv->param[i].handle!=LL_EXTENDED_ADV_INVALID_HANDLE)
+//		{
+//			if(ll->adv->param[i].enable)
+//			{
+//				gEnable = 1;
+//			}
+//		}
+//	}
+//	if(gEnable)
+//	{
+//		ble_ll_process_event(ll,BLE_LL_EVENT_START_ADVERTISING);
+//	}
+//	else
+//	{
+//		IRQ_DISABLE;
+//		ll->sch.delete=1;
+//		IRQ_RESTORE;
+//		ble_ll_process_event(ll,BLE_LL_EVENT_STOP_ADVERTISING);
+//	}
+//
+//	return SUCCESS;
+//}
 
-	if(pAdv->eventProperty & LL_ADV_EVENT_PROPERTY_LEGACY_PDU)
-	{
-		if(dataLen > 31||\
-		   operation!=LL_ADV_DATA_OPERATION_COMPLETE||\
-		   ((pAdv->eventType != ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED)&&(pAdv->eventType != ADV_EVENT_SCANNABLE_UNDIRECTED)))
-		{
-			return IVALID_HCI_COMMAND_PARAMETERS;
-		}
-	}
-	else
-	{
-		if(pAdv->eventType != ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED&&\
-		   pAdv->eventType != ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED&&\
-		   pAdv->eventType != ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED&&\
-		   pAdv->eventType != ADV_EVENT_SCANNABLE_UNDIRECTED)
-		{
-			return IVALID_HCI_COMMAND_PARAMETERS;
-		}
-	}
-
-	if(operation!=LL_ADV_DATA_OPERATION_COMPLETE)
-	{
-		if(dataLen == 0)
-		{
-			return IVALID_HCI_COMMAND_PARAMETERS;
-		}
-		if(pAdv->enable)
-		{
-			return COMMAND_DISALLOWED;
-		}
-	}
-
-	if(pAdv->enable)
-	{
-		if(dataLen == 0)
-		{
-			return COMMAND_DISALLOWED;
-		}
-	}
-
-	if(dataLen > BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH)
-	{
-		return MEMORY_CAPACITY_EXCEEDED;
-	}
-
-	static _u32 dataFillOffset = 0;
-	if(operation == LL_ADV_DATA_OPERATION_FIRST_FRAGMENT||\
-	   operation == LL_ADV_DATA_OPERATION_COMPLETE||\
-	   operation == LL_ADV_DATA_OPERATION_UNCHANGED)
-	{
-		dataFillOffset = 0;
-	}
-
-	if(!(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU))
-	{
-		if(ll_get_air_packet_time(pAdv->ea->phyMode,dataLen,0)>(pAdv->la->sch.interval*3/4))
-		{
-			return PACKET_TOO_LONG;
-		}
-		if(pAdv->eventProperty & (LL_ADV_EVENT_PROPERTY_SCANNABLE))
-		{
-			if((dataFillOffset+dataLen)>BLE_ADV_SEC_PHY_MAX_TX_LEN)
-			{
-				dataFillOffset = 0;
-				return MEMORY_CAPACITY_EXCEEDED;
-			}
-		}
-	}
-	if((operation == LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT) || (operation == LL_ADV_DATA_OPERATION_LAST_FRAGMENT))
-	{
-		if((dataFillOffset+dataLen)>BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH)
-		{
-			dataFillOffset = 0;
-			return MEMORY_CAPACITY_EXCEEDED;
-		}
-		if(ll_get_air_packet_time(pAdv->ea->phyMode,dataFillOffset+dataLen,0)>(pAdv->la->sch.interval*3/4))
-		{
-			return PACKET_TOO_LONG;
-		}
-		if(dataFillOffset == 0)
-		{
-			return COMMAND_DISALLOWED;
-		}
-	}
-	if(POINTER_NOT_VALID(pAdv->scanRsp.addr))
-	{
-		if(operation == LL_ADV_DATA_OPERATION_COMPLETE)
-		{
-			pAdv->scanRsp.addr = tx_malloc(dataLen);
-		}
-		else
-		{
-			pAdv->scanRsp.addr = tx_malloc(BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH);
-		}
-	}
-	switch(operation)
-	{
-		case LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT:
-		{
-			txMemcpy4(pAdv->scanRsp.addr+dataFillOffset,data,dataLen);
-			dataFillOffset+=dataLen;
-		}
-			break;
-		case LL_ADV_DATA_OPERATION_FIRST_FRAGMENT:
-		{
-			txMemcpy4(pAdv->scanRsp.addr,data,dataLen);
-			dataFillOffset=dataLen;
-		}
-			break;
-		case LL_ADV_DATA_OPERATION_LAST_FRAGMENT:
-		{
-			txMemcpy4(pAdv->scanRsp.addr+dataFillOffset,data,dataLen);
-			pAdv->scanRsp.len = dataFillOffset+dataLen;
-			dataFillOffset = 0;
-
-		}
-			break;
-		case LL_ADV_DATA_OPERATION_COMPLETE:
-		{
-			txMemcpy(pAdv->scanRsp.addr,data,dataLen);
-			pAdv->scanRsp.len = dataLen;
-		}
-			break;
-	}
-	if(!(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU)&&(operation == LL_ADV_DATA_OPERATION_LAST_FRAGMENT||operation == LL_ADV_DATA_OPERATION_COMPLETE))
-	{
-		if(POINTER_VALID(pAdv->ea->chain.entry))
-		{
-			tx_free((_u8*)pAdv->ea->chain.entry);
-		}
-		pAdv->ea->aux.data.addr= pAdv->scanRsp.addr;
-		//process data fragment
-		if(pAdv->scanRsp.len<=(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN))
-		{
-			pAdv->ea->chain.cnt= 0;//only aux packet exist
-			pAdv->ea->aux.data.len = pAdv->scanRsp.len;
-		}
-		else
-		{
-			_u8 remainLen         = ((pAdv->scanRsp.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))%BLE_ADV_SEC_PHY_MAX_TX_LEN;
-			_u8 chainCnt          = ((pAdv->scanRsp.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))/BLE_ADV_SEC_PHY_MAX_TX_LEN + (remainLen==0?0:1);
-			pAdv->schMap         |= ADV_SCH_MAP_AUX_CHAIN;
-			pAdv->ea->chain.entry = (ll_adv_entry_t*)tx_malloc(chainCnt*sizeof(ll_adv_entry_t));
-			pAdv->ea->chain.cnt   = chainCnt;
-			pAdv->ea->aux.data.len = BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN;
-			_u16 offset           = pAdv->ea->aux.data.len;
-			for(_u8 i=0;i<chainCnt-1;i++)
-			{
-				pAdv->ea->chain.entry[i].data.len = BLE_ADV_SEC_PHY_MAX_TX_LEN;
-				pAdv->ea->chain.entry[i].data.addr= (pAdv->scanRsp.addr+offset);
-				offset+=BLE_ADV_SEC_PHY_MAX_TX_LEN;
-			}
-			if(remainLen!=0)
-			{
-				pAdv->ea->chain.entry[chainCnt-1].data.len = remainLen;
-				pAdv->ea->chain.entry[chainCnt-1].data.addr= (pAdv->scanRsp.addr+offset);
-			}
-		}
-	}
-	pAdv->ea->scanRspDatafragPerf = fragPref;
-	return SUCCESS;
-}
-/**
- * Advertising disabled condition
- * 1.Host send "ll_set_extended_advertising_enable" with 'enable' field set to 0
- * 2.A connection is created using the advertising set.
- * 3.The duration field expires
- * 4.The number of extended advertising events for the set exceed the MAX_EXTENDED_ADVERTISING_EVENT.
- */
-controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
-														   _u8 numSets,\
-														   ll_extended_adv_enable_subField_e* pEnableSubFiled)
-{
-	//if the ll_set_extended_advertising_enable set again when the adv set is enabled,the timer for duration
-	//and the number of events counter are reset,any change to random address shall take effect
-
-
-	//disable advertising set will not disable periodic advertising
-
-	//disable a disabled advertising set have no effect
-
-	//if adv set is marked by more than one advHandle[i] parameter,should return error code 0x12
-	if((enable != 0) && (numSets == 0))
-	{
-		return IVALID_HCI_COMMAND_PARAMETERS;
-	}
-	if(numSets>BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS)
-	{
-		return IVALID_HCI_COMMAND_PARAMETERS;
-	}
-	ll_sm_t* ll = ll_get_current_state_machine();
-
-	if(POINTER_NOT_VALID(ll->adv))
-	{
-		return COMMAND_DISALLOWED;
-	}
-	if((enable == 0) && (numSets == 0))
-	{
-		for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
-		{
-			if(ll->adv->param[i].handle <= 0xEF)
-			{
-				if((ll->adv->param[i].eventProperty & LL_ADV_EVENT_PROPERTY_SCANNABLE)&&ll->adv->param[i].scanRsp.len == 0)
-				{
-					return COMMAND_DISALLOWED;
-				}
-				if((ll->adv->param[i].eventProperty & LL_ADV_EVENT_PROPERTY_CONNECTED)&&ll->adv->param[i].data.len == 0)
-				{
-					return IVALID_HCI_COMMAND_PARAMETERS;//?,need check if valid
-				}
-			}
-		}
-	}
-	else
-	{
-		for(_u8 i=0;i<numSets;i++)
-		{
-			ll_internal_adv_set_t* pAdv = ll_extended_adv_get_adv_set(pEnableSubFiled[i].advHandle,0);
-			if(POINTER_NOT_VALID(pAdv))
-			{
-				return IVALID_HCI_COMMAND_PARAMETERS;
-			}
-			if((pAdv->eventProperty & LL_ADV_EVENT_PROPERTY_SCANNABLE)&&pAdv->scanRsp.len == 0)
-			{
-				return COMMAND_DISALLOWED;
-			}
-			if((pAdv->eventProperty & LL_ADV_EVENT_PROPERTY_CONNECTED)&&pAdv->data.len == 0)
-			{
-				return IVALID_HCI_COMMAND_PARAMETERS;//?,need check if valid
-			}
-		}
-	}
-	if((enable == 0) && (numSets == 0))
-	{
-		for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
-		{
-			if(ll->adv->param[i].handle <= 0xEF)
-			{
-				ll->adv->param[i].enable   = enable;
-				if(POINTER_VALID(ll->adv->param[i].ea))
-				{
-					if(pEnableSubFiled[i].duration!=0)
-					{
-						ll->adv->param[i].ea->expireTime =  system_time() + ll->adv->param[i].la->sch.interval + pEnableSubFiled[i].duration*10000;
-					}
-					else
-					{
-						ll->adv->param[i].ea->expireTime = 0;
-					}
-
-					if(pEnableSubFiled[i].maxEvents!=0)
-					{
-						ll->adv->param[i].ea->maxEvents    = pEnableSubFiled[i].maxEvents;
-						ll->adv->param[i].ea->eventCnt = 0;
-					}
-					else
-					{
-						ll->adv->param[i].ea->maxEvents = 0;
-					}
-				}
-			}
-		}
-	}
-	else
-	{
-		for(_u8 i=0;i<numSets;i++)
-		{
-			ll_internal_adv_set_t* pAdv = ll_extended_adv_get_adv_set(pEnableSubFiled[i].advHandle,0);
-			if(pEnableSubFiled[i].duration!=0)
-			{
-				pAdv->ea->expireTime =  system_time() + pAdv->la->sch.interval + pEnableSubFiled[i].duration*10000;
-			}
-			else
-			{
-				pAdv->ea->expireTime = 0;
-			}
-
-			if(pEnableSubFiled[i].maxEvents!=0)
-			{
-				pAdv->ea->maxEvents    = pEnableSubFiled[i].maxEvents;
-				pAdv->ea->eventCnt = 0;
-			}
-			else
-			{
-				pAdv->ea->maxEvents = 0;
-			}
-			if(!pAdv->enable && enable)
-			{
-				pAdv->enable = enable;
-				pAdv->schMap|=ADV_SCH_MAP_PRI;
-				//la phy init
-				pAdv->la->phy.crcInit         = BLE_ADV_CRC_INIT;
-				pAdv->la->phy.accessCode      = BLE_ADV_ACCESS_CODE;
-				pAdv->la->phy.rxMaxOctets     = BLE_ADV_SEC_PHY_MAX_TX_LEN;
-                pAdv->la->phy.rxAddress       = ll_get_shared_phy_rx_address();
-                pAdv->la->phy.txAddress       = ll_get_shared_phy_tx_address();
-				//la sch init
-				pAdv->la->availableChnCnt = 0;
-				pAdv->la->availableChnCnt = pAdv->la->channelCnt;
-				pAdv->la->eventCnt    = 0;
-				pAdv->la->sch.startMargin = 100;
-				pAdv->la->sch.stopMargin  = 100;
-		        phy_obj_cast(&ll->phy);
-		        phy_obj_init(&ll->phy);
-                if(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU)
-                {
-                    if(pAdv->eventType == ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED)
-                    {
-                    	pAdv->la->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(pAdv->la->phy.mode,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+PACKET_DEFAULT_TIFS_TIME;
-                    }
-                    else
-                    {
-                    	pAdv->la->sch.duration = ll->phy.hw_get_prepare_time()+3*ll_get_air_packet_time(pAdv->la->phy.mode,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+2*PACKET_DEFAULT_TIFS_TIME;
-                    }
-                }
-                else
-                {
-					if(POINTER_NOT_VALID(pAdv->ea->chain.entry))
-					{
-						pAdv->ea->chain.cnt = 0;
-					}
-					pAdv->la->sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(pAdv->la->phy.mode,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+PACKET_DEFAULT_TIFS_TIME;
-                	pAdv->ea->aux.phy.crcInit         = BLE_ADV_CRC_INIT;
-                	pAdv->ea->aux.phy.accessCode      = BLE_ADV_ACCESS_CODE;
-                	pAdv->ea->aux.phy.rxMaxOctets     = BLE_ADV_SEC_PHY_MAX_TX_LEN;
-                	pAdv->ea->aux.phy.rxAddress       = ll_get_shared_phy_rx_address();
-                	pAdv->ea->aux.phy.txAddress       = ll_get_shared_phy_tx_address();
-					pAdv->ea->eventCnt = 0;
-					pAdv->ea->aux.phy.mode            = pAdv->ea->phyMode;
-                    //ea sch and phy init
-                	if(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_CONNECTED)
-                	{
-						pAdv->ea->aux.sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(pAdv->ea->aux.phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN+pAdv->ea->aux.data.len,0)+PACKET_DEFAULT_TIFS_TIME\
-												        + ll_get_air_packet_time(pAdv->ea->aux.phy.mode,3+sizeof(scan_type_aux_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME\
-												        + ll_get_air_packet_time(pAdv->ea->aux.phy.mode,3+sizeof(init_type_auxConnectRsp_t),0);
-					}
-					else if(pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_SCANNABLE)
-                	{
-						pAdv->ea->aux.sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(pAdv->ea->aux.phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN,0)+PACKET_DEFAULT_TIFS_TIME\
-											            + ll_get_air_packet_time(pAdv->ea->aux.phy.mode,3+sizeof(scan_type_aux_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME\
-												        + ll_get_air_packet_time(pAdv->ea->aux.phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN+pAdv->ea->aux.data.len,0);
-					}
-					else
-					{
-						pAdv->ea->aux.sch.duration = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(pAdv->ea->aux.phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN+pAdv->ea->aux.data.len,0);
-					}
-
-                    if(pAdv->schMap&ADV_SCH_MAP_AUX_CHAIN)
-                    {
-                        for(int i=0;i<pAdv->ea->chain.cnt;i++)
-                        {
-                        	pAdv->ea->chain.entry[i].sch.startMargin = 100;
-                            if(i==pAdv->ea->chain.cnt)
-                            {
-                            	pAdv->ea->chain.entry[i].sch.stopMargin  = 200;
-                            }
-                            else
-                            {
-                            	pAdv->ea->chain.entry[i].sch.stopMargin  = 100;
-                            }
-                            pAdv->ea->chain.entry[i].phy.crcInit    = BLE_ADV_CRC_INIT;
-                            pAdv->ea->chain.entry[i].phy.accessCode = BLE_ADV_ACCESS_CODE;
-                            pAdv->ea->chain.entry[i].phy.mode       = pAdv->ea->phyMode;
-                            pAdv->ea->chain.entry[i].phy.txAddress  = ll_get_shared_phy_tx_address();
-							pAdv->ea->chain.entry[i].sch.duration   = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(pAdv->ea->chain.entry[i].phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN+pAdv->ea->chain.entry[i].data.len,0)+PACKET_DEFAULT_TIFS_TIME;
-                        }
-                    	pAdv->ea->aux.sch.startMargin     = 100;
-                    	pAdv->ea->aux.sch.stopMargin      = 100;//shall location the next event
-                    }
-                    else
-                    {
-                    	pAdv->ea->aux.sch.startMargin     = 100;
-                    	pAdv->ea->aux.sch.stopMargin      = 200;//shall location the next event
-                    }
-                }
-				#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
-                if(POINTER_VALID(pAdv->pa))
-                {
-                	if(pAdv->pa->enable&&(!pAdv->pa->active))
-                	{
-                		pAdv->pa->active = 1;
-                	}
-                }
-				#endif
-			}
-			else if(pAdv->enable && !enable)
-			{
-				pAdv->enable = enable;
-			}
-		}
-	}
-	_u8 gEnable = 0;
-	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
-	{
-		if(ll->adv->param[i].handle!=LL_EXTENDED_ADV_INVALID_HANDLE)
-		{
-			if(ll->adv->param[i].enable)
-			{
-				gEnable = 1;
-			}
-		}
-	}
-	if(gEnable)
-	{
-		ble_ll_process_event(ll,BLE_LL_EVENT_START_ADVERTISING);
-	}
-	else
-	{
-		IRQ_DISABLE;
-		ll->sch.delete=1;
-		IRQ_RESTORE;
-		ble_ll_process_event(ll,BLE_LL_EVENT_STOP_ADVERTISING);
-	}
-
-	return SUCCESS;
-}
-
-controller_error_code_e ll_set_adv_set_random_address(_u8 advHandle,_u8* address)
-{
-	ll_internal_adv_set_t* pAdv = ll_extended_adv_get_adv_set(advHandle,0);
-
-	if(POINTER_NOT_VALID(pAdv))
-	{
-		return UNKNOWN_ADVERTISING_IDENTIFIER;
-	}
-	if(pAdv->enable &&\
-	  (pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_CONNECTED))
-	{
-		return COMMAND_DISALLOWED;
-	}
-	txMemcpy(pAdv->randomAddress,address,6);
-	return SUCCESS;
-}
-
-controller_error_code_e ll_read_maximum_advertising_data_length(_u16* length)
-{
-	*length = BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH;
-	return SUCCESS;
-}
-
-controller_error_code_e ll_read_number_of_supported_advertising_sets(_u8* number)
-{
-	*number = BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;
-	return SUCCESS;
-}
-
-controller_error_code_e ll_remove_advertising_sets(_u8 advHandle)
-{
-	ll_internal_adv_set_t* pAdv = ll_extended_adv_get_adv_set(advHandle,0);
-	if(POINTER_NOT_VALID(pAdv))
-	{
-		return IVALID_HCI_COMMAND_PARAMETERS;
-	}
-	if(pAdv->enable)
-	{
-		return COMMAND_DISALLOWED;
-	}
-	if(POINTER_VALID(pAdv->data.addr))
-	{
-		tx_free(pAdv->data.addr);
-	}
-	if(POINTER_VALID(pAdv->scanRsp.addr))
-	{
-		tx_free(pAdv->scanRsp.addr);
-	}
-	if(POINTER_VALID(pAdv->ea->chain.entry))
-	{
-		tx_free((_u8*)pAdv->ea->chain.entry);
-	}
-	if(POINTER_VALID(pAdv->la))
-	{
-		tx_free((_u8*)pAdv->la);
-	}
-	if(POINTER_VALID(pAdv->ea))
-	{
-		tx_free((_u8*)pAdv->ea);
-	}
-	txMemsetByte((_u8*)pAdv,0,sizeof(ll_internal_adv_set_t));
-	pAdv->handle = LL_EXTENDED_ADV_INVALID_HANDLE;
-
-	if(ll_extended_adv_get_current_set_number()==0)
-	{
-		ll_sm_t* ll = ll_get_current_state_machine();
-		ble_ll_process_event(ll,BLE_LL_EVENT_STOP_ADVERTISING);
-	}
-	return SUCCESS;
-}
-
-controller_error_code_e ll_clear_advertising_sets(void)
-{
-	ll_sm_t* ll = ll_get_current_state_machine();
-
-	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
-	{
-		if(ll->adv->param[i].handle!=LL_EXTENDED_ADV_INVALID_HANDLE)
-		{
-			ll_internal_adv_set_t* pAdv = &ll->adv->param[i];
-			if(ll->adv->param[i].enable)
-			{
-				return COMMAND_DISALLOWED;
-			}
-			if(POINTER_VALID(pAdv->data.addr))
-			{
-				tx_free(pAdv->data.addr);
-			}
-			if(POINTER_VALID(pAdv->scanRsp.addr))
-			{
-				tx_free(pAdv->scanRsp.addr);
-			}
-			if(POINTER_VALID(pAdv->ea->chain.entry))
-			{
-				tx_free((_u8*)pAdv->ea->chain.entry);
-			}
-			if(POINTER_VALID(pAdv->la))
-			{
-				tx_free((_u8*)pAdv->la);
-			}
-			if(POINTER_VALID(pAdv->ea))
-			{
-				tx_free((_u8*)pAdv->ea);
-			}
-		}
-	}
-	ble_ll_process_event(ll,BLE_LL_EVENT_STOP_ADVERTISING);
-	return SUCCESS;
-}
+//controller_error_code_e ll_set_adv_set_random_address(_u8 advHandle,_u8* address)
+//{
+//	ll_internal_adv_set_t* pAdv = ll_extended_adv_get_adv_set(advHandle,0);
+//
+//	if(POINTER_NOT_VALID(pAdv))
+//	{
+//		return UNKNOWN_ADVERTISING_IDENTIFIER;
+//	}
+//	if(pAdv->enable &&\
+//	  (pAdv->eventProperty&LL_ADV_EVENT_PROPERTY_CONNECTED))
+//	{
+//		return COMMAND_DISALLOWED;
+//	}
+//	txMemcpy(pAdv->randomAddress,address,6);
+//	return SUCCESS;
+//}
+//
+//controller_error_code_e ll_read_maximum_advertising_data_length(_u16* length)
+//{
+//	*length = BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH;
+//	return SUCCESS;
+//}
+//
+//controller_error_code_e ll_read_number_of_supported_advertising_sets(_u8* number)
+//{
+//	*number = BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;
+//	return SUCCESS;
+//}
+//
+//controller_error_code_e ll_remove_advertising_sets(_u8 advHandle)
+//{
+//	ll_internal_adv_set_t* pAdv = ll_extended_adv_get_adv_set(advHandle,0);
+//	if(POINTER_NOT_VALID(pAdv))
+//	{
+//		return IVALID_HCI_COMMAND_PARAMETERS;
+//	}
+//	if(pAdv->enable)
+//	{
+//		return COMMAND_DISALLOWED;
+//	}
+//	if(POINTER_VALID(pAdv->data.addr))
+//	{
+//		tx_free(pAdv->data.addr);
+//	}
+//	if(POINTER_VALID(pAdv->scanRsp.addr))
+//	{
+//		tx_free(pAdv->scanRsp.addr);
+//	}
+//	if(POINTER_VALID(pAdv->ea->chain.entry))
+//	{
+//		tx_free((_u8*)pAdv->ea->chain.entry);
+//	}
+//	if(POINTER_VALID(pAdv->la))
+//	{
+//		tx_free((_u8*)pAdv->la);
+//	}
+//	if(POINTER_VALID(pAdv->ea))
+//	{
+//		tx_free((_u8*)pAdv->ea);
+//	}
+//	txMemsetByte((_u8*)pAdv,0,sizeof(ll_internal_adv_set_t));
+//	pAdv->handle = LL_EXTENDED_ADV_INVALID_HANDLE;
+//
+//	if(ll_extended_adv_get_current_set_number()==0)
+//	{
+//		ll_sm_t* ll = ll_get_current_state_machine();
+//		ble_ll_process_event(ll,BLE_LL_EVENT_STOP_ADVERTISING);
+//	}
+//	return SUCCESS;
+//}
+//
+//controller_error_code_e ll_clear_advertising_sets(void)
+//{
+//	ll_sm_t* ll = ll_get_current_state_machine();
+//
+//	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+//	{
+//		if(ll->adv->param[i].handle!=LL_EXTENDED_ADV_INVALID_HANDLE)
+//		{
+//			ll_internal_adv_set_t* pAdv = &ll->adv->param[i];
+//			if(ll->adv->param[i].enable)
+//			{
+//				return COMMAND_DISALLOWED;
+//			}
+//			if(POINTER_VALID(pAdv->data.addr))
+//			{
+//				tx_free(pAdv->data.addr);
+//			}
+//			if(POINTER_VALID(pAdv->scanRsp.addr))
+//			{
+//				tx_free(pAdv->scanRsp.addr);
+//			}
+//			if(POINTER_VALID(pAdv->ea->chain.entry))
+//			{
+//				tx_free((_u8*)pAdv->ea->chain.entry);
+//			}
+//			if(POINTER_VALID(pAdv->la))
+//			{
+//				tx_free((_u8*)pAdv->la);
+//			}
+//			if(POINTER_VALID(pAdv->ea))
+//			{
+//				tx_free((_u8*)pAdv->ea);
+//			}
+//		}
+//	}
+//	ble_ll_process_event(ll,BLE_LL_EVENT_STOP_ADVERTISING);
+//	return SUCCESS;
+//}
 
 #endif/*(LL_SUPPORT_LE_EXTENDED_ADVERTISING)*/
 
