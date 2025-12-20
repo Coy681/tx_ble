@@ -13,7 +13,7 @@
 #define LL_INTERNAL_H_
 
 
-#define LL_SM_UNVALID_HANDLE    0xFFFF
+#define LL_SM_INVALID_HANDLE    0xFFFF
 
 /**
  * BLE Link Layer States
@@ -204,7 +204,8 @@ typedef struct
     _u8  rsvd1;
     _u16 eventProperty;
 	#else
-    _u8  schMap:4;
+    _u8  schMap:4;//adv set maybe have many sch type,such as adv,auy,pda,chain
+    _u8  inSch;//adv set in schedule.
     _u8  rsvd1:4;
     #endif
     _u8  ownAddressType:2;//'ll_own_address_type_e'
@@ -232,6 +233,11 @@ typedef struct
 
 typedef struct
 {
+	_u8     active:1;
+	_u8     rsvd:7;
+	_u8     rsvd1;
+	_u16    rsvd2;
+
 	reset_f reset;
 	ll_internal_adv_set_t set[BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS];
 }ll_internal_adv_ctrl_t;

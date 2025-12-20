@@ -49,7 +49,7 @@ _u8* ll_get_sm_entity_by_id(u8 id)
 	{
 		if(id == ll->sm[i].id)
 		{
-			return ll->sm[i].entity;
+			return &ll->sm[i];
 		}
 	}
 	return NULL;
@@ -65,25 +65,25 @@ _u8* ll_get_sm_entity_by_state(ble_ll_state_e state,_u16 handle,_u8 allocate)
 			{
 				case BLE_LL_STATE_CONNECTION://maybe multiple entity
 				{
-					if(handle==((ll_internal_connection_ctrl_t*)ll->sm[i].entity)->handle)
+					if(POINTER_VALID(ll->sm[i].entity)&&handle==((ll_internal_connection_ctrl_t*)ll->sm[i].entity)->handle)
 					{
-						return ll->sm[i].entity;
+						return &ll->sm[i];
 					}
 				}
 					break;
 				case BLE_LL_STATE_SYNCHRONIZATION://maybe multiple entity
 				{
-					if(handle==((ll_internal_synchronous_ctrl_t*)ll->sm[i].entity)->handle)
+					if(POINTER_VALID(ll->sm[i].entity)&&handle==((ll_internal_synchronous_ctrl_t*)ll->sm[i].entity)->handle)
 					{
-						return ll->sm[i].entity;
+						return &ll->sm[i];
 					}
 				}
 					break;
 				case BLE_LL_STATE_BROADCASTING://maybe multiple entity
 				{
-					if(handle==((ll_internal_broadcast_ctrl_t*)ll->sm[i].entity)->handle)
+					if(POINTER_VALID(ll->sm[i].entity)&&handle==((ll_internal_broadcast_ctrl_t*)ll->sm[i].entity)->handle)
 					{
-						return ll->sm[i].entity;
+						return &ll->sm[i];
 					}
 				}
 					break;
@@ -91,7 +91,7 @@ _u8* ll_get_sm_entity_by_state(ble_ll_state_e state,_u16 handle,_u8 allocate)
 				case BLE_LL_STATE_SCANNING://only one entity
 				case BLE_LL_STATE_INITIATING://only one entity
 				default:
-					return ll->sm[i].entity;
+					return &ll->sm[i];
 			}
 		}
 	}
@@ -104,10 +104,15 @@ _u8* ll_get_sm_entity_by_state(ble_ll_state_e state,_u16 handle,_u8 allocate)
 		if(BLE_LL_STATE_STANDBY == ll->sm[i].state)
 		{
 			ll->sm[i].state = state;
-			return ll->sm[i].entity;
+			return &ll->sm[i];
 		}
 	}
 	return NULL;
+}
+
+_RAM_CODE ll_free_sm_entity()
+{
+
 }
 
 _RAM_CODE
