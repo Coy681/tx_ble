@@ -54,23 +54,17 @@ typedef void(*reset_f)(void);
 
 typedef enum
 {
-    LL_SCH_EVENT = BIT(1),
-    LL_PHY_EVENT = BIT(2),
-}sm_event_type_e;
-
-typedef enum
-{
-    LL_SCH_EVENT_BASE              = 0x10,
+    LL_SCH_EVENT_BASE              = BIT(4),
     LL_SCH_EVENT_START             = LL_SCH_EVENT_BASE+SCH_TASK_START,
     LL_SCH_EVENT_STOP              = LL_SCH_EVENT_BASE+SCH_TASK_STOP,
     LL_SCH_EVENT_CANCELED          = LL_SCH_EVENT_BASE+SCH_TASK_CANCELED,
     LL_SCH_EVENT_PASSED            = LL_SCH_EVENT_BASE+SCH_TASK_PASSED,
 
-    LL_PHY_EVENT_BASE              = 0x20,
+    LL_PHY_EVENT_BASE              = BIT(5),
     LL_PHY_EVENT_SEND_FINISHED     = LL_PHY_EVENT_BASE+PHY_IRQ_TX_FINISHED,
     LL_PHY_EVENT_RECEIVE_FINISHED  = LL_PHY_EVENT_BASE+PHY_IRQ_RX_FINISHED,
     LL_PHY_EVENT_RECEIVE_TIMEOUT   = LL_PHY_EVENT_BASE+PHY_IRQ_RX_TIMEOUT,
-}ll_event_e;
+}ll_sm_event_e;
 
 /***********************ll standby sate**********************/
 typedef struct _PACKED
@@ -192,7 +186,7 @@ typedef struct
     _u8  state:5;//state machine sate
     _u8  rsvd0:2;
     _u8  eventType:4;//adv event type,search"adv_event_type_e"
-    _u8  processingEvent:4;//to prevent re-retrance
+    _u8  processingEvent:4;//to prevent adv sub state machine re-retrance
 
     #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
     _u8  handle;

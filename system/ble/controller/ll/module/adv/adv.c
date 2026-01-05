@@ -50,7 +50,7 @@ typedef struct _PACKED
     adv_sm_state_e  currentState;
     adv_sm_state_e  transSuccessState;
     adv_sm_state_e  transFailState;
-    ll_event_e      event;
+    ll_sm_event_e   event;
 }adv_event_sm_t; 
 
 /******* local struct define *******/
@@ -1828,54 +1828,44 @@ _DATA static adv_sequence_t advSequence[] =
 };
 
 _RAM_CODE
-static void adv_sequence_process(sm_event_type_e type,_u8 event)
+static void adv_sequence_process(ll_sm_event_e smEventType)
 {
-    _u8 smEventType = 0; 
-    if(type == LL_SCH_EVENT)
+    _u8 advEventType     = currentSet->eventType;//current adv set assigned in 'adv_get_next_event'
+    _u8 advEventClass    = currentEventClass;
+    if(advSequence[advEventType].listLen>advEventClass)//make sure event can be processed,
     {
-        smEventType = LL_SCH_EVENT_BASE+event;
-    }
-    else
-    {
-    	smEventType = LL_PHY_EVENT_BASE+event;
-    }
-    _u8 eventType     = currentSet->eventType;//current adv set assigned in 'adv_get_next_event'
-    _u8 eventClass    = currentEventClass;
-
-    if(advSequence[eventType].listLen>eventClass)
-    {
-        for(_u8 i=0;i<advSequence[eventType].procedureList[eventClass].listLen;i++)
+        for(_u8 i=0;i<advSequence[advEventType].procedureList[advEventClass].listLen;i++)
         {
-            if(currentSet->state  == advSequence[eventType].procedureList[eventClass].sm[i].currentState\
-            && smEventType  == advSequence[eventType].procedureList[eventClass].sm[i].event\
-		    &&(advSequence[eventType].procedureList[eventClass].context & advSequence[eventType].procedureList[eventClass].sm[i].context))
+            if(currentSet->state  == advSequence[advEventType].procedureList[advEventClass].sm[i].currentState\
+            && smEventType  == advSequence[advEventType].procedureList[advEventClass].sm[i].event\
+		    &&(advSequence[advEventType].procedureList[advEventClass].context & advSequence[advEventType].procedureList[advEventClass].sm[i].context))
             {
                 if(currentSet->processingEvent == smEventType)
                 {
                     return;//reload same event,return
                 }
-                if(advSequence[eventType].procedureList[eventClass].sm[i].cb != NULL)
+                if(advSequence[advEventType].procedureList[advEventClass].sm[i].cb != NULL)
                 {
                 	currentSet->processingEvent = smEventType;//use member value to avoid many entity conflict
-                    int ret = advSequence[eventType].procedureList[eventClass].sm[i].cb();
+                    int ret = advSequence[advEventType].procedureList[advEventClass].sm[i].cb();
                     if(ret)
                     {
-                    	currentSet->state = advSequence[eventType].procedureList[eventClass].sm[i].transSuccessState;
+                    	currentSet->state = advSequence[advEventType].procedureList[advEventClass].sm[i].transSuccessState;
                     }
                     else
                     {
-                    	currentSet->state = advSequence[eventType].procedureList[eventClass].sm[i].transFailState;
+                    	currentSet->state = advSequence[advEventType].procedureList[advEventClass].sm[i].transFailState;
                     }
                     currentSet->processingEvent = 0;
                 }
-                if(type         == LL_SCH_EVENT \
+                if((smEventType & LL_SCH_EVENT_BASE) \
 //                   && ll->state == BLE_LL_STATE_ADVERTISING //todo,when enter connect state,exit
                    && currentSet->enable\
                    && currentSet->state == ADV_SM_STATE_IDLE)
                 {
                     adv_get_next_event();
                 }
-                if(type         == LL_PHY_EVENT\
+                if((smEventType & LL_PHY_EVENT_BASE)\
 //                  && ll->state  == BLE_LL_STATE_ADVERTISING//can it works ok?
                   && currentSet->enable\
                   && currentSet->state == ADV_SM_STATE_IDLE)
@@ -1883,7 +1873,6 @@ static void adv_sequence_process(sm_event_type_e type,_u8 event)
                 	sch_stop_task_early();
                 }
                 break;               
-                 
             }
         }
     }
@@ -1907,7 +1896,7 @@ static void adv_phy_irq_callback(_u8 type)
         DEBUG_GPIO_HIGH(GPIO_10);
         DEBUG_GPIO_LOW(GPIO_10);
     }
-   adv_sequence_process(LL_PHY_EVENT,type);
+   adv_sequence_process(LL_PHY_EVENT_BASE+type);
 }
 
 _RAM_CODE
@@ -1939,7 +1928,7 @@ static void adv_sch_callback(_u8 type,_u8 id)
 	advCtrl = (ll_internal_adv_ctrl_t*)LLSM->entity;
 	ASSERT(POINTER_VALID(advCtrl));
 
-    adv_sequence_process(LL_SCH_EVENT,type);
+    adv_sequence_process(LL_SCH_EVENT_BASE+type);
 }
 
 /*************************************LL APIs Define*******************************************/
@@ -2005,7 +1994,6 @@ int ble_ll_enter_advertising_state(void)
 		if(sch_insert_task(&llsm->sch)==SCH_STATUS_SUCCESS)
 		{
 			sch_start();
-			advCtrl->active = 1;
 		}
 		else
 		{
@@ -2023,6 +2011,7 @@ int ble_ll_enter_advertising_state(void)
 	if(!advCtrl->active)
 	{
 		adv_get_next_event();
+		advCtrl->active = 1;
 	}
 	return 0;
 }

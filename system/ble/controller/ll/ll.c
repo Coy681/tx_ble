@@ -13,15 +13,6 @@
 #include"module/standby/standby_internal.h"
 /************************************ll implementation***************************************/
 ll_t* ll;
-
-typedef struct _PACKED
-{
-	ble_ll_state_e       currentState;
-	ble_ll_state_e       nextState;
-	ble_ll_event_e       event;
-	ble_ll_event_cb      cb;
-}ble_ll_state_table_t;
-
 void ll_init_state_machine(_u8 number)
 {
 	ll->smNum = number;
@@ -90,8 +81,9 @@ _u8* ll_get_sm_entity_by_state(ble_ll_state_e state,_u16 handle,_u8 allocate)
 				case BLE_LL_STATE_ADVERTISING://only one entity
 				case BLE_LL_STATE_SCANNING://only one entity
 				case BLE_LL_STATE_INITIATING://only one entity
-				default:
 					return &ll->sm[i];
+				default:
+					break;
 			}
 		}
 	}
