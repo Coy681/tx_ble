@@ -229,6 +229,20 @@ Host应该知道当前因为LL Control Procedure Collisions导致的设备断连
 
 #### BLE Advertising
 
+截至Core Specification v6.0,BLE Advertising 可以分为两大类
+
+```mermaid
+mindmap
+  root((BLE ADV))
+    legacy advertising
+    extended advertising
+      extended adv
+      periodic adv
+      periodic adv with rsp
+```
+
+
+
 #### BLE Connection
 
 ##### BLE Central
