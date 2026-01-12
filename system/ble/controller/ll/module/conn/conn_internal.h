@@ -10,6 +10,6 @@
 
 #include"../../ll_internal.h"
 
-int ble_ll_enter_connection_state(ble_ll_event_e event);
+int ble_ll_enter_connection_state(void);
 
 #endif /* BLE_CONTROLLER_LL_MODULE_CONN_CONN_INTERNAL_H_ */

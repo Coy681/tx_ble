@@ -10,5 +10,5 @@
 
 #include"../../ll_internal.h"
 
-int ble_ll_enter_scanning_state(ble_ll_event_e event);
+int ble_ll_enter_scanning_state(void);
 #endif /* BLE_CONTROLLER_LL_MODULE_SCAN_SCAN_INTERNAL_H_ */

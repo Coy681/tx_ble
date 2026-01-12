@@ -84,7 +84,7 @@
 // C.15: Mandatory if LE Controller supports transmitting scannable advertisements, otherwise excluded
 #define LE_SET_SCAN_RESPONSE_DATA_PROCESS                                    le_set_scan_response_data_process
 
-#if defined(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
+#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
 // C.17: Mandatory if LE Feature (Extended Advertising) is supported and the LE Controller supports Advertising State, otherwise excluded
 #define LE_CLEAR_ADVERTISING_SETS_PROCESS                                    le_clear_advertising_sets_process
 #define LE_REMOVE_ADVERTISING_SET_PROCESS                                    le_remove_advertising_set_process
@@ -1368,6 +1368,8 @@ controller_error_code_e le_test_end_process(_u8* data,_u8 length,bt_hci_event_t*
     return SUCCESS;
 }
 
+#if()
+
 // LE_CLEAR_ADVERTISING_SETS_PROCESS
 struct _PACKED le_clear_advertising_sets_process_retParam_t
 {
@@ -2553,12 +2555,12 @@ static const hci_command_array_t hci_cmd_handlers[] =
     {HCI_COMMAND_VENDOR_SPECIFIC,          hci_command_vendor_specific_list,         HCI_COMMAND_LIST_LENGTH(hci_command_vendor_specific_list)},
 };
 
-volatile _u8 AAA_COMMAND_BUFFER[16];
-volatile _u8 AAA_COMMAND_i;
-volatile _u8 AAA_COMMAND_j;
+//volatile _u8 AAA_COMMAND_BUFFER[16];
+//volatile _u8 AAA_COMMAND_i;
+//volatile _u8 AAA_COMMAND_j;
 void hci_command_packet_process(_u8* data)
 {
-    txMemcpy((_u8*)AAA_COMMAND_BUFFER,data,10);
+//    txMemcpy((_u8*)AAA_COMMAND_BUFFER,data,10);
 	bt_hci_command_t* hciCommand = (bt_hci_command_t*)data;
     bt_hci_event_t* event = NULL;
     int status = UNKNOWN_HCI_COMMAND;
@@ -2573,8 +2575,8 @@ void hci_command_packet_process(_u8* data)
                 if(hci_cmd_handlers[i].pArray[j].ocf == hciCommand->ocf)
                 {
                 	hciCommandOpcode = hciCommand->opcode;
-                	AAA_COMMAND_i = i;
-                	AAA_COMMAND_j = j;
+//                	AAA_COMMAND_i = i;
+//                	AAA_COMMAND_j = j;
                 	if(hci_cmd_handlers[i].pArray[j].process!=NULL)
                 	{
                 		status = hci_cmd_handlers[i].pArray[j].process(hciCommand->data,hciCommand->length,&event);

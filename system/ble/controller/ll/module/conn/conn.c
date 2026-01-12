@@ -438,7 +438,7 @@ controller_error_code_e ll_subrate_request(_u16 connHandle,\
 #endif
 
 #else
-int ble_ll_enter_connection_state(ble_ll_event_e event)
+int ble_ll_enter_connection_state(void)
 {
     return 0;
 }

@@ -10,6 +10,6 @@
 
 #include"../../ll_internal.h"
 
-int ble_ll_enter_sychronization_state(ble_ll_event_e event);
+int ble_ll_enter_sychronization_state(void);
 
 #endif /* BLE_CONTROLLER_LL_MODULE_SYNC_SYNC_INTERNAL_H_ */

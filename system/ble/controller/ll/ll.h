@@ -8,7 +8,6 @@
 #include"module/init/init.h"
 #include"module/sync/sync.h"
 #include"module/brd/brd.h"
-#include"module/standby/standby.h"
 
 /***********************Bluetooth LE LL config **************************/
 void ll_init_state_machine(_u8 number);

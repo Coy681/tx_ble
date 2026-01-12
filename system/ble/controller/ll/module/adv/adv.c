@@ -1940,11 +1940,6 @@ static void ble_ll_adv_reset(void)
 	ASSERT(POINTER_VALID(advCtrl));
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
-		if(POINTER_VALID(advCtrl->set[i].la))
-		{
-			tx_free((_u8*)advCtrl->set[i].la);
-			advCtrl->set[i].la = NULL;
-		}
 		if(POINTER_VALID(advCtrl->set[i].data.addr))
 		{
 			tx_free(advCtrl->set[i].data.addr);
@@ -2004,7 +1999,7 @@ int ble_ll_enter_advertising_state(void)
 	{
 		if(advCtrl->set[i].enable&&!advCtrl->set[i].inSch)
 		{
-			advCtrl->set[i]->state = ADV_SM_STATE_IDLE;
+			advCtrl->set[i].state = ADV_SM_STATE_IDLE;
 			ll_extended_adv_map_out_task(&advCtrl->set[i],system_time()+500,system_time()+500+advCtrl->set[i].la.sch.interval,ADV_SCH_MAP_ALL);
 		}
 	}
@@ -2094,7 +2089,6 @@ controller_error_code_e ll_set_advertising_data(_u8* data,_u8 length)
 		return MEMORY_CAPACITY_EXCEEDED;//the spec not specify error code in this scenario
 	}
 
-    ll_internal_adv_ctrl_t* adv = NULL;
 	if(POINTER_NOT_VALID(llsm->entity))
 	{
 		llsm->entity = tx_malloc(sizeof(ll_internal_adv_ctrl_t));

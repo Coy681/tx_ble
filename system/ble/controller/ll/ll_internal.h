@@ -13,7 +13,10 @@
 #define LL_INTERNAL_H_
 
 
+#define LL_LOG_TRACE         1
+
 #define LL_SM_INVALID_HANDLE    0xFFFF
+
 
 /**
  * BLE Link Layer States

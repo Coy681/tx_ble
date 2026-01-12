@@ -10,7 +10,6 @@
 #include"module/init/init_internal.h"
 #include"module/sync/sync_internal.h"
 #include"module/brd/brd_internal.h"
-#include"module/standby/standby_internal.h"
 /************************************ll implementation***************************************/
 ll_t* ll;
 void ll_init_state_machine(_u8 number)
@@ -34,13 +33,13 @@ void ll_init_state_machine(_u8 number)
 	phy_init();
 }
 
-_u8* ll_get_sm_entity_by_id(u8 id)
+_u8* ll_get_sm_entity_by_id(_u8 id)
 {
 	for(_u8 i=0;i<ll->smNum;i++)
 	{
 		if(id == ll->sm[i].id)
 		{
-			return &ll->sm[i];
+			return (_u8*)&ll->sm[i];
 		}
 	}
 	return NULL;
@@ -58,7 +57,7 @@ _u8* ll_get_sm_entity_by_state(ble_ll_state_e state,_u16 handle,_u8 allocate)
 				{
 					if(POINTER_VALID(ll->sm[i].entity)&&handle==((ll_internal_connection_ctrl_t*)ll->sm[i].entity)->handle)
 					{
-						return &ll->sm[i];
+						return (_u8*)&ll->sm[i];
 					}
 				}
 					break;
@@ -66,7 +65,7 @@ _u8* ll_get_sm_entity_by_state(ble_ll_state_e state,_u16 handle,_u8 allocate)
 				{
 					if(POINTER_VALID(ll->sm[i].entity)&&handle==((ll_internal_synchronous_ctrl_t*)ll->sm[i].entity)->handle)
 					{
-						return &ll->sm[i];
+						return (_u8*)&ll->sm[i];
 					}
 				}
 					break;
@@ -74,14 +73,14 @@ _u8* ll_get_sm_entity_by_state(ble_ll_state_e state,_u16 handle,_u8 allocate)
 				{
 					if(POINTER_VALID(ll->sm[i].entity)&&handle==((ll_internal_broadcast_ctrl_t*)ll->sm[i].entity)->handle)
 					{
-						return &ll->sm[i];
+						return (_u8*)&ll->sm[i];
 					}
 				}
 					break;
 				case BLE_LL_STATE_ADVERTISING://only one entity
 				case BLE_LL_STATE_SCANNING://only one entity
 				case BLE_LL_STATE_INITIATING://only one entity
-					return &ll->sm[i];
+					return (_u8*)&ll->sm[i];
 				default:
 					break;
 			}
@@ -96,13 +95,13 @@ _u8* ll_get_sm_entity_by_state(ble_ll_state_e state,_u16 handle,_u8 allocate)
 		if(BLE_LL_STATE_STANDBY == ll->sm[i].state)
 		{
 			ll->sm[i].state = state;
-			return &ll->sm[i];
+			return (_u8*)&ll->sm[i];
 		}
 	}
 	return NULL;
 }
 
-_RAM_CODE ll_free_sm_entity()
+_RAM_CODE void ll_free_sm_entity(void)
 {
 
 }
@@ -230,88 +229,88 @@ controller_error_code_e ll_set_host_feature(_u16 bitNum,_u8 bitValue)
 /******************************ll filter accept list operation*****************************/
 controller_error_code_e ll_add_device_to_filter_accept_list(_u8 addrType,_u8* addr)
 {
-	ll_sm_t* llSm = ll_get_current_state_machine();
-	if(POINTER_VALID(llSm->adv))
-	{
-		for(_u8 i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
-		{
-			if((llSm->adv->param[i].enable)&&\
-	          (llSm->adv->param[i].filterPolicy!=LL_FILTER_LIST_NOT_USE))
-			{
-				return COMMAND_DISALLOWED;
-			}
-		}
-	}
-	//todo,process initing and scanning
-	for(_u8 i=0;i<BLE_FILTER_ACCEPT_LIST_SIZE;i++)
-	{
-		if((ll->filterAcceptList[i].occupy)&&\
-		   (ll->filterAcceptList[i].addrType == addrType)&&\
-		   (!txMemcmp(ll->filterAcceptList[i].addr,addr,6)))
-		{
-			return SUCCESS;
-		}
-	}
-	for(_u8 i=0;i<BLE_FILTER_ACCEPT_LIST_SIZE;i++)
-	{
-		if(!(ll->filterAcceptList[i].occupy))
-		{
-			ll->filterAcceptList[i].addrType = addrType;
-			txMemcpy(ll->filterAcceptList[i].addr,addr,6);
-			return SUCCESS;
-		}
-	}
+//	ll_sm_t* llSm = ll_get_current_state_machine();
+//	if(POINTER_VALID(llSm->adv))
+//	{
+//		for(_u8 i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+//		{
+//			if((llSm->adv->param[i].enable)&&\
+//	          (llSm->adv->param[i].filterPolicy!=LL_FILTER_LIST_NOT_USE))
+//			{
+//				return COMMAND_DISALLOWED;
+//			}
+//		}
+//	}
+//	//todo,process initing and scanning
+//	for(_u8 i=0;i<BLE_FILTER_ACCEPT_LIST_SIZE;i++)
+//	{
+//		if((ll->filterAcceptList[i].occupy)&&\
+//		   (ll->filterAcceptList[i].addrType == addrType)&&\
+//		   (!txMemcmp(ll->filterAcceptList[i].addr,addr,6)))
+//		{
+//			return SUCCESS;
+//		}
+//	}
+//	for(_u8 i=0;i<BLE_FILTER_ACCEPT_LIST_SIZE;i++)
+//	{
+//		if(!(ll->filterAcceptList[i].occupy))
+//		{
+//			ll->filterAcceptList[i].addrType = addrType;
+//			txMemcpy(ll->filterAcceptList[i].addr,addr,6);
+//			return SUCCESS;
+//		}
+//	}
 	return MEMORY_CAPACITY_EXCEEDED;
 }
 controller_error_code_e ll_remove_device_from_filter_accept_list(_u8 addrType,_u8* addr)
 {
-	ll_sm_t* llSm = ll_get_current_state_machine();
-	if(POINTER_VALID(llSm->adv))
-	{
-		for(_u8 i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
-		{
-			if((llSm->adv->param[i].enable)&&\
-	          (llSm->adv->param[i].filterPolicy!=LL_FILTER_LIST_NOT_USE))
-			{
-				return COMMAND_DISALLOWED;
-			}
-		}
-	}
-	//todo,process initing and scanning
-	for(_u8 i=0;i<BLE_FILTER_ACCEPT_LIST_SIZE;i++)
-	{
-		if((ll->filterAcceptList[i].occupy)&&\
-		   (ll->filterAcceptList[i].addrType == addrType)&&\
-		   (!txMemcmp(ll->filterAcceptList[i].addr,addr,6)))
-		{
-			ll->filterAcceptList[i].occupy = 0;
-			return SUCCESS;
-		}
-	}
+//	ll_sm_t* llSm = ll_get_current_state_machine();
+//	if(POINTER_VALID(llSm->adv))
+//	{
+//		for(_u8 i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+//		{
+//			if((llSm->adv->param[i].enable)&&\
+//	          (llSm->adv->param[i].filterPolicy!=LL_FILTER_LIST_NOT_USE))
+//			{
+//				return COMMAND_DISALLOWED;
+//			}
+//		}
+//	}
+//	//todo,process initing and scanning
+//	for(_u8 i=0;i<BLE_FILTER_ACCEPT_LIST_SIZE;i++)
+//	{
+//		if((ll->filterAcceptList[i].occupy)&&\
+//		   (ll->filterAcceptList[i].addrType == addrType)&&\
+//		   (!txMemcmp(ll->filterAcceptList[i].addr,addr,6)))
+//		{
+//			ll->filterAcceptList[i].occupy = 0;
+//			return SUCCESS;
+//		}
+//	}
 	return MEMORY_CAPACITY_EXCEEDED;
 }
 controller_error_code_e ll_clear_filter_accept_list(void)
 {
-	ll_sm_t* llSm = ll_get_current_state_machine();
-	if(POINTER_VALID(llSm->adv))
-	{
-		for(_u8 i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
-		{
-			if((llSm->adv->param[i].enable)&&\
-	          (llSm->adv->param[i].filterPolicy!=LL_FILTER_LIST_NOT_USE))
-			{
-				return COMMAND_DISALLOWED;
-			}
-		}
-	}
-	//todo,process initing and scanning 
-	for(_u8 i=0;i<BLE_FILTER_ACCEPT_LIST_SIZE;i++)
-	{
-		if(ll->filterAcceptList[i].occupy)
-		{
-			ll->filterAcceptList[i].occupy = 0;
-		}	
-	}
+//	ll_sm_t* llSm = ll_get_current_state_machine();
+//	if(POINTER_VALID(llSm->adv))
+//	{
+//		for(_u8 i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+//		{
+//			if((llSm->adv->param[i].enable)&&\
+//	          (llSm->adv->param[i].filterPolicy!=LL_FILTER_LIST_NOT_USE))
+//			{
+//				return COMMAND_DISALLOWED;
+//			}
+//		}
+//	}
+//	//todo,process initing and scanning
+//	for(_u8 i=0;i<BLE_FILTER_ACCEPT_LIST_SIZE;i++)
+//	{
+//		if(ll->filterAcceptList[i].occupy)
+//		{
+//			ll->filterAcceptList[i].occupy = 0;
+//		}
+//	}
 	return SUCCESS;
 }
 
@@ -322,66 +321,66 @@ controller_error_code_e ll_reset(void)
 	ll_host_supported_feature = 0;
 	//
 	sch_stop();
-	for(int i=0;i<llSmConut;i++)
-	{
-	    //ll reset process
-		ll_sm_t* llSm = &ll->sm[i];
-		llSm->state = BLE_LL_STATE_STANDBY;
-		if(POINTER_VALID(llSm->adv))
-		{
-			if(POINTER_VALID(llSm->adv->reset))
-			{
-				llSm->adv->reset();
-			}
-			tx_free((_u8*)llSm->adv);
-			llSm->adv = NULL;
-		}
-		if(POINTER_VALID(llSm->scan))
-		{
-			if(POINTER_VALID(llSm->scan->reset))
-			{
-				llSm->scan->reset();
-			}
-			tx_free((_u8*)llSm->scan);
-			llSm->scan = NULL;
-		}
-		if(POINTER_VALID(llSm->initiating))
-		{
-			if(POINTER_VALID(llSm->initiating->reset))
-			{
-				llSm->initiating->reset();
-			}
-			tx_free((_u8*)llSm->initiating);
-			llSm->initiating = NULL;
-		}
-		if(POINTER_VALID(llSm->conn))
-		{
-			if(POINTER_VALID(llSm->conn->reset))
-			{
-				llSm->conn->reset();
-			}
-			tx_free((_u8*)llSm->conn);
-			llSm->conn = NULL;
-		}
-		if(POINTER_VALID(llSm->synchronous))
-		{
-			if(POINTER_VALID(llSm->synchronous->reset))
-			{
-				llSm->synchronous->reset();
-			}
-			tx_free((_u8*)llSm->synchronous);
-			llSm->synchronous = NULL;
-		}
-		if(POINTER_VALID(llSm->broadcast))
-		{
-			if(POINTER_VALID(llSm->broadcast->reset))
-			{
-				llSm->broadcast->reset();
-			}
-			tx_free((_u8*)llSm->broadcast);
-			llSm->broadcast = NULL;
-		}
-	}
+//	for(int i=0;i<llSmConut;i++)
+//	{
+//	    //ll reset process
+//		ll_sm_t* llSm = &ll->sm[i];
+//		llSm->state = BLE_LL_STATE_STANDBY;
+//		if(POINTER_VALID(llSm->adv))
+//		{
+//			if(POINTER_VALID(llSm->adv->reset))
+//			{
+//				llSm->adv->reset();
+//			}
+//			tx_free((_u8*)llSm->adv);
+//			llSm->adv = NULL;
+//		}
+//		if(POINTER_VALID(llSm->scan))
+//		{
+//			if(POINTER_VALID(llSm->scan->reset))
+//			{
+//				llSm->scan->reset();
+//			}
+//			tx_free((_u8*)llSm->scan);
+//			llSm->scan = NULL;
+//		}
+//		if(POINTER_VALID(llSm->initiating))
+//		{
+//			if(POINTER_VALID(llSm->initiating->reset))
+//			{
+//				llSm->initiating->reset();
+//			}
+//			tx_free((_u8*)llSm->initiating);
+//			llSm->initiating = NULL;
+//		}
+//		if(POINTER_VALID(llSm->conn))
+//		{
+//			if(POINTER_VALID(llSm->conn->reset))
+//			{
+//				llSm->conn->reset();
+//			}
+//			tx_free((_u8*)llSm->conn);
+//			llSm->conn = NULL;
+//		}
+//		if(POINTER_VALID(llSm->synchronous))
+//		{
+//			if(POINTER_VALID(llSm->synchronous->reset))
+//			{
+//				llSm->synchronous->reset();
+//			}
+//			tx_free((_u8*)llSm->synchronous);
+//			llSm->synchronous = NULL;
+//		}
+//		if(POINTER_VALID(llSm->broadcast))
+//		{
+//			if(POINTER_VALID(llSm->broadcast->reset))
+//			{
+//				llSm->broadcast->reset();
+//			}
+//			tx_free((_u8*)llSm->broadcast);
+//			llSm->broadcast = NULL;
+//		}
+//	}
 
     return SUCCESS;
 }
@@ -405,14 +404,14 @@ controller_error_code_e ll_set_le_event_mask(_u64 eventMask)
 }
 controller_error_code_e ll_set_random_address(_u8* addr)
 {
-	ll_sm_t* llSm = ll_get_current_state_machine();
-	if(POINTER_VALID(llSm->adv))
-	{
-		if(llSm->adv->param[0].enable)
-		{
-			return COMMAND_DISALLOWED;
-		}
-	}
+//	ll_sm_t* llSm = ll_get_current_state_machine();
+//	if(POINTER_VALID(llSm->adv))
+//	{
+//		if(llSm->adv->param[0].enable)
+//		{
+//			return COMMAND_DISALLOWED;
+//		}
+//	}
 	//todo,process initing and scanning
 	ll->addrType = 1;
 	txMemcmp(ll->addr,addr,6);
