@@ -93,7 +93,7 @@
 #define LE_READ_NUMBER_OF_SUPPORTED_ADVERTISING_SETS_PROCESS                 le_read_number_of_supported_advertising_sets_process
 #define LE_SET_EXTENDED_ADVERTISING_DATA_PROCESS                             le_set_extended_advertising_data_process
 #define LE_SET_EXTENDED_SCAN_RESPONSE_DATA_PROCESS                           le_set_extended_scan_response_data_process
-#define LE_SET_EXTENDED_ADVERTISING_ENABLE_PROCESS                           le_set_extended_advertising_enable_data_process
+#define LE_SET_EXTENDED_ADVERTISING_ENABLE_PROCESS                           le_set_extended_advertising_enable_process
 #define LE_SET_EXTENDED_ADVERTISING_PARAMETERS_PROCESS                       le_set_extended_advertising_parameters_process
 
 #if(LL_SUPPORT_ADVERTISING_CODING_SELECTION)
@@ -1244,6 +1244,7 @@ controller_error_code_e le_receiver_test_process(_u8* data,_u8 length,bt_hci_eve
     return SUCCESS;
 }
 
+#if defined(BLE_SUPPORT_ADV)
 struct _PACKED le_set_advertising_parameters_param_t
 {
     _u16 intMin;
@@ -1326,6 +1327,8 @@ controller_error_code_e le_set_advertising_enable_process(_u8* data,_u8 length,b
     return status;
 }
 
+#endif//BLE_SUPPORT_ADV
+
 struct _PACKED le_read_advertising_physical_channel_tx_power_retParam_t
 {
     _u8 status;
@@ -1368,8 +1371,7 @@ controller_error_code_e le_test_end_process(_u8* data,_u8 length,bt_hci_event_t*
     return SUCCESS;
 }
 
-#if()
-
+#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
 // LE_CLEAR_ADVERTISING_SETS_PROCESS
 struct _PACKED le_clear_advertising_sets_process_retParam_t
 {
@@ -1509,7 +1511,7 @@ struct _PACKED le_set_extended_advertising_enable_process_retParam_t
 {
     _u8  status;
 };
-controller_error_code_e le_set_extended_advertising_enable_data_process(_u8* data,_u8 length,bt_hci_event_t** event)
+controller_error_code_e le_set_extended_advertising_enable_process(_u8* data,_u8 length,bt_hci_event_t** event)
 {
     struct le_set_extended_advertising_enable_process_param_t* param = (struct le_set_extended_advertising_enable_process_param_t*)data;
     _u8 status = ll_set_extended_advertising_enable(param->enable,param->numSets,(ll_extended_adv_enable_subField_e*)param->set);
@@ -1576,14 +1578,14 @@ controller_error_code_e le_set_extended_advertising_parameters_process(_u8* data
     return status;
 }
 
+#endif//LL_SUPPORT_LE_EXTENDED_ADVERTISING
+
 struct _PACKED le_read_buffer_size_retParam_t
 {
     _u8  status;
     _u16 aclDataPacketLen;
     _u8  numOfAclDataPackets;
 };
-
-
 controller_error_code_e le_read_buffer_size(_u8* data,_u8 length,bt_hci_event_t** event)
 {
 	struct le_read_buffer_size_retParam_t* retParam = (struct le_read_buffer_size_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct le_read_buffer_size_retParam_t),event);
@@ -1679,7 +1681,6 @@ struct _PACKED read_br_addr_retParam_t
 };
 controller_error_code_e read_bd_addr_process(_u8* data,_u8 length,bt_hci_event_t** event)
 {
-	ll_sm_t* ll = ll_get_current_state_machine();
 	struct read_br_addr_retParam_t* retParam = \
 	(struct read_br_addr_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct read_br_addr_retParam_t),event);
 	retParam->status = (_u8)SUCCESS;
