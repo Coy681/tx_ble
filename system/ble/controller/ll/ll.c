@@ -14,18 +14,19 @@
 ll_t* ll;
 void ll_init_state_machine(_u8 number)
 {
+	ll = (ll_t*)tx_malloc(sizeof(ll_t));
+	ASSERT(POINTER_VALID(ll));
 	ll->smNum = number;
 	if(number==0)
 	{
 		ll->smNum = 1;
 	}
-
-	ll = (ll_t*)tx_malloc(sizeof(ll_t));
 	for(_u8 i=0;i<6;i++)
 	{
 		ll->addr[i] = 0x12+i;//todo,temporary value
 	}
 	ll->sm = (ll_sm_t*)tx_malloc(number*sizeof(ll_sm_t));
+	ASSERT(POINTER_VALID(ll->sm));
 	for(_u8 i=0;i<ll->smNum;i++)
 	{
 		ll->sm[i].state =  (_u8)BLE_LL_STATE_STANDBY;

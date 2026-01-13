@@ -210,6 +210,7 @@ static void adv_prepare_phy(ll_adv_phy_entry_t* phy,_u32 timestamp,phy_dir_e phy
     }
 }
 
+
 _RAM_CODE
 int ll_extended_adv_map_out_task(ll_internal_adv_set_t* advSet,_u32 refStart,_u32 refEnd,_u8 mapType)
 {
@@ -1351,7 +1352,6 @@ static int adv_event_step_sch_stop(void)
     if(currentSet->la.availableChnCnt)
     {
         currentSet->la.sch.anchorPoint += (currentSet->la.sch.duration+currentSet->la.sch.stopMargin + currentSet->la.sch.startMargin);
-
     }
     else
     {
@@ -1896,7 +1896,7 @@ static void adv_phy_irq_callback(_u8 type)
         DEBUG_GPIO_HIGH(GPIO_10);
         DEBUG_GPIO_LOW(GPIO_10);
     }
-   adv_sequence_process(LL_PHY_EVENT_BASE+type);
+    adv_sequence_process(LL_PHY_EVENT_BASE+type);
 }
 
 _RAM_CODE
@@ -1904,30 +1904,29 @@ static void adv_sch_callback(_u8 type,_u8 id)
 {
     if(type == SCH_TASK_START)
     {
-        DEBUG_GPIO_HIGH(GPIO_11);
-        DEBUG_GPIO_LOW(GPIO_11);
+        DEBUG_GPIO_HIGH(GPIO_2);
+        DEBUG_GPIO_LOW(GPIO_2);
     }
     else if(type == SCH_TASK_STOP)
     {
-        DEBUG_GPIO_HIGH(GPIO_12);
-        DEBUG_GPIO_LOW(GPIO_12);
+        DEBUG_GPIO_HIGH(GPIO_3);
+        DEBUG_GPIO_LOW(GPIO_3);
     }
     else if(type == SCH_TASK_CANCELED)
     {
-        DEBUG_GPIO_HIGH(GPIO_13);
-        DEBUG_GPIO_LOW(GPIO_13);
+        DEBUG_GPIO_HIGH(GPIO_4);
+        DEBUG_GPIO_LOW(GPIO_4);
     }
     else if(type == SCH_TASK_PASSED)
     {
-        DEBUG_GPIO_HIGH(GPIO_14);
-        DEBUG_GPIO_LOW(GPIO_14);
+        DEBUG_GPIO_HIGH(GPIO_5);
+        DEBUG_GPIO_LOW(GPIO_5);
     }
 
-	LLSM = ll_get_sm_entity_by_id(id);
+	LLSM = (ll_sm_t*)ll_get_sm_entity_by_id(id);
 	ASSERT(POINTER_VALID(LLSM));
 	advCtrl = (ll_internal_adv_ctrl_t*)LLSM->entity;
 	ASSERT(POINTER_VALID(advCtrl));
-
     adv_sequence_process(LL_SCH_EVENT_BASE+type);
 }
 
@@ -1976,8 +1975,18 @@ int ble_ll_enter_advertising_state(void)
 	{
 		return 1;
 	}
+	LLSM = llsm;
 	advCtrl = (ll_internal_adv_ctrl_t*)llsm->entity;
 	//need process multiple advertising set
+	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
+	{
+		if(advCtrl->set[i].enable&&!advCtrl->set[i].inSch)
+		{
+			advCtrl->set[i].state = ADV_SM_STATE_IDLE;
+			advCtrl->set[i].la.sch.anchorPoint = system_time()+1000;
+			ll_extended_adv_map_out_task(&advCtrl->set[i],system_time()+500,system_time()+500+advCtrl->set[i].la.sch.interval,ADV_SCH_MAP_ALL);
+		}
+	}
 	if(!advCtrl->active)
 	{
 		llsm->sch.id         = llsm->id;
@@ -1986,6 +1995,7 @@ int ble_ll_enter_advertising_state(void)
 		llsm->sch.cb         = adv_sch_callback;
 		llsm->sch.type       = SCH_PERIODIC_TASK;
 		llsm->sch.priority   = LL_ADV_PRIORITY;
+		adv_get_next_event();
 		if(sch_insert_task(&llsm->sch)==SCH_STATUS_SUCCESS)
 		{
 			sch_start();
@@ -1994,18 +2004,6 @@ int ble_ll_enter_advertising_state(void)
 		{
 			return 2;
 		}
-	}
-	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
-	{
-		if(advCtrl->set[i].enable&&!advCtrl->set[i].inSch)
-		{
-			advCtrl->set[i].state = ADV_SM_STATE_IDLE;
-			ll_extended_adv_map_out_task(&advCtrl->set[i],system_time()+500,system_time()+500+advCtrl->set[i].la.sch.interval,ADV_SCH_MAP_ALL);
-		}
-	}
-	if(!advCtrl->active)
-	{
-		adv_get_next_event();
 		advCtrl->active = 1;
 	}
 	return 0;
@@ -2031,7 +2029,7 @@ controller_error_code_e ll_set_advertising_parameters(_u16 interval,\
 	                                                  ll_advertising_filter_policy_e policy)
 {
 
-	ll_sm_t* llsm = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_INVALID_HANDLE,0);
+	ll_sm_t* llsm = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_INVALID_HANDLE,1);
 	if(POINTER_NOT_VALID(llsm))
 	{
 		return MEMORY_CAPACITY_EXCEEDED;//the spec not specify error code in this scenario
@@ -2083,7 +2081,7 @@ controller_error_code_e ll_set_advertising_parameters(_u16 interval,\
 
 controller_error_code_e ll_set_advertising_data(_u8* data,_u8 length)
 {
-	ll_sm_t* llsm = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_INVALID_HANDLE,0);
+	ll_sm_t* llsm = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_INVALID_HANDLE,1);
 	if(POINTER_NOT_VALID(llsm))
 	{
 		return MEMORY_CAPACITY_EXCEEDED;//the spec not specify error code in this scenario
@@ -2108,7 +2106,7 @@ controller_error_code_e ll_set_advertising_data(_u8* data,_u8 length)
 
 controller_error_code_e ll_set_scan_response_data(_u8* data,_u8 length)
 {
-	ll_sm_t* llsm = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_INVALID_HANDLE,0);
+	ll_sm_t* llsm = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_INVALID_HANDLE,1);
 	if(POINTER_NOT_VALID(llsm))
 	{
 		return MEMORY_CAPACITY_EXCEEDED;//the spec not specify error code in this scenario

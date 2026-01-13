@@ -414,7 +414,7 @@ _RAM_CODE void sch_start(void)
 
  _RAM_CODE void sch_irq_process(void)
 {
-	DEBUG_GPIO_HIGH(GPIO_3);
+	DEBUG_GPIO_HIGH(GPIO_1);
     if(TASK_VALID(schCtrl.pRunningTask))
     {
         schCtrl.pRunningTask->cb(SCH_TASK_STOP,schCtrl.pRunningTask->id);
@@ -432,7 +432,7 @@ _RAM_CODE void sch_start(void)
         schCtrl.pRunningTask->cb(SCH_TASK_START,schCtrl.pRunningTask->id);
     }
     sch_program_timer();
-	DEBUG_GPIO_LOW(GPIO_3);
+	DEBUG_GPIO_LOW(GPIO_1);
 }
 
 _RAM_CODE void sch_stop_task_early(void)
