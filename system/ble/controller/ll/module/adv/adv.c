@@ -363,9 +363,7 @@ int ll_extended_adv_map_out_task(ll_internal_adv_set_t* advSet,_u32 refStart,_u3
     //end of symbol "reCal"
     _u32 freeBlockCount = 0;
     sch_map_free_slot_t* freeBlock = NULL;
-    DEBUG_GPIO_HIGH(GPIO_15);
     sch_map_calculate_free_space_by_time(refStart,refEnd,node,nodeNum,&freeBlock,&freeBlockCount);
-    DEBUG_GPIO_LOW(GPIO_15);
     int blockIndex = 0;
     if(mapType&ADV_SCH_MAP_PRI)
     {
@@ -2015,8 +2013,12 @@ int ble_ll_exit_advertising_state(void)
 	ASSERT(POINTER_VALID(llsm));
 	advCtrl = (ll_internal_adv_ctrl_t*)llsm->entity;
 	ASSERT(POINTER_VALID(advCtrl));
+	if(advCtrl->active)
+	{
+		advCtrl->active = 0;
+		sch_remove_task(llsm->sch.id);
+	}
 	return 0;
-	//todo
 }
 
 /*************************************Bluetooth LE Advertising LL APIS******************************/

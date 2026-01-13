@@ -150,7 +150,7 @@ void ll_adv_test_process(_u8* data,_u8 len)
 	{
 	    case 0x00:
 	    {
-			status = ll_set_advertising_parameters(32,LL_ADV_NONCONN_IND,LL_PUBLIC_DEVICE_ADDRESS,LL_PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,0,7,LL_FILTER_LIST_NOT_USE);
+			status = ll_set_advertising_parameters(32,LL_ADV_IND,LL_PUBLIC_DEVICE_ADDRESS,LL_PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,0,7,LL_FILTER_LIST_NOT_USE);
 	    	LOG_TRACE(1,"set adv parameters",&status,4);
 	    	status = ll_set_advertising_data(advData,sizeof(advData));
 	    	LOG_TRACE(1,"set adv data",&status,4);
