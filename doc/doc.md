@@ -229,10 +229,34 @@ Host应该知道当前因为LL Control Procedure Collisions导致的设备断连
 
 #### BLE Advertising
 
-截至Core Specification v6.0,BLE Advertising 可以分为两大类
+截至Core Specification v6.0,BLE Advertising 可以分为两大类,分别是BLE Advertising和BLE Extended Advertising
 
-BLE Advertising 
+BLE Advertising 架构为
 
+![advertising arch](picture/module/adv/adv.svg "advertising arch")
+
+##### BLE Advertising 
+BLE广播有四种类型的广播事件，分别是
+
+|ADV Type       | Connectable | Scannable | 
+|:-------:      |:-----------:|:---------:|
+|ADV_IND        |Y            |Y          |
+|ADV_DIR_IND    |Y            |N          |
+|ADV_SCAN_IND   |N            |Y          |
+|ADV_NONCONN_IND|N            |N          |
+
+其中，ADV_DIR_IND又分为
+ - high duty cycle directed advertising：常用于回连
+ - low duty cycle directed advertising
+
+将四种基础广播抽象，设计一个基础广播状态机模型，以是否可连接，是否可扫描作为上下文context,来区分四种广播类型的处理
+
+![advertising state machine](picture/module/adv/adv_sm.svg "advertising state machine")
+
+其中，四种广播类型走的通路为
+
+
+##### BLE Extended Advertising
    
 
 
