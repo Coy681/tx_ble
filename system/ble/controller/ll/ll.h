@@ -10,6 +10,14 @@
 #include"module/brd/brd.h"
 
 /***********************Bluetooth LE LL config **************************/
+
+
+typedef struct
+{
+	int ppm;
+}ll_device_info_t;
+void ll_device_info_init(ll_device_info_t* info);
+
 void ll_init_state_machine(_u8 number);
 
 void ll_get_feature(_u8* feature,_u8 len);

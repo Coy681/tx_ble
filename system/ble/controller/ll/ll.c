@@ -12,6 +12,25 @@
 #include"module/brd/brd_internal.h"
 /************************************ll implementation***************************************/
 ll_t* ll;
+
+
+void ll_device_info_init(ll_device_info_t* info)
+{
+	if(POINTER_VALID(ll))
+	{
+		ll->localPPM = info->ppm;
+	}
+}
+
+_u32 ll_get_local_ppm(void)
+{
+	if(POINTER_VALID(ll))
+	{
+		return ll->localPPM;
+	}
+	return 0;
+}
+
 void ll_init_state_machine(_u8 number)
 {
 	ll = (ll_t*)tx_malloc(sizeof(ll_t));

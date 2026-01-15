@@ -8,7 +8,6 @@
 #include"ll_property.h"
 #include"channel/channel.h"
 #include"accuracy/accuracy.h"
-
 #ifndef LL_INTERNAL_H_
 #define LL_INTERNAL_H_
 
@@ -428,6 +427,7 @@ typedef struct _PACKED
 	_u16 srTimeout;//0x0a-0xc80,time = N*10ms,from 100ms to 32s
     #endif
     ll_sm_t* sm;
+    _u32 localPPM;
 }ll_t;
 
 /************************get state machine****************************/
@@ -435,6 +435,7 @@ _u8* ll_get_sm_entity_by_id(_u8 id);
 _u8* ll_get_sm_entity_by_state(ble_ll_state_e state,_u16 handle,_u8 allocate);
 
 _u8* ll_get_device_address(void);
+_u32 ll_get_local_ppm(void);
 _u8* ll_get_shared_phy_tx_address(void);
 _u8* ll_get_shared_phy_rx_address(void);
 

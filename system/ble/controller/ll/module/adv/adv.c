@@ -42,6 +42,9 @@ typedef enum
     ADV_CONTEXT_CHAINED     = BIT(4),
 }adv_context_e;
 
+
+
+/******* local struct define *******/
 typedef int(*adv_event_sm_cb)(void);
 typedef struct _PACKED
 {
@@ -51,9 +54,8 @@ typedef struct _PACKED
     adv_sm_state_e  transSuccessState;
     adv_sm_state_e  transFailState;
     ll_sm_event_e   event;
-}adv_event_sm_t; 
+}adv_event_sm_t;
 
-/******* local struct define *******/
 typedef struct
 {
     adv_event_class_e eventClass;
@@ -85,19 +87,22 @@ typedef struct
 #define ADV_SM_LIST_LENGTH(adv_sm_list)                    (sizeof(adv_sm_list)/sizeof(adv_sm_list[0]))
 
 /******* local global variable define *******/
-//Use uppercase letters to represent common ll state machine pointer.
-static ll_sm_t* LLSM;
-//adv ctrl pointer,point to current adv struct
-static ll_internal_adv_ctrl_t* advCtrl;
-//currrent used adv set
-static ll_internal_adv_set_t* currentSet;
-//current event class,search for 'adv_event_class_e'
-static int currentEventClass;
+/*
+ * local global ll state machine and adv ctrl module assigned in sch enter
+ */
+static ll_sm_t* LLSM;//Use uppercase letters to represent common ll state machine pointer.
+static ll_internal_adv_ctrl_t* advCtrl;//adv ctrl pointer,point to current adv struct
+
+/*
+ * current adv set and current adv class assigned in 'adv_get_next_event',when next adv event is confirmed,the adv schedule need to be remapped.
+ */
+static ll_internal_adv_set_t* currentSet;//current used adv set
+static int currentEventClass;//current event class,search for 'adv_event_class_e'
 
 
 /*************************************ADV Schedule Process*******************************************/
 _RAM_CODE
-static void adv_sub_node_remap(ll_adv_sch_entry_t* advSch)
+static void adv_set_sch_remap(ll_adv_sch_entry_t* advSch)
 {
     LLSM->sch.timestamp    = advSch->anchorPoint;
     LLSM->sch.duration     = LLSM->sch.durationMin = advSch->duration;
@@ -122,7 +127,7 @@ void adv_get_next_event(void)
                     timestamp = advCtrl->set[i].la.sch.anchorPoint|1;
                     currentSet = &advCtrl->set[i];
                     currentEventClass = ADV_EVENT;
-                    adv_sub_node_remap(&currentSet->la.sch);
+                    adv_set_sch_remap(&currentSet->la.sch);
                 }
             }
             if(advCtrl->set[i].schMap&ADV_SCH_MAP_AUX)
@@ -134,12 +139,12 @@ void adv_get_next_event(void)
                     currentSet->pChain = &currentSet->ea->chain;
                     if(advCtrl->set[i].ea->anchor == advCtrl->set[i].ea->aux.sch.anchorPoint)
                     {
-                        adv_sub_node_remap(&currentSet->ea->aux.sch);
+                        adv_set_sch_remap(&currentSet->ea->aux.sch);
                         currentEventClass = ADV_EXTENDED_EVENT;
                     }
                     else if(advCtrl->set[i].schMap&ADV_SCH_MAP_AUX_CHAIN)
                     {
-                        adv_sub_node_remap(&currentSet->ea->chain.entry[currentSet->ea->chain.current].sch);
+                        adv_set_sch_remap(&currentSet->ea->chain.entry[currentSet->ea->chain.current].sch);
                         currentEventClass = ADV_CHAINED_EVENT;
                     }
                 }
@@ -156,12 +161,12 @@ void adv_get_next_event(void)
 				if(advCtrl->set[i].pa->anchor == advCtrl->set[i].pa->sync.sch.anchorPoint)
 				{
 					currentEventClass = ADV_PERIODIC_EVENT;
-					adv_sub_node_remap(&currentSet->pa->sync.sch);
+					adv_set_sch_remap(&currentSet->pa->sync.sch);
 				}
 				else if(advCtrl->set[i].schMap&ADV_SCH_MAP_PA_CHAIN)
 				{
 					currentEventClass = ADV_CHAINED_EVENT;
-					adv_sub_node_remap(&currentSet->pa->chain.entry[currentSet->pa->chain.current].sch);
+					adv_set_sch_remap(&currentSet->pa->chain.entry[currentSet->pa->chain.current].sch);
 				}
 			}
 		}
@@ -173,7 +178,7 @@ void adv_get_next_event(void)
 	#else/*(!LL_SUPPORT_LE_EXTENDED_ADVERTISING)*/
     currentSet = &advCtrl->set[0];
     currentEventClass = ADV_EVENT;
-    adv_sub_node_remap(&currentSet->la.sch);
+    adv_set_sch_remap(&currentSet->la.sch);
 	#endif/*(LL_SUPPORT_LE_EXTENDED_ADVERTISING)*/
 }
 
@@ -212,7 +217,7 @@ static void adv_prepare_phy(ll_adv_phy_entry_t* phy,_u32 timestamp,phy_dir_e phy
 
 
 _RAM_CODE
-int ll_extended_adv_map_out_task(ll_internal_adv_set_t* advSet,_u32 refStart,_u32 refEnd,_u8 mapType)
+int ll_adv_task_timing_allocation(ll_internal_adv_set_t* advSet,_u32 refStart,_u32 refEnd,_u8 mapType)
 {
 
     _u8  nodeNum    = 0;
@@ -1250,17 +1255,70 @@ static int adv_event_step_phy_send_advertising(void)
     LLSM->phy.start();
     return 1;
 }
-
 _RAM_CODE
 static int adv_event_step_phy_start_listen(void)
 {
     phy_obj_cast(&LLSM->phy);
-//    	_u32 timestamp = advParam->la.sch.anchorPoint + ll_get_air_packet_time(advParam->la.phy.mode,6+advParam->data.len,0)+PACKET_DEFAULT_TIFS_TIME;
-	adv_prepare_phy(&currentSet->la.phy,0,PHY_DIR_RX);
+    //packet data length is 6 mac address plus additional data length.
+    _u32 lastAirPacketTime = ll_get_air_packet_time(currentSet->la.phy.mode,6+currentSet->data.len,0);
+    _u32 receiveWindowStart = currentSet->la.sch.anchorPoint + lastAirPacketTime + PACKET_DEFAULT_TIFS_TIME;
+    _u32 receiveWindowEnd   = receiveWindowStart + BLE_ADV_DEFAULT_RX_TIMEOUT_US;
+	_u32 timestamp = receiveWindowStart - ll_ca_cal_window_winden(LL_CA_TYPE_ACTIVE,0,ll_get_local_ppm(),currentSet->la.sch.anchorPoint,receiveWindowEnd);
+	adv_prepare_phy(&currentSet->la.phy,timestamp,PHY_DIR_RX);
 	LLSM->phy.start();
 	return 1;
 }
 
+_RAM_CODE
+static int adv_switch_to_conn_state(ll_adv_packet_t* packet)
+{
+	// //connect ind process
+	// init_type_connectInd_t* connInd = (init_type_connectInd_t*)(packet->data);
+    // if(POINTER_NOT_VALID(ll->conn))
+    // {
+    //     ll->conn = (ll_internal_connection_ctrl_t*)tx_malloc(sizeof(ll_internal_connection_ctrl_t));
+    // }
+	// //ll state machine transform
+    // if(ble_ll_process_event(ll,BLE_LL_EVENT_START_CONNECTION) == BLE_LL_STATE_SUCCESS)
+    // {
+    //     init_type_ll_data_t* llData = (init_type_ll_data_t*)(connInd->llData);
+    //     ll->conn->peer.sca = llData->sca;
+    //     ll->conn->timeout  = llData->timeout;
+    //     ll->conn->latency  = llData->latency;
+    //     ll->conn->csa.hop  = llData->hop;
+    //     if(packet->hdr.chSel && LL_CHANNEL_SUPP_CSA2)
+    //     {
+    //     	ll->conn->csa.mode = LL_CSA_2;
+    //     }
+    //     else
+    //     {
+    //     	ll->conn->csa.mode = LL_CSA_1;
+    //     }
+    //     ll->conn->csa.counter = 0;
+    //     txMemcpy(ll->conn->csa.map,llData->chnMap,5);
+    //     ll_csa_init(&ll->conn->csa);
+    //     //transmit window delay is 1.25ms when connect ind used
+    //     _u32 connIndAnchor = ll->phy.hw_get_rx_air_ts() + ll_get_air_packet_time(advParam->la.phy.mode,sizeof(init_type_connectInd_t),0);
+    //     ll->conn->anchor   = connIndAnchor +1250+llData->winOffset*1250;
+    //     ll->conn->duration = llData->winSize*1250;
+    //     ll->conn->interval = llData->interval*1250;
+
+    //     ll->sch.timestamp  = ll->conn->anchor;
+    //     ll->sch.duration   = ll->sch.durationMin = ll->conn->duration;
+    //     ll->sch.period     = ll->conn->interval;
+    //     ll->sch.startLatency = 100;
+    //     ll->sch.stopLatency  = 100;
+    //     ll->phy.mode       = PHY_MODE_1M;
+    //     ll->phy.accessCode = llData->AA;
+    //     ll->phy.crcInit    = llData->crcInit;
+    //     sch_abort_current_and_process_next_task();
+	//     return 1;//switch to conn state success
+    // }
+    // else
+    // {
+        // tx_free((_u8*)ll->conn);
+    // }
+}
 
 _RAM_CODE
 static int adv_event_step_phy_send_scan_rsp(void)
@@ -1282,51 +1340,10 @@ static int adv_event_step_phy_send_scan_rsp(void)
 		}
 		else if(packet->hdr.pduType == LL_ADV_TYPE_CONNECT_IND && packet->hdr.length == sizeof(init_type_connectInd_t))
 		{
-			// //connect ind process
-			// init_type_connectInd_t* connInd = (init_type_connectInd_t*)(packet->data);
-            // if(POINTER_NOT_VALID(ll->conn))
-            // {
-            //     ll->conn = (ll_internal_connection_ctrl_t*)tx_malloc(sizeof(ll_internal_connection_ctrl_t));
-            // }
-			// //ll state machine transform
-            // if(ble_ll_process_event(ll,BLE_LL_EVENT_START_CONNECTION) == BLE_LL_STATE_SUCCESS)
-            // {
-            //     init_type_ll_data_t* llData = (init_type_ll_data_t*)(connInd->llData);
-            //     ll->conn->peer.sca = llData->sca;
-            //     ll->conn->timeout  = llData->timeout;
-            //     ll->conn->latency  = llData->latency;
-            //     ll->conn->csa.hop  = llData->hop;
-            //     if(packet->hdr.chSel && LL_CHANNEL_SUPP_CSA2)
-            //     {
-            //     	ll->conn->csa.mode = LL_CSA_2;
-            //     }
-            //     else
-            //     {
-            //     	ll->conn->csa.mode = LL_CSA_1;
-            //     }
-            //     ll->conn->csa.counter = 0;
-            //     txMemcpy(ll->conn->csa.map,llData->chnMap,5);
-            //     ll_csa_init(&ll->conn->csa);
-            //     //transmit window delay is 1.25ms when connect ind used
-            //     _u32 connIndAnchor = ll->phy.hw_get_rx_air_ts() + ll_get_air_packet_time(advParam->la.phy.mode,sizeof(init_type_connectInd_t),0);
-            //     ll->conn->anchor   = connIndAnchor +1250+llData->winOffset*1250;
-            //     ll->conn->duration = llData->winSize*1250;
-            //     ll->conn->interval = llData->interval*1250;
-
-            //     ll->sch.timestamp  = ll->conn->anchor;
-            //     ll->sch.duration   = ll->sch.durationMin = ll->conn->duration;
-            //     ll->sch.period     = ll->conn->interval;
-            //     ll->sch.startLatency = 100;
-            //     ll->sch.stopLatency  = 100;
-            //     ll->phy.mode       = PHY_MODE_1M;
-            //     ll->phy.accessCode = llData->AA;
-            //     ll->phy.crcInit    = llData->crcInit;
-            //     sch_abort_current_and_process_next_task();
-            // }
-            // else 
-            // {
-                // tx_free((_u8*)ll->conn);
-            // }
+			if(adv_switch_to_conn_state(packet))
+			{
+				return 1;
+			}
 		}
 	}
 	return 0;
@@ -1360,7 +1377,7 @@ static int adv_event_step_sch_stop(void)
           ||((currentSet->schMap&ADV_SCH_MAP_AUX)&&txCompareTime(currentSet->ea->anchor,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval)))
         #endif
         {
-            ll_extended_adv_map_out_task(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_PRI);
+            ll_adv_task_timing_allocation(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_PRI);
         }
     }
     return 1;
@@ -1377,7 +1394,7 @@ static int adv_event_step_sch_passed(void)
      if((!(currentSet->schMap&ADV_SCH_MAP_AUX))||((currentSet->schMap&ADV_SCH_MAP_AUX)&&txCompareTime(currentSet->ea->anchor,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval)))
      #endif
      {
-         ll_extended_adv_map_out_task(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_PRI);
+         ll_adv_task_timing_allocation(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_PRI);
      }
      return 1;
 }
@@ -1396,7 +1413,7 @@ static int adv_event_step_sch_canceled(void)
     if((!(currentSet->schMap&ADV_SCH_MAP_AUX))||((currentSet->schMap&ADV_SCH_MAP_AUX)&&txCompareTime(currentSet->ea->anchor,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval)))
     #endif
     {
-        ll_extended_adv_map_out_task(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_PRI);
+        ll_adv_task_timing_allocation(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_PRI);
     }
     return 1;
 }
@@ -1601,18 +1618,18 @@ static int adv_extended_event_step_sch_stop(void)
         return 1;
     }
 
-    ll_extended_adv_map_out_task(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX);
+    ll_adv_task_timing_allocation(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX);
 	return 1;
 }
 static int adv_extended_event_step_sch_canceled(void)
 {
-    ll_extended_adv_map_out_task(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_ALL);
+    ll_adv_task_timing_allocation(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_ALL);
     //todo
 	return 1;
 }
 static int adv_extended_event_step_sch_passed(void)
 {
-    ll_extended_adv_map_out_task(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_ALL);
+    ll_adv_task_timing_allocation(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_ALL);
     //todo
 	return 1;
 }
@@ -1655,7 +1672,7 @@ static int adv_chained_event_step_sch_stop(void)
     if(currentSet->pChain->current==currentSet->pChain->cnt)
     {
     	currentSet->pChain->current = 0;
-        ll_extended_adv_map_out_task(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
+        ll_adv_task_timing_allocation(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
     }
     else
     {
@@ -1668,12 +1685,12 @@ static int adv_chained_event_step_default_process(void)
 }
 static int adv_chained_event_step_sch_canceled(void)
 {
-    ll_extended_adv_map_out_task(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
+    ll_adv_task_timing_allocation(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
 }
 
 static int adv_chained_event_step_sch_passed(void)
 {
-    ll_extended_adv_map_out_task(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
+    ll_adv_task_timing_allocation(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
 }
 
 _DATA
@@ -1982,7 +1999,7 @@ int ble_ll_enter_advertising_state(void)
 		{
 			advCtrl->set[i].state = ADV_SM_STATE_IDLE;
 			advCtrl->set[i].la.sch.anchorPoint = system_time()+1000;
-			ll_extended_adv_map_out_task(&advCtrl->set[i],system_time()+500,system_time()+500+advCtrl->set[i].la.sch.interval,ADV_SCH_MAP_ALL);
+			ll_adv_task_timing_allocation(&advCtrl->set[i],system_time()+500,system_time()+500+advCtrl->set[i].la.sch.interval,ADV_SCH_MAP_ALL);
 		}
 	}
 	if(!advCtrl->active)

@@ -1,11 +1,11 @@
 
 #include"system.h"
-#include"system/ble/controller/ll/ll.h"
+#include"system/ble/controller/controller.h"
 
 void system_init()
 {
 	tx_malloc_init();//must init first
-	ll_init_state_machine(1);
+	ble_controller_init();
 }
 
 ARCH_INIT(system_init);

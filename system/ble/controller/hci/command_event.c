@@ -1327,8 +1327,6 @@ controller_error_code_e le_set_advertising_enable_process(_u8* data,_u8 length,b
     return status;
 }
 
-#endif//BLE_SUPPORT_ADV
-
 struct _PACKED le_read_advertising_physical_channel_tx_power_retParam_t
 {
     _u8 status;
@@ -1342,6 +1340,7 @@ controller_error_code_e le_read_advertising_physical_channel_tx_power_process(_u
     retParam->txPower = BLE_PHY_DEFAULT_TX_POWER; 
     return SUCCESS;
 }
+#endif//BLE_SUPPORT_ADV
 
 struct _PACKED le_set_event_mask_retParam_t
 {

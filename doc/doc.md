@@ -27,7 +27,7 @@ BLE是一种短距离无线通信方式，它的子协议有很多，像是广�
 
 ![stack arch](picture/arch/stack_arch.png "stack arch")
 
-协议栈实现了标准的Bluetooth HCI和BLE LL
+协议栈实现了标准的Bluetooth HCI和BLE Controller
 
 Bluetooth HCI具有较强的框架性，整体代码精简，实现清晰高效，占用空间较小，具有较强的可扩展性和可移植性。
 
