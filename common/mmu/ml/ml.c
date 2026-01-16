@@ -6,6 +6,8 @@
  */
 #include"ml.h"
 #include"config.h"
+#include"../../txAssert.h"
+
 typedef struct
 {
     _u32 reserved;
@@ -127,6 +129,7 @@ tx_malloc_ret_e tx_free(_u8* pFreeNode)
     if(pNode == NULL)
     {
         return TX_MALLOC_NOT_FROUND;
+    	ASSERT(1);
     }
     pNext = pNode->next;
     if(pPrevious == NULL)

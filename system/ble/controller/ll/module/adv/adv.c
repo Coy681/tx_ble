@@ -120,16 +120,13 @@ void adv_get_next_event(void)
     {
         if(advCtrl->set[i].enable)
         {
-            if(POINTER_VALID(advCtrl->set[i].la))
-            {
-                if((timestamp == 0)||txCompareTime(timestamp,advCtrl->set[i].la.sch.anchorPoint))
-                {
-                    timestamp = advCtrl->set[i].la.sch.anchorPoint|1;
-                    currentSet = &advCtrl->set[i];
-                    currentEventClass = ADV_EVENT;
-                    adv_set_sch_remap(&currentSet->la.sch);
-                }
-            }
+			if((timestamp == 0)||txCompareTime(timestamp,advCtrl->set[i].la.sch.anchorPoint))
+			{
+				timestamp = advCtrl->set[i].la.sch.anchorPoint|1;
+				currentSet = &advCtrl->set[i];
+				currentEventClass = ADV_EVENT;
+				adv_set_sch_remap(&currentSet->la.sch);
+			}
             if(advCtrl->set[i].schMap&ADV_SCH_MAP_AUX)
             {
                 if((timestamp == 0)||txCompareTime(timestamp,advCtrl->set[i].ea->anchor))
@@ -1472,7 +1469,7 @@ ll_internal_adv_set_t* ll_extended_adv_get_adv_set(_u8 handle,_u8 allocate)
 
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
-		if(POINTER_VALID(adv->set[i].la)&&adv->set[i].handle == handle)
+		if(adv->set[i].handle == handle)
 		{
 			return &adv->set[i];
 		}
@@ -1487,10 +1484,6 @@ ll_internal_adv_set_t* ll_extended_adv_get_adv_set(_u8 handle,_u8 allocate)
         if(adv->set[i].handle == LL_EXTENDED_ADV_INVALID_HANDLE)
         {
         	adv->set[i].handle = handle;
-            if(POINTER_NOT_VALID(adv->set[i].la))
-            {
-            	adv->set[i].la = (ll_adv_type_la_t*)tx_malloc(sizeof(ll_adv_type_la_t));
-            }
             return &adv->set[i];
         }
     }
@@ -1500,17 +1493,23 @@ ll_internal_adv_set_t* ll_extended_adv_get_adv_set(_u8 handle,_u8 allocate)
 int ll_extended_adv_get_current_active_set_number(void)
 {
 	ll_sm_t* llsm = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_INVALID_HANDLE,0);
-	ASSERT(POINTER_VALID(llsm));
-	ASSERT(POINTER_VALID(llsm->entity));
+	if(POINTER_NOT_VALID(llsm)||POINTER_NOT_VALID(llsm->entity))
+	{
+		return 0;
+	}
 	ll_internal_adv_ctrl_t* adv = (ll_internal_adv_ctrl_t*)llsm->entity;
-
     _u8 count = 0;
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
-        if(adv->set[i].handle!=LL_EXTENDED_ADV_INVALID_HANDLE && adv->set[i].enable == 1)
+        if((adv->set[i].handle!=LL_EXTENDED_ADV_INVALID_HANDLE && adv->set[i].enable == 1)
+			#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
+			||(POINTER_VALID(adv->pa)&&adv->pa.enable)
+			#endif
+          )
         {
             count++;
         }
+
     }
     return count;
 }
@@ -1518,10 +1517,11 @@ int ll_extended_adv_get_current_active_set_number(void)
 int ll_extended_adv_get_current_set_number(void)
 {
 	ll_sm_t* llsm = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_INVALID_HANDLE,0);
-	ASSERT(POINTER_VALID(llsm));
-	ASSERT(POINTER_VALID(llsm->entity));
+	if(POINTER_NOT_VALID(llsm)||POINTER_NOT_VALID(llsm->entity))
+	{
+		return 0;
+	}
 	ll_internal_adv_ctrl_t* adv = (ll_internal_adv_ctrl_t*)llsm->entity;
-
     _u8 count = 0;
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
@@ -1995,10 +1995,10 @@ int ble_ll_enter_advertising_state(void)
 	//need process multiple advertising set
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
-		if(advCtrl->set[i].enable&&!advCtrl->set[i].inSch)
+		if(advCtrl->set[i].enable&&!advCtrl->set[i].inSch)//can't reallocate all asv set,some adv set maybe running.
 		{
+			advCtrl->set[i].inSch = 1;
 			advCtrl->set[i].state = ADV_SM_STATE_IDLE;
-			advCtrl->set[i].la.sch.anchorPoint = system_time()+1000;
 			ll_adv_task_timing_allocation(&advCtrl->set[i],system_time()+500,system_time()+500+advCtrl->set[i].la.sch.interval,ADV_SCH_MAP_ALL);
 		}
 	}
@@ -2115,6 +2115,7 @@ controller_error_code_e ll_set_advertising_data(_u8* data,_u8 length)
     if(adv->set[0].data.addr)
 	{
 		tx_free(adv->set[0].data.addr);
+		adv->set[0].data.addr = NULL;
 	}
     adv->set[0].data.len  = length;
     adv->set[0].data.addr = tx_malloc(length);
@@ -2139,6 +2140,7 @@ controller_error_code_e ll_set_scan_response_data(_u8* data,_u8 length)
     if(adv->set[0].scanRsp.addr)
 	{
 		tx_free(adv->set[0].scanRsp.addr);
+		adv->set[0].scanRsp.addr = NULL;
 	}
     adv->set[0].scanRsp.len  = length;
     adv->set[0].scanRsp.addr = tx_malloc(length);
@@ -2207,17 +2209,16 @@ controller_error_code_e ll_set_advertising_enable(_u8 enable)
 
 
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
-#error"la don't need malloc,need process"
 controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_param_t* pParam)
 {
-	ll_sm_t* llsm = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_INVALID_HANDLE,0);
+	ll_sm_t* llsm = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_INVALID_HANDLE,1);
 	if(POINTER_NOT_VALID(llsm))
 	{
 		return MEMORY_CAPACITY_EXCEEDED;
 	}
 	if(POINTER_NOT_VALID(llsm->entity))
 	{
-		llsm->entity = (ll_internal_adv_ctrl_t*)tx_malloc(sizeof(ll_internal_adv_ctrl_t));
+		llsm->entity = tx_malloc(sizeof(ll_internal_adv_ctrl_t));
 		ASSERT(POINTER_VALID(llsm->entity));
 		for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 		{
@@ -2474,7 +2475,16 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 			return COMMAND_DISALLOWED;
 		}
 	}
-
+	//when start configure adv data,buffer size set earlier maybe not inappropriate,shall reset.
+	if(operation == LL_ADV_DATA_OPERATION_FIRST_FRAGMENT
+	  ||operation == LL_ADV_DATA_OPERATION_COMPLETE)
+	{
+		if(POINTER_VALID(advSet->data.addr))
+		{
+			tx_free(advSet->data.addr);
+			advSet->data.addr = NULL;
+		}
+	}
 	if(POINTER_NOT_VALID(advSet->data.addr))
 	{
 		if(operation == LL_ADV_DATA_OPERATION_COMPLETE)
@@ -2537,6 +2547,7 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 		if(POINTER_VALID(advSet->ea->chain.entry))
 		{
 			tx_free((_u8*)advSet->ea->chain.entry);
+			advSet->ea->chain.entry = NULL;
 		}
 		advSet->ea->aux.data.addr= advSet->data.addr;
 		//process data fragment
@@ -2668,6 +2679,17 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 			return COMMAND_DISALLOWED;
 		}
 	}
+	//when start configure adv data,buffer size set earlier maybe not inappropriate,shall reset.
+	if(operation == LL_ADV_DATA_OPERATION_FIRST_FRAGMENT
+	  ||operation == LL_ADV_DATA_OPERATION_COMPLETE)
+	{
+		if(POINTER_VALID(advSet->scanRsp.addr))
+		{
+			tx_free(advSet->scanRsp.addr);
+			advSet->scanRsp.addr = NULL;
+		}
+	}
+
 	if(POINTER_NOT_VALID(advSet->scanRsp.addr))
 	{
 		if(operation == LL_ADV_DATA_OPERATION_COMPLETE)
@@ -2713,6 +2735,7 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 		if(POINTER_VALID(advSet->ea->chain.entry))
 		{
 			tx_free((_u8*)advSet->ea->chain.entry);
+			advSet->ea->chain.entry = NULL;
 		}
 		advSet->ea->aux.data.addr= advSet->scanRsp.addr;
 		//process data fragment
@@ -2882,7 +2905,6 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 				advSet->la.phy.rxAddress       = ll_get_shared_phy_rx_address();
 				advSet->la.phy.txAddress       = ll_get_shared_phy_tx_address();
 				//la sch init
-				advSet->la.availableChnCnt = 0;
 				advSet->la.availableChnCnt = advSet->la.channelCnt;
 				advSet->la.eventCnt    = 0;
 				advSet->la.sch.startMargin = 100;
@@ -3001,13 +3023,11 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 			return IVALID_HCI_COMMAND_PARAMETERS;
 		}
 	}
-
 	return SUCCESS;
 }
 controller_error_code_e ll_set_adv_set_random_address(_u8 advHandle,_u8* address)
 {
 	ll_internal_adv_set_t* advSet = ll_extended_adv_get_adv_set(advHandle,0);
-
 	if(POINTER_NOT_VALID(advSet))
 	{
 		return UNKNOWN_ADVERTISING_IDENTIFIER;
@@ -3044,22 +3064,25 @@ controller_error_code_e ll_remove_advertising_sets(_u8 advHandle)
 	{
 		return COMMAND_DISALLOWED;
 	}
-	#error"check detaily,if more or less"
 	if(POINTER_VALID(advSet->data.addr))
 	{
 		tx_free(advSet->data.addr);
+		advSet->data.addr = NULL;
 	}
 	if(POINTER_VALID(advSet->scanRsp.addr))
 	{
 		tx_free(advSet->scanRsp.addr);
+		advSet->scanRsp.addr = NULL;
 	}
 	if(POINTER_VALID(advSet->ea->chain.entry))
 	{
 		tx_free((_u8*)advSet->ea->chain.entry);
+		advSet->ea->chain.entry = NULL;
 	}
 	if(POINTER_VALID(advSet->ea))
 	{
 		tx_free((_u8*)advSet->ea);
+		advSet->ea = NULL;
 	}
 	txMemsetByte((_u8*)advSet,0,sizeof(ll_internal_adv_set_t));
 	advSet->handle = LL_EXTENDED_ADV_INVALID_HANDLE;
@@ -3088,23 +3111,28 @@ controller_error_code_e ll_clear_advertising_sets(void)
 			{
 				return COMMAND_DISALLOWED;
 			}
-			#error"need check if more or less"
 			if(POINTER_VALID(advSet->data.addr))
 			{
 				tx_free(advSet->data.addr);
+				advSet->data.addr = NULL;
 			}
 			if(POINTER_VALID(advSet->scanRsp.addr))
 			{
 				tx_free(advSet->scanRsp.addr);
+				advSet->scanRsp.addr = NULL;
 			}
 			if(POINTER_VALID(advSet->ea->chain.entry))
 			{
 				tx_free((_u8*)advSet->ea->chain.entry);
+				advSet->ea->chain.entry = NULL;
 			}
 			if(POINTER_VALID(advSet->ea))
 			{
 				tx_free((_u8*)advSet->ea);
+				advSet->ea = NULL;
 			}
+			txMemsetByte((_u8*)advSet,0,sizeof(ll_internal_adv_set_t));
+			advSet->handle = LL_EXTENDED_ADV_INVALID_HANDLE;
 		}
 	}
 	ble_ll_exit_advertising_state();
@@ -3233,6 +3261,7 @@ controller_error_code_e ll_set_periodic_advertising_data(_u8 advHandle,ll_advert
 		if(POINTER_VALID(advSet->pa->chain.entry))
 		{
 			tx_free((_u8*)advSet->pa->chain.entry);
+			advSet->pa->chain.entry = NULL;
 		}
 		advSet->pa->sync.data.addr= advSet->pa->data.addr;
 		//process data fragment

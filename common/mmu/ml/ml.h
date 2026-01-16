@@ -24,6 +24,9 @@ void tx_malloc_init(void);
 
 _u8* tx_malloc(_u16 length);
 
+/*
+ * Attention,when node released,user shall judge if node should be assigned NULL;
+ */
 tx_malloc_ret_e tx_free(_u8* pFreeNode);
 
 #endif /* MALLOC_TXMALLOC_H_ */

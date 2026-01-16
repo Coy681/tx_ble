@@ -186,22 +186,20 @@ typedef struct
 {
     _u8  enable:1;
     _u8  state:5;//state machine sate
-    _u8  rsvd0:2;
+    _u8  inSch:1;
+    _u8  rsvd0:1;
     _u8  eventType:4;//adv event type,search"adv_event_type_e"
     _u8  processingEvent:4;//to prevent adv sub state machine re-retrance
 
     #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
     _u8  handle;
     _u8  schMap;
-
     ll_adv_chain_entry_t* pChain;
-
-    _u8  sid:4;
-    _u8  rsvd1;
     _u16 eventProperty;
+    _u8  sid:4;
+    _u8  rsvd1:4;
 	#else
     _u8  schMap:4;//adv set maybe have many sch type,such as adv,auy,pda,chain
-    _u8  inSch;//adv set in schedule.
     _u8  rsvd1:4;
     #endif
     _u8  ownAddressType:2;//'ll_own_address_type_e'

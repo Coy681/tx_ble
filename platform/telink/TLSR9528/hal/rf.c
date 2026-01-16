@@ -38,7 +38,7 @@ void(*hal_rf_cb)(_u8);
 #define HARDWARE_TX_EXTRA_DELAY_1M              5
 #define HARDWARE_TX_EXTRA_DELAY_2M              0
 #define HARDWARE_TX_EXTRA_DELAY_CODED           4
-#error "tx and rx settle need plus hardware extra delay"
+//#error "tx and rx settle need plus hardware extra delay"
 /***********************Hardware used***************************/
 
 //rf prepare
