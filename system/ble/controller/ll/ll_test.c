@@ -26,32 +26,32 @@ void ll_test_process(_u8* data,_u8 len)
 		case 0x11:
 		{
 			extern void ll_adv_test_process(_u8* data,_u8 len);
-			ll_adv_test_process(&data[1],len);
+			ll_adv_test_process(&data[1],len-1);
 		}break;
 		case 0x22:
 		{
 			extern void ll_brd_test_process(_u8* data,_u8 len);
-			ll_brd_test_process(&data[1],len);
+			ll_brd_test_process(&data[1],len-1);
 		}break;
 		case 0x33:
 		{
 			extern void ll_conn_test_process(_u8* data,_u8 len);
-			ll_conn_test_process(&data[1],len);
+			ll_conn_test_process(&data[1],len-1);
 		}break;
 		case 0x44:
 		{
 			extern void ll_init_test_process(_u8* data,_u8 len);
-			ll_init_test_process(&data[1],len);
+			ll_init_test_process(&data[1],len-1);
 		}break;
 		case 0x55:
 		{
 			extern void ll_scan_test_process(_u8* data,_u8 len);
-			ll_scan_test_process(&data[1],len);
+			ll_scan_test_process(&data[1],len-1);
 		}break;
 		case 0x66:
 		{
 			extern void ll_scan_test_process(_u8* data,_u8 len);
-			ll_scan_test_process(&data[1],len);
+			ll_scan_test_process(&data[1],len-1);
 		}break;
 		default:
 			break;
