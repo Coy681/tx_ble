@@ -13,8 +13,27 @@
 #define BLE_ADV_ACCESS_CODE             0xd6be898e
 #define BLE_ADV_CRC_INIT                0x555555
 
+/***************************ble extended header subfield********************************/
+#define BLE_ADV_EXTENDED_HEADER_ADVA_LEN      6
+#define BLE_ADV_EXTENDED_HEADER_TARGETA_LEN   6
+#define BLE_ADV_EXTENDED_HEADER_CTE_LEN       1
+#define BLE_ADV_EXTENDED_HEADER_ADI_LEN       2
+#define BLE_ADV_EXTENDED_HEADER_AUX_PTR_LEN   3
+#define BLE_ADV_EXTENDED_HEADER_SYNC_INFO_LEN 18
+#define BLE_ADV_EXTENDED_HEADER_TX_POWER_LEN  1
+#define BLE_ADV_EXTENDED_HEADER_ACAD_LEN      54//maybe various
 
-#define BLE_ADV_EXTENDED_HEADER_MAX_LEN 64
+
+
+#define BLE_ADV_EXTENDED_HEADER_MAX_LEN           64
+
+#define BLE_ADV_EXTENDED_HEADER_CHAIN_PDU_MAX_LEN (BLE_ADV_EXTENDED_HEADER_CTE_LEN\
+		                                          +BLE_ADV_EXTENDED_HEADER_ADI_LEN\
+												  +BLE_ADV_EXTENDED_HEADER_AUX_PTR_LEN\
+												  +BLE_ADV_EXTENDED_HEADER_TX_POWER_LEN)
+
+
+
 #define BLE_ADV_INTERVAL_UNIT           1250
 
 #define BLE_ADV_DEFAULT_RX_TIMEOUT_US  (100+PACKET_DEFAULT_TIFS_TIME)

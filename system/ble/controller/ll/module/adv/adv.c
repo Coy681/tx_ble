@@ -269,10 +269,14 @@ int ll_adv_task_timing_allocation(ll_internal_adv_set_t* advSet,_u32 refStart,_u
         {
             if((advCtrl->set[i].handle == advSet[i].handle) || (advCtrl->set[i].enable == 0))
             {
+                DEBUG_GPIO_HIGH(GPIO_13);
+                DEBUG_GPIO_LOW(GPIO_13);
                 continue;
             }
             if(advCtrl->set[i].enable)
             {
+                DEBUG_GPIO_HIGH(GPIO_14);
+                DEBUG_GPIO_LOW(GPIO_14);
                 if(txCompareTime(refEnd,advCtrl->set[i].la.sch.anchorPoint))
                 {
                     node[nodeNum].start = advCtrl->set[i].la.sch.anchorPoint - advCtrl->set[i].la.sch.startMargin;
@@ -1672,6 +1676,8 @@ static int adv_chained_event_step_sch_stop(void)
     if(currentSet->pChain->current==currentSet->pChain->cnt)
     {
     	currentSet->pChain->current = 0;
+        DEBUG_GPIO_HIGH(GPIO_15);
+        DEBUG_GPIO_LOW(GPIO_15);
         ll_adv_task_timing_allocation(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
     }
     else
@@ -1997,6 +2003,8 @@ int ble_ll_enter_advertising_state(void)
 	{
 		if(advCtrl->set[i].enable&&!advCtrl->set[i].inSch)//can't reallocate all asv set,some adv set maybe running.
 		{
+	        DEBUG_GPIO_HIGH(GPIO_11);
+	        DEBUG_GPIO_LOW(GPIO_11);
 			advCtrl->set[i].inSch = 1;
 			advCtrl->set[i].state = ADV_SM_STATE_IDLE;
 			ll_adv_task_timing_allocation(&advCtrl->set[i],system_time()+500,system_time()+500+advCtrl->set[i].la.sch.interval,ADV_SCH_MAP_ALL);
@@ -2011,6 +2019,8 @@ int ble_ll_enter_advertising_state(void)
 		llsm->sch.type       = SCH_PERIODIC_TASK;
 		llsm->sch.priority   = LL_ADV_PRIORITY;
 		adv_get_next_event();
+        DEBUG_GPIO_HIGH(GPIO_12);
+        DEBUG_GPIO_LOW(GPIO_12);
 		if(sch_insert_task(&llsm->sch)==SCH_STATUS_SUCCESS)
 		{
 			sch_start();
@@ -2770,6 +2780,12 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 	return SUCCESS;
 }
 
+volatile int AAEE_DURA0;
+volatile int AAEE_DURA1;
+volatile int AAEE_DURA2;
+volatile int AAEE_DURA3;
+volatile int AAEE_DURA4;
+
 /**
  * Advertising disabled condition
  * 1.Host send "ll_set_extended_advertising_enable" with 'enable' field set to 0
@@ -2956,22 +2972,23 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 
                     if(advSet->schMap&ADV_SCH_MAP_AUX_CHAIN)
                     {
-                        for(int i=0;i<advSet->ea->chain.cnt;i++)
+                        for(int j=0;j<advSet->ea->chain.cnt;j++)
                         {
-                        	advSet->ea->chain.entry[i].sch.startMargin = 100;
-                            if(i==advSet->ea->chain.cnt)
+                        	advSet->ea->chain.entry[j].sch.startMargin = 100;
+                            if(j)
                             {
-                            	advSet->ea->chain.entry[i].sch.stopMargin  = 200;
+                            	advSet->ea->chain.entry[j].sch.stopMargin  = 200;
                             }
                             else
                             {
-                            	advSet->ea->chain.entry[i].sch.stopMargin  = 100;
+                            	advSet->ea->chain.entry[j].sch.stopMargin  = 100;
                             }
-                            advSet->ea->chain.entry[i].phy.crcInit    = BLE_ADV_CRC_INIT;
-                            advSet->ea->chain.entry[i].phy.accessCode = BLE_ADV_ACCESS_CODE;
-                            advSet->ea->chain.entry[i].phy.mode       = advSet->ea->phyMode;
-                            advSet->ea->chain.entry[i].phy.txAddress  = ll_get_shared_phy_tx_address();
-                            advSet->ea->chain.entry[i].sch.duration   = llsm->phy.hw_get_prepare_time()+ll_get_air_packet_time(advSet->ea->chain.entry[i].phy.mode,2+BLE_ADV_EXTENDED_HEADER_MAX_LEN+advSet->ea->chain.entry[i].data.len,0)+PACKET_DEFAULT_TIFS_TIME;
+                            advSet->ea->chain.entry[j].phy.crcInit    = BLE_ADV_CRC_INIT;
+                            advSet->ea->chain.entry[j].phy.accessCode = BLE_ADV_ACCESS_CODE;
+                            advSet->ea->chain.entry[j].phy.mode       = advSet->ea->phyMode;
+                            advSet->ea->chain.entry[j].phy.txAddress  = ll_get_shared_phy_tx_address();
+                            advSet->ea->chain.entry[j].sch.duration   = llsm->phy.hw_get_prepare_time()+ll_get_air_packet_time(advSet->ea->chain.entry[j].phy.mode,2+BLE_ADV_EXTENDED_HEADER_CHAIN_PDU_MAX_LEN+advSet->ea->chain.entry[j].data.len,0);
+
                         }
                         advSet->ea->aux.sch.startMargin     = 100;
                         advSet->ea->aux.sch.stopMargin      = 100;//shall location the next event

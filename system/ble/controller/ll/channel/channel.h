@@ -112,4 +112,6 @@ void ll_csa_init(ll_csa_ctrl_t* chnInfo);
 _u8  ll_csa_cal_channel_index(ll_csa_ctrl_t* chnInfo);
 
 
+_u8  ll_csa_generate_random_chn(void);
+
 #endif/*LL_CHANNEL_H_*/
