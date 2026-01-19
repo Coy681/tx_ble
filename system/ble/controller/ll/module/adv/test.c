@@ -176,6 +176,7 @@ void ll_adv_test_ea_test_process(_u8* data,_u8 len)
 			LOG_TRACE(1,"set scan rsp data",&status,4)
 			break;
 		case 0x04:
+			advEnable.advHandle = 0x00;
 			status = ll_set_extended_advertising_enable(1,\
 											   1,\
 											   &advEnable);
