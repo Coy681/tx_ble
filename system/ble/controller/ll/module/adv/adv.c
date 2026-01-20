@@ -3067,7 +3067,11 @@ controller_error_code_e ll_remove_advertising_sets(_u8 advHandle)
 	{
 		return IVALID_HCI_COMMAND_PARAMETERS;
 	}
-	if(advSet->enable)
+	if(advSet->enable
+	#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
+	  ||(POINTER_VALID(advSet->pa)&&advSet->pa->enable)
+	#endif
+	   )
 	{
 		return COMMAND_DISALLOWED;
 	}
@@ -3081,19 +3085,18 @@ controller_error_code_e ll_remove_advertising_sets(_u8 advHandle)
 		tx_free(advSet->scanRsp.addr);
 		advSet->scanRsp.addr = NULL;
 	}
-	if(POINTER_VALID(advSet->ea->chain.entry))
-	{
-		tx_free((_u8*)advSet->ea->chain.entry);
-		advSet->ea->chain.entry = NULL;
-	}
 	if(POINTER_VALID(advSet->ea))
 	{
+		if(POINTER_VALID(advSet->ea->chain.entry))
+		{
+			tx_free((_u8*)advSet->ea->chain.entry);
+			advSet->ea->chain.entry = NULL;
+		}
 		tx_free((_u8*)advSet->ea);
 		advSet->ea = NULL;
 	}
 	txMemsetByte((_u8*)advSet,0,sizeof(ll_internal_adv_set_t));
 	advSet->handle = LL_EXTENDED_ADV_INVALID_HANDLE;
-
 	if(ll_extended_adv_get_current_set_number()==0)
 	{
 		ble_ll_exit_advertising_state();
@@ -3108,13 +3111,18 @@ controller_error_code_e ll_clear_advertising_sets(void)
 	{
 		return MEMORY_CAPACITY_EXCEEDED;
 	}
+	ble_ll_exit_advertising_state();
 	ll_internal_adv_ctrl_t* adv = (ll_internal_adv_ctrl_t*)llsm->entity;
 	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 	{
 		if(adv->set[i].handle!=LL_EXTENDED_ADV_INVALID_HANDLE)
 		{
 			ll_internal_adv_set_t* advSet = &adv->set[i];
-			if(adv->set[i].enable)
+			if(advSet->enable
+			#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
+			  ||(POINTER_VALID(advSet->pa)&&advSet->pa->enable)
+			#endif
+			   )
 			{
 				return COMMAND_DISALLOWED;
 			}
@@ -3128,13 +3136,13 @@ controller_error_code_e ll_clear_advertising_sets(void)
 				tx_free(advSet->scanRsp.addr);
 				advSet->scanRsp.addr = NULL;
 			}
-			if(POINTER_VALID(advSet->ea->chain.entry))
-			{
-				tx_free((_u8*)advSet->ea->chain.entry);
-				advSet->ea->chain.entry = NULL;
-			}
 			if(POINTER_VALID(advSet->ea))
 			{
+				if(POINTER_VALID(advSet->ea->chain.entry))
+				{
+					tx_free((_u8*)advSet->ea->chain.entry);
+					advSet->ea->chain.entry = NULL;
+				}
 				tx_free((_u8*)advSet->ea);
 				advSet->ea = NULL;
 			}
@@ -3142,7 +3150,6 @@ controller_error_code_e ll_clear_advertising_sets(void)
 			advSet->handle = LL_EXTENDED_ADV_INVALID_HANDLE;
 		}
 	}
-	ble_ll_exit_advertising_state();
 	return SUCCESS;
 }
 
