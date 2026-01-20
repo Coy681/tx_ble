@@ -182,6 +182,13 @@ void ll_adv_test_ea_test_process(_u8* data,_u8 len)
 											   &advEnable);
 			LOG_TRACE(1,"set adv enable",&status,4)
 			break;
+		case 0x05:
+			advEnable.advHandle = 0x00;
+			status = ll_set_extended_advertising_enable(0,\
+											   1,\
+											   &advEnable);
+			LOG_TRACE(1,"set adv disable",&status,4)
+			break;
 		case 0x11:
 			extendedAdvParam.advHandle = 0x01;
 			status = ll_set_extended_advertising_parameters(&extendedAdvParam);
@@ -253,6 +260,13 @@ void ll_adv_test_ea_test_process(_u8* data,_u8 len)
 											   &advEnable);
 			LOG_TRACE(1,"set adv enable",&status,4)
 			break;
+		case 0x15:
+			advEnable.advHandle = 0x01;
+			status = ll_set_extended_advertising_enable(0,\
+											   1,\
+											   &advEnable);
+			LOG_TRACE(1,"set adv disable",&status,4)
+			break;
 		case 0x21:
 			extendedAdvParam.advHandle = 0x02;
 			status = ll_set_extended_advertising_parameters(&extendedAdvParam);
@@ -323,6 +337,13 @@ void ll_adv_test_ea_test_process(_u8* data,_u8 len)
 											   1,\
 											   &advEnable);
 			LOG_TRACE(1,"set adv enable",&status,4)
+			break;
+		case 0x25:
+			advEnable.advHandle = 0x02;
+			status = ll_set_extended_advertising_enable(0,\
+											   1,\
+											   &advEnable);
+			LOG_TRACE(1,"set adv disable",&status,4)
 			break;
 		default:
 			break;

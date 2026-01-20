@@ -147,6 +147,7 @@ void adv_get_next_event(void)
                 }
             }
         }
+
 		#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
 		if((advCtrl->set[i].schMap&ADV_SCH_MAP_PA)&&advCtrl->set[i].pa->active)
 		{
@@ -1222,7 +1223,7 @@ void(*adv_prepare_packet[])(adv_pdu_class_e pduClass)  =
 _RAM_CODE
 static int adv_event_step_phy_send_advertising(void)
 {
-    if(currentSet->la.availableChnCnt==0)
+    if(currentSet->la.availableChnCnt==0||currentSet->enable == 0)
     {
         return 0;
     }
@@ -2770,12 +2771,6 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 	return SUCCESS;
 }
 
-volatile int AAEE_DURA0;
-volatile int AAEE_DURA1;
-volatile int AAEE_DURA2;
-volatile int AAEE_DURA3;
-volatile int AAEE_DURA4;
-
 /**
  * Advertising disabled condition
  * 1.Host send "ll_set_extended_advertising_enable" with 'enable' field set to 0
@@ -2965,7 +2960,7 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
                         for(int j=0;j<advSet->ea->chain.cnt;j++)
                         {
                         	advSet->ea->chain.entry[j].sch.startMargin = 100;
-                            if(j)
+                            if(j == advSet->ea->chain.cnt-1)
                             {
                             	advSet->ea->chain.entry[j].sch.stopMargin  = 200;
                             }
@@ -2977,8 +2972,8 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
                             advSet->ea->chain.entry[j].phy.accessCode = BLE_ADV_ACCESS_CODE;
                             advSet->ea->chain.entry[j].phy.mode       = advSet->ea->phyMode;
                             advSet->ea->chain.entry[j].phy.txAddress  = ll_get_shared_phy_tx_address();
-                            advSet->ea->chain.entry[j].sch.duration   = llsm->phy.hw_get_prepare_time()+ll_get_air_packet_time(advSet->ea->chain.entry[j].phy.mode,2+BLE_ADV_EXTENDED_HEADER_CHAIN_PDU_MAX_LEN+advSet->ea->chain.entry[j].data.len,0);
-
+                            advSet->ea->chain.entry[j].sch.duration   = llsm->phy.hw_get_prepare_time()
+                            		                                  + ll_get_air_packet_time(advSet->ea->chain.entry[j].phy.mode,2+BLE_ADV_EXTENDED_HEADER_CHAIN_PDU_MAX_LEN+advSet->ea->chain.entry[j].data.len,0);
                         }
                         advSet->ea->aux.sch.startMargin     = 100;
                         advSet->ea->aux.sch.stopMargin      = 100;//shall location the next event
@@ -3002,21 +2997,12 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 			else if(advSet->enable && !enable)
 			{
 				advSet->enable = enable;
+				advSet->inSch  = 0;
+				advSet->state  = ADV_SM_STATE_IDLE;
 			}
 		}
 	}
-	_u8 gEnable = 0;
-	for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
-	{
-		if(adv->set[i].handle!=LL_EXTENDED_ADV_INVALID_HANDLE)
-		{
-			if(adv->set[i].enable)
-			{
-				gEnable = 1;
-			}
-		}
-	}
-	if(gEnable)
+	if(enable)
 	{
 		if(ble_ll_enter_advertising_state())
 		{
@@ -3025,9 +3011,23 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 	}
 	else
 	{
-		if(ble_ll_exit_advertising_state())
+		_u8 gDisable = 1;
+		for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
 		{
-			return IVALID_HCI_COMMAND_PARAMETERS;
+			if(adv->set[i].handle!=LL_EXTENDED_ADV_INVALID_HANDLE)
+			{
+				if(adv->set[i].enable)
+				{
+					gDisable = 0;
+				}
+			}
+		}
+		if(gDisable)
+		{
+			if(ble_ll_exit_advertising_state())
+			{
+				return IVALID_HCI_COMMAND_PARAMETERS;
+			}
 		}
 	}
 	return SUCCESS;
