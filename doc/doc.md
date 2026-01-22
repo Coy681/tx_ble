@@ -221,6 +221,9 @@ Host应该知道当前因为LL Control Procedure Collisions导致的设备断连
 (2)如果Procedure A是Connection Update procedure，Procedure B是Connection Parameters Request procedure
 
 
+
+
+
 待处理事项，
 (1)synchronization state的定义
 (2)BLE完整state定义，包括广播，扫描，连接，扩展广播，周期性广播之类的
@@ -274,3 +277,89 @@ BLE广播有四种类型的广播事件，分别是
 
 #### BLE Broadcasting
 
+###
+BTBLE Audio双模Audio SDK LE部分
+(0)LE 协议栈开发和维护
+   Ⅰ  legacy adv,extended adv,periodic adv,primary scan,secondary scan
+   Ⅱ  Multiple BLE ACL Slave/Master
+   Ⅲ BLE CIS/BIS 
+   Ⅳ HID Over ISO,1K爆点率的游戏手柄
+
+(1)新平台适配
+   Ⅰ  SDK新平台调试，link和startup.s文件适配等
+   Ⅱ  基础模块调试/适配层填充，如PM(低功耗),RF(射频),Timer，Codec(音频)等
+   Ⅲ 功耗优化，性能评估，如供电配置优化，射频性能测试评估，
+   Ⅳ SDK模块验证(BLE)，如LE ADV/ACL/BIS/CIS等
+   Ⅴ  多核架构设计/适配，多核通信机制优化
+      如mailbox/share memory设计优化等
+
+(3)ACCESS任务设计和优化
+   Ⅰ   BT Page/Page Scan+BT Inquiry/Inquiry Scan + LE Scan + 私有链路Scan
+   Ⅱ  带宽集中模式和带宽分散模式
+   Ⅲ 优先级模式(时间统计)
+(2)BT ACL Slave+LE ACL Slave + LE ADV + BT ESCO混合时序设计 - 适用于BTBLE Headset场景项目
+   Ⅰ  LE ADV + BT ACCESS
+   Ⅱ  LE ADV + BT Slave
+   Ⅲ LE ADV + BT ESCO
+   Ⅳ LE ACL Slave + 
+(3)BT ACL Master + LE ACL Master + BT ESCO混合场景时序设计 - 适用于BTBLE Audio Dongle场景项目
+   Ⅰ  BT ACL Master + multiple LE ACL Master 
+   Ⅱ BT ESCO + multiple LE ACL Master 
+(4)BT A2DP TO LE BIS方案设计和优化
+   Ⅰ  核心时序设计
+   Ⅱ 本地+远端多设备同步播放
+(5)多模块(BT/LE/私有链路)通信机制
+   Ⅰ 信息注册
+   Ⅱ 信息查询
+   Ⅲ 信息通知
+(7)多主动任务共存模块设计
+   Ⅰ offset+shift双维度时序规划
+   Ⅱ应用于多个量产项目
+(8)ACL with BIS/CIS时序共存
+   Ⅰ BIS/CIS任务碎片化
+(9)LE Audio TWS+私有链路音频方案
+   Ⅰ 耳机端 LE Audio TWS + 私有链路音频共存(通话，音乐)
+   Ⅱ Dongle端LE Audio TWS + 私有链路音频共存(通话，音乐)
+(10)低功耗框架
+   多低功耗模式
+   BT+LE+私有链路
+   单核/多核支持
+(12)Core Spec认证
+(13)项目支持
+
+协议栈从零到一
+
+通用模块
+
+(1)启动机制优化
+   system-init call，系统分层初始化
+(2)内存管理
+   Ⅰ  动态内存分配
+   Ⅱ 动态内存分配扩展memory block
+   Ⅲ 动态内存分配扩展memory ring buffer
+(3)log模块
+   使用硬件通信模块(如UART)模拟LOG输出，日志显示
+(4)消息通信模块 
+   消息发布和消息订阅机制
+(5)通用硬件抽象适配层   
+   Ⅰ   UART适配层
+   Ⅱ  Timer适配层
+   Ⅲ  RF适配层
+
+(6)新架构HCI
+
+(7)Controller底层调度系统
+   Ⅰ  时序调度
+      一 任务分类型调度
+      二 任务分层调度
+   Ⅱ  时序规划
+      双维度的时序规划方法
+   Ⅲ 时序映射
+      扫描线算法在嵌入式实时调度系统中的应用
+(8)Controller实战
+   Ⅰ  跳频算法
+   Ⅱ  扩窗算法
+   Ⅲ packet prepare
+   Ⅳ controller module define
+   Ⅴ  feature分层定义
+   Ⅰ  PHY实例化
