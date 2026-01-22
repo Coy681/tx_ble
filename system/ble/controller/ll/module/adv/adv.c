@@ -3164,6 +3164,22 @@ controller_error_code_e ll_set_periodic_advertising_paramters(_u8 advHandle,_u8 
 	{
 		return UNKNOWN_ADVERTISING_IDENTIFIER;
 	}
+	if(advSet->eventProperty&(LL_ADV_EVENT_PROPERTY_CONNECTED
+			                  |LL_ADV_EVENT_PROPERTY_SCANNABLE
+							  |LL_ADV_EVENT_PROPERTY_LEGACY_PDU
+							  |LL_ADV_EVENT_PROPERTY_ANONYMOUS_ADV))
+	{
+		return IVALID_HCI_COMMAND_PARAMETERS;
+	}
+	if(POINTER_NOT_VALID(advSet->pa)&&advSet->pa->enable)
+	{
+		return COMMAND_DISALLOWED;
+	}
+	/* how to to?
+	 * If the Advertising_Handle does not identify an advertising set that is already configured
+	 * for periodic advertising and the Controller is unable to support more periodic advertising
+	 * at present, the Controller shall return the error code Memory Capacity Exceeded (0x07).
+	 */
 	if(POINTER_NOT_VALID(advSet->pa))
 	{
 		advSet->pa = (ll_adv_type_pa_t*)tx_malloc(sizeof(ll_adv_type_pa_t));
@@ -3172,6 +3188,9 @@ controller_error_code_e ll_set_periodic_advertising_paramters(_u8 advHandle,_u8 
 	{
 		advSet->pa->includeTxPower = 1;
 	}
+	#if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
+    #error"shall process parameter,Num_Subevents,Subevent_Interval,Response_Slot_Delay,Response_Slot_Spacing,Num_Response_Slots"
+	#endif
 	advSet->pa->sync.sch.interval = 1250*interval;
 	return SUCCESS;
 }

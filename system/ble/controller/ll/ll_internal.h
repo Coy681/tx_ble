@@ -195,7 +195,7 @@ typedef struct
     _u8  handle;
     _u8  schMap;
     ll_adv_chain_entry_t* pChain;
-    _u16 eventProperty;
+    _u16 eventProperty;//ll_advertising_event_property_e
     _u8  sid:4;
     _u8  rsvd1:4;
 	#else
