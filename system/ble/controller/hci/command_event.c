@@ -118,9 +118,9 @@
 
 #if defined(BLE_SUPPORT_PERIODIC_ADVERTISING)
 // C.18: Mandatory if LE Feature (Periodic Advertising) is supported and the LE Controller supports Advertising State; 
-#define LE_SET_PERIODIC_ADVERTISING_DATA_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_SET_PERIODIC_ADVERTISING_ENABLE_PROCESS                           HCI_DEFAULT_PROCESS_ADDRESS
-#define LE_SET_PERIODIC_ADVERTISING_PARAMETERS_PROCESS                       HCI_DEFAULT_PROCESS_ADDRESS
+#define LE_SET_PERIODIC_ADVERTISING_DATA_PROCESS                             HCI_MANDORY_PROCESS_ADDRESS
+#define LE_SET_PERIODIC_ADVERTISING_ENABLE_PROCESS                           HCI_MANDORY_PROCESS_ADDRESS
+#define LE_SET_PERIODIC_ADVERTISING_PARAMETERS_PROCESS                       HCI_MANDORY_PROCESS_ADDRESS
 #else/*(!BLE_SUPPORT_PERIODIC_ADVERTISING)*/
 #define LE_SET_PERIODIC_ADVERTISING_DATA_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
 #define LE_SET_PERIODIC_ADVERTISING_ENABLE_PROCESS                           HCI_DEFAULT_PROCESS_ADDRESS
@@ -1577,7 +1577,84 @@ controller_error_code_e le_set_extended_advertising_parameters_process(_u8* data
     return status;
 }
 
+
+#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
+//LE_SET_PERIODIC_ADVERTISING_PARAMETERS_PROCESS
+struct _PACKED le_set_periodic_advertising_parameters_process_param_t
+{
+	_u8  handle;
+	_u16 paIntMin;
+	_u16 paIntMax;
+	_u16 paProperty;
+};
+
+struct _PACKED le_set_periodic_advertising_parameters_process_retParam_t
+{
+    _u8  status;
+};
+
+controller_error_code_e le_set_periodic_advertising_parameters_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+	struct le_set_periodic_advertising_parameters_process_param_t* param = (struct le_set_periodic_advertising_parameters_process_param_t*)data;
+
+	_u8 status = ll_set_periodic_advertising_paramters(param->handle,param->paIntMin,param->paProperty);
+
+    struct le_set_periodic_advertising_parameters_process_retParam_t* retParam = \
+    (struct le_set_periodic_advertising_parameters_process_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct le_set_periodic_advertising_parameters_process_retParam_t),event);
+    retParam->status = status;
+	return SUCCESS;
+}
+
+//LE_SET_PERIODIC_ADVERTISING_DATA_PROCESS
+struct _PACKED le_set_periodic_advertising_data_process_param_t
+{
+	_u8 handle;
+	_u8 operation;
+	_u8 dataLen;
+	_u8 data[0];
+};
+struct _PACKED le_set_periodic_advertising_data_process_retParam_t
+{
+	_u8 status;
+};
+controller_error_code_e le_set_periodic_advertising_data_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+	struct le_set_periodic_advertising_data_process_param_t* param = (struct le_set_periodic_advertising_data_process_param_t*)data;
+	_u8 status = ll_set_periodic_advertising_data(param->handle,param->operation,param->dataLen,param->data);
+    struct le_set_periodic_advertising_data_process_retParam_t* retParam = \
+    (struct le_set_periodic_advertising_data_process_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct le_set_periodic_advertising_data_process_retParam_t),event);
+    retParam->status = status;
+	return SUCCESS;
+}
+
+//LE_SET_PERIODIC_ADVERTISING_ENABLE_PROCESS
+struct _PACKED le_set_periodic_advertising_enbale_process_param_t
+{
+	_u8 enable;
+	_u8 handle;
+};
+struct _PACKED le_set_periodic_advertising_enable_process_retParam_t
+{
+	_u8 status;
+};
+
+controller_error_code_e le_set_periodic_advertising_enable_process(_u8* data,_u8 length,bt_hci_event_t** event)
+{
+	struct le_set_periodic_advertising_enbale_process_param_t* param = (struct le_set_periodic_advertising_enbale_process_param_t*)data;
+	_u8 status = ll_set_periodic_advertising_enable(param->handle,param->enable);
+    struct le_set_periodic_advertising_enable_process_retParam_t* retParam = \
+    (struct le_set_periodic_advertising_enable_process_retParam_t*)hci_command_complete_event(hciCommandOpcode,sizeof(struct le_set_periodic_advertising_enable_process_retParam_t),event);
+    retParam->status = status;
+	return SUCCESS;
+}
+
+#endif//LL_SUPPORT_LE_PERIODIC_ADVERTISING
+
 #endif//LL_SUPPORT_LE_EXTENDED_ADVERTISING
+
+
+
+
 
 struct _PACKED le_read_buffer_size_retParam_t
 {
@@ -1633,6 +1710,10 @@ controller_error_code_e le_subrate_request_process(_u8* data,_u8 length,bt_hci_e
     return ll_subrate_request(param->connHandle,param->subrateMin,param->subrateMax,param->maxLatency,param->continuationNumber,param->supervisionTimeout);
 }
 #endif
+
+
+
+
 
 //LE_SET_HOST_FEATURE_PROCESS
 struct _PACKED le_set_host_feature_param_t

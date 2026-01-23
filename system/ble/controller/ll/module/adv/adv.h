@@ -178,7 +178,7 @@ controller_error_code_e ll_set_periodic_advertising_paramters(_u8 advHandle,_u8 
 
 controller_error_code_e ll_set_periodic_advertising_data(_u8 advHandle,ll_advertising_data_operation_e operation,_u8 dataLen,_u8* data);
 
-controller_error_code_e ll_set_periodic_advertising_enable(_u8 enable,_u8 advHandle);
+controller_error_code_e ll_set_periodic_advertising_enable(_u8 advHandle,_u8 enable);
 #endif
 
 /***********************Bluetooth LE Periodic With Response Advertising **************************/

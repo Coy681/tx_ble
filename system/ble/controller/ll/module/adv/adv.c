@@ -3156,7 +3156,6 @@ controller_error_code_e ll_clear_advertising_sets(void)
 #endif//LL_SUPPORT_LE_EXTENDED_ADVERTISING
 
 #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
-#error"la don't need malloc,need process"
 controller_error_code_e ll_set_periodic_advertising_paramters(_u8 advHandle,_u8 interval,_u16 property)
 {
 	ll_internal_adv_set_t* advSet = ll_extended_adv_get_adv_set(advHandle,0);
@@ -3192,6 +3191,7 @@ controller_error_code_e ll_set_periodic_advertising_paramters(_u8 advHandle,_u8 
     #error"shall process parameter,Num_Subevents,Subevent_Interval,Response_Slot_Delay,Response_Slot_Spacing,Num_Response_Slots"
 	#endif
 	advSet->pa->sync.sch.interval = 1250*interval;
+	advSet->schMap |= ADV_SCH_MAP_PA;
 	return SUCCESS;
 }
 
@@ -3202,16 +3202,14 @@ controller_error_code_e ll_set_periodic_advertising_data(_u8 advHandle,ll_advert
 	{
 		return UNKNOWN_ADVERTISING_IDENTIFIER;
 	}
-	if((!advSet->schMap&ADV_SCH_MAP_PA))
+	if((!(advSet->schMap&ADV_SCH_MAP_PA))
+#if (LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
+	    ||advSet->schMap&ADV_SCH_MAP_PAWR
+#endif
+	  )
 	{
 		return COMMAND_DISALLOWED;
 	}
-	#if (LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
-	if(advSet->schMap&ADV_SCH_MAP_PAWR)
-	{
-		return COMMAND_DISALLOWED;
-	}
-	#endif
 	static _u32 dataFillOffset = 0;
 	if(dataLen > BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH || (dataLen+dataFillOffset>BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH))
 	{
@@ -3243,6 +3241,17 @@ controller_error_code_e ll_set_periodic_advertising_data(_u8 advHandle,ll_advert
 	{
 		return COMMAND_DISALLOWED;
 	}
+
+	if(operation == LL_ADV_DATA_OPERATION_FIRST_FRAGMENT
+	  ||operation == LL_ADV_DATA_OPERATION_COMPLETE)
+	{
+		if(POINTER_VALID(advSet->pa->data.addr))
+		{
+			tx_free(advSet->pa->data.addr);
+			advSet->pa->data.addr = NULL;
+		}
+	}
+
 	if(POINTER_NOT_VALID(advSet->pa->data.addr))
 	{
 		if(operation == LL_ADV_DATA_OPERATION_COMPLETE)
@@ -3300,7 +3309,7 @@ controller_error_code_e ll_set_periodic_advertising_data(_u8 advHandle,ll_advert
 		//process data fragment
 		if(advSet->pa->data.len<=(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN))
 		{
-			advSet->pa->chain.cnt= 0;//only aux packet exist
+			advSet->pa->chain.cnt = 0;//only aux packet exist
 			advSet->pa->sync.data.len = advSet->pa->data.len;
 		}
 		else
@@ -3328,10 +3337,10 @@ controller_error_code_e ll_set_periodic_advertising_data(_u8 advHandle,ll_advert
 	return SUCCESS;
 }
 
-controller_error_code_e ll_set_periodic_advertising_enable(_u8 enable,_u8 advHandle)
+controller_error_code_e ll_set_periodic_advertising_enable(_u8 advHandle,_u8 enable)
 {
+	ll_sm_t* llsm = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_INVALID_HANDLE,0);
 	ll_internal_adv_set_t* advSet = ll_extended_adv_get_adv_set(advHandle,0);
-	ll_sm_t* ll = ll_get_current_state_machine();
 	if(POINTER_NOT_VALID(advSet))
 	{
 		return UNKNOWN_ADVERTISING_IDENTIFIER;
@@ -3346,7 +3355,7 @@ controller_error_code_e ll_set_periodic_advertising_enable(_u8 enable,_u8 advHan
 	}
 	if(advSet->pa->enable&&(enable&BIT(0)))
 	{
-		//random address change
+		//todo,random address change
 	}
 	if((advSet->pa->enable == 0)&&(enable&BIT(0)))
 	{
@@ -3356,8 +3365,7 @@ controller_error_code_e ll_set_periodic_advertising_enable(_u8 enable,_u8 advHan
 			advSet->pa->active = 1;
 		}
 		advSet->pa->includeAdi = (enable&BIT(1)==0?0:1);
-		advSet->schMap |= ADV_SCH_MAP_PA;
-		phy_obj_cast(&ll->phy);
+		phy_obj_cast(&llsm->phy);
 		advSet->pa->sync.phy.mode       = advSet->ea->phyMode;
 		advSet->pa->sync.phy.rxMaxOctets= BLE_ADV_PRI_PHY_MAX_RX_LEN;
 		advSet->pa->sync.phy.accessCode = 0x89762349;
@@ -3368,7 +3376,7 @@ controller_error_code_e ll_set_periodic_advertising_enable(_u8 enable,_u8 advHan
 
 		advSet->pa->sync.sch.startMargin= 100;
 		advSet->pa->sync.sch.stopMargin = 100;
-		advSet->pa->sync.sch.duration   = ll->phy.hw_get_prepare_time()+ll_get_air_packet_time(advSet->pa->sync.phy.mode,2+BLE_ADV_SEC_PHY_MAX_TX_LEN,0);
+		advSet->pa->sync.sch.duration   = llsm->phy.hw_get_prepare_time()+ll_get_air_packet_time(advSet->pa->sync.phy.mode,2+BLE_ADV_SEC_PHY_MAX_TX_LEN,0);
 		advSet->pa->sync.sch.anchorPoint= system_time()+2000;//todo,periodic task get anchor point from planner
 	}
 	if((advSet->pa->enable == 1)&&(!(enable&BIT(0))))
@@ -3378,6 +3386,7 @@ controller_error_code_e ll_set_periodic_advertising_enable(_u8 enable,_u8 advHan
 		advSet->schMap &= (~ADV_SCH_MAP_PA);
 		//disable
 	}
+	return SUCCESS;
 }
 
 #endif//LL_SUPPORT_LE_PERIODIC_ADVERTISING
