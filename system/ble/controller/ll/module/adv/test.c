@@ -350,6 +350,32 @@ void ll_adv_test_ea_test_process(_u8* data,_u8 len)
 	  }
 }
 
+void ll_adv_test_pa_test_process(_u8* data,_u8 len)
+{
+	  _u8 advData[48];
+	  for(int i=0;i<48;i++)
+	  {
+		  advData[i] = i;
+	  }
+	  int status = 0;
+	  switch(data[0])
+	  {
+		case 0x01:
+			status = ll_set_periodic_advertising_paramters(0x01,0x28,0x00);
+			LOG_TRACE(1,"set pa parameter",&status,4)
+			break;
+		case 0x02:
+			status = ll_set_periodic_advertising_data(0x01,LL_ADV_DATA_OPERATION_COMPLETE,48,advData);
+			LOG_TRACE(1,"set pa data",&status,4)
+			break;
+		case 0x03:
+			status = ll_set_periodic_advertising_enable(0x01,1);
+			LOG_TRACE(1,"set pa enable",&status,4)
+			break;
+		default:
+			break;
+}
+
 void ll_adv_test_process(_u8* data,_u8 len)
 {
     switch(data[0])

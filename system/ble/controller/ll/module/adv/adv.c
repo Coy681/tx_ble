@@ -570,7 +570,7 @@ static void adv_generate_extended_header(_u8* packet,_u8 advMode,_u8 flags,adv_e
 			((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->offsetBase     = anchorDiff/30;
 			((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->offsetAdjust   = 0;
 		}
-		((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->eventCounter   = currentSet->pa->eventCnt+stepCnt;
+		((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->eventCounter   = currentSet->pa->eventCnt+stepCnt;`
 		#endif
         offset+=sizeof(adv_extended_header_subfield_syncInfo_t);
     }
