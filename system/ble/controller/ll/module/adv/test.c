@@ -374,6 +374,7 @@ void ll_adv_test_pa_test_process(_u8* data,_u8 len)
 			break;
 		default:
 			break;
+	  }
 }
 
 void ll_adv_test_process(_u8* data,_u8 len)
@@ -390,7 +391,7 @@ void ll_adv_test_process(_u8* data,_u8 len)
     	}break;
     	case 0x22:
     	{
-
+    		ll_adv_test_pa_test_process(&data[1],len-1);
     	}break;
 	    default:
 	    	break;

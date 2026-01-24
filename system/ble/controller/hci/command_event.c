@@ -118,9 +118,9 @@
 
 #if defined(BLE_SUPPORT_PERIODIC_ADVERTISING)
 // C.18: Mandatory if LE Feature (Periodic Advertising) is supported and the LE Controller supports Advertising State; 
-#define LE_SET_PERIODIC_ADVERTISING_DATA_PROCESS                             HCI_MANDORY_PROCESS_ADDRESS
-#define LE_SET_PERIODIC_ADVERTISING_ENABLE_PROCESS                           HCI_MANDORY_PROCESS_ADDRESS
-#define LE_SET_PERIODIC_ADVERTISING_PARAMETERS_PROCESS                       HCI_MANDORY_PROCESS_ADDRESS
+#define LE_SET_PERIODIC_ADVERTISING_DATA_PROCESS                             le_set_periodic_advertising_data_process
+#define LE_SET_PERIODIC_ADVERTISING_ENABLE_PROCESS                           le_set_periodic_advertising_enable_process
+#define LE_SET_PERIODIC_ADVERTISING_PARAMETERS_PROCESS                       le_set_periodic_advertising_parameters_process
 #else/*(!BLE_SUPPORT_PERIODIC_ADVERTISING)*/
 #define LE_SET_PERIODIC_ADVERTISING_DATA_PROCESS                             HCI_DEFAULT_PROCESS_ADDRESS
 #define LE_SET_PERIODIC_ADVERTISING_ENABLE_PROCESS                           HCI_DEFAULT_PROCESS_ADDRESS

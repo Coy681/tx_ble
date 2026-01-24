@@ -551,7 +551,7 @@ static void adv_generate_extended_header(_u8* packet,_u8 advMode,_u8 flags,adv_e
 		_u32 stepCnt = 0;
 		_u32 anchorTime = currentSet->ea->aux.sch.anchorPoint;
 		_u32 targetTime = currentSet->pa->sync.sch.anchorPoint;
-		if(txCompare(anchorTime,targetTime))
+		if(txCompareTime(anchorTime,targetTime))
 		{
 			stepCnt = (anchorTime-targetTime)/currentSet->pa->sync.sch.interval;
 			stepCnt++;
@@ -570,7 +570,7 @@ static void adv_generate_extended_header(_u8* packet,_u8 advMode,_u8 flags,adv_e
 			((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->offsetBase     = anchorDiff/30;
 			((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->offsetAdjust   = 0;
 		}
-		((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->eventCounter   = currentSet->pa->eventCnt+stepCnt;`
+		((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->eventCounter       = currentSet->pa->eventCnt+stepCnt;
 		#endif
         offset+=sizeof(adv_extended_header_subfield_syncInfo_t);
     }
@@ -1510,7 +1510,7 @@ int ll_extended_adv_get_current_active_set_number(void)
 	{
         if((adv->set[i].handle!=LL_EXTENDED_ADV_INVALID_HANDLE && adv->set[i].enable == 1)
 			#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
-			||(POINTER_VALID(adv->pa)&&adv->pa.enable)
+			||(POINTER_VALID(adv->set[i].pa)&&adv->set[i].pa->enable)
 			#endif
           )
         {
@@ -3179,7 +3179,7 @@ controller_error_code_e ll_set_periodic_advertising_paramters(_u8 advHandle,_u8 
 	{
 		return IVALID_HCI_COMMAND_PARAMETERS;
 	}
-	if(POINTER_NOT_VALID(advSet->pa)&&advSet->pa->enable)
+	if(POINTER_VALID(advSet->pa)&&advSet->pa->enable)
 	{
 		return COMMAND_DISALLOWED;
 	}
