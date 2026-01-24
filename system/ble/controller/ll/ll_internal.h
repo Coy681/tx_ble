@@ -167,8 +167,8 @@ typedef struct
 
     _u32 eventCnt;
     _u32 anchor;
+	ll_csa_ctrl_t         csa;
     ll_adv_data_entry_t   data;
-
     ll_adv_entry_t        sync;
     ll_adv_chain_entry_t  chain;
 }ll_adv_type_pa_t;
@@ -411,6 +411,8 @@ typedef struct _PACKED
     _u64     eventMask;
     _u64     eventMask2;
     _u64     leEventMask;
+    _u32     localPPM;
+    _u8      chnTable[5];
     struct 
     {
         _u8 occupy;
@@ -425,7 +427,7 @@ typedef struct _PACKED
 	_u16 srTimeout;//0x0a-0xc80,time = N*10ms,from 100ms to 32s
     #endif
     ll_sm_t* sm;
-    _u32 localPPM;
+
 }ll_t;
 
 /************************get state machine****************************/

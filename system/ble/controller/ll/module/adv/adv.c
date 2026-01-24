@@ -1762,13 +1762,16 @@ static adv_procedure_list_t adv_extended_non_con_non_scan_directed_procedure_wit
 static int adv_periodic_event_step_phy_send_sync_advertising(void)
 {
     phy_obj_cast(&LLSM->phy);
+    currentSet->pa->eventCnt++;
     //prepare packet
     adv_prepare_packet[ADV_EVENT_EXTENDED_PERIODIC](ADV_PDU_CLASS_SYNC);
-    currentSet->pa->sync.phy.chn = 35;//todo
     //prepare phy
+    //step 1:calculate channel
+    currentSet->pa->csa.counter = currentSet->pa->eventCnt;
+    currentSet->pa->sync.phy.chn = ll_csa_cal_channel_index(&currentSet->pa->csa);
+    //step 2:calculate channel
     adv_prepare_phy(&currentSet->pa->sync.phy,currentSet->pa->sync.sch.anchorPoint,PHY_DIR_TX);
     LLSM->phy.start();
-    currentSet->pa->eventCnt++;
 	return 1;
 }
 static int adv_periodic_event_step_sch_stop(void)
@@ -3372,8 +3375,11 @@ controller_error_code_e ll_set_periodic_advertising_enable(_u8 advHandle,_u8 ena
 		advSet->pa->sync.phy.crcInit    = 0x192874;
 		advSet->pa->sync.phy.txAddress  = ll_get_shared_phy_tx_address();;
 		advSet->pa->sync.phy.rxAddress  = ll_get_shared_phy_rx_address();
-
-
+		advSet->pa->csa.mode = LL_CSA_2;
+		txMemcpy(advSet->pa->csa.map,ll_get_default_channel_table(),5);
+		ll_csa_init(&advSet->pa->csa);
+		advSet->pa->csa.chnId = (advSet->pa->sync.phy.accessCode>>16&0xffff)^(advSet->pa->sync.phy.accessCode&0xffff);
+		advSet->pa->csa.seNum = 0;
 		advSet->pa->sync.sch.startMargin= 100;
 		advSet->pa->sync.sch.stopMargin = 100;
 		advSet->pa->sync.sch.duration   = llsm->phy.hw_get_prepare_time()+ll_get_air_packet_time(advSet->pa->sync.phy.mode,2+BLE_ADV_SEC_PHY_MAX_TX_LEN,0);

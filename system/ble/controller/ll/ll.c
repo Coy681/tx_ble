@@ -438,6 +438,22 @@ controller_error_code_e ll_set_random_address(_u8* addr)
 
 }
 
+_u8* ll_get_default_channel_table(void)
+{
+	return ll->chnTable;
+}
+
+controller_error_code_e ll_set_default_channel_table(_u8* chnTable)
+{
+    if(POINTER_NOT_VALID(chnTable)||(((_u32)chnTable&0xffffffff == 0) && (chnTable[5]&0x1f == 0)))
+    {
+    	return IVALID_HCI_COMMAND_PARAMETERS;
+    }
+    chnTable[5]&=0x1f;
+    txMemcpy(ll->chnTable,chnTable,5);
+    return SUCCESS;
+}
+
 #if(LL_SUPPORT_CONNECTION_SUBRATING)
 controller_error_code_e ll_set_default_subrate(_u16 subrateMin,_u16 subrateMax,_u16 maxLatency,_u16 continuation,_u16 timeout)
 {

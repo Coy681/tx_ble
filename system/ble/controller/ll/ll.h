@@ -22,6 +22,8 @@ void ll_init_state_machine(_u8 number);
 
 void ll_get_feature(_u8* feature,_u8 len);
 
+_u8* ll_get_default_channel_table(void);
+
 controller_error_code_e ll_set_default_channel_table(_u8* chnTable);
 
 controller_error_code_e ll_set_host_feature(_u16 bitNum,_u8 bitValue);
