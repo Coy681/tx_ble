@@ -540,37 +540,37 @@ static void adv_generate_extended_header(_u8* packet,_u8 advMode,_u8 flags,adv_e
     {
 		#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
     	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->interval   = currentSet->pa->sync.sch.interval;
-    	//todo with access code,crc init,sca
-    	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->chMH       = 0x1f;
-    	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->chML       = 0xffffffff;
-    	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->AA         = 0x23411243;
-    	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->crcInit[0] = 0x32;
-    	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->crcInit[1] = 0x54;
-    	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->crcInit[2] = 0x76;
+        //channel table assign
+    	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->chML       = *((_u32*)currentSet->pa->csa.map);
+    	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->chMH       = currentSet->pa->csa.map[4]&0x1f;
+    	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->crcInit[0] = currentSet->pa->sync.phy.crcInit&0xff;
+    	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->crcInit[1] = (currentSet->pa->sync.phy.crcInit>>8)&0xff;
+    	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->crcInit[2] = (currentSet->pa->sync.phy.crcInit>>16)&0xff;
+    	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->AA         = currentSet->pa->sync.phy.accessCode;
     	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->sca        = 3;
-    	_u32 stepCnt = 0;
-    	_u32 anchorTime = currentSet->ea->aux.sch.anchorPoint;
-    	_u32 targetTime = currentSet->pa->sync.sch.anchorPoint;
-    	if(txCompare(anchorTime,targetTime))
-    	{
-    		stepCnt = (anchorTime-targetTime)/currentSet->pa->sync.sch.interval;
-    		stepCnt++;
-    		targetTime+=(stepCnt*currentSet->pa->sync.sch.interval);
-    	}
-        _u32 anchorDiff = targetTime - anchorTime;
-        if(anchorDiff>(30*0x1fff))
-        {
-        	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->offsetUnits    = ADV_EXTENDED_OFFSET_UNIT_300US;
-        	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->offsetBase     = anchorDiff/300;
-        	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->offsetAdjust   = 0;
-        }
-        else
-        {
-        	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->offsetUnits    = ADV_EXTENDED_OFFSET_UNIT_30US;
-        	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->offsetBase     = anchorDiff/30;
-        	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->offsetAdjust   = 0;
-        }
-        ((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->eventCounter   = currentSet->pa->eventCnt+stepCnt;
+		_u32 stepCnt = 0;
+		_u32 anchorTime = currentSet->ea->aux.sch.anchorPoint;
+		_u32 targetTime = currentSet->pa->sync.sch.anchorPoint;
+		if(txCompare(anchorTime,targetTime))
+		{
+			stepCnt = (anchorTime-targetTime)/currentSet->pa->sync.sch.interval;
+			stepCnt++;
+			targetTime+=(stepCnt*currentSet->pa->sync.sch.interval);
+		}
+		_u32 anchorDiff = targetTime - anchorTime;
+		if(anchorDiff>(30*0x1fff))
+		{
+			((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->offsetUnits    = ADV_EXTENDED_OFFSET_UNIT_300US;
+			((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->offsetBase     = anchorDiff/300;
+			((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->offsetAdjust   = 0;
+		}
+		else
+		{
+			((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->offsetUnits    = ADV_EXTENDED_OFFSET_UNIT_30US;
+			((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->offsetBase     = anchorDiff/30;
+			((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->offsetAdjust   = 0;
+		}
+		((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->eventCounter   = currentSet->pa->eventCnt+stepCnt;
 		#endif
         offset+=sizeof(adv_extended_header_subfield_syncInfo_t);
     }
@@ -1025,7 +1025,10 @@ static void adv_event_extended_non_connectable_non_scannable_directed_with_auxil
                 auxInfo.channel           = currentSet->pChain->entry[0].phy.chn;
                 auxInfo.phy               = currentSet->pChain->entry[0].phy.mode;
             }
-            //sync info optional
+            if(currentSet->pa->active)
+            {
+                flags|=ADV_EXTENDED_HEADER_FLAG_SYNC_INFO;
+            }
             adv_aux_adv_ind_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);
         }
         break;
@@ -1084,7 +1087,10 @@ static void adv_event_extended_non_connectable_non_scannable_undirected_with_aux
                 auxInfo.channel           = currentSet->pChain->entry[0].phy.chn;
                 auxInfo.phy               = currentSet->pChain->entry[0].phy.mode;
             }   
-            //sync info optional
+            if(currentSet->pa->active)
+            {
+                flags|=ADV_EXTENDED_HEADER_FLAG_SYNC_INFO;
+            }
             adv_aux_adv_ind_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);
         }
         break;

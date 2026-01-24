@@ -445,11 +445,11 @@ _u8* ll_get_default_channel_table(void)
 
 controller_error_code_e ll_set_default_channel_table(_u8* chnTable)
 {
-    if(POINTER_NOT_VALID(chnTable)||(((_u32)chnTable&0xffffffff == 0) && (chnTable[5]&0x1f == 0)))
+    if(POINTER_NOT_VALID(chnTable)||(((_u32)chnTable&0xffffffff == 0) && (chnTable[4]&0x1f == 0)))
     {
     	return IVALID_HCI_COMMAND_PARAMETERS;
     }
-    chnTable[5]&=0x1f;
+    chnTable[4]&=0x1f;
     txMemcpy(ll->chnTable,chnTable,5);
     return SUCCESS;
 }
