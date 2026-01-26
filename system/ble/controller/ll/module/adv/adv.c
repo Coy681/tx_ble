@@ -153,8 +153,6 @@ void adv_get_next_event(void)
 		#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
 		if((advCtrl->set[i].schMap&ADV_SCH_MAP_PA)&&advCtrl->set[i].pa->active)
 		{
-			DEBUG_GPIO_HIGH(GPIO_11);
-			DEBUG_GPIO_LOW(GPIO_11);
 			if((timestamp == 0)||txCompareTime(timestamp,advCtrl->set[i].pa->anchor))
 			{
 				timestamp = advCtrl->set[i].pa->anchor|1;
@@ -163,8 +161,6 @@ void adv_get_next_event(void)
                 currentSet->eventType = ADV_EVENT_EXTENDED_PERIODIC;
 				if(advCtrl->set[i].pa->anchor == advCtrl->set[i].pa->sync.sch.anchorPoint)
 				{
-			        DEBUG_GPIO_HIGH(GPIO_12);
-			        DEBUG_GPIO_LOW(GPIO_12);
 					currentEventClass = ADV_PERIODIC_EVENT;
 					adv_set_sch_remap(&currentSet->pa->sync.sch);
 				}
@@ -429,19 +425,6 @@ int ll_adv_task_timing_allocation(ll_internal_adv_set_t* advSet,_u32 refStart,_u
 	#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
     if(((mapType&ADV_SCH_MAP_PA))&&(advSet->schMap&ADV_SCH_MAP_PA))
     {
-//    	_u32 paSpace = advSet->pa->sync.sch.startMargin+
-//    			       advSet->pa->sync.sch.duration+
-//					   advSet->pa->sync.sch.stopMargin;
-//        for(;blockIndex<freeBlockCount;blockIndex++)
-//        {
-//        	if((freeBlock[blockIndex].end - freeBlock[blockIndex].start)>(paSpace+PACKET_T_MAFS_TIME))
-//        	{
-//		        DEBUG_GPIO_HIGH(GPIO_11);
-//		        DEBUG_GPIO_LOW(GPIO_11);
-//        		advSet->pa->sync.sch.anchorPoint = freeBlock[blockIndex].start+advSet->pa->sync.sch.startMargin;
-//        		freeBlock[blockIndex].start +=(paSpace+PACKET_T_MAFS_TIME);
-//        	}
-//        }
     	//attention,chain of periodic sync pdu should greater than sync anchor and smaller than sync anchor plus sync interval
         if((mapType&ADV_SCH_MAP_PA_CHAIN)&&(advSet->schMap&ADV_SCH_MAP_PA_CHAIN))
         {
@@ -508,6 +491,7 @@ _u16 adv_calculate_extended_header_length(_u8 flags)
     return extHdLen;
 }
 
+
 static void adv_generate_extended_header(_u8* packet,_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
 {
     adv_extended_header_t* extHeader = (adv_extended_header_t*)packet;
@@ -564,7 +548,7 @@ static void adv_generate_extended_header(_u8* packet,_u8 advMode,_u8 flags,adv_e
     if(flags & ADV_EXTENDED_HEADER_FLAG_SYNC_INFO)
     {
 		#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
-    	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->interval   = currentSet->pa->sync.sch.interval;
+    	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->interval   = currentSet->pa->sync.sch.interval/1250;
         //channel table assign
     	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->chML       = *((_u32*)currentSet->pa->csa.map);
     	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->chMH       = currentSet->pa->csa.map[4]&0x1f;
@@ -718,6 +702,7 @@ static void adv_aux_sync_ind_pdu_prepare(_u8 advMode,_u8 flags,adv_extended_head
     {
         txMemcpy(packet+headerLen,currentSet->pa->sync.data.addr,currentSet->pa->sync.data.len);
     }
+
     ll_adv_packet_make(currentSet->pa->sync.phy.txAddress,0,currentSet->ownAddressType?1:0,0);
 }
 #endif
@@ -842,7 +827,6 @@ static void adv_event_extended_connectable_directed_packet_prapare(adv_pdu_class
     }
 }
 
-volatile _u8 AAVV_PACKET[50];
 //ADV_EVENT_EXTENDED_CONNECTABLE_UNDIRECTED
 _RAM_CODE
 static void adv_event_extended_connectable_undirected_packet_prapare(adv_pdu_class_e pduClass)
@@ -1050,7 +1034,7 @@ static void adv_event_extended_non_connectable_non_scannable_directed_with_auxil
                 auxInfo.channel           = currentSet->pChain->entry[0].phy.chn;
                 auxInfo.phy               = currentSet->pChain->entry[0].phy.mode;
             }
-            if(currentSet->pa->active)
+            if(POINTER_VALID(currentSet->pa)&&currentSet->pa->active)
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_SYNC_INFO;
             }
@@ -1112,7 +1096,7 @@ static void adv_event_extended_non_connectable_non_scannable_undirected_with_aux
                 auxInfo.channel           = currentSet->pChain->entry[0].phy.chn;
                 auxInfo.phy               = currentSet->pChain->entry[0].phy.mode;
             }   
-            if(currentSet->pa->active)
+            if(POINTER_VALID(currentSet->pa)&&currentSet->pa->active)
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_SYNC_INFO;
             }
@@ -1806,14 +1790,11 @@ static int adv_periodic_event_step_phy_send_sync_advertising(void)
 	return 1;
 }
 
-volatile int AACC_PA_INT;
-
 static int adv_periodic_event_step_sch_stop(void)
 {
     LLSM->phy.stop();
     currentSet->pa->sync.sch.anchorPoint+=currentSet->pa->sync.sch.interval;
     currentSet->pa->anchor = currentSet->pa->sync.sch.anchorPoint;
-    AACC_PA_INT = currentSet->pa->sync.sch.interval;
     return 1;
 }
 static int adv_periodic_event_step_sch_passed(void)
@@ -2031,6 +2012,7 @@ static void ble_ll_adv_reset(void)
 		}
 		#endif
 		#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
+
 		#endif
 		#if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
 		#endif
