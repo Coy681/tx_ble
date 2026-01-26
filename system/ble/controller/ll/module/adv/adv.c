@@ -151,6 +151,8 @@ void adv_get_next_event(void)
 		#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
 		if((advCtrl->set[i].schMap&ADV_SCH_MAP_PA)&&advCtrl->set[i].pa->active)
 		{
+			DEBUG_GPIO_HIGH(GPIO_11);
+			DEBUG_GPIO_LOW(GPIO_11);
 			if((timestamp == 0)||txCompareTime(timestamp,advCtrl->set[i].pa->anchor))
 			{
 				timestamp = advCtrl->set[i].pa->anchor|1;
@@ -158,6 +160,8 @@ void adv_get_next_event(void)
                 currentSet->pChain = &currentSet->pa->chain;
 				if(advCtrl->set[i].pa->anchor == advCtrl->set[i].pa->sync.sch.anchorPoint)
 				{
+			        DEBUG_GPIO_HIGH(GPIO_12);
+			        DEBUG_GPIO_LOW(GPIO_12);
 					currentEventClass = ADV_PERIODIC_EVENT;
 					adv_set_sch_remap(&currentSet->pa->sync.sch);
 				}
@@ -272,6 +276,48 @@ int ll_adv_task_timing_allocation(ll_internal_adv_set_t* advSet,_u32 refStart,_u
             {
                 continue;
             }
+			#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
+			if(POINTER_VALID(advCtrl->set[i].pa)&&advCtrl->set[i].pa->active)
+			{
+				if(advCtrl->set[i].schMap&ADV_SCH_MAP_PA)
+				{
+					if(txCompareTime(refEnd,advCtrl->set[i].pa->sync.sch.anchorPoint))
+					{
+				        DEBUG_GPIO_HIGH(GPIO_10);
+				        DEBUG_GPIO_LOW(GPIO_10);
+						node[nodeNum].start = advCtrl->set[i].pa->sync.sch.anchorPoint - advCtrl->set[i].pa->sync.sch.startMargin;
+						node[nodeNum].end   = advCtrl->set[i].pa->sync.sch.anchorPoint + advCtrl->set[i].pa->sync.sch.duration + advCtrl->set[i].pa->sync.sch.stopMargin;
+						node[nodeNum].type  = SCH_PERIODIC_TASK;
+						nodeNum++;
+						if(nodeNum>nodeCount)
+						{
+							goto reCal;
+						}
+					}
+					if(advCtrl->set[i].schMap&ADV_SCH_MAP_PA_CHAIN)
+					{
+						for(int j=0;j<advCtrl->set[i].pa->chain.cnt;j++)
+						{
+							if(txCompareTime(refEnd,advCtrl->set[i].pa->chain.entry[j].sch.anchorPoint))
+							{
+								node[nodeNum].start = advCtrl->set[i].pa->chain.entry[j].sch.anchorPoint\
+													- advCtrl->set[i].pa->chain.entry[j].sch.startMargin;
+
+								node[nodeNum].end   = advCtrl->set[i].pa->chain.entry[j].sch.anchorPoint\
+													+ advCtrl->set[i].pa->chain.entry[j].sch.duration\
+													+ advCtrl->set[i].pa->chain.entry[j].sch.stopMargin;
+								node[nodeNum].type  = SCH_SPORADIC_TASK;
+								nodeNum++;
+								if(nodeNum>nodeCount)
+								{
+									goto reCal;
+								}
+							}
+						}
+					}
+				}
+			}
+			#endif
             if(advCtrl->set[i].enable)
             {
                 if(txCompareTime(refEnd,advCtrl->set[i].la.sch.anchorPoint))
@@ -321,46 +367,6 @@ int ll_adv_task_timing_allocation(ll_internal_adv_set_t* advSet,_u32 refStart,_u
                     }
                 }
             }
-			#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
-    		if(POINTER_VALID(advCtrl->set[i].pa)&&advCtrl->set[i].pa->active)
-            {
-    			if(advCtrl->set[i].schMap&ADV_SCH_MAP_PA)
-    			{
-    				if(txCompareTime(refEnd,advCtrl->set[i].pa->sync.sch.anchorPoint))
-    				{
-                        node[nodeNum].start = advCtrl->set[i].pa->sync.sch.anchorPoint - advCtrl->set[i].pa->sync.sch.startMargin;
-                        node[nodeNum].end   = advCtrl->set[i].pa->sync.sch.anchorPoint + advCtrl->set[i].pa->sync.sch.duration + advCtrl->set[i].pa->sync.sch.stopMargin;
-                        node[nodeNum].type  = SCH_PERIODIC_TASK;
-                        nodeNum++;
-                        if(nodeNum>nodeCount)
-                        {
-                            goto reCal;
-                        }
-    				}
-    				if(advCtrl->set[i].schMap&ADV_SCH_MAP_PA_CHAIN)
-    				{
-                        for(int j=0;j<advCtrl->set[i].pa->chain.cnt;j++)
-                        {
-                            if(txCompareTime(refEnd,advCtrl->set[i].pa->chain.entry[j].sch.anchorPoint))
-                            {
-                                node[nodeNum].start = advCtrl->set[i].pa->chain.entry[j].sch.anchorPoint\
-                                                    - advCtrl->set[i].pa->chain.entry[j].sch.startMargin;
-
-                                node[nodeNum].end   = advCtrl->set[i].pa->chain.entry[j].sch.anchorPoint\
-                                                    + advCtrl->set[i].pa->chain.entry[j].sch.duration\
-                                                    + advCtrl->set[i].pa->chain.entry[j].sch.stopMargin;
-                                node[nodeNum].type  = SCH_SPORADIC_TASK;
-                                nodeNum++;
-                                if(nodeNum>nodeCount)
-                                {
-                                    goto reCal;
-                                }
-                            }
-                        }
-    				}
-    			}
-            }
-			#endif
         }
         #endif/*(LL_SUPPORT_LE_EXTENDED_ADVERTISING)*/
     //end of symbol "reCal"
@@ -419,7 +425,21 @@ int ll_adv_task_timing_allocation(ll_internal_adv_set_t* advSet,_u32 refStart,_u
     }
 	#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
     if(((mapType&ADV_SCH_MAP_PA))&&(advSet->schMap&ADV_SCH_MAP_PA))
-    {//attention,chain of periodic sync pdu should greater than sync anchor and smaller than sync anchor plus sync interval
+    {
+//    	_u32 paSpace = advSet->pa->sync.sch.startMargin+
+//    			       advSet->pa->sync.sch.duration+
+//					   advSet->pa->sync.sch.stopMargin;
+//        for(;blockIndex<freeBlockCount;blockIndex++)
+//        {
+//        	if((freeBlock[blockIndex].end - freeBlock[blockIndex].start)>(paSpace+PACKET_T_MAFS_TIME))
+//        	{
+//		        DEBUG_GPIO_HIGH(GPIO_11);
+//		        DEBUG_GPIO_LOW(GPIO_11);
+//        		advSet->pa->sync.sch.anchorPoint = freeBlock[blockIndex].start+advSet->pa->sync.sch.startMargin;
+//        		freeBlock[blockIndex].start +=(paSpace+PACKET_T_MAFS_TIME);
+//        	}
+//        }
+    	//attention,chain of periodic sync pdu should greater than sync anchor and smaller than sync anchor plus sync interval
         if((mapType&ADV_SCH_MAP_PA_CHAIN)&&(advSet->schMap&ADV_SCH_MAP_PA_CHAIN))
         {
             for(int j=0;j<advSet->pa->chain.cnt;j++)
@@ -429,7 +449,9 @@ int ll_adv_task_timing_allocation(ll_internal_adv_set_t* advSet,_u32 refStart,_u
                                 + advSet->pa->chain.entry[j].sch.stopMargin;
                 for(;blockIndex<freeBlockCount;blockIndex++)
                 {
-                    if((freeBlock[blockIndex].end - freeBlock[blockIndex].start)>(chainSpace+PACKET_T_MAFS_TIME))
+                    if((freeBlock[blockIndex].end - freeBlock[blockIndex].start)>(chainSpace+PACKET_T_MAFS_TIME)
+                      &&txCompareTime(freeBlock[blockIndex].start,advSet->pa->sync.sch.anchorPoint)
+					  &&txCompareTime(advSet->pa->sync.sch.anchorPoint + advSet->pa->sync.sch.interval,freeBlock[blockIndex].start))
                     {
                         advSet->pa->chain.entry[j].sch.anchorPoint = freeBlock[blockIndex].start+advSet->pa->chain.entry[j].sch.startMargin;
                         freeBlock[blockIndex].start +=(chainSpace+PACKET_T_MAFS_TIME);//todo,check need space how much
@@ -1250,7 +1272,7 @@ static int adv_event_step_phy_send_advertising(void)
     }
     else
     {
-        adv_prepare_packet[currentSet->eventType](ADV_PDU_CLASS_LEG); 
+        adv_prepare_packet[currentSet->eventType](ADV_PDU_CLASS_LEG);
     }
     #else
     adv_prepare_packet[currentSet->eventType](ADV_PDU_CLASS_LEG);
@@ -1767,6 +1789,8 @@ static adv_procedure_list_t adv_extended_non_con_non_scan_directed_procedure_wit
 #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
 static int adv_periodic_event_step_phy_send_sync_advertising(void)
 {
+    DEBUG_GPIO_HIGH(GPIO_13);
+
     phy_obj_cast(&LLSM->phy);
     currentSet->pa->eventCnt++;
     //prepare packet
@@ -1782,18 +1806,22 @@ static int adv_periodic_event_step_phy_send_sync_advertising(void)
 }
 static int adv_periodic_event_step_sch_stop(void)
 {
+    DEBUG_GPIO_LOW(GPIO_13);
     LLSM->phy.stop();
-    currentSet->pa->sync.sch.anchorPoint+=currentSet->pa->sync.sch.interval;
+    currentSet->pa->anchor = currentSet->pa->sync.sch.anchorPoint+=currentSet->pa->sync.sch.interval;
+    return 1;
 }
 static int adv_periodic_event_step_sch_passed(void)
 {
     currentSet->pa->eventCnt++;
-    currentSet->pa->sync.sch.anchorPoint+=currentSet->pa->sync.sch.interval;
+    currentSet->pa->anchor =  currentSet->pa->sync.sch.anchorPoint+=currentSet->pa->sync.sch.interval;
+    return 1;
 }
 static int adv_periodic_event_step_sch_canceled(void)
 {
     currentSet->pa->eventCnt++;
-    currentSet->pa->sync.sch.anchorPoint+=currentSet->pa->sync.sch.interval;
+    currentSet->pa->anchor = currentSet->pa->sync.sch.anchorPoint+=currentSet->pa->sync.sch.interval;
+    return 1;
 }
 static adv_event_sm_t adv_periodic_event_state_machine[]= 
 {
@@ -1807,8 +1835,6 @@ static adv_event_sm_t adv_periodic_event_state_machine[]=
 };
 static adv_procedure_list_t adv_extended_periodic_procedure[]=
 {
-    {ADV_EVENT,         adv_event_state_machine,         ADV_SM_LIST_LENGTH(adv_event_state_machine),         ADV_CONTEXT_DEFAULT},
-    {ADV_EXTENDED_EVENT,adv_extended_event_state_machine,ADV_SM_LIST_LENGTH(adv_extended_event_state_machine),ADV_CONTEXT_DEFAULT},
     {ADV_PERIODIC_EVENT,adv_periodic_event_state_machine,ADV_SM_LIST_LENGTH(adv_periodic_event_state_machine),ADV_CONTEXT_DEFAULT},
     {ADV_CHAINED_EVENT, adv_chained_event_state_machine, ADV_SM_LIST_LENGTH(adv_chained_event_state_machine), ADV_CONTEXT_CHAINED},
 };
@@ -3389,7 +3415,7 @@ controller_error_code_e ll_set_periodic_advertising_enable(_u8 advHandle,_u8 ena
 		advSet->pa->sync.sch.startMargin= 100;
 		advSet->pa->sync.sch.stopMargin = 100;
 		advSet->pa->sync.sch.duration   = llsm->phy.hw_get_prepare_time()+ll_get_air_packet_time(advSet->pa->sync.phy.mode,2+BLE_ADV_SEC_PHY_MAX_TX_LEN,0);
-		advSet->pa->sync.sch.anchorPoint= system_time()+2000;//todo,periodic task get anchor point from planner
+		advSet->pa->anchor = advSet->pa->sync.sch.anchorPoint= system_time()+200000;//todo,periodic task get anchor point from planner
 	}
 	if((advSet->pa->enable == 1)&&(!(enable&BIT(0))))
 	{
