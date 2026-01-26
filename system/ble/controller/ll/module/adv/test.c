@@ -361,7 +361,7 @@ void ll_adv_test_pa_test_process(_u8* data,_u8 len)
 	  switch(data[0])
 	  {
 		case 0x01:
-			status = ll_set_periodic_advertising_paramters(0x01,0x28,0x00);
+			status = ll_set_periodic_advertising_paramters(0x01,0x50,0x00);
 			LOG_TRACE(1,"set pa parameter",&status,4)
 			break;
 		case 0x02:

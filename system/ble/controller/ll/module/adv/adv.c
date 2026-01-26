@@ -125,6 +125,7 @@ void adv_get_next_event(void)
 				timestamp = advCtrl->set[i].la.sch.anchorPoint|1;
 				currentSet = &advCtrl->set[i];
 				currentEventClass = ADV_EVENT;
+				currentSet->eventType = currentSet->extendedEventType;
 				adv_set_sch_remap(&currentSet->la.sch);
 			}
             if(advCtrl->set[i].schMap&ADV_SCH_MAP_AUX)
@@ -134,6 +135,7 @@ void adv_get_next_event(void)
                     timestamp = advCtrl->set[i].ea->anchor|1;
                     currentSet = &advCtrl->set[i];
                     currentSet->pChain = &currentSet->ea->chain;
+                    currentSet->eventType = currentSet->extendedEventType;
                     if(advCtrl->set[i].ea->anchor == advCtrl->set[i].ea->aux.sch.anchorPoint)
                     {
                         adv_set_sch_remap(&currentSet->ea->aux.sch);
@@ -158,6 +160,7 @@ void adv_get_next_event(void)
 				timestamp = advCtrl->set[i].pa->anchor|1;
 				currentSet = &advCtrl->set[i];
                 currentSet->pChain = &currentSet->pa->chain;
+                currentSet->eventType = ADV_EVENT_EXTENDED_PERIODIC;
 				if(advCtrl->set[i].pa->anchor == advCtrl->set[i].pa->sync.sch.anchorPoint)
 				{
 			        DEBUG_GPIO_HIGH(GPIO_12);
@@ -272,10 +275,6 @@ int ll_adv_task_timing_allocation(ll_internal_adv_set_t* advSet,_u32 refStart,_u
 	    #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
         for(int i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
         {
-            if((advCtrl->set[i].handle == advSet->handle) || (advCtrl->set[i].enable == 0))
-            {
-                continue;
-            }
 			#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
 			if(POINTER_VALID(advCtrl->set[i].pa)&&advCtrl->set[i].pa->active)
 			{
@@ -318,6 +317,10 @@ int ll_adv_task_timing_allocation(ll_internal_adv_set_t* advSet,_u32 refStart,_u
 				}
 			}
 			#endif
+            if((advCtrl->set[i].handle == advSet->handle) || (advCtrl->set[i].enable == 0))
+            {
+                continue;
+            }
             if(advCtrl->set[i].enable)
             {
                 if(txCompareTime(refEnd,advCtrl->set[i].la.sch.anchorPoint))
@@ -1789,8 +1792,6 @@ static adv_procedure_list_t adv_extended_non_con_non_scan_directed_procedure_wit
 #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
 static int adv_periodic_event_step_phy_send_sync_advertising(void)
 {
-    DEBUG_GPIO_HIGH(GPIO_13);
-
     phy_obj_cast(&LLSM->phy);
     currentSet->pa->eventCnt++;
     //prepare packet
@@ -1804,23 +1805,36 @@ static int adv_periodic_event_step_phy_send_sync_advertising(void)
     LLSM->phy.start();
 	return 1;
 }
+
+volatile int AACC_PA_INT;
+
 static int adv_periodic_event_step_sch_stop(void)
 {
-    DEBUG_GPIO_LOW(GPIO_13);
     LLSM->phy.stop();
-    currentSet->pa->anchor = currentSet->pa->sync.sch.anchorPoint+=currentSet->pa->sync.sch.interval;
+    currentSet->pa->sync.sch.anchorPoint+=currentSet->pa->sync.sch.interval;
+    currentSet->pa->anchor = currentSet->pa->sync.sch.anchorPoint;
+    AACC_PA_INT = currentSet->pa->sync.sch.interval;
     return 1;
 }
 static int adv_periodic_event_step_sch_passed(void)
 {
     currentSet->pa->eventCnt++;
-    currentSet->pa->anchor =  currentSet->pa->sync.sch.anchorPoint+=currentSet->pa->sync.sch.interval;
+    currentSet->pa->sync.sch.anchorPoint+=currentSet->pa->sync.sch.interval;
+    currentSet->pa->anchor = currentSet->pa->sync.sch.anchorPoint;
     return 1;
 }
 static int adv_periodic_event_step_sch_canceled(void)
 {
     currentSet->pa->eventCnt++;
-    currentSet->pa->anchor = currentSet->pa->sync.sch.anchorPoint+=currentSet->pa->sync.sch.interval;
+    currentSet->pa->sync.sch.anchorPoint+=currentSet->pa->sync.sch.interval;
+    currentSet->pa->anchor = currentSet->pa->sync.sch.anchorPoint;
+    return 1;
+}
+
+static int adv_periodic_event_step_sch_test(void)
+{
+	DEBUG_GPIO_HIGH(GPIO_14);
+	DEBUG_GPIO_LOW(GPIO_14);
     return 1;
 }
 static adv_event_sm_t adv_periodic_event_state_machine[]= 
@@ -1830,7 +1844,7 @@ static adv_event_sm_t adv_periodic_event_state_machine[]=
     {adv_periodic_event_step_sch_passed,               ADV_CONTEXT_DEFAULT,ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,LL_SCH_EVENT_PASSED},
     {adv_periodic_event_step_sch_canceled,             ADV_CONTEXT_DEFAULT,ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,LL_SCH_EVENT_CANCELED},
 
-    {adv_periodic_event_step_sch_stop,                 ADV_CONTEXT_DEFAULT,ADV_SM_STATE_SENDING_PERIODIC_ADV,ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,LL_PHY_EVENT_SEND_FINISHED},
+    {adv_periodic_event_step_sch_test,                 ADV_CONTEXT_DEFAULT,ADV_SM_STATE_SENDING_PERIODIC_ADV,ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,LL_PHY_EVENT_SEND_FINISHED},
     {adv_periodic_event_step_sch_stop,                 ADV_CONTEXT_DEFAULT,ADV_SM_STATE_SENDING_PERIODIC_ADV,ADV_SM_STATE_IDLE,                ADV_SM_STATE_IDLE,LL_SCH_EVENT_STOP},
 };
 static adv_procedure_list_t adv_extended_periodic_procedure[]=
@@ -1848,8 +1862,6 @@ static adv_event_sm_t adv_periodic_with_rsp_event_state_machine[]=
 };
 static adv_procedure_list_t adv_extended_periodic_with_rsp_procedure[]=
 {
-    {ADV_EVENT,                  adv_event_state_machine,                  ADV_SM_LIST_LENGTH(adv_event_state_machine),                  ADV_CONTEXT_DEFAULT},
-    {ADV_EXTENDED_EVENT,         adv_extended_event_state_machine,         ADV_SM_LIST_LENGTH(adv_extended_event_state_machine),         ADV_CONTEXT_DEFAULT},
     {ADV_PERIODIC_WITH_RSP_EVENT,adv_periodic_with_rsp_event_state_machine,ADV_SM_LIST_LENGTH(adv_periodic_with_rsp_event_state_machine),ADV_CONTEXT_DEFAULT},
 };
 #endif
@@ -1878,54 +1890,60 @@ _DATA static adv_sequence_t advSequence[] =
     #endif
 };
 
+
+
+
 _RAM_CODE
 static void adv_sequence_process(ll_sm_event_e smEventType)
 {
     _u8 advEventType     = currentSet->eventType;//current adv set assigned in 'adv_get_next_event'
-    _u8 advEventClass    = currentEventClass;
-    if(advSequence[advEventType].listLen>advEventClass)//make sure event can be processed,
+    for(_u8 i=0;i<advSequence[advEventType].listLen;i++)
     {
-        for(_u8 i=0;i<advSequence[advEventType].procedureList[advEventClass].listLen;i++)
-        {
-            if(currentSet->state  == advSequence[advEventType].procedureList[advEventClass].sm[i].currentState\
-            && smEventType  == advSequence[advEventType].procedureList[advEventClass].sm[i].event\
-		    &&(advSequence[advEventType].procedureList[advEventClass].context & advSequence[advEventType].procedureList[advEventClass].sm[i].context))
-            {
-                if(currentSet->processingEvent == smEventType)
-                {
-                    return;//reload same event,return
-                }
-                if(advSequence[advEventType].procedureList[advEventClass].sm[i].cb != NULL)
-                {
-                	currentSet->processingEvent = smEventType;//use member value to avoid many entity conflict
-                    int ret = advSequence[advEventType].procedureList[advEventClass].sm[i].cb();
-                    if(ret)
-                    {
-                    	currentSet->state = advSequence[advEventType].procedureList[advEventClass].sm[i].transSuccessState;
-                    }
-                    else
-                    {
-                    	currentSet->state = advSequence[advEventType].procedureList[advEventClass].sm[i].transFailState;
-                    }
-                    currentSet->processingEvent = 0;
-                }
-                if((smEventType & LL_SCH_EVENT_BASE) \
-//                   && ll->state == BLE_LL_STATE_ADVERTISING //todo,when enter connect state,exit
-                   && currentSet->enable\
-                   && currentSet->state == ADV_SM_STATE_IDLE)
-                {
-                    adv_get_next_event();
-                }
-                if((smEventType & LL_PHY_EVENT_BASE)\
-//                  && ll->state  == BLE_LL_STATE_ADVERTISING//can it works ok?
-                  && currentSet->enable\
-                  && currentSet->state == ADV_SM_STATE_IDLE)
-                {
-                	sch_stop_task_early();
-                }
-                break;               
-            }
-        }
+    	if(advSequence[advEventType].procedureList[i].eventClass == currentEventClass)
+    	{
+    		for(_u8 j=0;j<advSequence[advEventType].procedureList[i].listLen;j++)
+    		{
+    			if(currentSet->state  == advSequence[advEventType].procedureList[i].sm[j].currentState\
+				&& smEventType  == advSequence[advEventType].procedureList[i].sm[j].event\
+				&&(advSequence[advEventType].procedureList[i].context & advSequence[advEventType].procedureList[i].sm[j].context))
+				{
+					if(currentSet->processingEvent == smEventType)
+					{
+						return;//reload same event,return
+					}
+					if(advSequence[advEventType].procedureList[i].sm[j].cb != NULL)
+					{
+						currentSet->processingEvent = smEventType;//use member value to avoid many entity conflict
+						int ret = advSequence[advEventType].procedureList[i].sm[j].cb();
+						if(ret)
+						{
+							currentSet->state = advSequence[advEventType].procedureList[i].sm[j].transSuccessState;
+						}
+						else
+						{
+							currentSet->state = advSequence[advEventType].procedureList[i].sm[j].transFailState;
+						}
+						currentSet->processingEvent = 0;
+					}
+					if((smEventType & LL_SCH_EVENT_BASE) \
+		//                   && ll->state == BLE_LL_STATE_ADVERTISING //todo,when enter connect state,exit
+					   && currentSet->enable\
+					   && currentSet->state == ADV_SM_STATE_IDLE)
+					{
+						adv_get_next_event();
+					}
+					if((smEventType & LL_PHY_EVENT_BASE)\
+		//                  && ll->state  == BLE_LL_STATE_ADVERTISING//can it works ok?
+					  && currentSet->enable\
+					  && currentSet->state == ADV_SM_STATE_IDLE)
+					{
+						sch_stop_task_early();
+					}
+					break;
+				}
+    		}
+    		break;
+    	}
     }
 }
 
@@ -2035,6 +2053,9 @@ int ble_ll_enter_advertising_state(void)
 		{
 			advCtrl->set[i].inSch = 1;
 			advCtrl->set[i].state = ADV_SM_STATE_IDLE;
+			#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
+			advCtrl->set[i].extendedEventType = advCtrl->set[i].eventType;
+			#endif
 			ll_adv_task_timing_allocation(&advCtrl->set[i],system_time()+500,system_time()+500+advCtrl->set[i].la.sch.interval,ADV_SCH_MAP_ALL);
 		}
 	}
