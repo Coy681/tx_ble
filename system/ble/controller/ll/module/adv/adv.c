@@ -457,7 +457,7 @@ _u16 adv_calculate_extended_header_length(_u8 flags)
 {
     if(flags == 0)
     {   
-        return 0;
+        return 1;
     }
     _u16 extHdLen = 2;
     if(flags & ADV_EXTENDED_HEADER_FLAG_ADV_A)
@@ -555,7 +555,7 @@ static void adv_generate_extended_header(_u8* packet,_u8 advMode,_u8 flags,adv_e
     	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->crcInit[0] = currentSet->pa->sync.phy.crcInit&0xff;
     	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->crcInit[1] = (currentSet->pa->sync.phy.crcInit>>8)&0xff;
     	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->crcInit[2] = (currentSet->pa->sync.phy.crcInit>>16)&0xff;
-    	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->AA         = currentSet->pa->sync.phy.accessCode;
+    	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->AA         = swap_endian_32(currentSet->pa->sync.phy.accessCode);
     	((adv_extended_header_subfield_syncInfo_t*)(extHeader->param+offset))->sca        = 3;
 		_u32 stepCnt = 0;
 		_u32 anchorTime = currentSet->ea->aux.sch.anchorPoint;
@@ -587,7 +587,14 @@ static void adv_generate_extended_header(_u8* packet,_u8 advMode,_u8 flags,adv_e
     {
         offset+=sizeof(adv_extended_header_subfield_Tx_Power_t);
     }
-    extHeader->len = 1+offset;
+    if(offset)
+    {
+        extHeader->len = 1+offset;
+    }
+    else
+    {
+        extHeader->len = 0;
+    }
 }
 #endif//LL_SUPPORT_LE_EXTENDED_ADVERTISING
 
@@ -702,7 +709,6 @@ static void adv_aux_sync_ind_pdu_prepare(_u8 advMode,_u8 flags,adv_extended_head
     {
         txMemcpy(packet+headerLen,currentSet->pa->sync.data.addr,currentSet->pa->sync.data.len);
     }
-
     ll_adv_packet_make(currentSet->pa->sync.phy.txAddress,0,currentSet->ownAddressType?1:0,0);
 }
 #endif
@@ -1783,7 +1789,7 @@ static int adv_periodic_event_step_phy_send_sync_advertising(void)
     //prepare phy
     //step 1:calculate channel
     currentSet->pa->csa.counter = currentSet->pa->eventCnt;
-    currentSet->pa->sync.phy.chn = ll_csa_cal_channel_index(&currentSet->pa->csa);
+    currentSet->pa->sync.phy.chn = 34;//ll_csa_cal_channel_index(&currentSet->pa->csa);
     //step 2:calculate channel
     adv_prepare_phy(&currentSet->pa->sync.phy,currentSet->pa->sync.sch.anchorPoint,PHY_DIR_TX);
     LLSM->phy.start();
@@ -3375,6 +3381,7 @@ controller_error_code_e ll_set_periodic_advertising_data(_u8 advHandle,ll_advert
 	return SUCCESS;
 }
 
+
 controller_error_code_e ll_set_periodic_advertising_enable(_u8 advHandle,_u8 enable)
 {
 	ll_sm_t* llsm = (ll_sm_t*)ll_get_sm_entity_by_state(BLE_LL_STATE_ADVERTISING,LL_SM_INVALID_HANDLE,0);
@@ -3402,12 +3409,13 @@ controller_error_code_e ll_set_periodic_advertising_enable(_u8 advHandle,_u8 ena
 		{
 			advSet->pa->active = 1;
 		}
-		advSet->pa->includeAdi = (enable&BIT(1)==0?0:1);
+		advSet->pa->includeAdi = ((enable&BIT(1))==0?0:1);
 		phy_obj_cast(&llsm->phy);
 		advSet->pa->sync.phy.mode       = advSet->ea->phyMode;
 		advSet->pa->sync.phy.rxMaxOctets= BLE_ADV_PRI_PHY_MAX_RX_LEN;
-		advSet->pa->sync.phy.accessCode = 0x89762349;
-		advSet->pa->sync.phy.crcInit    = 0x192874;
+		advSet->pa->sync.phy.accessCode = 0x84583423;
+		advSet->pa->sync.phy.crcInit    = 0x234221;
+
 		advSet->pa->sync.phy.txAddress  = ll_get_shared_phy_tx_address();;
 		advSet->pa->sync.phy.rxAddress  = ll_get_shared_phy_rx_address();
 		advSet->pa->csa.mode = LL_CSA_2;

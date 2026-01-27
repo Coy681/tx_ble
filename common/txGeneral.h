@@ -16,3 +16,6 @@ int  txStringLength(_s8* string);
 
 int  txCompareTime(_u32 val1,_u32 val2);
 
+int  swap_endian_32(int value);
+
+int  swap_endian_16(int value);

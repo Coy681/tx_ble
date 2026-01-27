@@ -355,15 +355,16 @@ void ll_adv_test_pa_test_process(_u8* data,_u8 len)
 	  _u8 advData[48];
 	  for(int i=0;i<48;i++)
 	  {
-		  advData[i] = i;
+		  advData[i] = 0x65;
 	  }
 	  int status = 0;
 	  switch(data[0])
 	  {
 		case 0x01:
 			_u8 table[5]={0xff,0xff,0xff,0xff,0xff};
+			extern ll_set_default_channel_table();
 			ll_set_default_channel_table(table);
-			status = ll_set_periodic_advertising_paramters(0x01,0x50,0x00);
+			status = ll_set_periodic_advertising_paramters(0x01,0x30,0x00);
 			LOG_TRACE(1,"set pa parameter",&status,4)
 			break;
 		case 0x02:
@@ -381,6 +382,7 @@ void ll_adv_test_pa_test_process(_u8* data,_u8 len)
 
 void ll_adv_test_process(_u8* data,_u8 len)
 {
+
     switch(data[0])
     {
     	case 0x00:
