@@ -191,6 +191,7 @@ void ll_adv_test_ea_test_process(_u8* data,_u8 len)
 			break;
 		case 0x11:
 			extendedAdvParam.advHandle = 0x01;
+			extendedAdvParam.advSid    = 0x01;
 			status = ll_set_extended_advertising_parameters(&extendedAdvParam);
 			LOG_TRACE(1,"set extended param",&status,4)
 			break;
@@ -269,6 +270,7 @@ void ll_adv_test_ea_test_process(_u8* data,_u8 len)
 			break;
 		case 0x21:
 			extendedAdvParam.advHandle = 0x02;
+			extendedAdvParam.advSid    = 0x02;
 			status = ll_set_extended_advertising_parameters(&extendedAdvParam);
 			LOG_TRACE(1,"set extended param",&status,4)
 			break;
@@ -372,7 +374,20 @@ void ll_adv_test_pa_test_process(_u8* data,_u8 len)
 			LOG_TRACE(1,"set pa data",&status,4)
 			break;
 		case 0x03:
-			status = ll_set_periodic_advertising_enable(0x01,1);
+			status = ll_set_periodic_advertising_enable(0x01,3);
+			LOG_TRACE(1,"set pa enable",&status,4)
+			break;
+
+		case 0x11:
+			status = ll_set_periodic_advertising_paramters(0x00,0x30,0x00);
+			LOG_TRACE(1,"set pa parameter",&status,4)
+			break;
+		case 0x12:
+			status = ll_set_periodic_advertising_data(0x00,LL_ADV_DATA_OPERATION_COMPLETE,48,advData);
+			LOG_TRACE(1,"set pa data",&status,4)
+			break;
+		case 0x13:
+			status = ll_set_periodic_advertising_enable(0x00,3);
 			LOG_TRACE(1,"set pa enable",&status,4)
 			break;
 		default:
