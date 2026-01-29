@@ -69,6 +69,11 @@ typedef enum
     ADV_PDU_CLASS_SYNC,
 }adv_pdu_class_e;
 
+typedef enum
+{
+	E_ADV_EXTENDED_CHIAN,
+	E_ADV_PERIODIC_CHIAN,
+}adv_chain_event_type_e;
 
 typedef enum
 {

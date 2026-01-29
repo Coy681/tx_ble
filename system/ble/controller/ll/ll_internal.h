@@ -124,9 +124,10 @@ typedef struct
 #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
 typedef struct
 {
-    _u8  cnt;
-    _u8  current;
-    _u16 rsvd;
+    _u8  type;//search in 'adv_chain_event_type_e'
+    _u8  idx;//current used chain entry
+    _u8  cnt;//total chain number
+    _u8  rsvd;
     ll_adv_entry_t* entry;
 }ll_adv_chain_entry_t;
 
@@ -146,7 +147,6 @@ typedef struct
     _u16 rsvd2;
 
     _u32 expireTime;//unit is us
-    _u32 anchor;
     _u32 eventCnt;
     ll_adv_entry_t        aux;
     ll_adv_chain_entry_t  chain;
@@ -166,7 +166,6 @@ typedef struct
     _u8  rsvd1;
 
     _u32 eventCnt;
-    _u32 anchor;
 	ll_csa_ctrl_t         csa;
     ll_adv_data_entry_t   data;
     ll_adv_entry_t        sync;

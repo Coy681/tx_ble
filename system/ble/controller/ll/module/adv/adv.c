@@ -116,63 +116,76 @@ void adv_get_next_event(void)
 {
 	#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
     _u32 timestamp = 0;
+    ll_adv_sch_entry_t* pSch = NULL;
     for(_u8 i=0;i<BLE_ADV_SUPPORTED_NUMBER_OF_ADV_SETS;i++)
     {
-        if(advCtrl->set[i].enable)
-        {
-			if((timestamp == 0)||txCompareTime(timestamp,advCtrl->set[i].la.sch.anchorPoint))
-			{
-				timestamp = advCtrl->set[i].la.sch.anchorPoint|1;
-				currentSet = &advCtrl->set[i];
-				currentEventClass = ADV_EVENT;
-				currentSet->eventType = currentSet->extendedEventType;
-				adv_set_sch_remap(&currentSet->la.sch);
-			}
+    	if(advCtrl->set[i].enable)
+    	{
+        	if(advCtrl->set[i].schMap&ADV_SCH_MAP_PRI)
+            {
+				if((timestamp == 0)||txCompareTime(timestamp,advCtrl->set[i].la.sch.anchorPoint))
+				{
+					timestamp = advCtrl->set[i].la.sch.anchorPoint|1;
+					currentSet = &advCtrl->set[i];
+					currentEventClass = ADV_EVENT;
+					pSch = &currentSet->la.sch;
+				}
+            }
             if(advCtrl->set[i].schMap&ADV_SCH_MAP_AUX)
             {
-                if((timestamp == 0)||txCompareTime(timestamp,advCtrl->set[i].ea->anchor))
-                {
-                    timestamp = advCtrl->set[i].ea->anchor|1;
-                    currentSet = &advCtrl->set[i];
-                    currentSet->pChain = &currentSet->ea->chain;
-                    currentSet->eventType = currentSet->extendedEventType;
-                    if(advCtrl->set[i].ea->anchor == advCtrl->set[i].ea->aux.sch.anchorPoint)
-                    {
-                        adv_set_sch_remap(&currentSet->ea->aux.sch);
-                        currentEventClass = ADV_EXTENDED_EVENT;
-                    }
-                    else if(advCtrl->set[i].schMap&ADV_SCH_MAP_AUX_CHAIN)
-                    {
-                        adv_set_sch_remap(&currentSet->ea->chain.entry[currentSet->ea->chain.current].sch);
-                        currentEventClass = ADV_CHAINED_EVENT;
-                    }
-                }
+				if((timestamp == 0)||txCompareTime(timestamp,advCtrl->set[i].ea->aux.sch.anchorPoint))
+				{
+					timestamp = advCtrl->set[i].ea->aux.sch.anchorPoint|1;
+					currentSet = &advCtrl->set[i];
+					currentEventClass = ADV_EXTENDED_EVENT;
+					pSch = &advCtrl->set[i].ea->aux.sch;
+				}
             }
-        }
-
-		#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
-		if((advCtrl->set[i].schMap&ADV_SCH_MAP_PA)&&advCtrl->set[i].pa->active)
-		{
-			if((timestamp == 0)||txCompareTime(timestamp,advCtrl->set[i].pa->anchor))
-			{
-				timestamp = advCtrl->set[i].pa->anchor|1;
-				currentSet = &advCtrl->set[i];
-                currentSet->pChain = &currentSet->pa->chain;
-                currentSet->eventType = ADV_EVENT_EXTENDED_PERIODIC;
-				if(advCtrl->set[i].pa->anchor == advCtrl->set[i].pa->sync.sch.anchorPoint)
+            if(advCtrl->set[i].schMap&ADV_SCH_MAP_AUX_CHAIN)
+            {
+				if((timestamp == 0)||txCompareTime(timestamp,advCtrl->set[i].ea->chain.entry[advCtrl->set[i].ea->chain.idx].sch.anchorPoint))
 				{
-					currentEventClass = ADV_PERIODIC_EVENT;
-					adv_set_sch_remap(&currentSet->pa->sync.sch);
-				}
-				else if(advCtrl->set[i].schMap&ADV_SCH_MAP_PA_CHAIN)
-				{
+					timestamp = advCtrl->set[i].ea->chain.entry[advCtrl->set[i].ea->chain.idx].sch.anchorPoint|1;
+					currentSet = &advCtrl->set[i];
 					currentEventClass = ADV_CHAINED_EVENT;
-					adv_set_sch_remap(&currentSet->pa->chain.entry[currentSet->pa->chain.current].sch);
+					pSch = &advCtrl->set[i].ea->chain.entry[advCtrl->set[i].ea->chain.idx].sch;
 				}
+            }
+    	}
+		#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
+    	if(advCtrl->set[i].pa->active)
+    	{
+            if(advCtrl->set[i].schMap&ADV_SCH_MAP_PA)
+            {
+				if((timestamp == 0)||txCompareTime(timestamp,advCtrl->set[i].pa->sync.sch.anchorPoint))
+				{
+					timestamp = advCtrl->set[i].pa->sync.sch.anchorPoint|1;
+					currentSet = &advCtrl->set[i];
+					currentEventClass = ADV_PERIODIC_EVENT;
+					pSch = &advCtrl->set[i].pa->sync.sch;
+            	}
+            }
+            if(advCtrl->set[i].schMap&ADV_SCH_MAP_PA_CHAIN)
+            {
+				if((timestamp == 0)||txCompareTime(timestamp,advCtrl->set[i].pa->chain.entry[advCtrl->set[i].pa->chain.idx].sch.anchorPoint))
+				{
+					timestamp = advCtrl->set[i].pa->chain.entry[advCtrl->set[i].pa->chain.idx].sch.anchorPoint|1;
+					currentSet = &advCtrl->set[i];
+					currentEventClass = ADV_CHAINED_EVENT;
+					pSch = &advCtrl->set[i].pa->chain.entry[advCtrl->set[i].pa->chain.idx].sch;
+				}
+            }
+			#if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
+			if(advCtrl->set[i].schMap&ADV_SCH_MAP_PAWR)
+			{
+
 			}
-		}
-		#endif/*(LL_SUPPORT_LE_PERIODIC_ADVERTISING)*/
+			#endif
+    	}
+		#endif
     }
+    ASSERT(pSch!=NULL);
+    adv_set_sch_remap(pSch);
     #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
     #endif/*(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)*/
 
@@ -278,8 +291,6 @@ int ll_adv_task_timing_allocation(ll_internal_adv_set_t* advSet,_u32 refStart,_u
 				{
 					if(txCompareTime(refEnd,advCtrl->set[i].pa->sync.sch.anchorPoint))
 					{
-				        DEBUG_GPIO_HIGH(GPIO_10);
-				        DEBUG_GPIO_LOW(GPIO_10);
 						node[nodeNum].start = advCtrl->set[i].pa->sync.sch.anchorPoint - advCtrl->set[i].pa->sync.sch.startMargin;
 						node[nodeNum].end   = advCtrl->set[i].pa->sync.sch.anchorPoint + advCtrl->set[i].pa->sync.sch.duration + advCtrl->set[i].pa->sync.sch.stopMargin;
 						node[nodeNum].type  = SCH_PERIODIC_TASK;
@@ -387,7 +398,7 @@ int ll_adv_task_timing_allocation(ll_internal_adv_set_t* advSet,_u32 refStart,_u
         }
     }
 	#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
-    if(((mapType&ADV_SCH_MAP_AUX))&&(advSet->schMap&ADV_SCH_MAP_AUX))
+    if(((mapType&ADV_SCH_MAP_AUX))&&(advSet->enable)&&(advSet->schMap&ADV_SCH_MAP_AUX))
     {
         _u32 secondarySpace = advSet->ea->aux.sch.startMargin\
         		            + advSet->ea->aux.sch.duration\
@@ -397,7 +408,6 @@ int ll_adv_task_timing_allocation(ll_internal_adv_set_t* advSet,_u32 refStart,_u
             if((freeBlock[blockIndex].end - freeBlock[blockIndex].start)>(secondarySpace+PACKET_T_MAFS_TIME))
             {
                 advSet->ea->aux.sch.anchorPoint = freeBlock[blockIndex].start+advSet->ea->aux.sch.startMargin;
-                advSet->ea->anchor = advSet->ea->aux.sch.anchorPoint;
                 freeBlock[blockIndex].start +=(secondarySpace+PACKET_T_MAFS_TIME);//todo,check need space how much
                 break;
             }
@@ -419,11 +429,12 @@ int ll_adv_task_timing_allocation(ll_internal_adv_set_t* advSet,_u32 refStart,_u
                         break;
                     }
                 }
+                advSet->ea->chain.idx = 0;
             }
         }
     }
 	#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
-    if(((mapType&ADV_SCH_MAP_PA))&&(advSet->schMap&ADV_SCH_MAP_PA))
+    if(((mapType&ADV_SCH_MAP_PA))&&(advSet->pa->active)&&(advSet->schMap&ADV_SCH_MAP_PA))
     {
     	//attention,chain of periodic sync pdu should greater than sync anchor and smaller than sync anchor plus sync interval
         if((mapType&ADV_SCH_MAP_PA_CHAIN)&&(advSet->schMap&ADV_SCH_MAP_PA_CHAIN))
@@ -444,6 +455,7 @@ int ll_adv_task_timing_allocation(ll_internal_adv_set_t* advSet,_u32 refStart,_u
                         break;
                     }
                 }
+                advSet->pa->chain.idx = 0;
             }
         }
     }
@@ -1202,7 +1214,13 @@ static void adv_event_extended_periodic_packet_prapare(adv_pdu_class_e pduClass)
           		auxInfo.channel           = currentSet->pa->chain.entry[0].phy.chn;
         	}
         	adv_aux_sync_ind_pdu_prepare(advMode,flags,&auxInfo,currentSet->pa->did);
-        }
+        }break;
+        case ADV_PDU_CLASS_CHAIN:
+        {
+
+        }break;
+        default:
+        	break;
     }
 }
 #endif
@@ -1800,6 +1818,10 @@ static int adv_periodic_event_step_sch_stop(void)
 {
     LLSM->phy.stop();
     currentSet->pa->sync.sch.anchorPoint+=currentSet->pa->sync.sch.interval;
+    if(currentSet->pa->chain.cnt)
+    {
+
+    }
     currentSet->pa->anchor = currentSet->pa->sync.sch.anchorPoint;
     return 1;
 }
@@ -2603,13 +2625,15 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 		}
 		else
 		{
-			_u8 remainLen          = ((advSet->data.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))%BLE_ADV_SEC_PHY_MAX_TX_LEN;
-			_u8 chainCnt           = ((advSet->data.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))/BLE_ADV_SEC_PHY_MAX_TX_LEN + (remainLen==0?0:1);
+			_u8 remainLen            = ((advSet->data.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))%BLE_ADV_SEC_PHY_MAX_TX_LEN;
+			_u8 chainCnt             = ((advSet->data.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))/BLE_ADV_SEC_PHY_MAX_TX_LEN + (remainLen==0?0:1);
 			advSet->schMap          |= ADV_SCH_MAP_AUX_CHAIN;
 			advSet->ea->chain.entry  = (ll_adv_entry_t*)tx_malloc(chainCnt*sizeof(ll_adv_entry_t));
 			advSet->ea->chain.cnt    = chainCnt;
+			advSet->ea->chain.idx    = 0;
+			advSet->ea->chain.type   = E_ADV_EXTENDED_CHIAN;
 			advSet->ea->aux.data.len = BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN;
-			_u16 offset            = advSet->ea->aux.data.len;
+			_u16 offset              = advSet->ea->aux.data.len;
 			for(_u8 i=0;i<chainCnt-1;i++)
 			{
 				advSet->ea->chain.entry[i].data.len = BLE_ADV_SEC_PHY_MAX_TX_LEN;
@@ -2791,11 +2815,13 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 		}
 		else
 		{
-			_u8 remainLen         = ((advSet->scanRsp.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))%BLE_ADV_SEC_PHY_MAX_TX_LEN;
-			_u8 chainCnt          = ((advSet->scanRsp.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))/BLE_ADV_SEC_PHY_MAX_TX_LEN + (remainLen==0?0:1);
-			advSet->schMap         |= ADV_SCH_MAP_AUX_CHAIN;
-			advSet->ea->chain.entry = (ll_adv_entry_t*)tx_malloc(chainCnt*sizeof(ll_adv_entry_t));
-			advSet->ea->chain.cnt   = chainCnt;
+			_u8 remainLen            = ((advSet->scanRsp.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))%BLE_ADV_SEC_PHY_MAX_TX_LEN;
+			_u8 chainCnt             = ((advSet->scanRsp.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))/BLE_ADV_SEC_PHY_MAX_TX_LEN + (remainLen==0?0:1);
+			advSet->schMap          |= ADV_SCH_MAP_AUX_CHAIN;
+			advSet->ea->chain.entry  = (ll_adv_entry_t*)tx_malloc(chainCnt*sizeof(ll_adv_entry_t));
+			advSet->ea->chain.cnt    = chainCnt;
+			advSet->ea->chain.idx    = 0;
+			advSet->ea->chain.type   = E_ADV_EXTENDED_CHIAN;
 			advSet->ea->aux.data.len = BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN;
 			_u16 offset           = advSet->ea->aux.data.len;
 			for(_u8 i=0;i<chainCnt-1;i++)
@@ -3358,11 +3384,13 @@ controller_error_code_e ll_set_periodic_advertising_data(_u8 advHandle,ll_advert
 		}
 		else
 		{
-			_u8 remainLen         = ((advSet->pa->data.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))%BLE_ADV_SEC_PHY_MAX_TX_LEN;
-			_u8 chainCnt          = ((advSet->pa->data.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))/BLE_ADV_SEC_PHY_MAX_TX_LEN + (remainLen==0?0:1);
-			advSet->schMap         |= ADV_SCH_MAP_PA_CHAIN;
-			advSet->pa->chain.entry = (ll_adv_entry_t*)tx_malloc(chainCnt*sizeof(ll_adv_entry_t));
-			advSet->pa->chain.cnt   = chainCnt;
+			_u8 remainLen            = ((advSet->pa->data.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))%BLE_ADV_SEC_PHY_MAX_TX_LEN;
+			_u8 chainCnt             = ((advSet->pa->data.len-(BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN)))/BLE_ADV_SEC_PHY_MAX_TX_LEN + (remainLen==0?0:1);
+			advSet->schMap          |= ADV_SCH_MAP_PA_CHAIN;
+			advSet->pa->chain.entry  = (ll_adv_entry_t*)tx_malloc(chainCnt*sizeof(ll_adv_entry_t));
+			advSet->pa->chain.cnt    = chainCnt;
+			advSet->ea->chain.idx    = 0;
+			advSet->ea->chain.type   = E_ADV_PERIODIC_CHIAN;
 			advSet->pa->sync.data.len = BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN;
 			_u16 offset           = advSet->pa->sync.data.len;
 			for(_u8 i=0;i<chainCnt-1;i++)
