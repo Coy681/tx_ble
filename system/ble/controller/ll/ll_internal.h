@@ -115,6 +115,7 @@ typedef struct
 {
     _u8  channelCnt:2;//total adv channel count,max 3,min 1
     _u8  availableChnCnt:2;//max is channelCnt
+    _u8  eventType:4;
     _u8  chnTable[3];
     _u32 eventCnt;
     ll_adv_sch_entry_t  sch;
@@ -134,7 +135,7 @@ typedef struct
 typedef struct 
 {
     _u16 did:12;
-    _u16 rsvd:4;
+    _u16 eventType:4;
     _u8  power;
     _u8  maxEvents;
 
@@ -160,7 +161,7 @@ typedef struct
     _u8  includeTxPower:1;
     _u8  includeAdi:1;
     _u8  active:1;
-    _u8  rsvd:4;
+    _u8  eventType:4;
     _u16 did:12;
     _u16 rsvd2:4;
     _u8  rsvd1;
@@ -187,7 +188,7 @@ typedef struct
     _u8  state:5;//state machine sate
     _u8  inSch:1;
     _u8  rsvd0:1;
-    _u8  eventType:4;//adv event type,search"adv_event_type_e"
+    _u8  rsvd1:4;//adv event type,search"adv_event_type_e"
     _u8  processingEvent:4;//to prevent adv sub state machine re-retrance
 
     #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
@@ -199,7 +200,7 @@ typedef struct
     _u8  extendedEventType:4;
 	#else
     _u8  schMap:4;//adv set maybe have many sch type,such as adv,auy,pda,chain
-    _u8  rsvd1:4;
+    _u8  rsvd2:4;
     #endif
     _u8  ownAddressType:2;//'ll_own_address_type_e'
     _u8  peerAddressType:2;//'ll_peer_address_type_e'

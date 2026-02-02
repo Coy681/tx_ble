@@ -42,8 +42,6 @@ typedef enum
     ADV_CONTEXT_CHAINED     = BIT(4),
 }adv_context_e;
 
-
-
 /******* local struct define *******/
 typedef int(*adv_event_sm_cb)(void);
 typedef struct _PACKED
@@ -98,7 +96,7 @@ static ll_internal_adv_ctrl_t* advCtrl;//adv ctrl pointer,point to current adv s
  */
 static ll_internal_adv_set_t* currentSet;//current used adv set
 static int currentEventClass;//current event class,search for 'adv_event_class_e'
-
+static int currentEventType;//current event type,search for 'adv_event_type_e'
 
 /*************************************ADV Schedule Process*******************************************/
 _RAM_CODE
@@ -128,6 +126,7 @@ void adv_get_next_event(void)
 					timestamp = advCtrl->set[i].la.sch.anchorPoint|1;
 					currentSet = &advCtrl->set[i];
 					currentEventClass = ADV_EVENT;
+		            currentEventType = currentSet->la.eventType;
 					pSch = &currentSet->la.sch;
 				}
             }
@@ -139,6 +138,7 @@ void adv_get_next_event(void)
 					currentSet = &advCtrl->set[i];
 					currentEventClass = ADV_EXTENDED_EVENT;
 					pSch = &advCtrl->set[i].ea->aux.sch;
+		            currentEventType = currentSet->ea->eventType;
 				}
             }
             if(advCtrl->set[i].schMap&ADV_SCH_MAP_AUX_CHAIN)
@@ -149,8 +149,11 @@ void adv_get_next_event(void)
 					currentSet = &advCtrl->set[i];
 					currentEventClass = ADV_CHAINED_EVENT;
 					pSch = &advCtrl->set[i].ea->chain.entry[advCtrl->set[i].ea->chain.idx].sch;
+		            currentEventType = currentSet->ea->eventType;
+		            currentSet->pChain = &currentSet->ea->chain;
 				}
             }
+
     	}
 		#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
     	if(advCtrl->set[i].pa->active)
@@ -163,6 +166,7 @@ void adv_get_next_event(void)
 					currentSet = &advCtrl->set[i];
 					currentEventClass = ADV_PERIODIC_EVENT;
 					pSch = &advCtrl->set[i].pa->sync.sch;
+					currentEventType = currentSet->pa->eventType;
             	}
             }
             if(advCtrl->set[i].schMap&ADV_SCH_MAP_PA_CHAIN)
@@ -173,6 +177,8 @@ void adv_get_next_event(void)
 					currentSet = &advCtrl->set[i];
 					currentEventClass = ADV_CHAINED_EVENT;
 					pSch = &advCtrl->set[i].pa->chain.entry[advCtrl->set[i].pa->chain.idx].sch;
+					currentEventType = currentSet->pa->eventType;
+		            currentSet->pChain = &currentSet->pa->chain;
 				}
             }
 			#if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
@@ -181,6 +187,7 @@ void adv_get_next_event(void)
 
 			}
 			#endif
+
     	}
 		#endif
     }
@@ -398,7 +405,9 @@ int ll_adv_task_timing_allocation(ll_internal_adv_set_t* advSet,_u32 refStart,_u
         }
     }
 	#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
-    if(((mapType&ADV_SCH_MAP_AUX))&&(advSet->enable)&&(advSet->schMap&ADV_SCH_MAP_AUX))
+    if(advSet->enable
+    &&(mapType&ADV_SCH_MAP_AUX)
+	&&(advSet->schMap&ADV_SCH_MAP_AUX))
     {
         _u32 secondarySpace = advSet->ea->aux.sch.startMargin\
         		            + advSet->ea->aux.sch.duration\
@@ -434,7 +443,9 @@ int ll_adv_task_timing_allocation(ll_internal_adv_set_t* advSet,_u32 refStart,_u
         }
     }
 	#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
-    if(((mapType&ADV_SCH_MAP_PA))&&(advSet->pa->active)&&(advSet->schMap&ADV_SCH_MAP_PA))
+    if(advSet->pa->active
+    &&(mapType&ADV_SCH_MAP_PA)
+	&&(advSet->schMap&ADV_SCH_MAP_PA))
     {
     	//attention,chain of periodic sync pdu should greater than sync anchor and smaller than sync anchor plus sync interval
         if((mapType&ADV_SCH_MAP_PA_CHAIN)&&(advSet->schMap&ADV_SCH_MAP_PA_CHAIN))
@@ -701,13 +712,13 @@ static void adv_aux_conn_rsp_pdu_prepare(_u8 advMode,_u8 flags,adv_extended_head
 static void adv_aux_chain_ind_pdu_prepare(_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
-    _u8* packet = ll_adv_packet_data_prepare(currentSet->pChain->entry[currentSet->pChain->current].phy.txAddress,headerLen+currentSet->ea->chain.entry[currentSet->pChain->current].data.len,LL_ADV_TYPE_AUX_CHAIN_IND);
+    _u8* packet = ll_adv_packet_data_prepare(currentSet->pChain->entry[currentSet->pChain->idx].phy.txAddress,headerLen+currentSet->ea->chain.entry[currentSet->pChain->idx].data.len,LL_ADV_TYPE_AUX_CHAIN_IND);
     adv_generate_extended_header(packet,advMode,flags,auxInfo,did);
-    if(currentSet->pChain->entry[currentSet->pChain->current].data.len!=0)
+    if(currentSet->pChain->entry[currentSet->pChain->idx].data.len!=0)
     {
-        txMemcpy(packet+headerLen,currentSet->pChain->entry[currentSet->pChain->current].data.addr,currentSet->pChain->entry[currentSet->pChain->current].data.len);
+        txMemcpy(packet+headerLen,currentSet->pChain->entry[currentSet->pChain->idx].data.addr,currentSet->pChain->entry[currentSet->pChain->idx].data.len);
     }
-    ll_adv_packet_make(currentSet->pChain->entry[currentSet->pChain->current].phy.txAddress,0,currentSet->ownAddressType?1:0,0);
+    ll_adv_packet_make(currentSet->pChain->entry[currentSet->pChain->idx].phy.txAddress,0,currentSet->ownAddressType?1:0,0);
 }
 #endif
 #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
@@ -938,13 +949,13 @@ static void adv_event_extended_scannable_directed_packet_prapare(adv_pdu_class_e
         case ADV_PDU_CLASS_CHAIN:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI;
-            if(currentSet->pChain->cnt>(currentSet->pChain->current+1))
+            if(currentSet->pChain->cnt>(currentSet->pChain->idx+1))
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-                auxInfo.anchorPoint       = currentSet->pChain->entry[currentSet->pChain->current].sch.anchorPoint;
-                auxInfo.targetAnchorPoint = currentSet->pChain->entry[currentSet->pChain->current+1].sch.anchorPoint;
-                auxInfo.channel           = currentSet->pChain->entry[currentSet->pChain->current+1].phy.chn;
-                auxInfo.phy               = currentSet->pChain->entry[currentSet->pChain->current+1].phy.mode;
+                auxInfo.anchorPoint       = currentSet->pChain->entry[currentSet->pChain->idx].sch.anchorPoint;
+                auxInfo.targetAnchorPoint = currentSet->pChain->entry[currentSet->pChain->idx+1].sch.anchorPoint;
+                auxInfo.channel           = currentSet->pChain->entry[currentSet->pChain->idx+1].phy.chn;
+                auxInfo.phy               = currentSet->pChain->entry[currentSet->pChain->idx+1].phy.mode;
             }
             adv_aux_chain_ind_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);
         }
@@ -1004,13 +1015,13 @@ static void adv_event_extended_scannable_undirected_packet_prapare(adv_pdu_class
         case ADV_PDU_CLASS_CHAIN:
         {
             flags = ADV_EXTENDED_HEADER_FLAG_ADI;
-            if(currentSet->pChain->cnt>(currentSet->pChain->current+1))
+            if(currentSet->pChain->cnt>(currentSet->pChain->idx+1))
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-                auxInfo.anchorPoint       = currentSet->pChain->entry[currentSet->pChain->current].sch.anchorPoint;
-                auxInfo.targetAnchorPoint = currentSet->pChain->entry[currentSet->pChain->current+1].sch.anchorPoint;
-                auxInfo.channel           = currentSet->pChain->entry[currentSet->pChain->current+1].phy.chn;
-                auxInfo.phy               = currentSet->pChain->entry[currentSet->pChain->current+1].phy.mode;
+                auxInfo.anchorPoint       = currentSet->pChain->entry[currentSet->pChain->idx].sch.anchorPoint;
+                auxInfo.targetAnchorPoint = currentSet->pChain->entry[currentSet->pChain->idx+1].sch.anchorPoint;
+                auxInfo.channel           = currentSet->pChain->entry[currentSet->pChain->idx+1].phy.chn;
+                auxInfo.phy               = currentSet->pChain->entry[currentSet->pChain->idx+1].phy.mode;
             }
             adv_aux_chain_ind_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);
         }
@@ -1066,13 +1077,13 @@ static void adv_event_extended_non_connectable_non_scannable_directed_with_auxil
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            if(currentSet->pChain->cnt>(currentSet->pChain->current+1))
+            if(currentSet->pChain->cnt>(currentSet->pChain->idx+1))
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-                auxInfo.anchorPoint       = currentSet->pChain->entry[currentSet->pChain->current].sch.anchorPoint;
-                auxInfo.targetAnchorPoint = currentSet->pChain->entry[currentSet->pChain->current+1].sch.anchorPoint;
-                auxInfo.channel           = currentSet->pChain->entry[currentSet->pChain->current+1].phy.chn;
-                auxInfo.phy               = currentSet->pChain->entry[currentSet->pChain->current+1].phy.mode;
+                auxInfo.anchorPoint       = currentSet->pChain->entry[currentSet->pChain->idx].sch.anchorPoint;
+                auxInfo.targetAnchorPoint = currentSet->pChain->entry[currentSet->pChain->idx+1].sch.anchorPoint;
+                auxInfo.channel           = currentSet->pChain->entry[currentSet->pChain->idx+1].phy.chn;
+                auxInfo.phy               = currentSet->pChain->entry[currentSet->pChain->idx+1].phy.mode;
             }
             adv_aux_chain_ind_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);
         }
@@ -1128,13 +1139,13 @@ static void adv_event_extended_non_connectable_non_scannable_undirected_with_aux
             {   
                 flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
             }
-            if(currentSet->pChain->cnt>(currentSet->pChain->current+1))
+            if(currentSet->pChain->cnt>(currentSet->pChain->idx+1))
             {
                 flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
-                auxInfo.anchorPoint       = currentSet->pChain->entry[currentSet->pChain->current].sch.anchorPoint;
-                auxInfo.targetAnchorPoint = currentSet->pChain->entry[currentSet->pChain->current+1].sch.anchorPoint;
-                auxInfo.channel           = currentSet->pChain->entry[currentSet->pChain->current+1].phy.chn;
-                auxInfo.phy               = currentSet->pChain->entry[currentSet->pChain->current+1].phy.mode;
+                auxInfo.anchorPoint       = currentSet->pChain->entry[currentSet->pChain->idx].sch.anchorPoint;
+                auxInfo.targetAnchorPoint = currentSet->pChain->entry[currentSet->pChain->idx+1].sch.anchorPoint;
+                auxInfo.channel           = currentSet->pChain->entry[currentSet->pChain->idx+1].phy.chn;
+                auxInfo.phy               = currentSet->pChain->entry[currentSet->pChain->idx+1].phy.mode;
             }
             adv_aux_chain_ind_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);
         }
@@ -1274,19 +1285,19 @@ static int adv_event_step_phy_send_advertising(void)
     {
         if(currentSet->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU)
         {
-            adv_prepare_packet[currentSet->eventType](ADV_PDU_CLASS_LEG);
+            adv_prepare_packet[currentEventType](ADV_PDU_CLASS_LEG);
         } 
         else
         {
-            adv_prepare_packet[currentSet->eventType](ADV_PDU_CLASS_EXT);
+            adv_prepare_packet[currentEventType](ADV_PDU_CLASS_EXT);
         }
     }
     else
     {
-        adv_prepare_packet[currentSet->eventType](ADV_PDU_CLASS_LEG);
+        adv_prepare_packet[currentEventType](ADV_PDU_CLASS_LEG);
     }
     #else
-    adv_prepare_packet[currentSet->eventType](ADV_PDU_CLASS_LEG);
+    adv_prepare_packet[currentEventType](ADV_PDU_CLASS_LEG);
     #endif
     adv_prepare_phy(&currentSet->la.phy,currentSet->la.sch.anchorPoint,PHY_DIR_TX);
     LLSM->phy.start();
@@ -1368,7 +1379,7 @@ static int adv_event_step_phy_send_scan_rsp(void)
 			 scan_type_scan_req_t* scanReq = (scan_type_scan_req_t*)(packet->data);
 			 if((txMemcmp(ll_get_device_address(),scanReq->advA,6) == 0))
 			 {
-				adv_prepare_packet[currentSet->eventType](ADV_PDU_CLASS_SCAN_RSP);
+				adv_prepare_packet[currentEventType](ADV_PDU_CLASS_SCAN_RSP);
 				_u32 timestamp = LLSM->phy.hw_get_rx_air_ts() + ll_get_air_packet_time(currentSet->la.phy.mode,sizeof(scan_type_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME;
 				adv_prepare_phy(&currentSet->la.phy,timestamp,PHY_DIR_TX);
 				LLSM->phy.start();
@@ -1411,7 +1422,7 @@ static int adv_event_step_sch_stop(void)
         currentSet->la.sch.anchorPoint += (currentSet->la.sch.interval + 30*(random_byte()|0x0f));
         #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
         if((!(currentSet->schMap&ADV_SCH_MAP_AUX))\
-          ||((currentSet->schMap&ADV_SCH_MAP_AUX)&&txCompareTime(currentSet->ea->anchor,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval)))
+          ||((currentSet->schMap&ADV_SCH_MAP_AUX)&&txCompareTime(currentSet->ea->aux.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval)))
         #endif
         {
             ll_adv_task_timing_allocation(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_PRI);
@@ -1428,7 +1439,7 @@ static int adv_event_step_sch_passed(void)
      currentSet->la.sch.anchorPoint += (periodicDiff+1)*currentSet->la.sch.interval;
      currentSet->la.availableChnCnt = currentSet->la.channelCnt;
      #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
-     if((!(currentSet->schMap&ADV_SCH_MAP_AUX))||((currentSet->schMap&ADV_SCH_MAP_AUX)&&txCompareTime(currentSet->ea->anchor,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval)))
+     if((!(currentSet->schMap&ADV_SCH_MAP_AUX))||((currentSet->schMap&ADV_SCH_MAP_AUX)&&txCompareTime(currentSet->ea->aux.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval)))
      #endif
      {
          ll_adv_task_timing_allocation(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_PRI);
@@ -1447,7 +1458,7 @@ static int adv_event_step_sch_canceled(void)
     currentSet->la.availableChnCnt = currentSet->la.channelCnt;
 
     #if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
-    if((!(currentSet->schMap&ADV_SCH_MAP_AUX))||((currentSet->schMap&ADV_SCH_MAP_AUX)&&txCompareTime(currentSet->ea->anchor,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval)))
+    if((!(currentSet->schMap&ADV_SCH_MAP_AUX))||((currentSet->schMap&ADV_SCH_MAP_AUX)&&txCompareTime(currentSet->ea->aux.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval)))
     #endif
     {
         ll_adv_task_timing_allocation(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_PRI);
@@ -1577,7 +1588,7 @@ static int adv_extended_event_step_phy_send_aux_advertising(void)
 {
     phy_obj_cast(&LLSM->phy);
     //prepare packet
-    adv_prepare_packet[currentSet->eventType](ADV_PDU_CLASS_AUX);
+    adv_prepare_packet[currentEventType](ADV_PDU_CLASS_AUX);
     currentSet->ea->aux.phy.chn = 35;//todo
     //prepare phy
     adv_prepare_phy(&currentSet->ea->aux.phy,currentSet->ea->aux.sch.anchorPoint,PHY_DIR_TX);
@@ -1603,7 +1614,7 @@ static int adv_extended_event_step_phy_send_aux_scan_rsp(void)
 			scan_type_aux_scan_req_t* scanReq = (scan_type_aux_scan_req_t*)(packet->data);
 			if((currentSet->scanRsp.len!=0)&&(txMemcmp(ll_get_device_address(),scanReq->advA,6) == 0))
 			{
-				adv_prepare_packet[currentSet->eventType](ADV_PDU_CLASS_SCAN_RSP);
+				adv_prepare_packet[currentEventType](ADV_PDU_CLASS_SCAN_RSP);
 				_u32 timestamp = LLSM->phy.hw_get_rx_air_ts() + ll_get_air_packet_time(currentSet->ea->aux.phy.mode,sizeof(scan_type_aux_scan_req_t),0)+PACKET_DEFAULT_TIFS_TIME;
 				adv_prepare_phy(&currentSet->ea->aux.phy,timestamp,PHY_DIR_TX);
 				LLSM->phy.start();
@@ -1629,7 +1640,7 @@ static int adv_extended_event_step_phy_send_aux_connect_rsp(void)
 			init_type_auxConnectReq_t* scanReq = (init_type_auxConnectReq_t*)(packet->data);
 //			if(txMemcmp(ll_get_device_address(),scanReq->advA,6) == 0)
 //			{
-				adv_prepare_packet[currentSet->eventType](ADV_PDU_CLASS_CONN_RSP);
+				adv_prepare_packet[currentEventType](ADV_PDU_CLASS_CONN_RSP);
 				_u32 timestamp = LLSM->phy.hw_get_rx_air_ts() + ll_get_air_packet_time(currentSet->ea->aux.phy.mode,sizeof(init_type_auxConnectReq_t),0)+PACKET_DEFAULT_TIFS_TIME;
 				adv_prepare_phy(&currentSet->ea->aux.phy,timestamp,PHY_DIR_TX);
 				LLSM->phy.start();
@@ -1654,7 +1665,6 @@ static int adv_extended_event_step_sch_stop(void)
     }
     else if(currentSet->schMap&ADV_SCH_MAP_AUX_CHAIN)
     {
-    	currentSet->ea->anchor = currentSet->ea->chain.entry[0].sch.anchorPoint;
         return 1;
     }
 
@@ -1697,10 +1707,10 @@ static int adv_chained_event_step_phy_send_chain_advertising(void)
 {
     phy_obj_cast(&LLSM->phy);
     //prepare packet
-    adv_prepare_packet[currentSet->eventType](ADV_PDU_CLASS_CHAIN);
-    currentSet->pChain->entry[currentSet->pChain->current].phy.chn = 35;//todo
+    adv_prepare_packet[currentEventType](ADV_PDU_CLASS_CHAIN);
+    currentSet->pChain->entry[currentSet->pChain->idx].phy.chn = 35;//todo
     //prepare phy
-    adv_prepare_phy(&currentSet->pChain->entry[currentSet->pChain->current].phy,currentSet->pChain->entry[currentSet->pChain->current].sch.anchorPoint,PHY_DIR_TX);
+    adv_prepare_phy(&currentSet->pChain->entry[currentSet->pChain->idx].phy,currentSet->pChain->entry[currentSet->pChain->idx].sch.anchorPoint,PHY_DIR_TX);
     LLSM->phy.start();
 	return 1;
 }
@@ -1708,16 +1718,20 @@ static int adv_chained_event_step_phy_send_chain_advertising(void)
 static int adv_chained_event_step_sch_stop(void)
 {
     LLSM->phy.stop();
-    currentSet->pChain->current++;
-    if(currentSet->pChain->current==currentSet->pChain->cnt)
+    currentSet->pChain->idx++;
+    if(currentSet->pChain->idx==currentSet->pChain->cnt)
     {
-    	currentSet->pChain->current = 0;
-        ll_adv_task_timing_allocation(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
+    	currentSet->pChain->idx = 0;
+    	if(currentSet->pChain->type == E_ADV_EXTENDED_CHIAN)
+    	{
+            ll_adv_task_timing_allocation(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
+    	}
+    	else if(currentSet->pChain->type == E_ADV_PERIODIC_CHIAN)
+    	{
+            ll_adv_task_timing_allocation(currentSet,currentSet->pa->sync.sch.anchorPoint,currentSet->pa->sync.sch.anchorPoint+currentSet->pa->sync.sch.interval,ADV_SCH_MAP_PA_CHAIN);
+    	}
     }
-    else
-    {
-        currentSet->ea->anchor = currentSet->ea->chain.entry[currentSet->pChain->current].sch.anchorPoint;
-    }
+    return 1;
 }
 static int adv_chained_event_step_default_process(void)
 {
@@ -1725,12 +1739,30 @@ static int adv_chained_event_step_default_process(void)
 }
 static int adv_chained_event_step_sch_canceled(void)
 {
-    ll_adv_task_timing_allocation(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
+	currentSet->pChain->idx = 0;
+	if(currentSet->pChain->type == E_ADV_EXTENDED_CHIAN)
+	{
+        ll_adv_task_timing_allocation(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
+	}
+	else if(currentSet->pChain->type == E_ADV_PERIODIC_CHIAN)
+	{
+        ll_adv_task_timing_allocation(currentSet,currentSet->pa->sync.sch.anchorPoint,currentSet->pa->sync.sch.anchorPoint+currentSet->pa->sync.sch.interval,ADV_SCH_MAP_PA_CHAIN);
+	}
+	return 1;
 }
 
 static int adv_chained_event_step_sch_passed(void)
 {
-    ll_adv_task_timing_allocation(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
+	currentSet->pChain->idx = 0;
+	if(currentSet->pChain->type == E_ADV_EXTENDED_CHIAN)
+	{
+        ll_adv_task_timing_allocation(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX|ADV_SCH_MAP_AUX_CHAIN);
+	}
+	else if(currentSet->pChain->type == E_ADV_PERIODIC_CHIAN)
+	{
+        ll_adv_task_timing_allocation(currentSet,currentSet->pa->sync.sch.anchorPoint,currentSet->pa->sync.sch.anchorPoint+currentSet->pa->sync.sch.interval,ADV_SCH_MAP_PA_CHAIN);
+	}
+	return 1;
 }
 
 _DATA
@@ -1818,25 +1850,18 @@ static int adv_periodic_event_step_sch_stop(void)
 {
     LLSM->phy.stop();
     currentSet->pa->sync.sch.anchorPoint+=currentSet->pa->sync.sch.interval;
-    if(currentSet->pa->chain.cnt)
-    {
-
-    }
-    currentSet->pa->anchor = currentSet->pa->sync.sch.anchorPoint;
     return 1;
 }
 static int adv_periodic_event_step_sch_passed(void)
 {
     currentSet->pa->eventCnt++;
     currentSet->pa->sync.sch.anchorPoint+=currentSet->pa->sync.sch.interval;
-    currentSet->pa->anchor = currentSet->pa->sync.sch.anchorPoint;
     return 1;
 }
 static int adv_periodic_event_step_sch_canceled(void)
 {
     currentSet->pa->eventCnt++;
     currentSet->pa->sync.sch.anchorPoint+=currentSet->pa->sync.sch.interval;
-    currentSet->pa->anchor = currentSet->pa->sync.sch.anchorPoint;
     return 1;
 }
 
@@ -1905,32 +1930,31 @@ _DATA static adv_sequence_t advSequence[] =
 _RAM_CODE
 static void adv_sequence_process(ll_sm_event_e smEventType)
 {
-    _u8 advEventType     = currentSet->eventType;//current adv set assigned in 'adv_get_next_event'
-    for(_u8 i=0;i<advSequence[advEventType].listLen;i++)
+    for(_u8 i=0;i<advSequence[currentEventType].listLen;i++)
     {
-    	if(advSequence[advEventType].procedureList[i].eventClass == currentEventClass)
+    	if(advSequence[currentEventType].procedureList[i].eventClass == currentEventClass)
     	{
-    		for(_u8 j=0;j<advSequence[advEventType].procedureList[i].listLen;j++)
+    		for(_u8 j=0;j<advSequence[currentEventType].procedureList[i].listLen;j++)
     		{
-    			if(currentSet->state  == advSequence[advEventType].procedureList[i].sm[j].currentState\
-				&& smEventType  == advSequence[advEventType].procedureList[i].sm[j].event\
-				&&(advSequence[advEventType].procedureList[i].context & advSequence[advEventType].procedureList[i].sm[j].context))
+    			if(currentSet->state  == advSequence[currentEventType].procedureList[i].sm[j].currentState\
+				&& smEventType  == advSequence[currentEventType].procedureList[i].sm[j].event\
+				&&(advSequence[currentEventType].procedureList[i].context & advSequence[currentEventType].procedureList[i].sm[j].context))
 				{
 					if(currentSet->processingEvent == smEventType)
 					{
 						return;//reload same event,return
 					}
-					if(advSequence[advEventType].procedureList[i].sm[j].cb != NULL)
+					if(advSequence[currentEventType].procedureList[i].sm[j].cb != NULL)
 					{
 						currentSet->processingEvent = smEventType;//use member value to avoid many entity conflict
-						int ret = advSequence[advEventType].procedureList[i].sm[j].cb();
+						int ret = advSequence[currentEventType].procedureList[i].sm[j].cb();
 						if(ret)
 						{
-							currentSet->state = advSequence[advEventType].procedureList[i].sm[j].transSuccessState;
+							currentSet->state = advSequence[currentEventType].procedureList[i].sm[j].transSuccessState;
 						}
 						else
 						{
-							currentSet->state = advSequence[advEventType].procedureList[i].sm[j].transFailState;
+							currentSet->state = advSequence[currentEventType].procedureList[i].sm[j].transFailState;
 						}
 						currentSet->processingEvent = 0;
 					}
@@ -2063,9 +2087,6 @@ int ble_ll_enter_advertising_state(void)
 		{
 			advCtrl->set[i].inSch = 1;
 			advCtrl->set[i].state = ADV_SM_STATE_IDLE;
-			#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
-			advCtrl->set[i].extendedEventType = advCtrl->set[i].eventType;
-			#endif
 			ll_adv_task_timing_allocation(&advCtrl->set[i],system_time()+500,system_time()+500+advCtrl->set[i].la.sch.interval,ADV_SCH_MAP_ALL);
 		}
 	}
@@ -2145,20 +2166,20 @@ controller_error_code_e ll_set_advertising_parameters(_u16 interval,\
 	{
 		case LL_ADV_IND:
 		{
-			adv->set[0].eventType = ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED;
+			adv->set[0].la.eventType = ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED;
 		}break;
 		case LL_ADV_DIRECT_IND_HIGH_DUTY:
 		case LL_ADV_DIRECT_IND_LOW_DUTY:
 		{
-			adv->set[0].eventType = ADV_EVENT_CONNECTABLE_DIRECTED;
+			adv->set[0].la.eventType = ADV_EVENT_CONNECTABLE_DIRECTED;
 		}break;
 		case LL_ADV_SCAN_IND:
 		{
-			adv->set[0].eventType = ADV_EVENT_SCANNABLE_UNDIRECTED;
+			adv->set[0].la.eventType = ADV_EVENT_SCANNABLE_UNDIRECTED;
 		}break;
 		case LL_ADV_NONCONN_IND:
 		{
-			adv->set[0].eventType = ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED;
+			adv->set[0].la.eventType = ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED;
 		}break;
 	}
 	LOG_TRACE(BLE_ADV_TRACE_ENABLE,"ll set adv param",0,0)
@@ -2240,7 +2261,7 @@ controller_error_code_e ll_set_advertising_enable(_u8 enable)
 	        advSet->la.availableChnCnt     = advSet->la.channelCnt;
 	        advSet->la.eventCnt            = 0;
 	        advSet->la.sch.anchorPoint     = system_time() + 500;
-			if(advSet->eventType == ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED)
+			if(advSet->la.eventType == ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED)
 			{
 				advSet->la.sch.duration = llsm->phy.hw_get_prepare_time()+ll_get_air_packet_time(PHY_MODE_1M,BLE_ADV_PRI_PHY_MAX_TX_LEN,0);
 			}
@@ -2318,24 +2339,24 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 		{
 			case (LL_ADV_EVENT_PROPERTY_LEGACY_PDU|LL_ADV_EVENT_PROPERTY_CONNECTED|LL_ADV_EVENT_PROPERTY_SCANNABLE):
 			{
-				advSet->eventType = ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED;
+				advSet->la.eventType = ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED;
 			}
 				break;
 			case (LL_ADV_EVENT_PROPERTY_LEGACY_PDU|LL_ADV_EVENT_PROPERTY_CONNECTED|LL_ADV_EVENT_PROPERTY_DIRECTED):
 			case (LL_ADV_EVENT_PROPERTY_LEGACY_PDU|LL_ADV_EVENT_PROPERTY_CONNECTED|LL_ADV_EVENT_PROPERTY_DIRECTED|LL_ADV_EVENT_PROPERTY_HIGH_DUTY_CONNECTED):
 			{
 				//todo,high duty cycle
-				advSet->eventType = ADV_EVENT_CONNECTABLE_DIRECTED;
+				advSet->la.eventType = ADV_EVENT_CONNECTABLE_DIRECTED;
 			}
 				break;
 			case (LL_ADV_EVENT_PROPERTY_LEGACY_PDU|LL_ADV_EVENT_PROPERTY_SCANNABLE):
 			{
-				advSet->eventType = ADV_EVENT_SCANNABLE_UNDIRECTED;
+				advSet->la.eventType = ADV_EVENT_SCANNABLE_UNDIRECTED;
 			}
 				break;
 			case (LL_ADV_EVENT_PROPERTY_LEGACY_PDU):
 			{
-				advSet->eventType = ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED;
+				advSet->la.eventType = ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED;
 			}
 		}
 	}
@@ -2350,36 +2371,36 @@ controller_error_code_e ll_set_extended_advertising_parameters(ll_extended_adv_p
 		{
 			case(LL_ADV_EVENT_PROPERTY_CONNECTED|LL_ADV_EVENT_PROPERTY_DIRECTED):
 			{
-				advSet->eventType = ADV_EVENT_EXTENDED_CONNECTABLE_DIRECTED;
+				advSet->la.eventType = advSet->ea->eventType = ADV_EVENT_EXTENDED_CONNECTABLE_DIRECTED;
 				advSet->schMap |= ADV_SCH_MAP_AUX;
 			}
 				break;
 			case(LL_ADV_EVENT_PROPERTY_CONNECTED):
 			{
-				advSet->eventType = ADV_EVENT_EXTENDED_CONNECTABLE_UNDIRECTED;
+				advSet->la.eventType = advSet->ea->eventType = ADV_EVENT_EXTENDED_CONNECTABLE_UNDIRECTED;
 				advSet->schMap |= ADV_SCH_MAP_AUX;
 			}
 				break;
 			case(LL_ADV_EVENT_PROPERTY_SCANNABLE|LL_ADV_EVENT_PROPERTY_DIRECTED):
 			{
-				advSet->eventType = ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED;
+				advSet->la.eventType = advSet->ea->eventType = ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED;
 				advSet->schMap |= ADV_SCH_MAP_AUX;
 			}
 				break;
 			case(LL_ADV_EVENT_PROPERTY_SCANNABLE):
 			{
-				advSet->eventType = ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED;
+				advSet->la.eventType = advSet->ea->eventType = ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED;
 				advSet->schMap |= ADV_SCH_MAP_AUX;
 			}
 				break;
 			case(LL_ADV_EVENT_PROPERTY_DIRECTED):
 			{
-				advSet->eventType = ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITHOUT_AUXILIARY;
+				advSet->la.eventType = advSet->ea->eventType = ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITHOUT_AUXILIARY;
 			}
 				break;
 			case(0):
 			{
-				advSet->eventType = ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED_WITHOUT_AUXILIARY;
+				advSet->la.eventType = advSet->ea->eventType = ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED_WITHOUT_AUXILIARY;
 			}
 				break;
 		}
@@ -2459,7 +2480,7 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 	{
 		if(dataLen > 31||\
 		   operation!=LL_ADV_DATA_OPERATION_COMPLETE||\
-		   advSet->eventType == ADV_EVENT_CONNECTABLE_DIRECTED)//direct pdu don't have advertising data
+		   advSet->la.eventType == ADV_EVENT_CONNECTABLE_DIRECTED)//direct pdu don't have advertising data
 		{
 			return IVALID_HCI_COMMAND_PARAMETERS;
 		}
@@ -2491,8 +2512,8 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 		}
 	}
 
-	if(advSet->eventType == ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED||\
-	   advSet->eventType == ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED)
+	if(advSet->ea->eventType == ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED||\
+	   advSet->ea->eventType == ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED)
 	{
 		return IVALID_HCI_COMMAND_PARAMETERS;//mode don't have advertising data
 	}
@@ -2564,14 +2585,14 @@ controller_error_code_e ll_set_extended_advertising_data(_u8 advHandle,\
 		}
 	}
 
-	if(advSet->eventType == ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITHOUT_AUXILIARY)
+	if(advSet->ea->eventType == ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITHOUT_AUXILIARY)
 	{
-		advSet->eventType = ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITH_AUXILIARY;
+		advSet->la.eventType = advSet->ea->eventType = ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_DIRECTED_WITH_AUXILIARY;
 		advSet->schMap |= ADV_SCH_MAP_AUX;
 	}
-	else if(advSet->eventType == ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED_WITHOUT_AUXILIARY)
+	else if(advSet->ea->eventType == ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED_WITHOUT_AUXILIARY)
 	{
-		advSet->eventType = ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED_WITH_AUXILIARY;
+		advSet->la.eventType = advSet->ea->eventType = ADV_EVENT_EXTENDED_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED_WITH_AUXILIARY;
 		advSet->schMap |= ADV_SCH_MAP_AUX;
 	}
 
@@ -2668,17 +2689,17 @@ controller_error_code_e ll_set_extended_scan_response_data(_u8 advHandle,\
 	{
 		if(dataLen > 31||\
 		   operation!=LL_ADV_DATA_OPERATION_COMPLETE||\
-		   ((advSet->eventType != ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED)&&(advSet->eventType != ADV_EVENT_SCANNABLE_UNDIRECTED)))
+		   ((advSet->la.eventType != ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED)&&(advSet->la.eventType != ADV_EVENT_SCANNABLE_UNDIRECTED)))
 		{
 			return IVALID_HCI_COMMAND_PARAMETERS;
 		}
 	}
 	else
 	{
-		if(advSet->eventType != ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED&&\
-		   advSet->eventType != ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED&&\
-		   advSet->eventType != ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED&&\
-		   advSet->eventType != ADV_EVENT_SCANNABLE_UNDIRECTED)
+		if(advSet->ea->eventType != ADV_EVENT_EXTENDED_SCANNABLE_DIRECTED&&\
+		   advSet->ea->eventType != ADV_EVENT_EXTENDED_SCANNABLE_UNDIRECTED&&\
+		   advSet->ea->eventType != ADV_EVENT_CONNECTABLE_SCANNABLE_UNDIRECTED&&\
+		   advSet->ea->eventType != ADV_EVENT_SCANNABLE_UNDIRECTED)
 		{
 			return IVALID_HCI_COMMAND_PARAMETERS;
 		}
@@ -2984,7 +3005,7 @@ controller_error_code_e ll_set_extended_advertising_enable(_u8 enable,\
 		        phy_obj_init(&llsm->phy);
                 if(advSet->eventProperty&LL_ADV_EVENT_PROPERTY_LEGACY_PDU)
                 {
-                    if(advSet->eventType == ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED)
+                    if(advSet->la.eventType == ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED)
                     {
                     	advSet->la.sch.duration = llsm->phy.hw_get_prepare_time()+ll_get_air_packet_time(advSet->la.phy.mode,BLE_ADV_PRI_PHY_MAX_TX_LEN,0)+PACKET_DEFAULT_TIFS_TIME;
                     }
@@ -3262,6 +3283,7 @@ controller_error_code_e ll_set_periodic_advertising_paramters(_u8 advHandle,_u8 
 	#endif
 	advSet->pa->sync.sch.interval = 1250*interval;
 	advSet->schMap |= ADV_SCH_MAP_PA;
+	advSet->pa->eventType = ADV_EVENT_EXTENDED_PERIODIC;
 	return SUCCESS;
 }
 
@@ -3454,7 +3476,6 @@ controller_error_code_e ll_set_periodic_advertising_enable(_u8 advHandle,_u8 ena
 		advSet->pa->sync.sch.startMargin= 100;
 		advSet->pa->sync.sch.stopMargin = 100;
 		advSet->pa->sync.sch.duration   = llsm->phy.hw_get_prepare_time()+ll_get_air_packet_time(advSet->pa->sync.phy.mode,2+BLE_ADV_SEC_PHY_MAX_TX_LEN,0);
-		advSet->pa->anchor = advSet->pa->sync.sch.anchorPoint= system_time()+200000;//todo,periodic task get anchor point from planner
 	}
 	if((advSet->pa->enable == 1)&&(!(enable&BIT(0))))
 	{
