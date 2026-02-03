@@ -153,7 +153,6 @@ void adv_get_next_event(void)
 		            currentSet->pChain = &currentSet->ea->chain;
 				}
             }
-
     	}
 		#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
     	if(advCtrl->set[i].pa->active)
@@ -162,6 +161,7 @@ void adv_get_next_event(void)
             {
 				if((timestamp == 0)||txCompareTime(timestamp,advCtrl->set[i].pa->sync.sch.anchorPoint))
 				{
+
 					timestamp = advCtrl->set[i].pa->sync.sch.anchorPoint|1;
 					currentSet = &advCtrl->set[i];
 					currentEventClass = ADV_PERIODIC_EVENT;
@@ -236,7 +236,6 @@ static void adv_prepare_phy(ll_adv_phy_entry_t* phy,_u32 timestamp,phy_dir_e phy
     }
 }
 
-
 _RAM_CODE
 int ll_adv_task_timing_allocation(ll_internal_adv_set_t* advSet,_u32 refStart,_u32 refEnd,_u8 mapType)
 {
@@ -298,16 +297,19 @@ int ll_adv_task_timing_allocation(ll_internal_adv_set_t* advSet,_u32 refStart,_u
 				{
 					if(txCompareTime(refEnd,advCtrl->set[i].pa->sync.sch.anchorPoint))
 					{
-						node[nodeNum].start = advCtrl->set[i].pa->sync.sch.anchorPoint - advCtrl->set[i].pa->sync.sch.startMargin;
-						node[nodeNum].end   = advCtrl->set[i].pa->sync.sch.anchorPoint + advCtrl->set[i].pa->sync.sch.duration + advCtrl->set[i].pa->sync.sch.stopMargin;
-						node[nodeNum].type  = SCH_PERIODIC_TASK;
+						node[nodeNum].start  = advCtrl->set[i].pa->sync.sch.anchorPoint - advCtrl->set[i].pa->sync.sch.startMargin;
+						node[nodeNum].end    = advCtrl->set[i].pa->sync.sch.anchorPoint + advCtrl->set[i].pa->sync.sch.duration + advCtrl->set[i].pa->sync.sch.stopMargin;
+						node[nodeNum].period = advCtrl->set[i].pa->sync.sch.interval;
+						node[nodeNum].type   = SCH_PERIODIC_TASK;
 						nodeNum++;
 						if(nodeNum>nodeCount)
 						{
 							goto reCal;
 						}
 					}
-					if(advCtrl->set[i].schMap&ADV_SCH_MAP_PA_CHAIN)
+					//this process is very special,
+					if((!(mapType&ADV_SCH_MAP_PA_CHAIN))
+					 &&(advCtrl->set[i].schMap&ADV_SCH_MAP_PA_CHAIN))
 					{
 						for(int j=0;j<advCtrl->set[i].pa->chain.cnt;j++)
 						{
@@ -404,6 +406,7 @@ int ll_adv_task_timing_allocation(ll_internal_adv_set_t* advSet,_u32 refStart,_u
             }
         }
     }
+
 	#if(LL_SUPPORT_LE_EXTENDED_ADVERTISING)
     if(advSet->enable
     &&(mapType&ADV_SCH_MAP_AUX)
@@ -426,6 +429,7 @@ int ll_adv_task_timing_allocation(ll_internal_adv_set_t* advSet,_u32 refStart,_u
 
             for(int j=0;j<advSet->ea->chain.cnt;j++)
             {
+
                 _u32 chainSpace = advSet->ea->chain.entry[j].sch.startMargin\
                                 + advSet->ea->chain.entry[j].sch.duration\
                                 + advSet->ea->chain.entry[j].sch.stopMargin;
@@ -444,32 +448,30 @@ int ll_adv_task_timing_allocation(ll_internal_adv_set_t* advSet,_u32 refStart,_u
     }
 	#if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
     if(advSet->pa->active
-    &&(mapType&ADV_SCH_MAP_PA)
-	&&(advSet->schMap&ADV_SCH_MAP_PA))
+    &&(mapType&ADV_SCH_MAP_PA_CHAIN)
+	&&(advSet->schMap&ADV_SCH_MAP_PA_CHAIN))
     {
     	//attention,chain of periodic sync pdu should greater than sync anchor and smaller than sync anchor plus sync interval
-        if((mapType&ADV_SCH_MAP_PA_CHAIN)&&(advSet->schMap&ADV_SCH_MAP_PA_CHAIN))
-        {
-            for(int j=0;j<advSet->pa->chain.cnt;j++)
-            {
-                _u32 chainSpace = advSet->pa->chain.entry[j].sch.startMargin\
-                                + advSet->pa->chain.entry[j].sch.duration\
-                                + advSet->pa->chain.entry[j].sch.stopMargin;
-                for(;blockIndex<freeBlockCount;blockIndex++)
-                {
-                    if((freeBlock[blockIndex].end - freeBlock[blockIndex].start)>(chainSpace+PACKET_T_MAFS_TIME)
-                      &&txCompareTime(freeBlock[blockIndex].start,advSet->pa->sync.sch.anchorPoint)
-					  &&txCompareTime(advSet->pa->sync.sch.anchorPoint + advSet->pa->sync.sch.interval,freeBlock[blockIndex].start))
-                    {
-                        advSet->pa->chain.entry[j].sch.anchorPoint = freeBlock[blockIndex].start+advSet->pa->chain.entry[j].sch.startMargin;
-                        freeBlock[blockIndex].start +=(chainSpace+PACKET_T_MAFS_TIME);//todo,check need space how much
-                        break;
-                    }
-                }
-                advSet->pa->chain.idx = 0;
-            }
-        }
-    }
+		for(int j=0;j<advSet->pa->chain.cnt;j++)
+		{
+			_u32 chainSpace = advSet->pa->chain.entry[j].sch.startMargin\
+							+ advSet->pa->chain.entry[j].sch.duration\
+							+ advSet->pa->chain.entry[j].sch.stopMargin;
+			for(;blockIndex<freeBlockCount;blockIndex++)
+			{
+
+				if((freeBlock[blockIndex].end - freeBlock[blockIndex].start)>(chainSpace+PACKET_T_MAFS_TIME)
+				  &&txCompareTime(freeBlock[blockIndex].start,advSet->pa->sync.sch.anchorPoint-1)
+				  &&txCompareTime(advSet->pa->sync.sch.anchorPoint + advSet->pa->sync.sch.interval,freeBlock[blockIndex].start))
+				{
+					advSet->pa->chain.entry[j].sch.anchorPoint = freeBlock[blockIndex].start+advSet->pa->chain.entry[j].sch.startMargin;
+					freeBlock[blockIndex].start +=(chainSpace+PACKET_T_MAFS_TIME);//todo,check need space how much
+					break;
+				}
+			}
+			advSet->pa->chain.idx = 0;
+		}
+	}
 	#endif/*(LL_SUPPORT_LE_PERIODIC_ADVERTISING)*/
     #endif/*(LL_SUPPORT_LE_EXTENDED_ADVERTISING)*/
     tx_free((_u8*)freeBlock);
@@ -712,7 +714,7 @@ static void adv_aux_conn_rsp_pdu_prepare(_u8 advMode,_u8 flags,adv_extended_head
 static void adv_aux_chain_ind_pdu_prepare(_u8 advMode,_u8 flags,adv_extended_header_auxInfo_t* auxInfo,_u16 did)
 {
     _u16 headerLen = adv_calculate_extended_header_length(flags);
-    _u8* packet = ll_adv_packet_data_prepare(currentSet->pChain->entry[currentSet->pChain->idx].phy.txAddress,headerLen+currentSet->ea->chain.entry[currentSet->pChain->idx].data.len,LL_ADV_TYPE_AUX_CHAIN_IND);
+    _u8* packet = ll_adv_packet_data_prepare(currentSet->pChain->entry[currentSet->pChain->idx].phy.txAddress,headerLen+currentSet->pChain->entry[currentSet->pChain->idx].data.len,LL_ADV_TYPE_AUX_CHAIN_IND);
     adv_generate_extended_header(packet,advMode,flags,auxInfo,did);
     if(currentSet->pChain->entry[currentSet->pChain->idx].data.len!=0)
     {
@@ -1228,7 +1230,20 @@ static void adv_event_extended_periodic_packet_prapare(adv_pdu_class_e pduClass)
         }break;
         case ADV_PDU_CLASS_CHAIN:
         {
-
+            flags = ADV_EXTENDED_HEADER_FLAG_ADI;
+            if(currentSet->ea->power!=0x7f)
+            {
+                flags|=ADV_EXTENDED_HEADER_FLAG_TX_POWER;
+            }
+            if(currentSet->pChain->cnt>(currentSet->pChain->idx+1))
+            {
+                flags|=ADV_EXTENDED_HEADER_FLAG_AUX_PTR;
+                auxInfo.anchorPoint       = currentSet->pChain->entry[currentSet->pChain->idx].sch.anchorPoint;
+                auxInfo.targetAnchorPoint = currentSet->pChain->entry[currentSet->pChain->idx+1].sch.anchorPoint;
+                auxInfo.channel           = currentSet->pChain->entry[currentSet->pChain->idx+1].phy.chn;
+                auxInfo.phy               = currentSet->pChain->entry[currentSet->pChain->idx+1].phy.mode;
+            }
+            adv_aux_chain_ind_pdu_prepare(advMode,flags,&auxInfo,currentSet->ea->did);//TODO,did shall use pda did
         }break;
         default:
         	break;
@@ -1665,6 +1680,7 @@ static int adv_extended_event_step_sch_stop(void)
     }
     else if(currentSet->schMap&ADV_SCH_MAP_AUX_CHAIN)
     {
+    	currentSet->ea->aux.sch.anchorPoint = currentSet->ea->chain.entry[currentSet->ea->chain.cnt-1].sch.anchorPoint+1;
         return 1;
     }
 
@@ -1673,13 +1689,15 @@ static int adv_extended_event_step_sch_stop(void)
 }
 static int adv_extended_event_step_sch_canceled(void)
 {
-    ll_adv_task_timing_allocation(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_ALL);
+
+    ll_adv_task_timing_allocation(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX);
     //todo
 	return 1;
 }
 static int adv_extended_event_step_sch_passed(void)
 {
-    ll_adv_task_timing_allocation(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_ALL);
+
+    ll_adv_task_timing_allocation(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_PRI|ADV_SCH_MAP_AUX);
     //todo
 	return 1;
 }
@@ -1750,7 +1768,6 @@ static int adv_chained_event_step_sch_canceled(void)
 	}
 	return 1;
 }
-
 static int adv_chained_event_step_sch_passed(void)
 {
 	currentSet->pChain->idx = 0;
@@ -1867,8 +1884,6 @@ static int adv_periodic_event_step_sch_canceled(void)
 
 static int adv_periodic_event_step_sch_test(void)
 {
-	DEBUG_GPIO_HIGH(GPIO_14);
-	DEBUG_GPIO_LOW(GPIO_14);
     return 1;
 }
 static adv_event_sm_t adv_periodic_event_state_machine[]= 
@@ -2087,7 +2102,9 @@ int ble_ll_enter_advertising_state(void)
 		{
 			advCtrl->set[i].inSch = 1;
 			advCtrl->set[i].state = ADV_SM_STATE_IDLE;
+			IRQ_DISABLE;
 			ll_adv_task_timing_allocation(&advCtrl->set[i],system_time()+500,system_time()+500+advCtrl->set[i].la.sch.interval,ADV_SCH_MAP_ALL);
+			IRQ_RESTORE;
 		}
 	}
 	if(!advCtrl->active)
@@ -3305,10 +3322,12 @@ controller_error_code_e ll_set_periodic_advertising_data(_u8 advHandle,ll_advert
 	static _u32 dataFillOffset = 0;
 	if(dataLen > BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH || (dataLen+dataFillOffset>BLE_ADV_MAXIMUM_ADVERTISING_DATA_LENGTH))
 	{
+		dataFillOffset = 0;
 		return MEMORY_CAPACITY_EXCEEDED;
 	}
 	if(ll_get_air_packet_time(advSet->ea->phyMode,dataFillOffset+dataLen,0)>(advSet->pa->sync.sch.interval*3/4))
 	{
+		dataFillOffset = 0;
 		return PACKET_TOO_LONG;
 	}
 	if(operation == LL_ADV_DATA_OPERATION_UNCHANGED)
@@ -3318,6 +3337,7 @@ controller_error_code_e ll_set_periodic_advertising_data(_u8 advHandle,ll_advert
 	    ||advSet->pa->data.len==0\
 	    ||dataLen!=0)
 		{
+			dataFillOffset = 0;
 			return IVALID_HCI_COMMAND_PARAMETERS;
 		}
 	}
@@ -3325,18 +3345,21 @@ controller_error_code_e ll_set_periodic_advertising_data(_u8 advHandle,ll_advert
 	&&(operation!=LL_ADV_DATA_OPERATION_COMPLETE)\
 	&&(operation!=LL_ADV_DATA_OPERATION_UNCHANGED))
 	{
+		dataFillOffset = 0;
 		return IVALID_HCI_COMMAND_PARAMETERS;
 	}
 	if(advSet->pa->enable\
 	&&(operation!=LL_ADV_DATA_OPERATION_COMPLETE)\
 	&&(operation!=LL_ADV_DATA_OPERATION_UNCHANGED))
 	{
+		dataFillOffset = 0;
 		return COMMAND_DISALLOWED;
 	}
 
 	if(operation == LL_ADV_DATA_OPERATION_FIRST_FRAGMENT
 	  ||operation == LL_ADV_DATA_OPERATION_COMPLETE)
 	{
+		dataFillOffset = 0;
 		if(POINTER_VALID(advSet->pa->data.addr))
 		{
 			tx_free(advSet->pa->data.addr);
@@ -3411,8 +3434,8 @@ controller_error_code_e ll_set_periodic_advertising_data(_u8 advHandle,ll_advert
 			advSet->schMap          |= ADV_SCH_MAP_PA_CHAIN;
 			advSet->pa->chain.entry  = (ll_adv_entry_t*)tx_malloc(chainCnt*sizeof(ll_adv_entry_t));
 			advSet->pa->chain.cnt    = chainCnt;
-			advSet->ea->chain.idx    = 0;
-			advSet->ea->chain.type   = E_ADV_PERIODIC_CHIAN;
+			advSet->pa->chain.idx    = 0;
+			advSet->pa->chain.type   = E_ADV_PERIODIC_CHIAN;
 			advSet->pa->sync.data.len = BLE_ADV_SEC_PHY_MAX_TX_LEN - BLE_ADV_EXTENDED_HEADER_MAX_LEN;
 			_u16 offset           = advSet->pa->sync.data.len;
 			for(_u8 i=0;i<chainCnt-1;i++)
@@ -3430,7 +3453,6 @@ controller_error_code_e ll_set_periodic_advertising_data(_u8 advHandle,ll_advert
 	}
 	return SUCCESS;
 }
-
 
 controller_error_code_e ll_set_periodic_advertising_enable(_u8 advHandle,_u8 enable)
 {
@@ -3476,6 +3498,31 @@ controller_error_code_e ll_set_periodic_advertising_enable(_u8 advHandle,_u8 ena
 		advSet->pa->sync.sch.startMargin= 100;
 		advSet->pa->sync.sch.stopMargin = 100;
 		advSet->pa->sync.sch.duration   = llsm->phy.hw_get_prepare_time()+ll_get_air_packet_time(advSet->pa->sync.phy.mode,2+BLE_ADV_SEC_PHY_MAX_TX_LEN,0);
+		advSet->pa->sync.sch.anchorPoint= system_time()+300000;//todo,periodic task get anchor point from planner
+        if(advSet->schMap&ADV_SCH_MAP_PA_CHAIN)
+        {
+			for(int j=0;j<advSet->pa->chain.cnt;j++)
+			{
+				advSet->pa->chain.entry[j].sch.startMargin = 100;
+				if(j == advSet->pa->chain.cnt-1)
+				{
+					advSet->pa->chain.entry[j].sch.stopMargin  = 200;
+				}
+				else
+				{
+					advSet->pa->chain.entry[j].sch.stopMargin  = 100;
+				}
+				advSet->pa->chain.entry[j].phy.crcInit    = advSet->pa->sync.phy.crcInit;
+				advSet->pa->chain.entry[j].phy.accessCode = advSet->pa->sync.phy.accessCode;
+				advSet->pa->chain.entry[j].phy.mode       = advSet->ea->phyMode;
+				advSet->pa->chain.entry[j].phy.txAddress  = ll_get_shared_phy_tx_address();
+				advSet->pa->chain.entry[j].sch.duration   = llsm->phy.hw_get_prepare_time()
+														  + ll_get_air_packet_time(advSet->pa->chain.entry[j].phy.mode,2+BLE_ADV_EXTENDED_HEADER_CHAIN_PDU_MAX_LEN+advSet->pa->chain.entry[j].data.len,0);
+			}
+			IRQ_DISABLE;
+			ll_adv_task_timing_allocation(advSet,advSet->pa->sync.sch.anchorPoint,advSet->pa->sync.sch.anchorPoint+advSet->pa->sync.sch.interval,ADV_SCH_MAP_PA_CHAIN);
+			IRQ_RESTORE;
+        }
 	}
 	if((advSet->pa->enable == 1)&&(!(enable&BIT(0))))
 	{

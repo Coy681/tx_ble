@@ -163,6 +163,11 @@ _RAM_CODE
 void hal_rf_stop(void)
 {
     reg_rf_ll_cmd = 0x80;
+
+    dma_chn_dis(DMA0); /* reset RF TX DMA channels */
+    dma_chn_dis(DMA1); /* reset RF RX DMA channels */
+    reg_rst3 &= (~FLD_RST3_ZB); // reset baseband
+    reg_rst3 |= (FLD_RST3_ZB);  // clr baseband
 }
 
 

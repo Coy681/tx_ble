@@ -354,10 +354,10 @@ void ll_adv_test_ea_test_process(_u8* data,_u8 len)
 
 void ll_adv_test_pa_test_process(_u8* data,_u8 len)
 {
-	  _u8 advData[48];
-	  for(int i=0;i<48;i++)
+	  _u8 advData[456];
+	  for(int i=0;i<456;i++)
 	  {
-		  advData[i] = 0x65;
+		  advData[i] = i;
 	  }
 	  int status = 0;
 	  switch(data[0])
@@ -370,8 +370,16 @@ void ll_adv_test_pa_test_process(_u8* data,_u8 len)
 			LOG_TRACE(1,"set pa parameter",&status,4)
 			break;
 		case 0x02:
-			status = ll_set_periodic_advertising_data(0x01,LL_ADV_DATA_OPERATION_COMPLETE,48,advData);
+			status = ll_set_periodic_advertising_data(0x01,LL_ADV_DATA_OPERATION_FIRST_FRAGMENT,48,advData);
 			LOG_TRACE(1,"set pa data",&status,4)
+			status = ll_set_periodic_advertising_data(0x01,LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,48,advData+48);
+			LOG_TRACE(1,"set pa data2",&status,4)
+			status = ll_set_periodic_advertising_data(0x01,LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,48,advData+96);
+			LOG_TRACE(1,"set pa data3",&status,4)
+			status = ll_set_periodic_advertising_data(0x01,LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,48,advData+144);
+			LOG_TRACE(1,"set pa data4",&status,4)
+			status = ll_set_periodic_advertising_data(0x01,LL_ADV_DATA_OPERATION_LAST_FRAGMENT,48,advData+192);
+			LOG_TRACE(1,"set pa data5",&status,4)
 			break;
 		case 0x03:
 			status = ll_set_periodic_advertising_enable(0x01,3);
