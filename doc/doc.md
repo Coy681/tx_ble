@@ -278,12 +278,6 @@ BLE广播有四种类型的广播事件，分别是
 #### BLE Broadcasting
 
 ###
-BTBLE Audio双模Audio SDK LE部分
-(0)LE 协议栈开发和维护
-   Ⅰ  legacy adv,extended adv,periodic adv,primary scan,secondary scan
-   Ⅱ  Multiple BLE ACL Slave/Master
-   Ⅲ BLE CIS/BIS 
-   Ⅳ HID Over ISO,1K爆点率的游戏手柄
 
 (1)新平台适配
    Ⅰ  SDK新平台调试，link和startup.s文件适配等
@@ -292,6 +286,18 @@ BTBLE Audio双模Audio SDK LE部分
    Ⅳ SDK模块验证(BLE)，如LE ADV/ACL/BIS/CIS等
    Ⅴ  多核架构设计/适配，多核通信机制优化
       如mailbox/share memory设计优化等
+
+BTBLE Audio双模Audio SDK LE部分
+(0)LE 协议栈开发和维护
+   Ⅰ  legacy adv,extended adv,periodic adv,primary scan,secondary scan
+   Ⅱ  Multiple BLE ACL Slave/Master
+   Ⅲ BLE CIS/BIS 
+   Ⅳ HID Over ISO,1K爆点率的游戏手柄
+
+相关项目
+某会议系统（主从）
+hid over iso游戏手柄
+
 
 (3)ACCESS任务设计和优化
    Ⅰ   BT Page/Page Scan+BT Inquiry/Inquiry Scan + LE Scan + 私有链路Scan
@@ -305,9 +311,13 @@ BTBLE Audio双模Audio SDK LE部分
 (3)BT ACL Master + LE ACL Master + BT ESCO混合场景时序设计 - 适用于BTBLE Audio Dongle场景项目
    Ⅰ  BT ACL Master + multiple LE ACL Master 
    Ⅱ BT ESCO + multiple LE ACL Master 
+
+   项目 某多模转换器
+s
 (4)BT A2DP TO LE BIS方案设计和优化
    Ⅰ  核心时序设计
    Ⅱ 本地+远端多设备同步播放
+   某音箱
 (5)多模块(BT/LE/私有链路)通信机制
    Ⅰ 信息注册
    Ⅱ 信息查询
@@ -327,12 +337,13 @@ BTBLE Audio双模Audio SDK LE部分
 (12)Core Spec认证
 (13)项目支持
 
-协议栈从零到一
+协议栈从零到一的经验
 
 通用模块
 
 (1)启动机制优化
    system-init call，系统分层初始化
+
 (2)内存管理
    Ⅰ  动态内存分配
    Ⅱ 动态内存分配扩展memory block
