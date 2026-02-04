@@ -3535,3 +3535,7 @@ controller_error_code_e ll_set_periodic_advertising_enable(_u8 advHandle,_u8 ena
 }
 
 #endif//LL_SUPPORT_LE_PERIODIC_ADVERTISING
+
+#if(BLE_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
+
+#endif

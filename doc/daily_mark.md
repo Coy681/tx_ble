@@ -307,3 +307,75 @@ L2CAP层提供了一种供同步和异步数据面向帧的传输方式，这种
 ### LE传输可靠性
 
 使用24-bit的CRC来提供差错检测，由于CRC的长度足够，不需要L2CAP层额外提供差错检测
+
+
+## Bluetooth PHY Channels
+
+### BT Classic Channels
+
+频点从2402-2480，共79个信道，所有模式都使用这79个信道
+
+#### Basic piconet channel
+
+跳频序列由Central的地址决定
+跳频相位由主机的时钟决定
+所有从机跟随主机的跳频序列
+
+Central只从偶数slot上发包，每个slot跳一次频
+Central最多占据5个slot
+一个slot时间是625us
+一个Basic piconet只允许有一个central
+每个slot都要重新跳频
+#### Adapted piconet channel
+
+和basic piconet channel的区别主要在两个方面
+
+ - 从机频点跟随主机
+ - 信道数量可少于79个
+
+总结  basic piconet channel是全频、主从独立跳频、双向有限连接的基础模式；
+     Adapted piconet channel是减频、主从同频、支持单向无限广播的优化模式；
+     二者时序兼容、拓扑一致。
+
+Adapted piconet channel是一个feature，刚开始连接使用的是Basic piconet channel，使用Adapted piconet channel需要经过主从交互开启
+
+#### Inquiry scan channel
+
+ 使用79个信道中32个信道的子集
+
+ Inquiry 主动扫、高速率、全覆盖；
+ Inquiry Scan 被动听、周期性、省功耗；
+ 二者通过专用信道与接入码配合，一快一慢，实现设备快速发现与定向寻址。
+
+#### Page scan channel
+
+page channel使用32个信道，这32个channel基于目标地址(page scan的设备)动态生成
+
+page scan设备基于自身地址，生成专有的access code，在page channels上周期性的监听
+page设备如果知道目标设备时钟，可以精准预测目标channel，快速建立连接
+page设备如果不知道目标设备时钟，需要快速逐频发送page
+
+### LE PHY Channels
+
+五种LE PHY Channels
+
+- LE piconet physical channel
+- LE advertising physical channel
+- LE periodic physical channel
+- LE isochronous physical channel
+- LE Channel Sounding physical channel
+
+一个设备在同一时间只能使用一种类型的信道
+
+#### LE piconet physical channel
+
+37个channel，跳频序列
+
+
+
+#### LE advertising physical channel
+
+分为两类
+
+ - primary advertising channels,可以使用LE 1M PHY和LE Coded PHY
+ - secondary advertising channels
