@@ -7,3 +7,4 @@ cmake_configs
 CMakeLists.txt
 settings.json
 .vscode/settings.json
+doc/HDT_study.md
