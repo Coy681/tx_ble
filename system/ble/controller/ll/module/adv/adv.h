@@ -174,7 +174,7 @@ controller_error_code_e ll_clear_advertising_sets(void);
 
 /***********************Bluetooth LE Periodic Advertising **************************/
 #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
-controller_error_code_e ll_set_periodic_advertising_paramters(_u8 advHandle,_u8 interval,_u16 property);
+controller_error_code_e ll_set_periodic_advertising_paramters(_u8 advHandle,_u16 interval,_u16 property);
 
 controller_error_code_e ll_set_periodic_advertising_data(_u8 advHandle,ll_advertising_data_operation_e operation,_u8 dataLen,_u8* data);
 
@@ -183,5 +183,26 @@ controller_error_code_e ll_set_periodic_advertising_enable(_u8 advHandle,_u8 ena
 
 /***********************Bluetooth LE Periodic With Response Advertising **************************/
 #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
+typedef struct
+{
+	_u16 interval;
+	_u16 property;
+	_u8  numSubevents;
+    _u8  subeventInterval;
+    _u8  responseSlotDelay;
+    _u8  responseSlotSpacing;
+    _u8  numResponseSlots;
+}ll_periodic_adv_with_rsp_param_t;
+controller_error_code_e ll_set_periodic_advertising_with_response_parameters(_u8 advHandle,ll_periodic_adv_with_rsp_param_t* param);
+typedef struct
+{
+	_u8 subeventIndex;
+	_u8 responseSlotStart;
+	_u8 responseSlotCount;
+	_u8 subeventDataLength;
+	_u8 subeventData[0];
+}ll_periodic_adv_with_rsp_subevent_data_t;
+
+controller_error_code_e ll_set_periodic_advertising_with_response_subevent_data(_u8 advHandle,_u8 numSubevents,ll_periodic_adv_with_rsp_subevent_data_t* subevent);
 #endif
 

@@ -3264,7 +3264,7 @@ controller_error_code_e ll_clear_advertising_sets(void)
 #endif//LL_SUPPORT_LE_EXTENDED_ADVERTISING
 
 #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
-controller_error_code_e ll_set_periodic_advertising_paramters(_u8 advHandle,_u8 interval,_u16 property)
+controller_error_code_e ll_set_periodic_advertising_paramters(_u8 advHandle,_u16 interval,_u16 property)
 {
 	ll_internal_adv_set_t* advSet = ll_extended_adv_get_adv_set(advHandle,0);
 	if(POINTER_NOT_VALID(advSet))
@@ -3536,6 +3536,14 @@ controller_error_code_e ll_set_periodic_advertising_enable(_u8 advHandle,_u8 ena
 
 #endif//LL_SUPPORT_LE_PERIODIC_ADVERTISING
 
-#if(BLE_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
+#if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
+controller_error_code_e ll_set_periodic_advertising_with_response_parameters(_u8 advHandle,ll_periodic_adv_with_rsp_param_t* param)
+{
+	return SUCCESS;
+}
 
+controller_error_code_e ll_set_periodic_advertising_with_response_subevent_data(_u8 advHandle,_u8 numSubevents,ll_periodic_adv_with_rsp_subevent_data_t* subevent)
+{
+	return SUCCESS;
+}
 #endif
