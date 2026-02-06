@@ -155,6 +155,13 @@ typedef struct
 #endif
 
 #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
+#if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
+typedef struct
+{
+
+}ll_adv_type_pawr_t;
+#endif//LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER
+
 typedef struct 
 {
     _u8  enable:1;
@@ -171,16 +178,9 @@ typedef struct
     ll_adv_data_entry_t   data;
     ll_adv_entry_t        sync;
     ll_adv_chain_entry_t  chain;
+
 }ll_adv_type_pa_t;
-#endif
-
-#if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
-typedef struct 
-{
-
-}ll_adv_type_pawr_t;
-#endif
-
+#endif//LL_SUPPORT_LE_PERIODIC_ADVERTISING
 
 typedef struct
 {
@@ -219,9 +219,6 @@ typedef struct
     #endif
     #if(LL_SUPPORT_LE_PERIODIC_ADVERTISING)
     ll_adv_type_pa_t*   pa;//periodic advertising
-    #endif
-    #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
-    ll_adv_type_pawr_t* pawr;//periodic advertising with response
     #endif
 }ll_internal_adv_set_t;
 

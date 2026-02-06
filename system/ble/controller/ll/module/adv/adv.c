@@ -3539,11 +3539,22 @@ controller_error_code_e ll_set_periodic_advertising_enable(_u8 advHandle,_u8 ena
 #if(LL_SUPPORT_PERIODIC_ADVERTISING_WITH_RESPONSES_ADVERTISER)
 controller_error_code_e ll_set_periodic_advertising_with_response_parameters(_u8 advHandle,ll_periodic_adv_with_rsp_param_t* param)
 {
+	ll_internal_adv_set_t* advSet = ll_extended_adv_get_adv_set(advHandle,0);
+	if(POINTER_NOT_VALID(advSet))
+	{
+		return UNKNOWN_ADVERTISING_IDENTIFIER;
+	}
+
 	return SUCCESS;
 }
 
 controller_error_code_e ll_set_periodic_advertising_with_response_subevent_data(_u8 advHandle,_u8 numSubevents,ll_periodic_adv_with_rsp_subevent_data_t* subevent)
 {
+	ll_internal_adv_set_t* advSet = ll_extended_adv_get_adv_set(advHandle,0);
+	if(POINTER_NOT_VALID(advSet))
+	{
+		return UNKNOWN_ADVERTISING_IDENTIFIER;
+	}
 	return SUCCESS;
 }
 #endif
