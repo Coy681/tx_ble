@@ -28,13 +28,13 @@ typedef struct tx_bl_node_t
 typedef struct tx_bl_t
 {
 	_u8*            addr;
-	_u8             nodeCnt;
+	_u8             usedCnt;
 	_u8             freeCnt;
 	_u8             sequence;
 	_u8             rsvd;
-	tx_bl_node_t*   nodeHdr;
+	tx_bl_node_t*   usedHdr;
 	tx_bl_node_t*   freeHdr;
-	_u8*            (*allocNode)(tx_bl_t*,_u32);
+	_u8*            (*allocNode)(tx_bl_t*,_u32,_u8);
 	_u8*            (*popNodeBySerialNum)(tx_bl_t*,_u32);
 	_u8*            (*popNodeInOrder)(tx_bl_t*);
 	void            (*freeNode)(tx_bl_t*,_u8*);

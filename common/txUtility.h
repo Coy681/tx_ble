@@ -24,4 +24,6 @@
 
 #define TX_MIN(a, b)                   (((a) < (b)) ? (a) : (b))
 
+#define TX_ALIGN_UP_TO_4(num)          (((num) + 3) & ~3)
+
 #endif /* TXUTILITY_H_ */

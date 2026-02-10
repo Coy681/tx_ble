@@ -202,7 +202,6 @@ typedef struct
 	_u8 subeventDataLength;
 	_u8 subeventData[0];
 }ll_periodic_adv_with_rsp_subevent_data_t;
-
 controller_error_code_e ll_set_periodic_advertising_with_response_subevent_data(_u8 advHandle,_u8 numSubevents,ll_periodic_adv_with_rsp_subevent_data_t* subevent);
 #endif
 

@@ -14,5 +14,7 @@ void tx_assert_handler(const char* file,int line,const char* expr)
     LOG_TRACE(1,"expression",0,0);
     LOG_TRACE(1,expr,0,0);
     #endif
-    while(1);
+//#if(1)
+//    while(1);
+//#endif
 }

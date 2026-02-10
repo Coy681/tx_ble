@@ -7,25 +7,37 @@
 
 #include"bl.h"
 #include"../ml/ml.h"
-#define TX_DATA_BLOCK_SIZE(size)      ((sizeof(tx_bl_node_t)+size+3)&(~3))
 
-static _u8* tx_bl_alloc_node(tx_bl_t* block,_u32 serialNum)
+static _u8* tx_bl_alloc_node(tx_bl_t* block,_u32 serialNum,_u8 serialDuplicateDetect)
 {
+	tx_bl_node_t* elem = NULL;
+	if(serialDuplicateDetect!=0)
+	{
+		elem = block->usedHdr;
+		while(POINTER_VALID(elem))
+		{
+			if(elem->serialNum == serialNum)
+			{
+				return NULL;
+			}
+			elem = elem->next;
+		}
+	}
 	if(block->freeCnt)
 	{
-		tx_bl_node_t* elem = block->freeHdr;
+		elem = block->freeHdr;
 		block->freeHdr = block->freeHdr->next;
 		block->freeCnt--;
 		elem->serialNum = serialNum;
 		elem->next = NULL;
 		tx_bl_node_t* prev = NULL;
-		block->nodeCnt++;
-		if(POINTER_NOT_VALID(block->nodeHdr))
+		block->usedCnt++;
+		if(POINTER_NOT_VALID(block->usedHdr))
 		{
-			block->nodeHdr = elem;
+			block->usedHdr = elem;
 			return elem->data;
 		}
-		tx_bl_node_t* curNode = block->nodeHdr;
+		tx_bl_node_t* curNode = block->usedHdr;
 		while(POINTER_VALID(curNode))
 		{
 			if(block->sequence == TX_BL_SERIAL_NUMBER_ASCENDING)
@@ -53,7 +65,7 @@ static _u8* tx_bl_alloc_node(tx_bl_t* block,_u32 serialNum)
 		else
 		{
 			elem->next   = curNode;
-			block->nodeHdr = elem;
+			block->usedHdr = elem;
 		}
 		return elem->data;
 	}
@@ -65,9 +77,9 @@ static _u8* tx_bl_alloc_node(tx_bl_t* block,_u32 serialNum)
 
 static _u8* tx_bl_pop_node_by_serialNum(tx_bl_t* block,_u32 serialNum)
 {
-	tx_bl_node_t* curNode  = block->nodeHdr;
+	tx_bl_node_t* curNode  = block->usedHdr;
 	tx_bl_node_t* prevNode = NULL;
-	if(POINTER_NOT_VALID(block->nodeHdr))
+	if(POINTER_NOT_VALID(block->usedHdr))
 	{
 		return NULL;
 	}
@@ -75,7 +87,7 @@ static _u8* tx_bl_pop_node_by_serialNum(tx_bl_t* block,_u32 serialNum)
 	{
 		if(curNode->serialNum == serialNum)
 		{
-			block->nodeCnt--;
+			block->usedCnt--;
 			if(POINTER_VALID(prevNode))
 			{
 				prevNode->next = curNode->next;
@@ -84,7 +96,7 @@ static _u8* tx_bl_pop_node_by_serialNum(tx_bl_t* block,_u32 serialNum)
 			else
 			{
 				_u8* data = curNode->data;
-				block->nodeHdr = curNode->next;
+				block->usedHdr = curNode->next;
 				return data;
 			}
 		}
@@ -96,16 +108,15 @@ static _u8* tx_bl_pop_node_by_serialNum(tx_bl_t* block,_u32 serialNum)
 
 static _u8* tx_bl_pop_node_in_order(tx_bl_t* block)
 {
-	if(POINTER_NOT_VALID(block->nodeHdr))
+	if(POINTER_NOT_VALID(block->usedHdr))
 	{
 		return NULL;
 	}
-	tx_bl_node_t* node = block->nodeHdr;
-	block->nodeHdr = block->nodeHdr->next;
-	block->nodeCnt--;
+	tx_bl_node_t* node = block->usedHdr;
+	block->usedHdr = block->usedHdr->next;
+	block->usedCnt--;
 	return node->data;
 }
-
 static void tx_bl_free_node(tx_bl_t* block,_u8* data)
 {
 	ASSERT(data>block->addr);
@@ -114,17 +125,18 @@ static void tx_bl_free_node(tx_bl_t* block,_u8* data)
 	block->freeHdr = node;
 	block->freeCnt++;
 }
-
+#include"tx_common.h"
 void tx_bl_destory(tx_bl_t* block)
 {
 	if(POINTER_VALID(block->addr))
 	{
-		tx_free(block->addr);
+		tx_malloc_ret_e ret = tx_free(block->addr);
+		LOG_TRACE(1,"destory",&ret,4);
 		block->addr = NULL;
 	}
 	block->freeHdr            = NULL;
-	block->nodeHdr            = NULL;
-	block->nodeCnt            = 0;
+	block->usedHdr            = NULL;
+	block->usedCnt            = 0;
 	block->freeCnt            = 0;
 	block->sequence           = 0;
 }
@@ -132,12 +144,15 @@ void tx_bl_destory(tx_bl_t* block)
 void tx_bl_init(tx_bl_t* block,_u16 size,_u8 num)
 {
 	block->freeHdr = NULL;
-	block->nodeHdr = NULL;
+	block->usedHdr = NULL;
 	tx_bl_node_t* temp = NULL;
-	block->addr = tx_malloc(TX_DATA_BLOCK_SIZE(size)*num);
+	_u32 nodeSize = TX_ALIGN_UP_TO_4(sizeof(tx_bl_node_t)+size);
+	block->addr = tx_malloc(nodeSize*num);
+	ASSERT(block->addr!=NULL);
 	for(int i=0;i<num;i++)
 	{
-		tx_bl_node_t* node = (tx_bl_node_t*)(block->addr+i*TX_DATA_BLOCK_SIZE(size));
+
+		tx_bl_node_t* node = (tx_bl_node_t*)(block->addr+i*nodeSize);
 		node->next = NULL;
 		if(i==0)
 		{
@@ -149,7 +164,7 @@ void tx_bl_init(tx_bl_t* block,_u16 size,_u8 num)
 		}
 		temp = node;
 	}
-	block->nodeCnt            = 0;
+	block->usedCnt            = 0;
 	block->freeCnt            = num;
 	block->destory            = tx_bl_destory;
 	block->allocNode          = tx_bl_alloc_node;
@@ -157,3 +172,44 @@ void tx_bl_init(tx_bl_t* block,_u16 size,_u8 num)
 	block->popNodeBySerialNum = tx_bl_pop_node_by_serialNum;
 	block->freeNode           = tx_bl_free_node;
 }
+
+#if(0)
+volatile tx_bl_t  AACC_BlockTest;
+volatile _u32     AACC_ADDR;
+volatile _u32     AACC_NODE_ADDR;
+void tx_bl_test(_u8* data,_u8 len)
+{
+	  switch(data[0])
+	  {
+		case 0x01:
+			tx_bl_init(&AACC_BlockTest,48,8);
+			LOG_TRACE(1,"block list init",0,0)
+			break;
+		case 0x02:
+			AACC_ADDR =  (_u32)AACC_BlockTest.allocNode(&AACC_BlockTest,0,0);
+			LOG_TRACE(1,"block list alloc node",&AACC_ADDR,4)
+			AACC_ADDR =  (_u32)AACC_BlockTest.allocNode(&AACC_BlockTest,1,0);
+			LOG_TRACE(1,"block list alloc node",&AACC_ADDR,4)
+			AACC_ADDR =  (_u32)AACC_BlockTest.allocNode(&AACC_BlockTest,2,0);
+			LOG_TRACE(1,"block list alloc node",&AACC_ADDR,4)
+			AACC_ADDR =  (_u32)AACC_BlockTest.allocNode(&AACC_BlockTest,3,0);
+			LOG_TRACE(1,"block list alloc node",&AACC_ADDR,4)
+			break;
+		case 0x03:
+			AACC_NODE_ADDR = (_u32)AACC_BlockTest.popNodeInOrder(&AACC_BlockTest);
+			LOG_TRACE(1,"block list free node",&AACC_NODE_ADDR,4)
+			AACC_BlockTest.freeNode(&AACC_BlockTest,AACC_NODE_ADDR);
+			break;
+		case 0x04:
+			AACC_NODE_ADDR = (_u32)AACC_BlockTest.popNodeBySerialNum(&AACC_BlockTest,2);
+			LOG_TRACE(1,"block list free node",&AACC_NODE_ADDR,4)
+			AACC_BlockTest.freeNode(&AACC_BlockTest,AACC_NODE_ADDR);
+			break;
+		case 0x05:
+			AACC_BlockTest.destory(&AACC_BlockTest);
+			break;
+		default:
+			break;
+	  }
+}
+#endif
