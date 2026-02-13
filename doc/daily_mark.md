@@ -85,7 +85,7 @@ receiverAllowance悠接收机自己确定
 
 ## Subrate的意义
 
-对于连续的connection event,central和peripheral可以协商，从指定的事件开始，只再固定的事件中活动，活动的规则如下
+对于连续的connection event,central和peripheral可以协商，从指定的事件开始，只在固定的事件中活动，活动的规则如下
 
 subrateBaseEvent   - 即subrate生效的起始事件
 subrateEvent       - subrate生效的连接事件，注意，只有一个事件
@@ -105,6 +105,7 @@ peripheral可以忽略central的事件数(connection event)，注意是忽略,�
 peripheral可以忽略central的subrate事件数，相当于在基础peripheral latency的基础上叠加了一个subrateEvent的概念    
 
 注意：**subrate生效的时候，peripheral latency生效的基础是subrate event**
+
 
 # 20251213
 
@@ -379,3 +380,10 @@ page设备如果不知道目标设备时钟，需要快速逐频发送page
 
  - primary advertising channels,可以使用LE 1M PHY和LE Coded PHY
  - secondary advertising channels
+
+
+ ## 20260213
+
+ ### short connection interval
+
+ 通过LL CONNECTION RATE REQUEST Procedure和LL CONNECTION RATE REQUEST Update Procedure来进行

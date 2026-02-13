@@ -279,9 +279,12 @@ BLE广播有四种类型的广播事件，分别是
 
 ###
 
+
+
+
 (1)新平台适配
-   Ⅰ  SDK新平台调试，link和startup.s文件适配等
-   Ⅱ  基础模块调试/适配层填充，如PM(低功耗),RF(射频),Timer，Codec(音频)等
+   Ⅰ  SDK新平台调试，启动文件适配优化
+   Ⅱ  基础模块功能调试/适配层填充，如PM(低功耗),RF(射频),Timer，Codec(音频)等
    Ⅲ 功耗优化，性能评估，如供电配置优化，射频性能测试评估，
    Ⅳ SDK模块验证(BLE)，如LE ADV/ACL/BIS/CIS等
    Ⅴ  多核架构设计/适配，多核通信机制优化
@@ -292,7 +295,7 @@ BTBLE Audio双模Audio SDK LE部分
    Ⅰ  legacy adv,extended adv,periodic adv,primary scan,secondary scan
    Ⅱ  Multiple BLE ACL Slave/Master
    Ⅲ BLE CIS/BIS 
-   Ⅳ HID Over ISO,1K爆点率的游戏手柄
+   Ⅳ HID Over ISO，SCI，iso parameter update等
 
 相关项目
 某会议系统（主从）
@@ -312,21 +315,25 @@ hid over iso游戏手柄
    Ⅰ  BT ACL Master + multiple LE ACL Master 
    Ⅱ BT ESCO + multiple LE ACL Master 
 
-   项目 某多模转换器
-s
+项目 多模游戏手柄转换器
+
 (4)BT A2DP TO LE BIS方案设计和优化
    Ⅰ  核心时序设计
    Ⅱ 本地+远端多设备同步播放
-   某音箱
+项目 音箱
+
 (5)多模块(BT/LE/私有链路)通信机制
    Ⅰ 信息注册
    Ⅱ 信息查询
    Ⅲ 信息通知
+
 (7)多主动任务共存模块设计
    Ⅰ offset+shift双维度时序规划
    Ⅱ应用于多个量产项目
+
 (8)ACL with BIS/CIS时序共存
    Ⅰ BIS/CIS任务碎片化
+
 (9)LE Audio TWS+私有链路音频方案
    Ⅰ 耳机端 LE Audio TWS + 私有链路音频共存(通话，音乐)
    Ⅱ Dongle端LE Audio TWS + 私有链路音频共存(通话，音乐)
@@ -334,7 +341,9 @@ s
    多低功耗模式
    BT+LE+私有链路
    单核/多核支持
-(12)Core Spec认证
+
+(12)Core Spec认证，Core 5.3,5.4,6.0
+
 (13)项目支持
 
 协议栈从零到一的经验
@@ -350,8 +359,10 @@ s
    Ⅲ 动态内存分配扩展memory ring buffer
 (3)log模块
    使用硬件通信模块(如UART)模拟LOG输出，日志显示
+
 (4)消息通信模块 
    消息发布和消息订阅机制
+
 (5)通用硬件抽象适配层   
    Ⅰ   UART适配层
    Ⅱ  Timer适配层
@@ -371,6 +382,22 @@ s
    Ⅰ  跳频算法
    Ⅱ  扩窗算法
    Ⅲ packet prepare
-   Ⅳ controller module define
+   Ⅳ controller module define：controller分层的艺术
    Ⅴ  feature分层定义
-   Ⅰ  PHY实例化
+   Ⅰ   PHY对象化，实例化
+
+
+
+   ## SCI
+
+   ### 为什么SCI是power friendly的?
+   HID Over ISO, CIS一旦建立起来就需要一直运行下去，相比较而言，ACL的策略就灵活很多，即便使用SCI，也有很多休眠策略，如Subrate，Latency
+   ### 为什么SCI是更稳定的的?
+   HID OVER ISO本身不带有数据重传(已经使用subevent了，不能继续往下拆分了)，需要在Host层面做重传，而使用ACL的话方便在Controller层面对ACL Event进行拆分，在controller进行重传机制的添加
+   ### SCI相比于HID Over ISO有什么优势
+   简化，高利用率，带有低功耗
+
+   这类设备数据上报率不会是持续的，一般都是突发的，像是HID Over ISO是比较浪费带宽的，ACL可以在空闲的时候利用Subrate等机制，使设备进入低功耗
+
+
+   
