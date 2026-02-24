@@ -386,7 +386,87 @@ hid over iso游戏手柄
    Ⅴ  feature分层定义
    Ⅰ   PHY对象化，实例化
 
+从零到一
+   系统部分
+   -- 使用system call的方式，系统分层初始化
+   -- 事件驱动模型
+   -- log模块
+   -- 消息通信机制
+   -- 内存管理模块
+   LE 协议栈(Controller)部分
+   -- 硬件抽象层定义
+      -- RF抽象层
+      -- Timer抽象层
+      -- UART抽象层
+   -- 高效的HCI框架实现
+   -- 时序部分
+      --时序调度
+      --时序规划
+      --时序映射
+   -- 物理层PHY实例化，对象化
+   -- 具体实现
+      -- 跳频算法#1和跳频算法#2
+      -- 收包扩窗算法
+      -- packet部分定义
+      -- feature模块化，分层化 
+   -- Leagcy ADV,Extended ADV,Periodic ADV，Periodic ADV with RSP的实现
+      --分层状态机
+      --统一封包处理
+      --时序映射的外层实现
 
+
+多模协议栈
+    
+   BTBLE协议栈
+
+   负责混合场景时序设计
+   BT/BLE主设备 -- BT inquiry/page + LE primary/secondary scan + BT ACL Master + LE ACL Master + BT ESCO + LE CIS Master
+
+   BTBLE Audio Dongle参考设计
+
+   --多模游戏手柄转换器，最大支持连接一路BT audio+四路LE ACL
+
+   从设备--BT inquiry/page scan + BT ACL Slave+LE ACL Slave + LE ADV + BT ESCO +LE CIS Slave
+
+   BTBLE Headset参考设计
+   BTBLE Headset项目
+   BTBLE TWS参考设计
+
+   LE+2.4G协议栈
+
+   -- LE Audio TWS+私有链路参考设计
+
+   -- LE Audio Headset+Audio Dongle混音参考设计
+
+   -- LE Audio TWS+私有链路设计+Audio Dongle混音参考设计
+
+
+LE协议栈
+   Controller协议栈维护/优化
+      Ⅰ  legacy adv,extended adv,periodic adv,primary scan,secondary scan
+      Ⅱ  Multiple BLE ACL Slave/Master,动态优先级
+      Ⅲ BLE CIS/BIS 
+      -- ACL with CIS/BIS优化
+      -- 非对称PHY的适配
+      新协议开发/优化
+      Ⅳ HID Over ISO，SCI，iso parameter update，HDT等
+      Core认证
+      参与core 5.3/core 6.0认证
+   Host协议栈开发/优化
+      LE Audio Profile的开发/认证
+   项目开发
+   -- LE Audio会议系统
+   -- HID Over ISO游戏手柄
+   -- 语音遥控器
+   -- 蓝牙数字钥匙
+
+驱动开发
+   Ⅰ  SDK新平台调试，启动文件适配优化
+   Ⅱ  基础模块功能调试/适配层填充，如PM(低功耗),RF(射频),Timer，Codec(音频)等
+   Ⅲ 功耗优化，性能评估，如供电配置优化，射频性能测试评估，
+   Ⅳ BLE SDK模块验证，如LE ADV/ACL/BIS/CIS等
+   Ⅴ  多核架构设计/适配，多核通信机制优化
+      如mailbox/share memory设计优化等
 
    ## SCI
 
