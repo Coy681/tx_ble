@@ -390,20 +390,28 @@ hid over iso游戏手柄
    系统部分
    -- 使用system call的方式，系统分层初始化
    -- 事件驱动模型
-   -- log模块
+   -- log模块简单实现
    -- 消息通信机制
+      -- 基于订阅者-发布者模型的消息通信机制
    -- 内存管理模块
+      --集中内存管理模型
    LE 协议栈(Controller)部分
    -- 硬件抽象层定义
       -- RF抽象层
+         跨平台API，如设置phy mode,phy parateter
       -- Timer抽象层
+         系统运行基准，从system tick转换成us
       -- UART抽象层
    -- 高效的HCI框架实现
+      -- 基于嵌套表的HCI实现
    -- 时序部分
       --时序调度
       --时序规划
+        --双维度的时序规划方法
       --时序映射
+        --扫描线算法在嵌入式系统时序调度中的应用
    -- 物理层PHY实例化，对象化
+        以面向对象的方式实现LE的物理层，高效低耗
    -- 具体实现
       -- 跳频算法#1和跳频算法#2
       -- 收包扩窗算法
@@ -452,6 +460,8 @@ LE协议栈
       Ⅳ HID Over ISO，SCI，iso parameter update，HDT等
       Core认证
       参与core 5.3/core 6.0认证
+      通用部分
+      低功耗部分
    Host协议栈开发/优化
       LE Audio Profile的开发/认证
    项目开发
