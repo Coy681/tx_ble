@@ -406,6 +406,7 @@ hid over iso游戏手柄
       -- 基于嵌套表的HCI实现
    -- 时序部分
       --时序调度
+        模块化
       --时序规划
         --双维度的时序规划方法
       --时序映射
@@ -417,6 +418,7 @@ hid over iso游戏手柄
       -- 收包扩窗算法
       -- packet部分定义
       -- feature模块化，分层化 
+      -- ll state machine实例化
    -- Leagcy ADV,Extended ADV,Periodic ADV，Periodic ADV with RSP的实现
       --分层状态机
       --统一封包处理
@@ -473,7 +475,7 @@ LE协议栈
 驱动开发
    Ⅰ  SDK新平台调试，启动文件适配优化
    Ⅱ  基础模块功能调试/适配层填充，如PM(低功耗),RF(射频),Timer，Codec(音频)等
-   Ⅲ 功耗优化，性能评估，如供电配置优化，射频性能测试评估，
+   Ⅲ 功耗优化，性能评估，如供电配置优化，射频性能测试优化等，
    Ⅳ BLE SDK模块验证，如LE ADV/ACL/BIS/CIS等
    Ⅴ  多核架构设计/适配，多核通信机制优化
       如mailbox/share memory设计优化等
