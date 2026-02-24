@@ -407,49 +407,127 @@ hid over iso游戏手柄
       -- 基于嵌套表的HCI实现
    -- 时序部分
       --时序调度
-        模块化
+        抽象化，模块化
+        任务有三种类型 - 周期性(无论是强周期性还是弱周期性)
+                      - ASAP，尽可能多的
+                      - 突发性
+        任务间的相对关系，有六种
+                      - A在B之前
+                      - A的后半部分和B的前半部分重叠
+                      - B在A中间
+                      - A在B中间
+                      - B的后半部分和A的前半部分重叠
+                      - B在A之后
+         运行原则 (1)task list涵盖了所有待调度的任务，这些任务按照执行时间的先后顺序和优先级排列
+                 (2)调度器取出task list的头节点调度，调度结束之后，如果是周期性任务，则重新插入。
+                 (3)任务插入时，根据执行时间和优先级，和已有任务PK，如果不冲突或者优先级较高，则插入。如果冲突且优先级较低，插入失败，通过任务回调通知任务。
+         特殊机制
+         (1)如果待插入任务A插入失败，且满足A在B中间，或者B的后半部分和A的前半部分重叠，则任务A进入waiting list，等待任务B提前结束，寻找调度机会。
+         (2)任务扩展，如果任务A请求了任务扩展，则调度器返回A的最大执行时间。
+
       --时序规划
         --双维度的时序规划方法
+          先抛出两个问题,假设系统时间初始基准确定
+             (1)两个任务的interval一样，怎么让两个任务在时间轴上错开
+             (2)两个任务的interval不一样，例如任务A interval是30ms，任务B interval是40ms，怎么让两个任务在时间轴上错开？
+          步骤
+          系统设置ecosystem base interval
+          任务抽象成节点，将已存在的其他所有任务(interval+duration)，映射到自己的时间轴上(时间轴以待规划任务interval为基准，颗粒度可分)，从base interval和offset两个维度规划任务
+            shift和offset
+            映射时，需要考虑三个因素   待分配任务A interval,待分配任务B interval，系统base interval，只考虑任务A interval,任务B interval都是系统base interval整数倍的情况
+
+            如果任务A interval是任务B interval的整数倍，任务B只需要映射多次
+            如果任务B 是任务A interval的整数倍，任务B只需要映射一次
+            如果任务A和任务B，interval不互称整数倍，则每个base interval都需要映射
+         扩展 - 时序聚合和分散的实现
+
       --时序映射
         --扫描线算法在嵌入式系统时序调度中的应用
+        --背景：BLE Extended ADV的独特特性可能存在多广播集和周期性广播，PAWR等共存，导致时序过于复杂,有问题，才有需求，根据BLE Extended ADV的独特特性，设计出独特的时序排布机制
+
+        指定参考时间轴起点和终点，传入时间轴内存在的任务信息(包括任务数量，每个任务的起点和终点，任务类型(是否周期性)等)
+        时序映射模块将所有任务映射到该时间轴上，从时间轴起点遍历到时间轴终点，返回时间轴所有的空闲block
+
    -- 物理层PHY实例化，对象化
-        以面向对象的方式实现LE的物理层，高效低耗
+         以面向对象的方式实现LE的物理层，高效低耗
+         受到过往经验的警示，PHY和LE Controller的耦合性高低决定了协议栈跨平台稳定性和可继承性，并和协议栈稳定性高度相关
+         PHY的资源只有一份，可能被多个模块共享，这些模块有各自的参数，所以将PHY对象化。PHY层定义相关参数和操作函数，只接受传入对象。
+         PHY规定了物理层收发API的跨平台类型，如PHY Mode,PHY EVENT TYPE,以及协议栈需要的具体API
+                                                                    例如(1)收包/发包API
+                                                                        (2)期望的发包点
+                                                                        (3)期望的收包窗口
+                                                                        (4)收包时参考点(经过timer转换，将tick转换成us)
+                                                                        (5)其他相关API
+         PHY层配合RF抽象层，可以实现LE Controller稳定/高效跨平台
    -- 具体实现
       -- 跳频算法#1和跳频算法#2
       -- 收包扩窗算法
+         sleep accuracy:瞬时抖动16us+ppm
+         active accuracy:瞬时抖动2us+ppm
+         扩窗（local ppm+peer ppm）*(windenEnd - lastSync) + jitter
       -- packet部分定义
+         packet分层准备(prepare+make)
+         通用处理函数(例如获取air time)
       -- feature模块化，分层化 
-      -- ll state machine实例化
-   -- Leagcy ADV,Extended ADV,Periodic ADV，Periodic ADV with RSP的实现
-      --分层状态机
-      --统一封包处理
-      --时序映射的外层实现
 
+      -- ll state machine实例化
+         LE Controller多状态机实现，资源分配/释放
+   -- Leagcy ADV,Extended ADV,Periodic ADV，Periodic ADV with RSP的实现
+      具体效果:代码3000行vs12000行
+      代码高度统一
+      具体特性：adv event原子化，拆分到最小时序单位
+      通过分层状态机，分别调度最小时序单位
+ 
+      adv event state machine调度adv event(legacy adv+extended adv的primary部分)
+
+      extended adv state machine调度extended event
+
+      chaind adv state machine调度chaind event
+
+      periodic adv state machine调度periodic event
+
+      periodic adv with rsp state machine调度periodic adv with rsp部分
+      --统一处理流程
+        --packet prepare->phy prepare->phy start
+      --时序映射扫描线算法的具体应用
+        --按照最小时序单位，为每一路adv分配本次Adv event的时序
 
 多模协议栈
     
    BTBLE协议栈
 
-   负责混合场景时序设计
+   混合场景1时序设计
    BT/BLE主设备 -- BT inquiry/page + LE primary/secondary scan + BT ACL Master + LE ACL Master + BT ESCO + LE CIS Master
 
-   BTBLE Audio Dongle参考设计
+   具体实现：BTBLE Audio Dongle参考设计
 
-   --多模游戏手柄转换器，最大支持连接一路BT audio+四路LE ACL
+   应用项目：多模游戏手柄转换器
+            支持双模式
+            模式1：BT 耳机(音乐+通话)+四路LE HID手柄
+            模式2：BT 耳机(音乐+通话)+LE TWS耳机(音乐+通话)，部分场景共存
 
-   从设备--BT inquiry/page scan + BT ACL Slave+LE ACL Slave + LE ADV + BT ESCO +LE CIS Slave
+   混合场景2时序设计
 
-   BTBLE Headset参考设计
-   BTBLE Headset项目
-   BTBLE TWS参考设计
+   BT/BLE从设备--BT inquiry/page scan +LE ADV +BT ACL Slave+LE ACL Slave+ BT ESCO +LE CIS Slave
+
+   具体实现1：BTBLE Headset参考设计
+   应用项目1：头戴式游戏耳机
+             支持同时连接一路LE手机+一路BT手机，并支持音乐共存+通话抢占
+   具体实现2：BTBLE TWS参考设计
+   应用项目2：真无线TWS耳机 
+             支持同时连接一路LE TWS手机+一路BT TWS手机，并支持音乐共存+通话抢占
+   
 
    LE+2.4G协议栈
 
    -- LE Audio TWS+私有链路参考设计
-
-   -- LE Audio Headset+Audio Dongle混音参考设计
+      私有链路存在于LE Audio TWS左右耳之间，用于同步灯光/音量等UI信息
 
    -- LE Audio TWS+私有链路设计+Audio Dongle混音参考设计
+      支持手机+Dongle双路音频混音播放
+      使用镜像思维，将Dongle抽象为一部虚拟的手机，来实现LE Audio TWS带宽的高效利用
+   -- LE Audio Headset+Audio Dongle混音参考设计
+      支持手机+Dongle双路音频混音播放
 
 
 LE协议栈
@@ -457,29 +535,44 @@ LE协议栈
       Ⅰ  legacy adv,extended adv,periodic adv,primary scan,secondary scan
       Ⅱ  Multiple BLE ACL Slave/Master,动态优先级
       Ⅲ BLE CIS/BIS 
-      -- ACL with CIS/BIS优化
-      -- 非对称PHY的适配
+      -- ACL with CIS/BIS优化，碎片化BIS/CIS，以subevent为基准进行调度
+      -- 非对称PHY的适配，切换TX->RX auto模式到手动TX->RX模式
       新协议开发/优化
       Ⅳ HID Over ISO，SCI，iso parameter update，HDT等
+      HDT详解：
+      --HDT rate
+        HDT2,HDT3使用Π/4调制
+        HDT4使用8PSK调制
+        HDT 6和HDT 7.5使用16QAM调制
+      --HDT有三种包格式
+        short format  preamble + control header
+        format 0      preamble + control header + (pdu header +  pdu zone)
+        format 1      preamble + control header +  pdu header + (pdu zone)
+
+        format1有phy interval
       Core认证
       参与core 5.3/core 6.0认证
       通用部分
-      低功耗部分
+      LE协议栈低功耗模式开发/优化，支持BT+LE+2.4G多模式共存
    Host协议栈开发/优化
       LE Audio Profile的开发/认证
    项目开发
    -- LE Audio会议系统
+      支持CIS 二拖四上下行以及BIS转发方案，以量产
    -- HID Over ISO游戏手柄
+      1K爆点率的标准协议游戏手柄，已量产
    -- 语音遥控器
+      蓝牙语音遥控器，已量产
    -- 蓝牙数字钥匙
+      初代方案，基于rssi强度测量的数字钥匙方案
 
-通用嵌入式开发
-   Ⅰ  SDK新平台调试，启动文件适配优化
+通用SDK开发
+   Ⅰ  SDK新平台适配，启动文件适配优化等
    Ⅱ  基础模块功能调试/适配层填充，如PM(低功耗),RF(射频),Timer，Codec(音频)等
    Ⅲ 功耗优化，性能评估，如供电配置优化，射频性能测试优化等，
-   Ⅳ BLE SDK模块验证，如LE ADV/ACL/BIS/CIS等
+   Ⅳ BLE SDK模块新平台验证，如LE ADV/ACL/BIS/CIS等
    Ⅴ  多核架构设计/适配，多核通信机制优化
-      如mailbox/share memory设计优化等
+      如mailbox/share memory设计迭代优化等
 
    ## SCI
 
