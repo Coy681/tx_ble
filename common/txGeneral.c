@@ -51,12 +51,10 @@ int txMemcmp(void * str1, void * str2, _u32 length)
 
 	while(length--)
     {
-		if(*st1 != *st2)
+		if(*st1++ != *st2++)
         {
 			return 1; 
 		}
-		st1++;
-		st2++;
 	}
 	return 0;
 }
