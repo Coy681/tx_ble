@@ -66,35 +66,3 @@ int main(void)
 	tx_task_start();
     return 0;
 }
-
-void swap(int*a,int*b)
-{
-	int temp = *a;
-	*a = *b;
-	*b = temp;
-}
-
-int partition(int a[],int low,int high)
-{
-	int base = a[high];
-	int i = low;
-	for(int j = low;j<high;j++)
-	{
-		if(a[j]<=base)
-		{
-			swap(&a[i],&a[j]);
-			i++;
-		}
-	}
-	swap(&a[i],&a[high]);
-	return i;
-}
-void quick_sort(int a[],int low,int high)
-{
-	if(low<high)
-	{
-		int base = partition(a,low,high);
-		quick_sort(a,low,base-1);
-		quick_sort(a,base+1,high);
-	}
-}
