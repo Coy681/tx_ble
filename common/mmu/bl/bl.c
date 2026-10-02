@@ -1,7 +1,7 @@
 /*
  * txBlock.c
  *
- *  Created on: 2025å¹´10æœˆ17æ—¥
+ *  Created on: 2025å¹?0æœ?7æ—?
  *      Author: Admin
  */
 
@@ -131,7 +131,7 @@ void tx_bl_destory(tx_bl_t* block)
 	if(POINTER_VALID(block->addr))
 	{
 		tx_malloc_ret_e ret = tx_free(block->addr);
-		LOG_TRACE(1,"destory",&ret,4);
+		LOG_HEX(1,"destory",&ret,4);
 		block->addr = NULL;
 	}
 	block->freeHdr            = NULL;
@@ -183,26 +183,26 @@ void tx_bl_test(_u8* data,_u8 len)
 	  {
 		case 0x01:
 			tx_bl_init(&AACC_BlockTest,48,8);
-			LOG_TRACE(1,"block list init",0,0)
+			LOG_STR(1,"block list init")
 			break;
 		case 0x02:
 			AACC_ADDR =  (_u32)AACC_BlockTest.allocNode(&AACC_BlockTest,0,0);
-			LOG_TRACE(1,"block list alloc node",&AACC_ADDR,4)
+			LOG_HEX(1,"block list alloc node",&AACC_ADDR,4)
 			AACC_ADDR =  (_u32)AACC_BlockTest.allocNode(&AACC_BlockTest,1,0);
-			LOG_TRACE(1,"block list alloc node",&AACC_ADDR,4)
+			LOG_HEX(1,"block list alloc node",&AACC_ADDR,4)
 			AACC_ADDR =  (_u32)AACC_BlockTest.allocNode(&AACC_BlockTest,2,0);
-			LOG_TRACE(1,"block list alloc node",&AACC_ADDR,4)
+			LOG_HEX(1,"block list alloc node",&AACC_ADDR,4)
 			AACC_ADDR =  (_u32)AACC_BlockTest.allocNode(&AACC_BlockTest,3,0);
-			LOG_TRACE(1,"block list alloc node",&AACC_ADDR,4)
+			LOG_HEX(1,"block list alloc node",&AACC_ADDR,4)
 			break;
 		case 0x03:
 			AACC_NODE_ADDR = (_u32)AACC_BlockTest.popNodeInOrder(&AACC_BlockTest);
-			LOG_TRACE(1,"block list free node",&AACC_NODE_ADDR,4)
+			LOG_HEX(1,"block list free node",&AACC_NODE_ADDR,4)
 			AACC_BlockTest.freeNode(&AACC_BlockTest,AACC_NODE_ADDR);
 			break;
 		case 0x04:
 			AACC_NODE_ADDR = (_u32)AACC_BlockTest.popNodeBySerialNum(&AACC_BlockTest,2);
-			LOG_TRACE(1,"block list free node",&AACC_NODE_ADDR,4)
+			LOG_HEX(1,"block list free node",&AACC_NODE_ADDR,4)
 			AACC_BlockTest.freeNode(&AACC_BlockTest,AACC_NODE_ADDR);
 			break;
 		case 0x05:

@@ -1,7 +1,7 @@
-/*
+﻿/*
  * adv1.c
  *
- *  Created on: 2025年12月15日
+ *  Created on: 2025骞?2鏈?5鏃?
  *      Author: Admin
  */
 
@@ -2000,18 +2000,18 @@ static void adv_phy_irq_callback(_u8 type)
 {
     if(type == PHY_IRQ_TX_FINISHED)
     {
-        DEBUG_GPIO_HIGH(GPIO_8);
-        DEBUG_GPIO_LOW(GPIO_8);
+        DEBUG_GPIO_HIGH(DBG_GPIO_8);
+        DEBUG_GPIO_LOW(DBG_GPIO_8);
     }
     else if(type == PHY_IRQ_RX_FINISHED)
     {
-        DEBUG_GPIO_HIGH(GPIO_9);
-        DEBUG_GPIO_LOW(GPIO_9);
+        DEBUG_GPIO_HIGH(DBG_GPIO_9);
+        DEBUG_GPIO_LOW(DBG_GPIO_9);
     }
     else if(type == PHY_IRQ_RX_TIMEOUT)
     {
-        DEBUG_GPIO_HIGH(GPIO_10);
-        DEBUG_GPIO_LOW(GPIO_10);
+        DEBUG_GPIO_HIGH(DBG_GPIO_10);
+        DEBUG_GPIO_LOW(DBG_GPIO_10);
     }
     adv_sequence_process(LL_PHY_EVENT_BASE+type);
 }
@@ -2021,23 +2021,23 @@ static void adv_sch_callback(_u8 type,_u8 id)
 {
     if(type == SCH_TASK_START)
     {
-        DEBUG_GPIO_HIGH(GPIO_2);
-        DEBUG_GPIO_LOW(GPIO_2);
+        DEBUG_GPIO_HIGH(DBG_GPIO_2);
+        DEBUG_GPIO_LOW(DBG_GPIO_2);
     }
     else if(type == SCH_TASK_STOP)
     {
-        DEBUG_GPIO_HIGH(GPIO_3);
-        DEBUG_GPIO_LOW(GPIO_3);
+        DEBUG_GPIO_HIGH(DBG_GPIO_3);
+        DEBUG_GPIO_LOW(DBG_GPIO_3);
     }
     else if(type == SCH_TASK_CANCELED)
     {
-        DEBUG_GPIO_HIGH(GPIO_4);
-        DEBUG_GPIO_LOW(GPIO_4);
+        DEBUG_GPIO_HIGH(DBG_GPIO_4);
+        DEBUG_GPIO_LOW(DBG_GPIO_4);
     }
     else if(type == SCH_TASK_PASSED)
     {
-        DEBUG_GPIO_HIGH(GPIO_5);
-        DEBUG_GPIO_LOW(GPIO_5);
+        DEBUG_GPIO_HIGH(DBG_GPIO_5);
+        DEBUG_GPIO_LOW(DBG_GPIO_5);
     }
 
 	LLSM = (ll_sm_t*)ll_get_sm_entity_by_id(id);
@@ -2199,7 +2199,7 @@ controller_error_code_e ll_set_advertising_parameters(_u16 interval,\
 			adv->set[0].la.eventType = ADV_EVENT_NON_CONNECTABLE_NON_SCANNABLE_UNDIRECTED;
 		}break;
 	}
-	LOG_TRACE(BLE_ADV_TRACE_ENABLE,"ll set adv param",0,0)
+	LOG_STR(BLE_ADV_TRACE_ENABLE,"ll set adv param")
 	return SUCCESS;
 }
 
@@ -2225,7 +2225,7 @@ controller_error_code_e ll_set_advertising_data(_u8* data,_u8 length)
     adv->set[0].data.len  = length;
     adv->set[0].data.addr = tx_malloc(length);
 	txMemcpy(adv->set[0].data.addr,data,length);
-	LOG_TRACE(BLE_ADV_TRACE_ENABLE,"ll set adv data",adv->set[0].data.addr,adv->set[0].data.len)
+	LOG_HEX(BLE_ADV_TRACE_ENABLE,"ll set adv data",adv->set[0].data.addr,adv->set[0].data.len)
 	return SUCCESS;
 }
 
@@ -2250,7 +2250,7 @@ controller_error_code_e ll_set_scan_response_data(_u8* data,_u8 length)
     adv->set[0].scanRsp.len  = length;
     adv->set[0].scanRsp.addr = tx_malloc(length);
 	txMemcpy(adv->set[0].scanRsp.addr,data,length);
-	LOG_TRACE(BLE_ADV_TRACE_ENABLE,"ll set scan rsp data",adv->set[0].scanRsp.addr,adv->set[0].scanRsp.len)
+	LOG_HEX(BLE_ADV_TRACE_ENABLE,"ll set scan rsp data",adv->set[0].scanRsp.addr,adv->set[0].scanRsp.len)
 	return SUCCESS;
 }
 controller_error_code_e ll_set_advertising_enable(_u8 enable)
@@ -2265,7 +2265,7 @@ controller_error_code_e ll_set_advertising_enable(_u8 enable)
 	{
 		return SUCCESS;//enable adv that already enabled,maybe change the random address
 	}
-	LOG_TRACE(BLE_ADV_TRACE_ENABLE,"set scan enable",&enable,1)
+	LOG_HEX(BLE_ADV_TRACE_ENABLE,"set scan enable",&enable,1)
 	if(adv->set[0].enable!=enable)
 	{
 		adv->set[0].enable = enable;

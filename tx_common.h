@@ -1,4 +1,4 @@
 
-#include"platform/debug/debug_gpio.h"
+#include"debug/gpio/gpio.h"
 
-#include"platform/debug/log.h"
+#include"debug/log/log.h"

@@ -21,6 +21,8 @@
 
 #include"system/ble/controller/ll/ll_test.h"
 
+#include"debug/debug.h"
+
 volatile _u32 AAA_Mcause = 0;
 volatile _u32 AAA_Mtval = 0;
 volatile _u32 AAA_Mpec = 0;
@@ -45,7 +47,13 @@ void trap_entry(void)
 
 void app_rx_cmd(_u8* data,_u32 len)
 {
-	LOG_TRACE(1,"rx data",data,len)
+
+	LOG_HEX(1,"rx data",data,len)
+	// LOG_HEX(1,"rx data",data,len);
+	// LOG_PRINTF(1,"len = %d\n",len);
+	LOG_STR(1,"[I]");
+	LOG_STR(1,"[W]");
+	LOG_STR(1,"[E]");
 	ll_test_process(data,len);
 }
 int main(void)
@@ -60,9 +68,9 @@ int main(void)
     	pInit = (initcall_f)(*pTemp);
     	pInit();
     }
-	LOG_TRACE(1,"system start",0,0)
+	LOG_STR(1,"system start")
 	hal_stimer_set_capture(system_time()+1000);
-	log_register_rx_callback(app_rx_cmd);
+	debug_port_rx_register(app_rx_cmd);
 	tx_task_start();
     return 0;
 }

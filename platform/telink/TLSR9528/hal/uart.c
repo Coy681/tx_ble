@@ -42,15 +42,26 @@ PLIC_ISR_REGISTER(uart_irq_handler, IRQ_UART0)
 void hal_uart_register_task(hal_uart_baudrate_e baudrate,\
 		                       hal_uart_rx_task rxCb,\
 							   hal_uart_tx_task txCb,\
-							   hal_uart_parity_e patiry,\
-							   hal_uart_stopBit_e stopBit)
+							   hal_uart_parity_e parity,\
+							   hal_uart_stopbit_e stopBit)
 {
+	/* map hal abstract values to telink chip values */
+	static const uart_parity_e parityMap[] = {
+	    [HAL_UART_PARITY_NONE] = UART_PARITY_NONE,
+	    [HAL_UART_PARITY_EVEN] = UART_PARITY_EVEN,
+	    [HAL_UART_PARITY_ODD]  = UART_PARITY_ODD,
+	};
+	static const uart_stop_bit_e stopBitMap[] = {
+	    [HAL_UART_STOP_BIT_ONE] = UART_STOP_BIT_ONE,
+	    [HAL_UART_STOP_BIT_TWO] = UART_STOP_BIT_TWO,
+	};
+
 	uart_set_pin(UART0,uartTxPin,uartRxPin);
     _u16 div;
     _u8 bwpc;
 	uart_cal_div_and_bwpc((_u32 )baudrate, sys_clk.pclk*1000*1000, &div, &bwpc);
     uart_set_rx_timeout(UART0, bwpc, 12, UART_BW_MUL2);
-    uart_init(UART0, div, bwpc, (uart_parity_e)patiry, (uart_stop_bit_e)stopBit);
+    uart_init(UART0, div, bwpc, parityMap[parity], stopBitMap[stopBit]);
     uart_set_tx_dma_config(UART0, uartTxDma);
     uart_set_rx_dma_config(UART0, uartRxDma);
     uart_set_irq_mask(UART0, UART_TXDONE_MASK|UART_RXDONE_MASK);

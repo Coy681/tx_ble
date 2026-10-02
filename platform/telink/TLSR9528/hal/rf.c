@@ -12,6 +12,12 @@
 #include"common/txCommon.h"
 void(*hal_rf_cb)(_u8);
 
+/* TLSR system timer: 24MHz tick, implementation detail of this chip */
+enum
+{
+	CLOCK_TICK_US = 24,
+};
+
 
 /*******************rf extra time define********************************/
 

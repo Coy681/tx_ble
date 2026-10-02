@@ -1,8 +1,8 @@
 
-#include"common/txCommon.h"
-
 #ifndef TASK_MESSAGE_EVENT_H_
 #define TASK_MESSAGE_EVENT_H_
+
+#include"common/txCommon.h"
 
 typedef struct txMessageHeader_t
 {

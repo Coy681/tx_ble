@@ -1,9 +1,10 @@
 
 #include"sch.h"
 #include"system/task/task.h"
-#include"system/task/event/event.h" 
+#include"system/task/event/event.h"
 #include"system/task/message/message.h"
 #include"platform/hal/stimer.h"
+#include"platform/platform.h"
 #include"config.h"
 #include"tx_common.h"
 #include"common/txCommon.h"
@@ -88,6 +89,7 @@ sch_ctrl_t schCtrl;
     _u32 task2S = TASK_START_TIME(task2);
     _u32 task2E = TASK_STOP_TIME(task2);
 
+    
     if (txCompareTime(task2S,task1S))
     {
         if(txCompareTime(task2S,task1E))
@@ -414,7 +416,7 @@ _RAM_CODE void sch_start(void)
 
  _RAM_CODE void sch_irq_process(void)
 {
-	DEBUG_GPIO_HIGH(GPIO_1);
+	DEBUG_GPIO_HIGH(DBG_GPIO_1);
     if(TASK_VALID(schCtrl.pRunningTask))
     {
         schCtrl.pRunningTask->cb(SCH_TASK_STOP,schCtrl.pRunningTask->id);
@@ -432,7 +434,7 @@ _RAM_CODE void sch_start(void)
         schCtrl.pRunningTask->cb(SCH_TASK_START,schCtrl.pRunningTask->id);
     }
     sch_program_timer();
-	DEBUG_GPIO_LOW(GPIO_1);
+	DEBUG_GPIO_LOW(DBG_GPIO_1);
 }
 
 _RAM_CODE void sch_stop_task_early(void)
@@ -528,7 +530,7 @@ _RAM_CODE int sch_task_extended(_u32 targetTime)
         sch_node_t* task = sch_serach_node_in_list(schCtrl.pCanceledList,taskId);
         if(TASK_VALID(task))
         {
-            sch_delete_node_from_list(&schCtrl.pWaitingList,task);
+            sch_delete_node_from_list(&schCtrl.pCanceledList,task);
         	IRQ_RESTORE;
             return 1;
         }
@@ -595,26 +597,22 @@ TASK_INIT(sche_init);
 //	{
 //		aTask1.priority = SCH_TASK_PRIORITY_A;
 //    	DEBUG_GPIO_HIGH(GPIO_4);
-////		LOG_TRACE(1,"task 1 start",0,0)
 //    	DEBUG_GPIO_LOW(GPIO_4);
 //	}
 //	else if(type == SCH_TASK_STOP)
 //	{
-////		LOG_TRACE(1,"task 1 stop",0,0)
 //	}
 //	else if(type == SCH_TASK_CANCELED)
 //	{
 ////    	DEBUG_GPIO_HIGH(GPIO_5);
 //		aTask1.priority++;
 ////		DEBUG_GPIO_LOW(GPIO_5);
-////		LOG_TRACE(1,"task 1 canceled",0,0)
 //	}
 //	else if(type == SCH_TASK_PASSED)
 //	{
 ////    	DEBUG_GPIO_HIGH(GPIO_6);
 //		aTask1.priority++;
 ////		DEBUG_GPIO_LOW(GPIO_6);
-////		LOG_TRACE(1,"task 1 passed",0,0)
 //	}
 //}
 //
@@ -640,22 +638,18 @@ TASK_INIT(sche_init);
 //	{
 //		aTask2.priority = SCH_TASK_PRIORITY_A;
 //    	DEBUG_GPIO_HIGH(GPIO_5);
-////		LOG_TRACE(1,"task 2 start",0,0)
 //    	DEBUG_GPIO_LOW(GPIO_5);
 //	}
 //	else if(type == SCH_TASK_STOP)
 //	{
-////		LOG_TRACE(1,"task 2 stop",0,0)
 //	}
 //	else if(type == SCH_TASK_CANCELED)
 //	{
 //		aTask2.priority++;
-////		LOG_TRACE(1,"task 2 canceled",0,0)
 //	}
 //	else if(type == SCH_TASK_PASSED)
 //	{
 //		aTask2.priority++;
-////		LOG_TRACE(1,"task 2 passed",0,0)
 //	}
 //
 //}
@@ -682,22 +676,18 @@ TASK_INIT(sche_init);
 //	{
 //		aTask3.priority = SCH_TASK_PRIORITY_A;
 //    	DEBUG_GPIO_HIGH(GPIO_6);
-////		LOG_TRACE(1,"task 3 start",0,0)
 //    	DEBUG_GPIO_LOW(GPIO_6);
 //	}
 //	else if(type == SCH_TASK_STOP)
 //	{
-////		LOG_TRACE(1,"task 3 stop",0,0)
 //	}
 //	else if(type == SCH_TASK_CANCELED)
 //	{
 //		aTask3.priority++;
-////		LOG_TRACE(1,"task 3 canceled",0,0)
 //	}
 //	else if(type == SCH_TASK_PASSED)
 //	{
 //		aTask3.priority++;
-////		LOG_TRACE(1,"task 3 passed",0,0)
 //	}
 //
 //}

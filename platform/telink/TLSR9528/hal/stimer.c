@@ -8,11 +8,32 @@
 #include"../../hal/stimer.h"
 
 #include "../../../../common/txCommon.h"
+
+/* TLSR system timer: 24MHz tick, implementation detail of this chip */
+enum
+{
+	CLOCK_TICK_US = 24,
+	CLOCK_TICK_MS = 24000,
+	CLOCK_TICK_S  = 24000000,
+};
+
 static hal_stimer_task hal_stimer_irq_cb = NULL;
 static unsigned int stimerTime = 0;
 static unsigned int lastClockTick = 0;
 static unsigned int lastClockRemain = 0;
 static unsigned int stimeCapture = 0;
+
+void system_delay_us(_u32 us)
+{
+	delay_us(us);
+}
+
+void system_delay_ms(_u32 ms)
+{
+	delay_ms(ms);
+}
+
+
 /**
  * @brief		System timer interrupt handler.
  * @param[in]	none
@@ -100,3 +121,4 @@ _RAM_CODE unsigned int system_switch_tick_to_time(unsigned int tick)
 		return (stimerTime - (lastClockTick - tick)/CLOCK_TICK_US);
 	}
 }
+

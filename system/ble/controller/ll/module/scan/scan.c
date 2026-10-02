@@ -2,6 +2,6 @@
 #include"scan_internal.h"
 int ble_ll_enter_scanning_state(void)
 {
-	LOG_TRACE(LL_LOG_TRACE,"enter scanning state",0,0)
+	LOG_STR(LL_LOG_HEX,"enter scanning state")
     return 1;
 }

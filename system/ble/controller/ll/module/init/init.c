@@ -3,6 +3,6 @@
 
 int ble_ll_enter_initiating_state(void)
 {
-	LOG_TRACE(LL_LOG_TRACE,"enter initiating state",0,0)
+	LOG_STR(LL_LOG_HEX,"enter initiating state")
     return 1;
 }

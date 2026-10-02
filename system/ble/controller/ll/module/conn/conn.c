@@ -339,7 +339,7 @@ static void conn_ctrl_pdu_process(ll_sm_t* ll,ll_internal_connection_ctrl_t* con
 	if(connParam->ctrl.in.nodeCnt)
 	{
 		ll_acl_packet_t* pdu = (ll_acl_packet_t*)connParam->ctrl.in.popNodeInOrder(&connParam->ctrl.in);
-		//maybe need decryptï¼Ÿ
+		//maybe need decryptï¼?
 		int ret = 0;
 		for(int i=0;i<(sizeof(ctrlPduProcess)/sizeof(ctrlPduProcess[0]));i++)
 		{
@@ -420,7 +420,7 @@ int ble_ll_enter_connection_state(ble_ll_event_e event)
     ll->sch.cb            = conn_sch_callback;
     ll->conn->tifs_cp     = 150;
     ll->conn->tifs_pc     = 150;
-	LOG_TRACE(LL_LOG_TRACE,"enter connection state",0,0)
+	LOG_STR(LL_LOG_HEX,"enter connection state")
     return 1;
 }
 

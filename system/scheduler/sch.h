@@ -1,8 +1,9 @@
+#ifndef TX_SCH_H_
+#define TX_SCH_H_
+
 #include"common/txCommon.h"
 #include"system/task/event/event.h"
 #include"system/task/message/message.h"
-#ifndef TX_SCH_H_
-#define TX_SCH_H_
 
 #define TASK_VALID(task)              ((task)!=NULL)
 #define TASK_NOT_VALID(task)          ((task)==NULL)

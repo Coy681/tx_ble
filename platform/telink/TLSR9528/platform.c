@@ -37,14 +37,8 @@ void platform_init(void)
     plic_set_priority(IRQ_SYSTIMER, 2);
     plic_set_priority(IRQ_UART0, 1);
     core_interrupt_enable();
-    #if(TX_DEBUG_GPIO_ENABLE) 
-    hal_gpio_debug_init();
     extern void rf_enable_bb_debug(void);
     rf_enable_bb_debug();
-    #endif
-    #if(TX_DEBUG_LED_ENABLE) 
-    hal_gpio_led_init();
-    #endif
 }
 HAREWARE_INIT(platform_init);
 

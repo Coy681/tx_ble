@@ -1,7 +1,7 @@
 /*
  * test.c
  *
- *  Created on: 2026å¹´1æœˆ12æ—¥
+ *  Created on: 2026å¹?æœ?2æ—?
  *      Author: Admin
  */
 #include"common/txCommon.h"
@@ -51,21 +51,21 @@ void ll_adv_test_la_test_process(_u8* data,_u8 len)
 	    case 0x00:
 	    {
 			status = ll_set_advertising_parameters(32,LL_ADV_IND,LL_PUBLIC_DEVICE_ADDRESS,LL_PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,0,7,LL_FILTER_LIST_NOT_USE);
-	    	LOG_TRACE(1,"set adv parameters",&status,4);
+	    	LOG_HEX(1,"set adv parameters",&status,4);
 	    	status = ll_set_advertising_data(advData,sizeof(advData));
-	    	LOG_TRACE(1,"set adv data",&status,4);
+	    	LOG_HEX(1,"set adv data",&status,4);
 	    	status = ll_set_scan_response_data(advData,sizeof(advData));
-	    	LOG_TRACE(1,"set scan rsp data",&status,4);
+	    	LOG_HEX(1,"set scan rsp data",&status,4);
 	    }break;
 	    case 0x01:
 	    {
 	    	status = ll_set_advertising_enable(1);
-	    	LOG_TRACE(1,"enable adv",&status,4);
+	    	LOG_HEX(1,"enable adv",&status,4);
 	    }break;
 	    case 0x02:
 	    {
 	    	status = ll_set_advertising_enable(0);
-	    	LOG_TRACE(1,"disable adv",&status,4);
+	    	LOG_HEX(1,"disable adv",&status,4);
 	    }break;
 	    default:
 	    	break;
@@ -115,7 +115,7 @@ void ll_adv_test_ea_test_process(_u8* data,_u8 len)
 	  {
 		case 0x01:
 			status = ll_set_extended_advertising_parameters(&extendedAdvParam);
-			LOG_TRACE(1,"set extended param",&status,4)
+			LOG_HEX(1,"set extended param",&status,4)
 			break;
 		case 0x02:
 				status = ll_set_extended_advertising_data(0x00,\
@@ -123,49 +123,49 @@ void ll_adv_test_ea_test_process(_u8* data,_u8 len)
 												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
 												 48,
 												 advData);
-				LOG_TRACE(1,"set extended data1",&status,4)
+				LOG_HEX(1,"set extended data1",&status,4)
 				status = ll_set_extended_advertising_data(0x00,\
 												 LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
 												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
 												 48,
 												 advData+48);
-				LOG_TRACE(1,"set extended data2",&status,4)
+				LOG_HEX(1,"set extended data2",&status,4)
 				status = ll_set_extended_advertising_data(0x00,\
 												LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
 												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
 												 48,
 												 advData+96);
-				LOG_TRACE(1,"set extended data3",&status,4)
+				LOG_HEX(1,"set extended data3",&status,4)
 				status = ll_set_extended_advertising_data(0x00,\
 												LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
 												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
 												 48,
 												 advData+144);
-				LOG_TRACE(1,"set extended data4",&status,4)
+				LOG_HEX(1,"set extended data4",&status,4)
 				status = ll_set_extended_advertising_data(0x00,\
 												 LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
 												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
 												 48,
 												 advData+192);
-				LOG_TRACE(1,"set extended data5",&status,4)
+				LOG_HEX(1,"set extended data5",&status,4)
 				status = ll_set_extended_advertising_data(0x00,\
 												 LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
 												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
 												 48,
 												 advData+240);
-				LOG_TRACE(1,"set extended data6",&status,4)
+				LOG_HEX(1,"set extended data6",&status,4)
 				status = ll_set_extended_advertising_data(0x00,\
 												 LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
 												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
 												 48,
 												 advData+288);
-				LOG_TRACE(1,"set extended data7",&status,4)
+				LOG_HEX(1,"set extended data7",&status,4)
 				status = ll_set_extended_advertising_data(0x00,\
 												 LL_ADV_DATA_OPERATION_LAST_FRAGMENT,\
 												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
 												 48,
 												 advData+336);
-				LOG_TRACE(1,"set extended data8",&status,4)
+				LOG_HEX(1,"set extended data8",&status,4)
 			break;
 		case 0x03:
 			status = ll_set_extended_scan_response_data(0x00,\
@@ -173,27 +173,27 @@ void ll_adv_test_ea_test_process(_u8* data,_u8 len)
 											 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
 											 sizeof(scanRspData),
 											 scanRspData);
-			LOG_TRACE(1,"set scan rsp data",&status,4)
+			LOG_HEX(1,"set scan rsp data",&status,4)
 			break;
 		case 0x04:
 			advEnable.advHandle = 0x00;
 			status = ll_set_extended_advertising_enable(1,\
 											   1,\
 											   &advEnable);
-			LOG_TRACE(1,"set adv enable",&status,4)
+			LOG_HEX(1,"set adv enable",&status,4)
 			break;
 		case 0x05:
 			advEnable.advHandle = 0x00;
 			status = ll_set_extended_advertising_enable(0,\
 											   1,\
 											   &advEnable);
-			LOG_TRACE(1,"set adv disable",&status,4)
+			LOG_HEX(1,"set adv disable",&status,4)
 			break;
 		case 0x11:
 			extendedAdvParam.advHandle = 0x01;
 			extendedAdvParam.advSid    = 0x01;
 			status = ll_set_extended_advertising_parameters(&extendedAdvParam);
-			LOG_TRACE(1,"set extended param",&status,4)
+			LOG_HEX(1,"set extended param",&status,4)
 			break;
 		case 0x12:
 			advData[0]=0x11;
@@ -202,49 +202,49 @@ void ll_adv_test_ea_test_process(_u8* data,_u8 len)
 												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
 												 48,
 												 advData);
-				LOG_TRACE(1,"set extended data1",&status,4)
+				LOG_HEX(1,"set extended data1",&status,4)
 				status = ll_set_extended_advertising_data(0x01,\
 												 LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
 												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
 												 48,
 												 advData+48);
-				LOG_TRACE(1,"set extended data2",&status,4)
+				LOG_HEX(1,"set extended data2",&status,4)
 				status = ll_set_extended_advertising_data(0x01,\
 												LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
 												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
 												 48,
 												 advData+96);
-				LOG_TRACE(1,"set extended data3",&status,4)
+				LOG_HEX(1,"set extended data3",&status,4)
 				status = ll_set_extended_advertising_data(0x01,\
 												LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
 												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
 												 48,
 												 advData+144);
-				LOG_TRACE(1,"set extended data4",&status,4)
+				LOG_HEX(1,"set extended data4",&status,4)
 				status = ll_set_extended_advertising_data(0x01,\
 												 LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
 												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
 												 48,
 												 advData+192);
-				LOG_TRACE(1,"set extended data5",&status,4)
+				LOG_HEX(1,"set extended data5",&status,4)
 				status = ll_set_extended_advertising_data(0x01,\
 												 LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
 												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
 												 48,
 												 advData+240);
-				LOG_TRACE(1,"set extended data6",&status,4)
+				LOG_HEX(1,"set extended data6",&status,4)
 				status = ll_set_extended_advertising_data(0x01,\
 												 LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
 												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
 												 48,
 												 advData+288);
-				LOG_TRACE(1,"set extended data7",&status,4)
+				LOG_HEX(1,"set extended data7",&status,4)
 				status = ll_set_extended_advertising_data(0x01,\
 												 LL_ADV_DATA_OPERATION_LAST_FRAGMENT,\
 												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
 												 48,
 												 advData+336);
-				LOG_TRACE(1,"set extended data8",&status,4)
+				LOG_HEX(1,"set extended data8",&status,4)
 			break;
 		case 0x13:
 			status = ll_set_extended_scan_response_data(0x01,\
@@ -252,27 +252,27 @@ void ll_adv_test_ea_test_process(_u8* data,_u8 len)
 											 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
 											 sizeof(scanRspData),
 											 scanRspData);
-			LOG_TRACE(1,"set scan rsp data",&status,4)
+			LOG_HEX(1,"set scan rsp data",&status,4)
 			break;
 		case 0x14:
 			advEnable.advHandle = 0x01;
 			status = ll_set_extended_advertising_enable(1,\
 											   1,\
 											   &advEnable);
-			LOG_TRACE(1,"set adv enable",&status,4)
+			LOG_HEX(1,"set adv enable",&status,4)
 			break;
 		case 0x15:
 			advEnable.advHandle = 0x01;
 			status = ll_set_extended_advertising_enable(0,\
 											   1,\
 											   &advEnable);
-			LOG_TRACE(1,"set adv disable",&status,4)
+			LOG_HEX(1,"set adv disable",&status,4)
 			break;
 		case 0x21:
 			extendedAdvParam.advHandle = 0x02;
 			extendedAdvParam.advSid    = 0x02;
 			status = ll_set_extended_advertising_parameters(&extendedAdvParam);
-			LOG_TRACE(1,"set extended param",&status,4)
+			LOG_HEX(1,"set extended param",&status,4)
 			break;
 		case 0x22:
 			advData[0]=0x22;
@@ -281,49 +281,49 @@ void ll_adv_test_ea_test_process(_u8* data,_u8 len)
 												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
 												 48,
 												 advData);
-				LOG_TRACE(1,"set extended data1",&status,4)
+				LOG_HEX(1,"set extended data1",&status,4)
 				status = ll_set_extended_advertising_data(0x02,\
 												 LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
 												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
 												 48,
 												 advData+48);
-				LOG_TRACE(1,"set extended data2",&status,4)
+				LOG_HEX(1,"set extended data2",&status,4)
 				status = ll_set_extended_advertising_data(0x02,\
 												LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
 												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
 												 48,
 												 advData+96);
-				LOG_TRACE(1,"set extended data3",&status,4)
+				LOG_HEX(1,"set extended data3",&status,4)
 				status = ll_set_extended_advertising_data(0x02,\
 												LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
 												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
 												 48,
 												 advData+144);
-				LOG_TRACE(1,"set extended data4",&status,4)
+				LOG_HEX(1,"set extended data4",&status,4)
 				status = ll_set_extended_advertising_data(0x02,\
 												 LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
 												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
 												 48,
 												 advData+192);
-				LOG_TRACE(1,"set extended data5",&status,4)
+				LOG_HEX(1,"set extended data5",&status,4)
 				status = ll_set_extended_advertising_data(0x02,\
 												 LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
 												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
 												 48,
 												 advData+240);
-				LOG_TRACE(1,"set extended data6",&status,4)
+				LOG_HEX(1,"set extended data6",&status,4)
 				status = ll_set_extended_advertising_data(0x02,\
 												 LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,\
 												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
 												 48,
 												 advData+288);
-				LOG_TRACE(1,"set extended data7",&status,4)
+				LOG_HEX(1,"set extended data7",&status,4)
 				status = ll_set_extended_advertising_data(0x02,\
 												 LL_ADV_DATA_OPERATION_LAST_FRAGMENT,\
 												 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
 												 48,
 												 advData+336);
-				LOG_TRACE(1,"set extended data8",&status,4)
+				LOG_HEX(1,"set extended data8",&status,4)
 			break;
 		case 0x23:
 			status = ll_set_extended_scan_response_data(0x02,\
@@ -331,21 +331,21 @@ void ll_adv_test_ea_test_process(_u8* data,_u8 len)
 											 LL_ADV_DATA_NOT_OR_MINIMIZE_FRAGMENT,\
 											 sizeof(scanRspData),
 											 scanRspData);
-			LOG_TRACE(1,"set scan rsp data",&status,4)
+			LOG_HEX(1,"set scan rsp data",&status,4)
 			break;
 		case 0x24:
 			advEnable.advHandle = 0x02;
 			status = ll_set_extended_advertising_enable(1,\
 											   1,\
 											   &advEnable);
-			LOG_TRACE(1,"set adv enable",&status,4)
+			LOG_HEX(1,"set adv enable",&status,4)
 			break;
 		case 0x25:
 			advEnable.advHandle = 0x02;
 			status = ll_set_extended_advertising_enable(0,\
 											   1,\
 											   &advEnable);
-			LOG_TRACE(1,"set adv disable",&status,4)
+			LOG_HEX(1,"set adv disable",&status,4)
 			break;
 		default:
 			break;
@@ -367,36 +367,36 @@ void ll_adv_test_pa_test_process(_u8* data,_u8 len)
 			extern ll_set_default_channel_table();
 			ll_set_default_channel_table(table);
 			status = ll_set_periodic_advertising_paramters(0x01,0x30,0x00);
-			LOG_TRACE(1,"set pa parameter",&status,4)
+			LOG_HEX(1,"set pa parameter",&status,4)
 			break;
 		case 0x02:
 			status = ll_set_periodic_advertising_data(0x01,LL_ADV_DATA_OPERATION_FIRST_FRAGMENT,48,advData);
-			LOG_TRACE(1,"set pa data",&status,4)
+			LOG_HEX(1,"set pa data",&status,4)
 			status = ll_set_periodic_advertising_data(0x01,LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,48,advData+48);
-			LOG_TRACE(1,"set pa data2",&status,4)
+			LOG_HEX(1,"set pa data2",&status,4)
 			status = ll_set_periodic_advertising_data(0x01,LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,48,advData+96);
-			LOG_TRACE(1,"set pa data3",&status,4)
+			LOG_HEX(1,"set pa data3",&status,4)
 			status = ll_set_periodic_advertising_data(0x01,LL_ADV_DATA_OPERATION_INTERMEDIATE_FRAGMENT,48,advData+144);
-			LOG_TRACE(1,"set pa data4",&status,4)
+			LOG_HEX(1,"set pa data4",&status,4)
 			status = ll_set_periodic_advertising_data(0x01,LL_ADV_DATA_OPERATION_LAST_FRAGMENT,48,advData+192);
-			LOG_TRACE(1,"set pa data5",&status,4)
+			LOG_HEX(1,"set pa data5",&status,4)
 			break;
 		case 0x03:
 			status = ll_set_periodic_advertising_enable(0x01,3);
-			LOG_TRACE(1,"set pa enable",&status,4)
+			LOG_HEX(1,"set pa enable",&status,4)
 			break;
 
 		case 0x11:
 			status = ll_set_periodic_advertising_paramters(0x00,0x30,0x00);
-			LOG_TRACE(1,"set pa parameter",&status,4)
+			LOG_HEX(1,"set pa parameter",&status,4)
 			break;
 		case 0x12:
 			status = ll_set_periodic_advertising_data(0x00,LL_ADV_DATA_OPERATION_COMPLETE,48,advData);
-			LOG_TRACE(1,"set pa data",&status,4)
+			LOG_HEX(1,"set pa data",&status,4)
 			break;
 		case 0x13:
 			status = ll_set_periodic_advertising_enable(0x00,3);
-			LOG_TRACE(1,"set pa enable",&status,4)
+			LOG_HEX(1,"set pa enable",&status,4)
 			break;
 		default:
 			break;

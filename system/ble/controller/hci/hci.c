@@ -130,7 +130,7 @@ static void ble_hci_rx_init()
 
 static void ble_hci_init(void)
 {
-	hal_uart_register_task(HAL_UART_BAUDRATE_1000000,ble_hci_hardware_rx_irq,ble_hci_hardware_tx_irq,HAL_UART_PARITY_NONE,HAL_UART_STOP_BITE_ONE);
+	hal_uart_register_task(HAL_UART_BAUDRATE_1000000,ble_hci_hardware_rx_irq,ble_hci_hardware_tx_irq,HAL_UART_PARITY_NONE,HAL_UART_STOP_BIT_ONE);
     tx_task_add(ble_hci_rx_init,ble_hci_rx_event_process,TX_TASK_ID_HCI_CONTROLLER_RX,TX_TASK_PRIORITY_15);
     tx_task_add(ble_hci_tx_init,ble_hci_tx_evet_process,TX_TASK_ID_HCI_CONTROLLER_TX,TX_TASK_PRIORITY_15);
     //tx buffer malloc

@@ -7,19 +7,13 @@
 
 #ifndef HAL_STIMER_H_
 #define HAL_STIMER_H_
-#include"driver.h"
-
-#define system_delay_us delay_us
-#define system_delay_ms delay_ms
-
-enum
-{
-	CLOCK_TICK_US = 24,
-	CLOCK_TICK_MS = 24000,
-	CLOCK_TICK_S  = 24000000,
-};
+#include"common/txCommon.h"
 
 typedef void(*hal_stimer_task)(void);
+
+void system_delay_us(_u32 us);
+
+void system_delay_ms(_u32 ms);
 
 void hal_stimer_register_task(hal_stimer_task cb);
 
