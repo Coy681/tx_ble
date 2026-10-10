@@ -14,6 +14,8 @@
 
 #define TX_DEBUG_LOG_ENABLE              1
 
+#define TX_DEBUG_WAVE_ENABLE             1
+
 /***************** scheduler configure********************/
 
 #define TX_SCHEDULER_ENABLE              1

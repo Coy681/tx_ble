@@ -4,7 +4,6 @@
  *  Created on: 2026年10月2日
  *      Author: Admin
  *
- *  Wave id space (absorbed from "Firmware Log可视化升级方案"):
  *  32-bit id = [type(1) | module(7) | feature(8) | instance(8) | rsvd(8)].
  *
  *  record type (bit31):
@@ -41,8 +40,8 @@
 #define WAVE_ID_MODULE_MASK     0x7F
 #define WAVE_ID_FEATURE_MASK    0xFF
 #define WAVE_ID_INSTANCE_MASK   0xFF
-
 /* record type */
+
 #define WAVE_TYPE_NUM           0x00    /* numeric sample: value is data */
 #define WAVE_TYPE_LEVEL         (0x01UL << 31)  /* edge: value 1=begin 0=end */
 
@@ -69,20 +68,21 @@
 #define WAVE_PASTE3_I(a, b, c)      a##b##c
 
 /******************id build (paste-based)*********************/
-/* WAVE_ID(mod, feat): pastes to WAVE_MOD_<mod> and
- * WAVE_FEAT_<mod>_<feat> enum tokens, builds [module|feature|inst 0].
+/* WAVE_ID(mod, feat): pastes to WAVE_FEAT_<mod>_<feat>, whose enum
+ * value already carries [module<<24 | feature<<16] (see WAVE_FEAT_ENUM).
  * Instance is OR'ed in by the WAVE_*() call macros (runtime value). */
 #define WAVE_ID(mod, feat)      \
-    ((WAVE_PASTE(WAVE_MOD_, mod) << WAVE_ID_MODULE_SHIFT) | \
-     (WAVE_PASTE(WAVE_FEAT_, WAVE_PASTE3(mod, _, feat)) << WAVE_ID_FEATURE_SHIFT))
+    (WAVE_PASTE(WAVE_FEAT_, WAVE_PASTE3(mod, _, feat)))
 #define WAVE_ID_I(mod, feat, inst)  (WAVE_ID(mod, feat) | ((inst) & WAVE_ID_INSTANCE_MASK))
 
 /* feature-0 token: for module/feature level probes without a feature
  * enum (e.g. module alive heartbeat). feat value 0 is reserved. */
 #define WAVE_FEAT_NONE          0x00
 
-/* module-level num probe (no feature split needed) */
-#define WAVE_MOD_ID(mod, inst)  (WAVE_ID(mod, WAVE_FEAT_NONE) | ((inst) & WAVE_ID_INSTANCE_MASK))
+/* module-level num probe (no feature split needed): build
+ * [module<<24 | 0<<16] from the module registry directly */
+#define WAVE_MOD_ID(mod, inst)  \
+    ((WAVE_PASTE(WAVE_MOD_, mod) << WAVE_ID_MODULE_SHIFT) | ((inst) & WAVE_ID_INSTANCE_MASK))
 
 /******************module registry (X-macro)******************/
 /* X(short, value, host_label); short name feeds the pasting above */
@@ -98,6 +98,7 @@
     X(RF,       0x09, "rf")         \
     X(DEBUG,    0x0A, "debug")      \
     X(APP,      0x0B, "app")
+
 
 #define X_WAVE_ENUM(short, value, label)    WAVE_PASTE(WAVE_MOD_, short) = value,
 typedef enum

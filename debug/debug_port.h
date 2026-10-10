@@ -30,6 +30,16 @@ typedef void(*debug_port_rx_cb_f)(_u8* data,_u32 dataLen);
  */
 void debug_port_rx_register(debug_port_rx_cb_f cb);
 
+/******************block type*********************************/
+/* wire frame (in-band, the only thing that reaches the host):
+ * [0xA5 sync][type:1][len:1][payload...], len = payload bytes.
+ * The 4-byte header inside the ring buffer is hardware-only and
+ * never appears on the wire. */
+#define PORT_FRAME_SYNC         0xA5U
+#define PORT_FRAME_SIZE         3
+#define DEBUG_BLK_LOG           0x0U    /* text payload (log.c) */
+#define DEBUG_BLK_WAVE          0x1U    /* wave records, 12B each */
+
 /**
  * @brief     This function is used to write data into port output buffer.
  *            Data is sent on uart by debug tx task asynchronously.
@@ -38,5 +48,12 @@ void debug_port_rx_register(debug_port_rx_cb_f cb);
  * @return    none
  */
 void debug_port_write(const _u8 *data,_u32 len);
+
+/**
+ * @brief     Typed variant of debug_port_write. The block type is put
+ *            into the wire header (bits 30..31) so the host can route
+ *            log text and wave records to different views.
+ */
+void debug_port_write_typed(_u32 type,const _u8 *data,_u32 len);
 
 #endif /* DEBUG_PORT_H_ */

@@ -4,7 +4,7 @@
 #include"common/txCommon.h"
 #include"system/task/event/event.h"
 #include"system/task/message/message.h"
-
+#include"debug/debug.h"
 #define TASK_VALID(task)              ((task)!=NULL)
 #define TASK_NOT_VALID(task)          ((task)==NULL)
 #define TASK_START_TIME(task)         (task->timestamp - task->startLatency)
@@ -14,6 +14,16 @@
 #ifndef TX_SCHE_LOG_ENABLE
 #define TX_SCHE_LOG_ENABLE  1
 #endif
+
+
+/******************adv wave test******************/
+/* 1. 模块在自己的头文件里定义 feature 列表（谁的代码谁定义） */
+#define WAVE_SCHED_FEATS(X)       \
+    X(SCHED, STIMER,   0x01)      \
+    X(SCHED, SCH_START,0x02)      \
+    X(SCHED, SCH_STOP, 0x03)
+
+WAVE_FEAT_ENUM(WAVE_SCHED_FEATS)
 
 typedef enum
 {

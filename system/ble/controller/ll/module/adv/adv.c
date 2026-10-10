@@ -9,7 +9,6 @@
 #include"adv_internal.h"
 #include"system/scheduler/sch_map.h"
 #include"../../channel/channel.h"
-
 /************************************Global Variables Define***********************************/
 
 /******* local enum define *******/
@@ -2274,6 +2273,7 @@ controller_error_code_e ll_set_advertising_enable(_u8 enable)
 	        phy_obj_cast(&llsm->phy);
 	        phy_obj_init(&llsm->phy);
 	        ll_internal_adv_set_t* advSet = &adv->set[0];
+			advSet->schMap |= ADV_SCH_MAP_PRI;
 			//sch init
 	        advSet->la.availableChnCnt     = advSet->la.channelCnt;
 	        advSet->la.eventCnt            = 0;

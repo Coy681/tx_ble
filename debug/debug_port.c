@@ -120,8 +120,13 @@ _RAM_CODE static void port_hardware_tx_irq(void)
 
 void debug_port_write(const _u8 *data,_u32 len)
 {
+    debug_port_write_typed(DEBUG_BLK_LOG,data,len);
+}
+
+void debug_port_write_typed(_u32 type,const _u8 *data,_u32 len)
+{
     if(portOutputRb.p == NULL || data == NULL ||
-       len == 0 || len > DEBUG_PORT_OUTPUT_BUFFER_SIZE - 4)
+       len == 0 || len > DEBUG_PORT_OUTPUT_BUFFER_SIZE - 4 - PORT_FRAME_SIZE)
     {
         return;
     }
@@ -130,8 +135,13 @@ void debug_port_write(const _u8 *data,_u32 len)
         return;
     }
     _u8* pLog = portOutputRb.getWritePtr(&portOutputRb);
-    U32_TO_STREAM(pLog, len);
+    U32_TO_STREAM(pLog, (len + PORT_FRAME_SIZE));
+    /* in-band wire frame: [0xA5][type][len][payload...].
+     * The rb 4-byte header is hardware-only; this is what the host sees. */
     _u8* buf = pLog;
+    *buf++ = PORT_FRAME_SYNC;
+    *buf++ = (_u8)(type & 0xFFU);
+    *buf++ = (_u8)len;
     while(len--)
     {
         *buf++ = *data++;
@@ -147,7 +157,9 @@ static _u32 port_task_event_tx(_u16 taskId,_u32 event)
         _u32 dataLen = 0;
         _u8* pData = portOutputRb.getReadPtr(&portOutputRb);
         STREAM_TO_U32(dataLen,pData);
-        /* STREAM_TO_U32 already advanced pData past the 4-byte length header */
+        /* STREAM_TO_U32 already advanced pData past the 4-byte hardware
+         * header; the hardware region never reaches the wire. Framing
+         * lives in-band (PORT_FRAME_*, written by debug_port_write_typed). */
         hal_uart_send_data(pData,dataLen);
         portOutputRb.moveReadPtr(&portOutputRb);
         port_status_operation(PORT_SET_STATUS);

@@ -1,0 +1,13 @@
+CompileFlags:
+  Add:
+    - "-Wno-unknown-warning-option"
+    - "-Wno-gnu"
+    - "-D__D25F__"
+  Remove:
+    - "-mext-dsp"
+    - "-fuse-ld=*"
+    - "-fno-jump-tables"
+    - "-fno-fat-lto-objects"
+Diagnostics:
+  UnusedIncludes: None
+  MissingIncludes: None

@@ -9,6 +9,7 @@
 #define BLE_CONTROLLER_LL_MODULE_ADV_ADV_INTERNAL_H_
 
 #include"../../ll_internal.h"
+#include"debug/debug.h"
 
 #define BLE_ADV_ACCESS_CODE             0xd6be898e
 #define BLE_ADV_CRC_INIT                0x555555
@@ -43,6 +44,16 @@
 #ifndef BLE_ADV_TRACE_ENABLE
 #define BLE_ADV_TRACE_ENABLE 1
 #endif
+
+
+/******************adv wave test******************/
+/* 1. 模块在自己的头文件里定义 feature 列表（谁的代码谁定义） */
+#define WAVE_ADV_FEATS(X)       \
+    X(ADV, LEGACY,   0x01)      \
+    X(ADV, EXT,      0x02)      \
+    X(ADV, PERIODIC, 0x03)
+
+WAVE_FEAT_ENUM(WAVE_ADV_FEATS)
 
 typedef enum
 {

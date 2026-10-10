@@ -8,3 +8,6 @@ CMakeLists.txt
 settings.json
 .vscode/settings.json
 doc/HDT_study.md
+__pycache__/
+compile_commands.json
+*.vcd

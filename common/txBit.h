@@ -29,11 +29,11 @@
 
 #define U8_TO_STREAM(p,n)               {*p++ = (_u8)n;}
 
-#define U16_TO_STREAM(p,n)              {*p++ = (_u8)n; *p++ = (_u8)n>>8}
+#define U16_TO_STREAM(p,n)              {*p++ = (_u8)(n); *p++ = (_u8)((n)>>8);}
 
-#define U24_TO_STREAM(p,n)              {*p++ = (_u8)n; *p++ = (_u8)n>>8; *p++ = (_u8)n>>16;}
+#define U24_TO_STREAM(p,n)              {*p++ = (_u8)(n); *p++ = (_u8)((n)>>8); *p++ = (_u8)((n)>>16);}
 
-#define U32_TO_STREAM(p,n)              {*p++ = (_u8)n; *p++ = (_u8)n>>8; *p++ = (_u8)n>>16; *p++ = (_u8)n>>24;}
+#define U32_TO_STREAM(p,n)              {*p++ = (_u8)(n); *p++ = (_u8)((n)>>8); *p++ = (_u8)((n)>>16); *p++ = (_u8)((n)>>24);}
 
 
 #define BIT_SET(var, bit)               ((var) |=  (1U << (bit)))
