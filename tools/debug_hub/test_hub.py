@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """synthesize a debug stream: log frames + wave frames, then run the hub offline."""
 import struct, subprocess, sys, os
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
+HUB_DIR = os.path.dirname(os.path.abspath(__file__))
+os.chdir(HUB_DIR)
 
 def frame(t, payload):
     return bytes([0xA5, t, len(payload)]) + payload

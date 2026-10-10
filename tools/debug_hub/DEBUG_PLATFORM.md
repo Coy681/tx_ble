@@ -3,7 +3,7 @@
 > 供后续 AI / 开发者接续分析维护。描述现状、依据、协议、已知问题与路线。
 > 仓库：`https://github.com/Coy681/tx_ble.git`（SDK 根 = 本文件上级目录）。
 > 状态：**固件侧联调通过（2026-10-10，COM7 1M 波特率实测）**；上位机主力为 `debug_hub_qt.py`（PySide6），tkinter 版兜底。波形导出为 gz-VCD（层级化、按需声明）。
-> 最近更新：2026-10-10 — 波形导出为层级化裸 VCD（5.3）；Surfer 兼容坑与 scope 配对已记录（9.7/9.8）；adv 门悬空问题定位并修复——end 补齐 CANCELED/PASSED 等全部出口路径（4.4、9.9）
+> 最近更新：2026-10-10 — 波形导出为层级化裸 VCD（5.3）；Surfer 兼容坑与 scope 配对已记录（9.7/9.8）；adv 门悬空问题定位并修复（4.4、9.9）；上位机全部迁至 `tools/debug_hub/`（SDK 代码区只留固件侧 `debug/`）
 
 ---
 
@@ -29,7 +29,7 @@
 │      │                        │          │  ├ 右栏: wave 原始流监视     │
 │ log.c: 文本格式化             │          │  └ [surfer]按钮: 全量记录     │
 │      ▼                        │          │     → live.vcd.gz → Surfer   │
-│ debug_port.c: rb+TX任务+UART │          │ Surfer (surfer_win/) 做波形  │
+│ debug_port.c: rb+TX任务+UART │          │ Surfer (tools/debug_hub/) 做波形  │
 └──────────────────────────────┘          │    缩放/光标/信号树           │
                                           └─────────────────────────────┘
 ```
@@ -118,7 +118,7 @@ adv.c:1473  WAVE_LEVEL(ADV, LEGACY, 0, 1, 0);   // 门 end：step_sch_canceled�
 
 实测 id = `0x81010001`（1M 波特率下真实发送窗口 ~1.8ms）。
 
-**门配对语义（实测教训，2026-10-10）**：begin 只在 EVENT_START 打一次，但 end 必须**覆盖所有可能离开发送状态的路径**（STOP / CANCELED / PASSED / PHY 事件默认路径）。最初只在 sch_stop 打 end，而 CANCELED 路径不经过它 → 门悬空 ~22.8ms 直到下一次 START 前才闭合，波形呈现"空闲高、发送低"的反相假象。排查方法：`debug/wave/analyze_gates.py` 统计每个符号的高电平窗口长度与边沿间隔分布，异常长的窗口即悬空门。
+**门配对语义（实测教训，2026-10-10）**：begin 只在 EVENT_START 打一次，但 end 必须**覆盖所有可能离开发送状态的路径**（STOP / CANCELED / PASSED / PHY 事件默认路径）。最初只在 sch_stop 打 end，而 CANCELED 路径不经过它 → 门悬空 ~22.8ms 直到下一次 START 前才闭合，波形呈现"空闲高、发送低"的反相假象。排查方法：`tools/debug_hub/analyze_gates.py` 统计每个符号的高电平窗口长度与边沿间隔分布，异常长的窗口即悬空门。
 
 > 待办：`WAVE_LEVEL` 第 4 参 `state=1` 应用语义常量（如 `WV_ADV_LEGACY_WINDOW`）替换裸数字；补齐 adv EXT/PERIODIC 及更多模块打点。
 
@@ -128,15 +128,16 @@ adv.c:1473  WAVE_LEVEL(ADV, LEGACY, 0, 1, 0);   // 门 end：step_sch_canceled�
 
 | 文件 | 说明 |
 |---|---|
-| `debug/wave/debug_hub_qt.py` | **主力**。PySide6 界面（见 5.2） |
-| `debug/wave/debug_hub.py` | tkinter 版（功能对齐，兜底用） |
-| `debug/wave/wave_view.py` | 早期 matplotlib 原型，已被取代（grep 逻辑同源） |
-| `debug/wave/test_hub.py` | 端到端离线测试：合成流 → hub → 校验 VCD |
-| `debug/wave/test_fst.py` | 测试 VCD 的层级 scope 与"只含出现过的信号" |
-| `debug/wave/analyze_gates.py` | 门形分析：统计 live.vcd 各符号高电平窗口/边沿间隔，定位悬空门 |
-| `surfer_win/surfer.exe` | 开源波形查看器（MIT），看 VCD（不支持 gz；也支持 FST） |
+| `tools/debug_hub/debug_hub_qt.py` | **主力**。PySide6 界面（见 5.2） |
+| `tools/debug_hub/debug_hub.py` | tkinter 版（功能对齐，兜底用） |
+| `tools/debug_hub/test_hub.py` | 端到端离线测试：合成流 → hub → 校验 VCD |
+| `tools/debug_hub/test_fst.py` | 测试 VCD 的层级 scope 与"只含出现过的信号" |
+| `tools/debug_hub/analyze_gates.py` | 门形分析：统计 live.vcd 各符号高电平窗口/边沿间隔，定位悬空门 |
+| `tools/debug_hub/surfer.exe` | 开源波形查看器（MIT），看 VCD（不支持 gz；也支持 FST） |
 
-三个上位机（hub/hub_qt/wave_view）各自内嵌同一套核心（帧解析、X-macro grep、VCD writer），**修改协议时三处需同步**；后续可拆 `hub_core.py` 统一 import。
+（早期原型 `wave_view.py` 已删除，可从 git 历史找。）
+
+两个上位机（hub/hub_qt）各自内嵌同一套核心（帧解析、X-macro grep、VCD writer），**修改协议时两处需同步**；后续可拆 `hub_core.py` 统一 import。
 
 ### 5.2 Qt 版界面与行为
 
@@ -170,8 +171,8 @@ adv.c:1473  WAVE_LEVEL(ADV, LEGACY, 0, 1, 0);   // 门 end：step_sch_canceled�
 
 ## 6. 验证记录
 
-- `python debug/wave/test_hub.py`：合成 log+wave+garbage 流 → 解帧/重同步/轨道名全部通过（tkinter 版）
-- `python debug/wave/test_fst.py`：VCD 导出验证——scope 层级（`tx_ble > adv > LEGACY > s1`、`tx_ble > scheduler > STIMER > s2_num`）、只含出现过的信号、Surfer 完整解析（`Loaded the body`）
+- `python tools/debug_hub/test_hub.py`：合成 log+wave+garbage 流 → 解帧/重同步/轨道名全部通过（tkinter 版）
+- `python tools/debug_hub/test_fst.py`：VCD 导出验证——scope 层级（`tx_ble > adv > LEGACY > s1`、`tx_ble > scheduler > STIMER > s2_num`）、只含出现过的信号、Surfer 完整解析（`Loaded the body`）
 - 真机（COM7, 1M）：raw dump 确认 `A5 01 0C [ts][id=0x81010001][val 1/0]` 帧流正确；`analyze_gates.py` 验证 adv 门修复后真实发送窗口 ~1.8ms、周期 ~24ms
 - Qt GUI 冒烟测试通过（启动/退出无异常）
 
@@ -197,10 +198,10 @@ cd cmake_builds/tx_text/TL32_ELF_MCULIB_V5F_GCC12_2
 
 # 上位机
 pip install pyserial PySide6
-python debug/wave/debug_hub_qt.py            # GUI 里选 COM/波特率 → connect
-python debug/wave/debug_hub_qt.py --input dump.bin   # 离线 dump → gz-VCD
-python debug/wave/test_hub.py                # tkinter 版回归测试
-python debug/wave/test_fst.py                # gz-VCD 层级/按需声明测试
+python tools/debug_hub/debug_hub_qt.py            # GUI 里选 COM/波特率 → connect
+python tools/debug_hub/debug_hub_qt.py --input dump.bin   # 离线 dump → VCD
+python tools/debug_hub/test_hub.py                # tkinter 版回归测试
+python tools/debug_hub/test_fst.py                # VCD 层级/按需声明测试
 ```
 
 ## 9. 设计决策存档（为什么这样做）

@@ -20,7 +20,7 @@ Usage:
   python debug_hub.py --input dump.bin         # offline: dump -> vcd
 
 Requires: pyserial   (pip install pyserial)
-Surfer:   surfer_win/surfer.exe (launched by the "surfer" button).
+Surfer:   tools/debug_hub/surfer.exe (launched by the "surfer" button).
 """
 
 import argparse
@@ -532,7 +532,7 @@ def main():
     ap.add_argument('--vcd', default=None, help='VCD output path '
                     '(default: <script dir>/live.vcd)')
     ap.add_argument('--surfer', default=None, help='surfer.exe path '
-                    '(default: <sdk root>/surfer_win/surfer.exe)')
+                    '(default: <script dir>/surfer.exe)')
     ap.add_argument('--no-surfer', action='store_true')
     ap.add_argument('--raw-dump', action='store_true',
                     help='hex-dump all received bytes to stderr for debugging')
@@ -542,9 +542,9 @@ def main():
     if args.vcd is None:
         args.vcd = os.path.join(script_dir, 'live.vcd')
     if args.surfer is None:
-        args.surfer = os.path.abspath(os.path.join(script_dir, '..', '..',
-                                                   'surfer_win', 'surfer.exe'))
+        args.surfer = os.path.abspath(os.path.join(script_dir, 'surfer.exe'))
     if args.root is None:
+        # script lives in <sdk>/tools/debug_hub -> SDK root is two levels up
         root = os.path.abspath(os.path.join(script_dir, '..', '..'))
     else:
         root = os.path.abspath(args.root)

@@ -546,9 +546,9 @@ def main():
     if args.vcd is None:
         args.vcd = os.path.join(script_dir, 'live.vcd')
     if args.surfer is None:
-        args.surfer = os.path.abspath(os.path.join(script_dir, '..', '..',
-                                                   'surfer_win', 'surfer.exe'))
+        args.surfer = os.path.abspath(os.path.join(script_dir, 'surfer.exe'))
     if args.root is None:
+        # script lives in <sdk>/tools/debug_hub -> SDK root is two levels up
         root = os.path.abspath(os.path.join(script_dir, '..', '..'))
     else:
         root = os.path.abspath(args.root)
