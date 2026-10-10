@@ -2,8 +2,8 @@
 
 > 供后续 AI / 开发者接续分析维护。描述现状、依据、协议、已知问题与路线。
 > 仓库：`https://github.com/Coy681/tx_ble.git`（SDK 根 = 本文件上级目录）。
-> 状态：**固件侧联调通过（2026-10-10，COM7 1M 波特率实测）**；上位机唯一 GUI 为 `debug_hub_qt.py`（PySide6，v1.1）。波形导出为层级化裸 VCD。产品定义见 §1。
-> 最近更新：2026-10-10 — v1.1：面板头部条（操作归属各自面板）、历史过滤（留底+重放）、状态栏左 log/右 wave 拆分、record 录制；删除 tkinter 版；浅色主题（VS Code Light+）；surfer 空导出三态提示修复
+> 状态：**固件侧联调通过（2026-10-10，COM7 1M 波特率实测）**；上位机唯一 GUI 为 `debug_hub_qt.py`（PySide6，**v2.0.0**），另有独立 exe 构建（`build_exe.ps1`）。波形导出为层级化裸 VCD。产品定义见 §1。
+> 最近更新：2026-10-10 — **v2.0.0**：UART 配置折叠为 ⚙ 按钮（补 parity/flow）；LOG/WAVE 各加 save、WAVE 加 import（bin 回放闭环）；session 日志（每次连接自动落盘，小时级保真）；布局改 LOG 通高左列 + 右侧 WAVE/TRACKS 上下分；MONITOR/TRACKS 两层折叠树；HTX 图标（exe 资源 + 运行时任务栏，AppUserModelID 修复 python.exe 归组）；PyInstaller 单文件 exe
 
 ---
 
@@ -22,34 +22,45 @@
 | 异常抓回来慢慢看 | 抓包文件散落 | 一键 snapshot 带时间戳归档 |
 | 新模块加打点 | 翻文档回忆宏 | 本文件 3.3/9.9 即手册 |
 
-**界面形态（v1.1，2026-10-10 定稿并实现）**：
+**界面形态（v2.0.0，2026-10-10 定稿并实现）**：
 
 ```
-顶部(仅全局): [port baud connect ●药丸] [⏸] [⏺record] [📸snapshot] [clear all]
-┌─ LOG 40% ─────────────┬─ WAVE 35% ──────────┬─ TRACKS 25% ─┐
-│ [filter('re:')__]n/m clear │ [surfer▶] clear wave:N │ all none │ ← 各面板头部条
-│ 本机时间戳+着色         │ 每轨一行:            │ 信号树勾选    │
-│                       │ value|ago|▓▓░░|track │ =surfer导出   │
-│ [send to board___][hex][tx] │               │              │ ← LOG 底部
-└───────────────────────┴─────────────────────┴──────────────┘
-状态栏: log:N lines | live.vcd/rec/snap 提示 ...... wave:N | X KB/s | gate ok
-        ←— log 统计 ——→|←—— 全局文件事件 ——→|←———— wave 统计 ————→|
+顶部: [⚙ uart] [connect ●药丸] ... [⏸] [⏺record] [📸snapshot] [clear all]
+      ⚙ 展开: [port baud parity flow]（默认折叠，留白给操作按钮）
+┌─ LOG 通高 45% ─────────┬─ WAVE (右上) ─────────────┐
+│ [filter__]n/m save clear│ [surfer▶][import][save][clear] │
+│ 本机时间戳+着色          │ value|ago|▓▓░░|track      │
+│ session 日志自动落盘     ├─ TRACKS (右下 40%) ────────┤
+│ [send___][hex][tx]      │ [all][none] 信号树勾选      │
+└─────────────────────────┴───────────────────────────┘
+状态栏: log:N lines | live.vcd/rec/snap .... wave:N | KB/s | gate ok
 ```
 
 设计原则：
-- **操作归属各自面板**（面板头部条），顶部只留全局件（连接/暂停/录制/快照/全清）
-- WAVE MONITOR 取代旧"原始流"栏：每轨一行实时摘要，LEVEL 轨 sparkline
-  （最近 8 窗口相对宽度 `▓▓░░`），门未闭合显示红色 `OPEN!`
-- `⏸` 冻结显示不丢数据（留底继续收，恢复时全量重放）；`⏺record` 把原始
-  字节流落盘 `record_*.bin`（连接时挂 feed 钩子），录制中按钮红色闪烁
-- **log 过滤作用于历史**：留底列表（20000 条上限）+ 过滤变化 300ms 防抖
-  后全量重放；快照 log.txt 从留底导出（不受过滤影响，永远完整）
-- 状态栏左右分段：左 log 统计、中全局文件提示、右 wave 统计（recs/KB/s/
-  gate），与三栏布局一一对应
-- ago 列 = 距最后记录的本机墙钟差（固件 tick≠墙钟）
-- 浅色主题（VS Code Light+ 风格）；按钮宽度一律内容自适应（fit_btn，
-  固定像素会在不同字体/DPI 下裁字）
-- tkinter 版已删除（曾双版本内嵌同一核心，同步成本高；PySide6 环境已稳定）
+- **操作归属各自面板**（面板头部条），顶部只留全局件；UART 配置折叠成
+  ⚙ 按钮（port/baud/parity/flow 展开），顶部空间留给高频操作
+- **布局**：LOG 行长（时间戳+文本）横向空间最值钱 -> 左列通高；WAVE
+  4 列表与 TRACKS 树是"宽扁"内容 -> 右侧上下分，导出选择（下）与数据
+  流（上）视线近，勾选完马上 surfer
+- **log 三层存储（小时级保真）**：session 文件（每次连接一个
+  `logs/session_*.txt`，无限、20 行一 flush）> log_store 留底（默认
+  无限，`--log-max N` 可设上限）> 显示面板（最近 20000 行，渲染性能
+  保护；重放只画这段）
+- **数据闭环**：实时采集 -> save 存底片（12B bin）/ snapshot 归档 ->
+  import 回放（灌入现有 MONITOR/TRACKS 管线）-> 勾选 -> surfer 分析
+- **MONITOR 两层折叠树**：组行 = module/feature/实例（带道数 + 组内
+  ago 聚合，默认折叠）；道行 = value/ago/sparkline。几百轨道不爆屏
+- `⏸` 冻结显示不丢数据（留底/session 继续收，恢复时全量重放）；
+  `⏺record` 原始字节流落盘 `record_*.bin`，录制中红色闪烁
+- **log 过滤作用于历史**：留底 + 过滤变化 300ms 防抖后全量重放；
+  save/snapshot 从留底导出（不受过滤影响，永远完整）
+- 状态栏左右分段：左 log 统计、中全局文件提示、右 wave 统计
+- **图标**：HTX 艺术字（H 横梁断开=帧意象 + 底部青色门形方波）。
+  exe 资源（--icon）只管资源管理器；运行时任务栏需 setWindowIcon +
+  SetCurrentProcessExplicitAppUserModelID（否则 python.exe 启动按
+  进程归组显示 Python 图标）
+- 浅色主题（VS Code Light+）；按钮宽度一律内容自适应
+- tkinter 版已删除；exe 单文件分发（build_exe.ps1 可复现，exe 不入库）
 
 **明确不做**：不重写波形渲染（Surfer 是产品一部分，UI 是它的发射台）；不做仪表盘美化；不做多设备。
 
@@ -233,8 +244,8 @@ adv.c:1473  WAVE_LEVEL(ADV, LEGACY, 0, 1, 0);   // 门 end：step_sch_canceled�
 | 缓冲无上限 | records 列表只增（surfer 导出全量） | 长时间联调加环形上限或分片导出 |
 | ts 回绕 | u32 差值处理，未处理绝对回绕 | 桥内做 unwrap |
 | Surfer 刷新 | 手动按按钮重开 | 可调研 Surfer 的 VCD 流式/重载插件 |
-| Replay 回放页 | record_*.bin 需 `--input` 命令行回放 | v1.2：Replay 页签（选快照目录 GUI 回放） |
-| 打点覆盖率 | 无量化 | v1.2：扫描 `WAVE_` 宏统计面板 |
+| Replay 完整页签 | import 按钮已覆盖单文件回放；record_*.bin（含 log 的原始流）仍需 `--input` | 后续：Replay 页签（选快照目录 GUI 回放 raw 流） |
+| 打点覆盖率 | 无量化 | 后续：扫描 `WAVE_` 宏统计面板 |
 | GUI 中文 | 界面英文 | 按需 |
 | 带宽 | 定长 12B + 3B 帧头 | 撞带宽墙先降打点频率，勿急着压缩协议 |
 
@@ -251,6 +262,10 @@ python tools/debug_hub/debug_hub_qt.py            # GUI 里选 COM/波特率 →
 python tools/debug_hub/debug_hub_qt.py --input dump.bin   # 离线 dump → VCD
 python tools/debug_hub/test_hub.py                # 回归测试（解析核心）
 python tools/debug_hub/test_fst.py                # VCD 层级/按需声明测试
+
+# exe 构建（无需 python 的分发方式）
+powershell -File tools/debug_hub/build_exe.ps1    # -> debug_hub.exe（44MB）
+# exe 分发布局：SDK 根/ debug_hub.exe + surfer.exe（自动扫描源码树建 id 映射）
 ```
 
 ## 9. 设计决策存档（为什么这样做）
@@ -267,3 +282,7 @@ python tools/debug_hub/test_fst.py                # VCD 层级/按需声明测�
 11. **surfer 空导出必须三态提示**："没记录 / 没勾选 / 勾选与记录无交集"混报成一句，用户会以为有 bug（实测发生过）。错误提示要区分到可操作的动作（如 `TRACKS > all?`）
 12. **按钮尺寸禁用固定像素**：`setFixedWidth(48)` 在不同字体/DPI 下裁字；统一 `minimumWidth = minimumSizeHint().width() + pad` 内容自适应
 13. **QSS 裸 background 会被子控件继承**：面板头部条容器样式必须用 `#objectName` 选择器限定，否则按钮 hover/checked 态被冲淡（hex 按钮选中态几乎看不出来就是这么来的）
+14. **save 存 bin（底片）而非 vcd（照片）**：bin 无损全量、可回放重新导出任意轨道组合的 vcd；vcd 固化勾选结果，轨道选漏就废。闭环靠 WAVE 头部 import 按钮（bin -> 现有管线 -> 勾选 -> surfer）
+15. **log 小时级保真 = 三层存储**：session 文件（无限/自动落盘）> 留底（默认无限）> 显示面板（2 万行）。只靠内存列表必然受显示上限或内存约束；落盘文件是唯一断电安全的层
+16. **任务栏图标归组**：exe 资源图标只管资源管理器；运行时需 setWindowIcon。python.exe 命令行启动时任务栏按进程显示 Python 图标，必须 `SetCurrentProcessExplicitAppUserModelID` 注册独立应用身份
+17. **打包路径自适应**：PyInstaller onefile 下 `__file__` 指向临时解包目录，路径定位改 `sys.executable`；图标/资源用 `sys._MEIPASS` 查找；exe 按放位置自动推断 id 映射扫描根（SDK 根旁 / tools/debug_hub 内 / 独立分发降级）

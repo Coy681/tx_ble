@@ -318,11 +318,13 @@ def make_worker(qt):
         wave_rec = Signal(object)    # object 可携带任意 Python 对象（元组）
         status_line = Signal(str)
 
-        def __init__(self, port, baud, raw_dump):
+        def __init__(self, port, baud, raw_dump, parity='N', flow=''):
             super().__init__()
             self.port = port         # 串口号字符串（如 'COM7'）
             self.baud = baud         # 波特率 int
             self.raw_dump = raw_dump # 调试开关：是否把原始字节 dump 到 stderr
+            self.parity = parity     # 校验位 'N'/'E'/'O'（setup 面板可配）
+            self.flow = flow         # 流控 ''/'rtscts'/'xonxoff'/'dsrdtr'
             self._stop = False       # 停止标志（GUI 断开时置 True）
             self.ser = None          # 串口对象（run() 里创建）
             self.raw = bytearray()   # 本次连接的原始字节流（快照归档用）
@@ -347,7 +349,12 @@ def make_worker(qt):
             import serial
             try:
                 # timeout=0.05：read 最多阻塞 50ms，保证 _stop 置位后能及时退出
-                self.ser = serial.Serial(self.port, self.baud, timeout=0.05)
+                self.ser = serial.Serial(
+                    self.port, self.baud, timeout=0.05,
+                    parity=self.parity,
+                    xonxoff=(self.flow == 'xonxoff'),
+                    rtscts=(self.flow == 'rtscts'),
+                    dsrdtr=(self.flow == 'dsrdtr'))
             except Exception as e:
                 self.status_line.emit(f'open failed: {e}')       # 开口失败上报
                 return
@@ -386,12 +393,13 @@ QLineEdit, QComboBox { background: #ffffff; border: 1px solid #cecece;
                        selection-background-color: #add6ff; }       /* 输入框/下拉 */
 QComboBox QAbstractItemView { background: #ffffff; color: #333;
                               selection-background-color: #cce5ff; }
-QPushButton { background: #f8f8f8; border: 1px solid #cecece;       /* 按钮常态 */
+QPushButton { background: #e4e6e9; border: 1px solid #c9c9c9;        /* 按钮常态：浅灰
+              （白面板上白按钮无层次，统一压灰一档） */
               border-radius: 4px; padding: 4px 14px; color: #333; }
-QPushButton:hover { background: #e8e8e8; border-color: #b0b0b0; }   /* 悬停变深 */
+QPushButton:hover { background: #d5d7db; border-color: #9a9a9a; }   /* 悬停变深 */
 QPushButton:pressed { background: #007acc; color: white; }          /* 按下强调蓝 */
 QPushButton:checked { background: #007acc; color: white; }          /* 可勾选按钮(hex) */
-QPushButton:disabled { color: #aaaaaa; }                            /* 禁用态置灰 */
+QPushButton:disabled { color: #aaaaaa; background: #ededed; }       /* 禁用态更浅 */
 QSplitter::handle { background: #e0e0e0; width: 3px; }              /* 分屏拖动条 */
 QStatusBar { background: #f0f0f0; color: #616161;                   /* VS Code 蓝状态栏底改浅 */
              border-top: 1px solid #e0e0e0; }
@@ -401,7 +409,11 @@ QLabel#pill_conn { border-radius: 8px; padding: 1px 10px;           /* 连接状
 QToolTip { background: #ffffe8; color: #333; border: 1px solid #cecece; }
 """
 
-LOG_MAX_BLOCKS = 20000      # log 面板最大行数（超出自动丢最旧的一半，防内存膨胀）
+LOG_MAX_BLOCKS = 20000      # log **显示层**最大行数（QPlainTextEdit 上限，
+                            # 保证 HTML 渲染性能；更早历史在留底/会话文件）
+LOG_STORE_MAX = 0           # log 留底上限（0=无限）。默认无限：约 120B/行，
+                            # 50 行/s 跑 8 小时 ≈ 170MB，可接受；内存紧张时
+                            # 用 --log-max 设上限（显示/落盘不受影响）
 
 # HTML 着色模板（appendHtml 用；浅底深色系，对齐 VS Code Light 语义色）
 STYLE_ERR = '<span style="color:#c93030">%s</span>'    # 红：错误（cd3131 变体）
@@ -434,16 +446,44 @@ def run_gui(args, modules, features):
     from PySide6.QtWidgets import (
         QApplication, QMainWindow, QWidget, QPlainTextEdit, QHBoxLayout,
         QVBoxLayout, QPushButton, QComboBox, QLabel, QLineEdit, QSplitter,
-        QTreeWidget, QTreeWidgetItem)
+        QTreeWidget, QTreeWidgetItem, QAbstractItemView)
+
+    from PySide6.QtGui import QColor, QFont, QIcon
 
     import serial.tools.list_ports   # COM 口枚举
 
     SerialWorker = make_worker(None) # 生成线程类（延迟 Qt 绑定）
 
-    app = QApplication(sys.argv)     # Qt 应用对象（全局唯一）
+    # 运行时窗口图标（任务栏/Alt-Tab）：exe 内嵌图标只管文件资源管理器，
+    # Qt 窗口必须显式 setWindowIcon，否则下边栏显示默认灰图标
+    # 图标查找顺序：PyInstaller 解包目录(--add-data 嵌入) -> exe 同目录 ->
+    # 脚本目录（源码布局）
+    if getattr(sys, 'frozen', False):
+        _icon_cands = [os.path.join(getattr(sys, '_MEIPASS', ''), 'htx.ico'),
+                       os.path.join(os.path.dirname(sys.executable),
+                                    'htx.ico')]
+    else:
+        _icon_cands = [os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), 'htx.ico')]
+    _icon_path = next((p for p in _icon_cands if os.path.isfile(p)), '')
+    # AppUserModelID：Windows 任务栏按进程归属显示图标，python.exe 启动时
+    # 下边栏显示 Python 图标。设置独立应用身份后任务栏改用窗口图标
+    try:
+        import ctypes
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+            'amlogic.tx_ble.debug_hub')
+    except Exception:
+        pass
+    app = QApplication([sys.argv[0]] if getattr(sys, 'frozen', False)
+                       else sys.argv)  # QApplication(sys.argv) 对 exe argv 敏感
+    if _icon_path:
+        app.setWindowIcon(QIcon(_icon_path))
+
     app.setStyleSheet(LIGHT)         # 应用浅色主题（VS Code Light+ 风格）
     win = QMainWindow()              # 主窗口
     win.setWindowTitle('tx_ble debug hub')
+    if _icon_path:
+        win.setWindowIcon(QIcon(_icon_path))
     win.resize(1200, 680)            # 默认窗口尺寸（适配 1280x800 主屏）
 
     central = QWidget()              # 中央容器（装工具栏 + 分屏）
@@ -459,6 +499,12 @@ def run_gui(args, modules, features):
 
     bar1 = QHBoxLayout()
     bar1.setSpacing(6)
+    # UART 配置折叠：默认只显示一个 ⚙ 按钮，点开弹出配置面板
+    # （port/baud/parity/flow 全收进面板，顶部留白给其他按钮）
+    btn_setup = QPushButton('\u2699 uart')        # ⚙ 折叠的串口配置入口
+    btn_setup.setCheckable(True)
+    btn_setup.setToolTip('UART settings (port/baud/parity/flow)')
+    fit_btn(btn_setup, 10)
     cb_port = QComboBox()            # 串口选择下拉
     cb_port.setEditable(True)
     cb_port.setFixedWidth(95)
@@ -470,6 +516,20 @@ def run_gui(args, modules, features):
     cb_baud.addItems(['9600', '115200', '460800', '921600',
                       '1000000', '2000000'])
     cb_baud.setCurrentText(str(args.baud))
+    cb_parity = QComboBox()          # 校验位（默认 N，与固件一致）
+    cb_parity.addItems(['N', 'E', 'O'])
+    cb_flow = QComboBox()            # 流控（默认无）
+    cb_flow.addItems(['none', 'rtscts', 'xonxoff', 'dsrdtr'])
+    cfg_row = QWidget()              # 折叠配置面板（默认隐藏）
+    cfg_h = QHBoxLayout(cfg_row)
+    cfg_h.setContentsMargins(24, 0, 0, 0)
+    cfg_h.setSpacing(6)
+    for lbl, wdg in (('port:', cb_port), ('baud:', cb_baud),
+                     ('parity:', cb_parity), ('flow:', cb_flow)):
+        cfg_h.addWidget(QLabel(lbl))
+        cfg_h.addWidget(wdg)
+    cfg_h.addStretch(1)
+    cfg_row.setVisible(False)        # 折叠态
 
     btn_conn = QPushButton('connect')
     fit_btn(btn_conn)
@@ -494,10 +554,7 @@ def run_gui(args, modules, features):
     for b in (btn_snap, btn_clear):
         b.setMinimumWidth(b.minimumSizeHint().width() + 12)
 
-    bar1.addWidget(QLabel('port:'))
-    bar1.addWidget(cb_port)
-    bar1.addWidget(QLabel('baud:'))
-    bar1.addWidget(cb_baud)
+    bar1.addWidget(btn_setup)
     bar1.addWidget(btn_conn)
     bar1.addWidget(lbl_conn)
     bar1.addSpacing(12)
@@ -507,6 +564,7 @@ def run_gui(args, modules, features):
     bar1.addWidget(btn_clear)
     bar1.addStretch(1)               # 右侧弹性：其余控件靠左成组
     vbox.addLayout(bar1)
+    vbox.addWidget(cfg_row)          # 配置面板（⌂ 展开时可见）
 
     # ---------------- 面板头部条（操作归属各自面板，不再挤顶部） ----------------
     def panel_bar(*items, stretch=None):
@@ -539,8 +597,11 @@ def run_gui(args, modules, features):
     btn_clear_log = QPushButton('clear')
     fit_btn(btn_clear_log, 14)
     btn_clear_log.setToolTip('clear log pane')
+    btn_save_log = QPushButton('save')
+    fit_btn(btn_save_log, 14)
+    btn_save_log.setToolTip('save full log (from backing store) to file')
     log_head = panel_bar(QLabel('LOG'), edt_filter, lbl_filter,
-                         btn_clear_log, stretch=edt_filter)
+                         btn_save_log, btn_clear_log, stretch=edt_filter)
     ent_send = QLineEdit()
     ent_send.setPlaceholderText('send to board... (Enter=tx)')
     cb_hex = QPushButton('hex')
@@ -562,8 +623,17 @@ def run_gui(args, modules, features):
     fit_btn(btn_clear_wave, 14)
     btn_clear_wave.setToolTip('clear wave records + monitor rows')
     lbl_wave = QLabel('wave: 0')
-    mon_head = panel_bar(QLabel('WAVE'), btn_surfer, btn_clear_wave,
-                         lbl_wave)
+    btn_save_wave = QPushButton('save')
+    fit_btn(btn_save_wave, 14)
+    btn_save_wave.setToolTip('save wave records (12B binary) to file')
+    btn_load_wave = QPushButton('import')
+    fit_btn(btn_load_wave, 14)
+    btn_load_wave.setToolTip(
+        'load a saved wave_*.bin (or snapshot wave.bin) for replay;\n'
+        'records feed MONITOR/TRACKS, then check tracks + surfer as usual')
+    mon_head = panel_bar(QLabel('WAVE'), btn_surfer, btn_load_wave,
+                         btn_save_wave,
+                         btn_clear_wave, lbl_wave)
 
     # TRACKS 面板：全选/全不选（勾选 = surfer 导出范围）
     btn_sel_all = QPushButton('all')
@@ -574,25 +644,31 @@ def run_gui(args, modules, features):
     btn_sel_none.setToolTip('uncheck all tracks')
     trk_head = panel_bar(QLabel('TRACKS'), btn_sel_all, btn_sel_none)
 
-    # ---------------- 主区：LOG | WAVE MONITOR | TRACKS 三栏 ----------------
-    split = QSplitter()
+    # ---------------- 主区：左 LOG 通高 | 右上 WAVE / 右下 TRACKS ----------------
+    # LOG 行长（时间戳+文本）横向空间最值钱 -> 单独一列通高；
+    # WAVE 4 列表与 TRACKS 树都是"宽扁"内容 -> 上下分各拿完整宽度，
+    # 且导出选择（下）与数据流（上）视线近：勾选完马上 surfer。
+    split_h = QSplitter(Qt.Horizontal)   # 一级：左 | 右
+    split_v = QSplitter(Qt.Vertical)     # 二级：右上 WAVE / 右下 TRACKS
     txt_log = QPlainTextEdit()       # 左：log（带本机时间戳 + 过滤）
     txt_log.setReadOnly(True)
     txt_log.setMaximumBlockCount(LOG_MAX_BLOCKS)
     txt_log.setFont(QFont('Consolas', 9))
 
-    mon = QTreeWidget()              # 中：WAVE MONITOR 每轨一行实时摘要
+    mon = QTreeWidget()              # 右上：WAVE MONITOR 每轨一行实时摘要
     mon.setHeaderLabels(['value', 'ago', 'gate', 'track'])
-    mon.setRootIsDecorated(False)    # 平铺行（区别于右侧信号树）
+    mon.setRootIsDecorated(True)     # 两层树：组行可折叠（防轨道多时爆屏）
     mon.setUniformRowHeights(True)
+    mon.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+    mon.setVerticalScrollMode(QAbstractItemView.ScrollPerItem)  # 平滑滚动
     mon.setColumnWidth(COL_VAL, 90)
     mon.setColumnWidth(COL_AGO, 80)
     mon.setColumnWidth(COL_SPARK, 110)
     mon.setFont(QFont('Consolas', 9))
 
-    tree_tracks = QTreeWidget()      # 右：TRACKS 信号树（勾选决定导出范围）
+    tree_tracks = QTreeWidget()      # 右下：TRACKS 信号树（勾选决定导出范围）
     tree_tracks.setHeaderLabels(['track', ''])
-    tree_tracks.setColumnWidth(0, 200)
+    tree_tracks.setColumnWidth(0, 260)
 
     # 每栏 = 头部条 + 内容（+ 底部条），用容器包住再进 splitter
     def pane(head, body, foot=None):
@@ -608,11 +684,13 @@ def run_gui(args, modules, features):
     pane_log = pane(log_head, txt_log, log_foot)
     pane_mon = pane(mon_head, mon)
     pane_trk = pane(trk_head, tree_tracks)
-    split.addWidget(pane_log)
-    split.addWidget(pane_mon)
-    split.addWidget(pane_trk)
-    split.setSizes([560, 490, 350])  # 约 40/35/25
-    vbox.addWidget(split, 1)
+    split_v.addWidget(pane_mon)      # 右上：wave
+    split_v.addWidget(pane_trk)      # 右下：tracks
+    split_v.setSizes([400, 260])     # 右侧上下约 6/4（wave 是主观察区）
+    split_h.addWidget(pane_log)      # 左：log 通高
+    split_h.addWidget(split_v)       # 右：上下两窗
+    split_h.setSizes([560, 640])     # 左右约 45/55（右列要放两窗）
+    vbox.addWidget(split_h, 1)
 
     # ---------------- 状态栏（信息带：左 log 统计 | 中 全局提示 | 右 wave 统计） ----------------
     lbl_stat_log = QLabel('log: 0 lines')        # 左段：log 留底统计
@@ -633,10 +711,12 @@ def run_gui(args, modules, features):
     records = []                     # 全部 wave 记录（surfer 导出用）
     worker = [None]                  # 当前串口线程（列表模拟可变闭包变量）
     track_items = {}                 # TRACKS 树叶子：key -> 叶节点
-    mon_rows = {}                    # MONITOR 行：key -> (行节点, 状态dict)
+    mon_rows = {}                    # MONITOR 道：key -> (道行节点, 状态dict)
+    mon_groups = {}                  # MONITOR 组行：(模块,feat,实例) -> 组行
     track_state = {}                 # 门摘要：key -> {open_ts,win,wins[]}
     pending_log = []                 # 暂停期间积压的 log 行
     log_store = []                   # log 留底（过滤重放 + 快照完整导出用）
+    log_sess = [None, 0]             # [会话文件句柄, 行计数]：小时级保真
     filter_re = [None]               # 当前过滤正则（None = 不过滤）
     filter_sub = ['']                # 当前过滤子串
     gate_bad = [0]                   # 悬空门计数（状态栏）
@@ -667,7 +747,11 @@ def run_gui(args, modules, features):
         return c
 
     def ensure_track_item(key):
-        """TRACKS 树懒构建：模块 > feature/实例 > 道名，叶子带勾选框。"""
+        """TRACKS 树懒构建：模块 > feature/实例 > 道名，叶子带勾选框。
+
+        默认全部折叠（几百 feature 时列表不爆屏）：模块行可见可点，
+        新轨道挂入不打断当前浏览位置；想看哪个组手动展开。
+        """
         if key in track_items:
             return track_items[key]
         mod_l, feat_l, inst, lane = key
@@ -676,22 +760,36 @@ def run_gui(args, modules, features):
         leaf = QTreeWidgetItem([lane])
         leaf.setCheckState(0, Qt.Checked)     # 默认全选 = 与旧版全量导出一致
         fi.addChild(leaf)
-        fi.setExpanded(True)
+        fi.setText(1, f'({fi.childCount()})')  # feature 行显示道数
         track_items[key] = leaf
         return leaf
 
     def ensure_mon_row(key, is_level):
-        """WAVE MONITOR 行懒构建：value | ago | spark | track 四列。"""
+        """WAVE MONITOR 两层树懒构建（防几百轨道时平铺爆屏）：
+
+        第 1 层 = 组行 `module/feature/iN`（汇总：最近值/ago/活跃道数）
+        第 2 层 = 各信号道 lane（value/ago/spark/全名）
+        组行默认折叠，点击展开只看关心的组。
+        """
+        mod_l, feat_l, inst, lane = key
+        gname = '/'.join([mod_l, feat_l] + ([f'i{inst}'] if inst else []))
+        group_key = (mod_l, feat_l, inst)
+        if group_key not in mon_groups:
+            g = QTreeWidgetItem(['', '', '', gname])
+            g.setForeground(COL_VAL, QColor('#616161'))
+            g.setFont(COL_TRACK, QFont('Consolas', 9, QFont.Bold))
+            mon.addTopLevelItem(g)
+            mon_groups[group_key] = g
+        g = mon_groups[group_key]
         if key in mon_rows:
             return mon_rows[key]
-        mod_l, feat_l, inst, lane = key
-        name = '/'.join([mod_l, feat_l + (f'/i{inst}' if inst else ''), lane])
-        row = QTreeWidgetItem(['-', '-', '', name])
+        row = QTreeWidgetItem(['-', '-', '', f'{gname}/{lane}'])
         if is_level:
             row.setForeground(COL_VAL, QColor('#005cb8'))   # LEVEL：深蓝
         else:
             row.setForeground(COL_VAL, QColor('#8a5200'))   # NUM：深琥珀
-        mon.addTopLevelItem(row)
+        g.addChild(row)
+        g.setText(COL_TRACK, f'{gname} ({g.childCount()})')  # 组内道数
         mon_rows[key] = (row, {'last_ts': None, 'open_ts': None,
                                'wins': []})
         return mon_rows[key]
@@ -743,23 +841,39 @@ def run_gui(args, modules, features):
         return True
 
     def on_log_line(line):
-        """log 信号槽：先入留底（快照/重放用），再渲染。
+        """log 信号槽：落盘 -> 入留底 -> 渲染（暂停时积压不渲染）。
 
-        暂停时只积压不渲染，恢复时统一重放（从留底全量重建）。
+        三层存储，容量策略不同：
+          session 文件 = 无限（小时级保真，每条带本机时间戳落盘）
+          log_store    = 留底（默认无限；--log-max 可设上限省内存）
+          txt_log 面板 = 最近 LOG_MAX_BLOCKS 行（显示层，重放也只画这段）
         """
-        log_store.append(line.rstrip('\r\n'))
-        if len(log_store) > LOG_MAX_BLOCKS:      # 与面板同步裁剪
-            del log_store[:len(log_store) - LOG_MAX_BLOCKS]
+        text = line.rstrip('\r\n')
+        if log_sess[0] is not None:              # 会话文件：小时级保真
+            try:
+                log_sess[0].write(f'[{now_hms()}] {text}\n')
+                log_sess[1] += 1
+                if log_sess[1] % 20 == 0:        # 每 20 行 flush 一次
+                    log_sess[0].flush()
+            except OSError:
+                pass                             # 磁盘故障不打断采集
+        log_store.append(text)
+        if LOG_STORE_MAX and len(log_store) > LOG_STORE_MAX:
+            del log_store[:len(log_store) - LOG_STORE_MAX]
         if btn_pause.isChecked():
             pending_log.append(line)
             return
-        if append_log(line) and (filter_re[0] is not None or filter_sub[0]):
+        if append_log(text) and (filter_re[0] is not None or filter_sub[0]):
             update_log_counter()     # 过滤生效时命中数随新行实时更新
 
     def replay_log():
-        """按当前过滤条件全量重建 log 面板（过滤历史行）。"""
+        """按当前过滤条件全量重建 log 面板（过滤历史行）。
+
+        只重画**显示窗口**（最近 LOG_MAX_BLOCKS 条）：留底可能是几小时
+        几十万行，全量画 HTML 会卡死 UI；更早的历史走 session 文件/save。
+        """
         txt_log.clear()
-        for text in log_store:
+        for text in log_store[-LOG_MAX_BLOCKS:]:
             append_log(text)
         update_log_counter()
 
@@ -865,21 +979,40 @@ def run_gui(args, modules, features):
             btn_rec.setStyleSheet('')
 
     def toggle_connect():
-        """连接/断开按钮槽：管理串口线程生命周期。"""
+        """连接/断开按钮槽：管理串口线程生命周期 + 会话日志文件。"""
         if worker[0] is not None:    # 已连接 -> 断开
             worker[0]._stop = True
             worker[0].wait(1000)
             worker[0] = None
+            if log_sess[0] is not None:      # 会话日志收尾落盘
+                log_sess[0].close()
+                log_sess[0] = None
             btn_conn.setText('connect')
             btn_pause.setEnabled(False)
             set_conn_pill(False, 'disconnected')
             return
         try:
             w = SerialWorker(cb_port.currentText(),
-                             int(cb_baud.currentText()), args.raw_dump)
+                             int(cb_baud.currentText()), args.raw_dump,
+                             parity=cb_parity.currentText(),
+                             flow=cb_flow.currentText()
+                             if cb_flow.currentText() != 'none' else '')
         except Exception as e:
             set_conn_pill(False, f'bad config: {e}')
             return
+        # 会话日志文件：每次连接一个，小时级保真（append 模式随时可断电）
+        import datetime
+        sess_path = os.path.join(
+            os.path.dirname(args.vcd), 'logs',
+            'session_' + datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+            + '_' + cb_port.currentText().replace(':', '') + '.txt')
+        os.makedirs(os.path.dirname(sess_path), exist_ok=True)
+        try:
+            log_sess[0] = open(sess_path, 'a', encoding='utf-8',
+                               errors='replace')
+            log_sess[1] = 0
+        except OSError as e:
+            lbl_stat_vcd.setText(f'session log failed: {e}')
         # 录制模式：把落盘钩子挂进 worker 读循环（write hook）
         if rec_file[0] is not None:
             f_ref = rec_file[0]
@@ -897,6 +1030,7 @@ def run_gui(args, modules, features):
         btn_conn.setText('disconnect')
         btn_pause.setEnabled(True)
         set_conn_pill(True, f'{cb_port.currentText()} @ {cb_baud.currentText()}')
+        lbl_stat_vcd.setText(f'session log -> {os.path.basename(sess_path)}')
 
     def do_send():
         """发送槽：hex/ascii 组包写入串口（自动补 \\r\\n）。"""
@@ -962,6 +1096,72 @@ def run_gui(args, modules, features):
             except OSError as e:
                 lbl_stat_vcd.setText(f'surfer launch failed: {e}')
 
+    def do_save_log():
+        """LOG save：留底全量另存（文件对话框选目录/文件名，可选跳过）。"""
+        import datetime
+        from PySide6.QtWidgets import QFileDialog
+        default = os.path.join(
+            os.path.dirname(args.vcd),
+            'log_' + datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+            + '.txt')
+        path, _ = QFileDialog.getSaveFileName(
+            win, 'save log', default, 'Text (*.txt);;All (*)')
+        if not path:                 # 用户取消 = 可选保存，静默退出
+            return
+        with open(path, 'w', encoding='utf-8', errors='replace') as f:
+            f.write('\n'.join(log_store))
+        lbl_stat_vcd.setText(f'saved {len(log_store)} log lines')
+
+    def do_save_wave():
+        """WAVE save：12B 原始记录另存（可 --input 回放/转 VCD）。"""
+        import datetime
+        from PySide6.QtWidgets import QFileDialog
+        if not records:
+            lbl_stat_vcd.setText('no wave records to save')
+            return
+        default = os.path.join(
+            os.path.dirname(args.vcd),
+            'wave_' + datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+            + '.bin')
+        path, _ = QFileDialog.getSaveFileName(
+            win, 'save wave records', default, 'Binary (*.bin);;All (*)')
+        if not path:
+            return
+        with open(path, 'wb') as f:
+            for r in records:
+                f.write(struct.pack('<III', *r))
+        lbl_stat_vcd.setText(f'saved {len(records)} wave records')
+
+    def do_load_wave():
+        """WAVE import：加载 wave_*.bin（save/snapshot 产物）回放。
+
+        读 12B 记录逐条走 on_wave_record 现有管线 -> MONITOR/TRACKS/
+        门摘要/状态栏全部按回放数据重建；之后照常勾选 + surfer。
+        导入会清空当前记录（避免与新数据混流），会话日志不受影响。
+        """
+        from PySide6.QtWidgets import QFileDialog
+        path, _ = QFileDialog.getOpenFileName(
+            win, 'import wave records', os.path.dirname(args.vcd),
+            'Wave records (*.bin);;All (*)')
+        if not path:
+            return
+        data = open(path, 'rb').read()
+        if len(data) % RECORD_SIZE:
+            lbl_stat_vcd.setText(
+                f'bad bin: {len(data)}B not multiple of {RECORD_SIZE}')
+            return
+        do_clear_wave()              # 先清当前记录（回放 = 替换现场）
+        n = 0
+        for off in range(0, len(data), RECORD_SIZE):
+            on_wave_record(struct.unpack_from('<III', data, off))
+            n += 1
+        lbl_stat_vcd.setText(
+            f'imported {n} records <- {os.path.basename(path)}')
+
+    def toggle_setup(checked):
+        """⚙ uart 配置折叠切换：展开显示 port/baud/parity/flow 面板。"""
+        cfg_row.setVisible(checked)
+
     def do_snapshot():
         """snapshot 按钮：log + wave + raw + config 归档到快照目录。"""
         import datetime
@@ -1006,6 +1206,7 @@ def run_gui(args, modules, features):
         records.clear()
         mon.clear()
         mon_rows.clear()
+        mon_groups.clear()
         track_state.clear()
         gate_bad[0] = 0
         lbl_wave.setText('wave: 0')
@@ -1035,7 +1236,14 @@ def run_gui(args, modules, features):
         else:
             byte_count[1] = 0
             lbl_stat_bw.setText('0 KB/s')
-        # ago 列：距最后一条记录的本机时间差（秒）
+        # ago 列：距最后一条记录的本机时间差（秒）；组行聚合组内最近事件
+        for key, g in mon_groups.items():
+            walls = [st.get('last_wall') for (_r, st) in mon_rows.values()
+                     if _r.parent() is g and st.get('last_wall')]
+            if walls:
+                ago = (now - max(walls)) / 1000.0
+                g.setText(COL_AGO,
+                          f'{ago:.1f}s' if ago < 600 else f'{ago/60:.0f}m')
         for key, (row, st) in mon_rows.items():
             if st.get('last_wall') is not None:
                 ago = (now - st['last_wall']) / 1000.0
@@ -1072,6 +1280,10 @@ def run_gui(args, modules, features):
     btn_clear.clicked.connect(do_clear)
     btn_clear_log.clicked.connect(do_clear_log)
     btn_clear_wave.clicked.connect(do_clear_wave)
+    btn_save_log.clicked.connect(do_save_log)
+    btn_save_wave.clicked.connect(do_save_wave)
+    btn_load_wave.clicked.connect(do_load_wave)
+    btn_setup.toggled.connect(toggle_setup)
     btn_sel_all.clicked.connect(do_sel_all)
     btn_sel_none.clicked.connect(do_sel_none)
     btn_surfer.clicked.connect(do_surfer)
@@ -1116,20 +1328,42 @@ def main():
     ap.add_argument('--surfer', default=None)                 # Surfer 路径
     ap.add_argument('--no-surfer', action='store_true')       # 只导出不拉 Surfer
     ap.add_argument('--raw-dump', action='store_true')        # 原始字节调试开关
+    ap.add_argument('--log-max', type=int, default=0,
+                    help='log 留底上限行数（0=无限，默认无限）')
     args = ap.parse_args()
 
     # 默认路径全部相对脚本定位（任何 cwd 运行都一致）
-    script_dir = os.path.dirname(os.path.abspath(__file__))
+    # PyInstaller 打包后 __file__ 指向临时解包目录，改用 exe 所在目录
+    if getattr(sys, 'frozen', False):
+        script_dir = os.path.dirname(sys.executable)
+    else:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
     if args.vcd is None:
         args.vcd = os.path.join(script_dir, 'live.vcd')
     if args.surfer is None:
-        args.surfer = os.path.abspath(os.path.join(script_dir, 'surfer.exe'))
+        cand = os.path.join(script_dir, 'surfer.exe')
+        # exe 同目录没有 surfer.exe 时退回仓库内位置（开发机场景）
+        if os.path.isfile(cand):
+            args.surfer = os.path.abspath(cand)
+        elif os.path.isdir(os.path.join(script_dir, '..', '..', 'tools')):
+            args.surfer = os.path.abspath(
+                os.path.join(script_dir, '..', 'tools', 'debug_hub',
+                             'surfer.exe'))
+        else:
+            args.surfer = os.path.abspath(cand)
     if args.root is None:
-        # 脚本在 <sdk>/tools/debug_hub 下 -> SDK 根是上两级
-        root = os.path.abspath(os.path.join(script_dir, '..', '..'))
+        if os.path.isdir(os.path.join(script_dir, 'tools')):
+            # exe 放在 SDK 根旁 -> 扫描 SDK 树建 id 映射
+            root = os.path.abspath(script_dir)
+        elif os.path.isdir(os.path.join(script_dir, '..', '..', 'tools')):
+            # 脚本在 <sdk>/tools/debug_hub 下 -> SDK 根是上两级
+            root = os.path.abspath(os.path.join(script_dir, '..', '..'))
+        else:
+            root = script_dir      # 独立 exe（无源码树）：无映射，id 降级显示
     else:
         root = os.path.abspath(args.root)
     modules, features = load_map(root)       # 扫描固件头文件建映射
+    LOG_STORE_MAX = args.log_max             # 留底上限（0=无限）
     print(f'[hub] scanned: {len(modules)} modules, {len(features)} features')
 
     if args.input:                           # ----- 离线模式 -----

@@ -1,1 +1,6 @@
 snapshots/
+logs/
+build/
+dist/
+debug_hub.spec
+debug_hub.exe
