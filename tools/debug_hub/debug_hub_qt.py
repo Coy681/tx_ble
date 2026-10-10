@@ -325,6 +325,7 @@ def make_worker(qt):
             self.raw_dump = raw_dump # 调试开关：是否把原始字节 dump 到 stderr
             self._stop = False       # 停止标志（GUI 断开时置 True）
             self.ser = None          # 串口对象（run() 里创建）
+            self.raw = bytearray()   # 本次连接的原始字节流（快照归档用）
             # 解析器：回调直接 emit 信号，把解析结果搬运到主线程
             self.parser = FrameParser(
                 on_log=lambda p: self.log_line.emit(
@@ -357,6 +358,7 @@ def make_worker(qt):
                 except Exception:
                     break                        # 串口出错（拔线等）直接退出
                 if data:
+                    self.raw += data               # 原始流缓存（快照用）
                     if self.raw_dump:            # 调试：原始十六进制流
                         n += len(data)
                         sys.stderr.write(f'[raw {n:7d}B] {data[:64].hex(" ")}\n')
@@ -369,144 +371,365 @@ def make_worker(qt):
 
 # ================= GUI =================
 
-# 深色主题 QSS（Qt 样式表，语法类似 CSS）
-DARK = """
-QWidget { background: #1e1f22; color: #d4d4d4; font-size: 13px; }   /* 全局底色 */
-QPlainTextEdit { background: #141517; color: #d4d4d4;               /* 文本面板：深底等宽字 */
-                 font-family: Consolas; font-size: 12px; border: none; }
-QLineEdit, QComboBox { background: #2a2b2f; border: 1px solid #3c3d42;
-                       border-radius: 4px; padding: 3px 6px; }      /* 输入框/下拉 */
-QComboBox QAbstractItemView { background: #2a2b2f;                  /* 下拉弹出列表 */
-                              selection-background-color: #094771; }
-QPushButton { background: #2a2b2f; border: 1px solid #3c3d42;       /* 按钮常态 */
-              border-radius: 4px; padding: 4px 14px; }
-QPushButton:hover { background: #35363b; }                          /* 悬停变亮 */
-QPushButton:pressed { background: #094771; }                        /* 按下变蓝 */
-QPushButton:checked { background: #094771; color: white; }          /* 可勾选按钮(hex) */
-QSplitter::handle { background: #33343a; width: 3px; }              /* 分屏拖动条 */
-QStatusBar { background: #18191c; color: #888; }                    /* 状态栏 */
+# 浅色主题 QSS（VS Code Light+ 风格：#f3f3f3 底 / #e8e8e8 面板 / #007acc 强调蓝）
+LIGHT = """
+QWidget { background: #f3f3f3; color: #333333; font-size: 13px; }   /* 全局底色 */
+QPlainTextEdit, QTreeWidget { background: #ffffff; color: #333333;  /* 文本/树面板 */
+                 font-family: Consolas; font-size: 12px; border: 1px solid #e0e0e0; }
+QTreeWidget::item { height: 22px; }                                  /* 树行加高可读 */
+QTreeWidget::item:selected { background: #cce5ff; color: #1e1e1e; }
+QHeaderView::section { background: #f0f0f0; color: #616161;          /* 表头 */
+                       border: none; border-bottom: 1px solid #e0e0e0;
+                       padding: 3px 6px; }
+QLineEdit, QComboBox { background: #ffffff; border: 1px solid #cecece;
+                       border-radius: 4px; padding: 3px 6px;
+                       selection-background-color: #add6ff; }       /* 输入框/下拉 */
+QComboBox QAbstractItemView { background: #ffffff; color: #333;
+                              selection-background-color: #cce5ff; }
+QPushButton { background: #f8f8f8; border: 1px solid #cecece;       /* 按钮常态 */
+              border-radius: 4px; padding: 4px 14px; color: #333; }
+QPushButton:hover { background: #e8e8e8; border-color: #b0b0b0; }   /* 悬停变深 */
+QPushButton:pressed { background: #007acc; color: white; }          /* 按下强调蓝 */
+QPushButton:checked { background: #007acc; color: white; }          /* 可勾选按钮(hex) */
+QPushButton:disabled { color: #aaaaaa; }                            /* 禁用态置灰 */
+QSplitter::handle { background: #e0e0e0; width: 3px; }              /* 分屏拖动条 */
+QStatusBar { background: #f0f0f0; color: #616161;                   /* VS Code 蓝状态栏底改浅 */
+             border-top: 1px solid #e0e0e0; }
+QStatusBar QLabel { color: #616161; padding: 0 8px; }               /* 状态指标分段 */
+QLabel#pill_conn { border-radius: 8px; padding: 1px 10px;           /* 连接状态药丸 */
+                   font-weight: bold; }
+QToolTip { background: #ffffe8; color: #333; border: 1px solid #cecece; }
 """
 
 LOG_MAX_BLOCKS = 20000      # log 面板最大行数（超出自动丢最旧的一半，防内存膨胀）
-WAVE_MAX_BLOCKS = 20000     # wave 面板同上
 
-# HTML 着色模板（appendHtml 用；%s 处填转义后的文本）
-STYLE_ERR = '<span style="color:#e74c3c">%s</span>'    # 红：错误
-STYLE_WARN = '<span style="color:#e67e22">%s</span>'   # 橙：警告
-STYLE_OK = '<span style="color:#2ecc71">%s</span>'     # 绿：成功
-STYLE_LVL = '<span style="color:#4fc3f7">%s</span>'    # 蓝：LEVEL 门记录
-STYLE_NUM = '<span style="color:#ffd54f">%s</span>'    # 黄：NUM 数值记录
+# HTML 着色模板（appendHtml 用；浅底深色系，对齐 VS Code Light 语义色）
+STYLE_ERR = '<span style="color:#c93030">%s</span>'    # 红：错误（cd3131 变体）
+STYLE_WARN = '<span style="color:#b8800a">%s</span>'   # 橙/黄：警告
+STYLE_OK = '<span style="color:#1a9a4b">%s</span>'     # 绿：成功
+STYLE_LVL = '<span style="color:#005cb8">%s</span>'    # 蓝：LEVEL 门记录
+STYLE_NUM = '<span style="color:#8a5200">%s</span>'    # 深琥珀：NUM 数值记录
+STYLE_TS = '<span style="color:#9b9b9b">%s</span>'     # 浅灰：本机时间戳
+
+# sparkline：LEVEL 门最近窗口相对宽度字符画（8 格条形图）
+SPARK_BLOCKS = 8
+SPARK_FULL = '\u2593'          # ▓
+SPARK_EMPTY = '\u2591'         # ░
+GATE_OPEN_LIMIT = 50_000       # 预留：门开启超过 50ms tick 视为悬空阈值
+
+# WAVE MONITOR 表格列
+COL_VAL, COL_AGO, COL_SPARK, COL_TRACK = range(4)
 
 
 def run_gui(args, modules, features):
-    """构建并运行 Qt 界面（阻塞直到窗口关闭）。"""
-    from PySide6.QtCore import Qt
+    """构建并运行 Qt 界面（阻塞直到窗口关闭）。
+
+    页面形态（v1.0）：
+        工具栏两行：连接/暂停/录制/快照 | 发送/过滤/导出
+        三栏：LOG(40%) | WAVE MONITOR(35%, 每轨一行+sparkline) | TRACKS(25%)
+        状态栏：recs | KB/s | gate 异常 | 快照提示
+    """
+    from PySide6.QtCore import Qt, QTimer, QDateTime
+    from PySide6.QtGui import QColor, QFont
     from PySide6.QtWidgets import (
         QApplication, QMainWindow, QWidget, QPlainTextEdit, QHBoxLayout,
-        QVBoxLayout, QPushButton, QComboBox, QLabel, QLineEdit, QSplitter)
+        QVBoxLayout, QPushButton, QComboBox, QLabel, QLineEdit, QSplitter,
+        QTreeWidget, QTreeWidgetItem)
 
     import serial.tools.list_ports   # COM 口枚举
 
     SerialWorker = make_worker(None) # 生成线程类（延迟 Qt 绑定）
 
     app = QApplication(sys.argv)     # Qt 应用对象（全局唯一）
-    app.setStyleSheet(DARK)          # 应用深色主题
+    app.setStyleSheet(LIGHT)         # 应用浅色主题（VS Code Light+ 风格）
     win = QMainWindow()              # 主窗口
     win.setWindowTitle('tx_ble debug hub')
-    win.resize(1400, 700)            # 默认窗口尺寸
+    win.resize(1200, 680)            # 默认窗口尺寸（适配 1280x800 主屏）
 
     central = QWidget()              # 中央容器（装工具栏 + 分屏）
     win.setCentralWidget(central)
-    vbox = QVBoxLayout(central)      # 垂直布局：上工具栏、下分屏
-    vbox.setContentsMargins(6, 6, 6, 6)   # 四周留白 6px
-    vbox.setSpacing(6)               # 控件间距 6px
+    vbox = QVBoxLayout(central)      # 垂直布局：两行工具栏、下分屏
+    vbox.setContentsMargins(6, 6, 6, 4)
+    vbox.setSpacing(4)
 
-    # ---------------- 工具栏：串口配置 / 发送 / 过滤 / 导出 ----------------
-    bar = QHBoxLayout()              # 工具栏（水平排布）
+    # ---------------- 顶部工具栏：仅全局操作（连接/暂停/录制/快照/全清） ----------------
+    def fit_btn(b, pad=12):
+        """按钮宽度按内容自适应（固定像素会在不同 DPI/字体下裁字）。"""
+        b.setMinimumWidth(b.minimumSizeHint().width() + pad)
+
+    bar1 = QHBoxLayout()
+    bar1.setSpacing(6)
     cb_port = QComboBox()            # 串口选择下拉
-    cb_port.setEditable(True)        # 可手输（自动枚举之外的自定义口）
+    cb_port.setEditable(True)
     cb_port.setFixedWidth(95)
-    # 枚举系统当前所有 COM 口填入下拉
     cb_port.addItems([p.device for p in serial.tools.list_ports.comports()])
-    if args.port:                    # 命令行指定了口就预选
+    if args.port:
         cb_port.setCurrentText(args.port)
-    cb_baud = QComboBox()            # 波特率下拉
-    cb_baud.setEditable(True)        # 允许输入预设外的波特率
+    cb_baud = QComboBox()
+    cb_baud.setEditable(True)
     cb_baud.addItems(['9600', '115200', '460800', '921600',
                       '1000000', '2000000'])
-    cb_baud.setCurrentText(str(args.baud))   # 默认 1M（与固件一致）
+    cb_baud.setCurrentText(str(args.baud))
 
-    btn_conn = QPushButton('connect')            # 连接/断开按钮
-    btn_conn.setFixedWidth(96)
-    lbl_conn = QLabel('disconnected')            # 连接状态文字
+    btn_conn = QPushButton('connect')
+    fit_btn(btn_conn)
+    lbl_conn = QLabel('disconnected')
+    lbl_conn.setObjectName('pill_conn')           # 药丸样式（QSS #pill_conn）
+    lbl_conn.setStyleSheet('background:#c8c8c8;color:#666666;')
 
-    ent_send = QLineEdit()           # 发送输入框
-    ent_send.setPlaceholderText('send... (Enter=tx)')    # 灰色提示文字
-    cb_hex = QPushButton('hex')      # hex 模式开关（可按下 = 十六进制发送）
-    cb_hex.setCheckable(True)
-    cb_hex.setFixedWidth(48)
-    btn_tx = QPushButton('tx')       # 发送按钮
-    btn_tx.setFixedWidth(44)
+    btn_pause = QPushButton('\u23f8')             # ⏸ 冻结滚动显示（数据不丢）
+    btn_pause.setCheckable(True)
+    btn_pause.setToolTip('pause display (data keeps buffering)')
+    btn_pause.setEnabled(False)                   # 未连接前禁用
+    btn_rec = QPushButton('\u2b55 record')        # ⏺ 原始流录制
+    btn_rec.setCheckable(True)
+    btn_rec.setToolTip('record raw stream to file (replayable)')
+    btn_snap = QPushButton('\U0001F4F8 snapshot') # 📸 会话快照归档
+    btn_clear = QPushButton('clear all')          # 全局清空（log+wave）
 
-    edt_filter = QComboBox()         # 过滤框（可编辑下拉，留历史记录位）
+    # 按钮宽度一律按内容自适应（固定像素会在不同 DPI/字体下裁字），
+    # 统一给 12px 余量；窄按钮（⏸/tx 等）单独收紧为 8px
+    for b in (btn_pause, btn_rec):
+        b.setMinimumWidth(b.minimumSizeHint().width() + 8)
+    for b in (btn_snap, btn_clear):
+        b.setMinimumWidth(b.minimumSizeHint().width() + 12)
+
+    bar1.addWidget(QLabel('port:'))
+    bar1.addWidget(cb_port)
+    bar1.addWidget(QLabel('baud:'))
+    bar1.addWidget(cb_baud)
+    bar1.addWidget(btn_conn)
+    bar1.addWidget(lbl_conn)
+    bar1.addSpacing(12)
+    bar1.addWidget(btn_pause)
+    bar1.addWidget(btn_rec)
+    bar1.addWidget(btn_snap)
+    bar1.addWidget(btn_clear)
+    bar1.addStretch(1)               # 右侧弹性：其余控件靠左成组
+    vbox.addLayout(bar1)
+
+    # ---------------- 面板头部条（操作归属各自面板，不再挤顶部） ----------------
+    def panel_bar(*items, stretch=None):
+        """构造一个面板头部条：浅底圆角横条，放该面板专属操作。
+
+        stretch=某个 item 时该项吃满剩余宽度（如过滤框/发送框）。
+        """
+        w_ = QWidget()
+        h = QHBoxLayout(w_)
+        h.setContentsMargins(4, 2, 4, 2)
+        h.setSpacing(6)
+        for it in items:
+            h.addWidget(it, 1 if it is stretch else 0)
+        if stretch is None:
+            h.addStretch(1)
+        # 选择器限定：裸 background 声明会被子控件继承（冲淡按钮
+        # hover/checked 态），必须用 #paneBar 选择器只作用容器自身
+        w_.setObjectName('paneBar')
+        w_.setStyleSheet(
+            'QWidget#paneBar { background:#eaeaea;'
+            'border:1px solid #e0e0e0; border-radius:4px; }')
+        return w_
+
+    # LOG 面板：过滤框（头部）+ 发送框（底部，聊天式语境）
+    edt_filter = QComboBox()         # 过滤框：re: 前缀 = 正则，否则子串
     edt_filter.setEditable(True)
-    edt_filter.setFixedWidth(150)
-    edt_filter.lineEdit().setPlaceholderText('filter')
+    edt_filter.setMinimumWidth(180)
+    edt_filter.lineEdit().setPlaceholderText("filter ('re:' = regex)")
+    lbl_filter = QLabel('')          # 过滤命中计数（n/m = 命中/留底总量）
+    btn_clear_log = QPushButton('clear')
+    fit_btn(btn_clear_log, 14)
+    btn_clear_log.setToolTip('clear log pane')
+    log_head = panel_bar(QLabel('LOG'), edt_filter, lbl_filter,
+                         btn_clear_log, stretch=edt_filter)
+    ent_send = QLineEdit()
+    ent_send.setPlaceholderText('send to board... (Enter=tx)')
+    cb_hex = QPushButton('hex')
+    cb_hex.setCheckable(True)
+    fit_btn(cb_hex, 14)
+    # 选中态高对比：强调蓝底白字 + 深蓝边框（与常态浅灰明显区分）
+    cb_hex.setStyleSheet(
+        'QPushButton:checked { background:#007acc; color:white;'
+        ' border:1px solid #005a9e; font-weight:bold; }'
+        'QPushButton:checked:hover { background:#0086c8; }')
+    btn_tx = QPushButton('tx')
+    fit_btn(btn_tx, 14)
+    log_foot = panel_bar(ent_send, cb_hex, btn_tx, stretch=ent_send)
 
-    btn_surfer = QPushButton('surfer')   # 导出 VCD 并拉起 Surfer
-    btn_clear = QPushButton('clear')     # 清空 wave 缓冲
-    lbl_wave = QLabel('wave: 0 records') # wave 计数标签
+    # WAVE MONITOR 面板：surfer 导出 + 自己的 clear（统计在底部状态栏右段）
+    btn_surfer = QPushButton('surfer \u25b6')     # 导出勾选轨道 -> Surfer
+    fit_btn(btn_surfer)
+    btn_clear_wave = QPushButton('clear')
+    fit_btn(btn_clear_wave, 14)
+    btn_clear_wave.setToolTip('clear wave records + monitor rows')
+    lbl_wave = QLabel('wave: 0')
+    mon_head = panel_bar(QLabel('WAVE'), btn_surfer, btn_clear_wave,
+                         lbl_wave)
 
-    # 按顺序摆进工具栏
-    bar.addWidget(QLabel('port:'))
-    bar.addWidget(cb_port)
-    bar.addWidget(QLabel('baud:'))
-    bar.addWidget(cb_baud)
-    bar.addWidget(btn_conn)
-    bar.addWidget(lbl_conn)
-    bar.addSpacing(12)               # 组间距
-    bar.addWidget(QLabel('send:'))
-    bar.addWidget(ent_send, 1)       # stretch=1：发送框吃掉剩余宽度
-    bar.addWidget(cb_hex)
-    bar.addWidget(btn_tx)
-    bar.addSpacing(12)
-    bar.addWidget(QLabel('filter:'))
-    bar.addWidget(edt_filter)
-    bar.addSpacing(12)
-    bar.addWidget(btn_surfer)
-    bar.addWidget(btn_clear)
-    bar.addWidget(lbl_wave)
-    vbox.addLayout(bar)              # 工具栏挂进主垂直布局
+    # TRACKS 面板：全选/全不选（勾选 = surfer 导出范围）
+    btn_sel_all = QPushButton('all')
+    fit_btn(btn_sel_all, 14)
+    btn_sel_all.setToolTip('check all tracks')
+    btn_sel_none = QPushButton('none')
+    fit_btn(btn_sel_none, 14)
+    btn_sel_none.setToolTip('uncheck all tracks')
+    trk_head = panel_bar(QLabel('TRACKS'), btn_sel_all, btn_sel_none)
 
-    # ---------------- 主区：左右分屏 ----------------
-    split = QSplitter()              # 可拖动的水平分屏容器
-    txt_log = QPlainTextEdit()       # 左：log 面板
+    # ---------------- 主区：LOG | WAVE MONITOR | TRACKS 三栏 ----------------
+    split = QSplitter()
+    txt_log = QPlainTextEdit()       # 左：log（带本机时间戳 + 过滤）
     txt_log.setReadOnly(True)
-    txt_log.setMaximumBlockCount(LOG_MAX_BLOCKS)     # 超限自动裁剪旧内容
-    txt_wave = QPlainTextEdit()      # 右：wave 原始流面板
-    txt_wave.setReadOnly(True)
-    txt_wave.setMaximumBlockCount(WAVE_MAX_BLOCKS)
-    split.addWidget(txt_log)
-    split.addWidget(txt_wave)
-    split.setSizes([700, 700])       # 初始各占一半
-    vbox.addWidget(split, 1)         # stretch=1：分屏区吃掉全部剩余高度
+    txt_log.setMaximumBlockCount(LOG_MAX_BLOCKS)
+    txt_log.setFont(QFont('Consolas', 9))
 
-    # 底部状态栏：显示 id 映射规模
-    win.statusBar().showMessage(
-        f'id map: {len(modules)} modules, {len(features)} features')
+    mon = QTreeWidget()              # 中：WAVE MONITOR 每轨一行实时摘要
+    mon.setHeaderLabels(['value', 'ago', 'gate', 'track'])
+    mon.setRootIsDecorated(False)    # 平铺行（区别于右侧信号树）
+    mon.setUniformRowHeights(True)
+    mon.setColumnWidth(COL_VAL, 90)
+    mon.setColumnWidth(COL_AGO, 80)
+    mon.setColumnWidth(COL_SPARK, 110)
+    mon.setFont(QFont('Consolas', 9))
+
+    tree_tracks = QTreeWidget()      # 右：TRACKS 信号树（勾选决定导出范围）
+    tree_tracks.setHeaderLabels(['track', ''])
+    tree_tracks.setColumnWidth(0, 200)
+
+    # 每栏 = 头部条 + 内容（+ 底部条），用容器包住再进 splitter
+    def pane(head, body, foot=None):
+        w_ = QWidget()
+        v = QVBoxLayout(w_)
+        v.setContentsMargins(0, 0, 0, 0)
+        v.setSpacing(2)
+        v.addWidget(head)
+        v.addWidget(body, 1)
+        if foot is not None:
+            v.addWidget(foot)
+        return w_
+    pane_log = pane(log_head, txt_log, log_foot)
+    pane_mon = pane(mon_head, mon)
+    pane_trk = pane(trk_head, tree_tracks)
+    split.addWidget(pane_log)
+    split.addWidget(pane_mon)
+    split.addWidget(pane_trk)
+    split.setSizes([560, 490, 350])  # 约 40/35/25
+    vbox.addWidget(split, 1)
+
+    # ---------------- 状态栏（信息带：左 log 统计 | 中 全局提示 | 右 wave 统计） ----------------
+    lbl_stat_log = QLabel('log: 0 lines')        # 左段：log 留底统计
+    lbl_stat_vcd = QLabel('live.vcd -')          # 中段：文件操作提示
+    lbl_wave_stat = QLabel('wave: 0')            # 右段：wave 统计（recs/KB/s/gate）
+    lbl_stat_bw = QLabel('0 KB/s')
+    lbl_stat_gate = QLabel('gate ok')
+    win.statusBar().addWidget(lbl_stat_log)      # 左
+    win.statusBar().addWidget(lbl_stat_vcd)      # 中
+    win.statusBar().addWidget(QLabel(), 1)       # 弹性区把 wave 组推到右侧
+    win.statusBar().addWidget(lbl_wave_stat)     # 右
+    win.statusBar().addWidget(lbl_stat_bw)
+    win.statusBar().addWidget(lbl_stat_gate)
+    win.statusBar().addWidget(
+        QLabel(f'id map: {len(modules)} modules, {len(features)} features'))
 
     # ---------------- 状态与回调 ----------------
-    records = []                     # 全部 wave 记录（surfer 导出用，只增不清）
+    records = []                     # 全部 wave 记录（surfer 导出用）
     worker = [None]                  # 当前串口线程（列表模拟可变闭包变量）
+    track_items = {}                 # TRACKS 树叶子：key -> 叶节点
+    mon_rows = {}                    # MONITOR 行：key -> (行节点, 状态dict)
+    track_state = {}                 # 门摘要：key -> {open_ts,win,wins[]}
+    pending_log = []                 # 暂停期间积压的 log 行
+    log_store = []                   # log 留底（过滤重放 + 快照完整导出用）
+    filter_re = [None]               # 当前过滤正则（None = 不过滤）
+    filter_sub = ['']                # 当前过滤子串
+    gate_bad = [0]                   # 悬空门计数（状态栏）
+    byte_count = [0, 0]              # KB/s 统计：[上次字节, 上次时刻]
+    rec_file = [None]                # 录制文件句柄
+
+    def now_hms():
+        """本机时间戳 HH:MM:SS.mmm（log 行前缀）。"""
+        return QDateTime.currentDateTime().toString('HH:mm:ss.zzz')
+
+    def track_key(wid):
+        """32 位 id -> VCD 声明用的轨道 key（与 GzVcdWriter key 一致）。"""
+        typ, mod, feat, inst, evt = decode_id(wid)
+        m = modules.get(mod, (f'mod{mod:#x}', f'mod{mod:#x}'))
+        f = features.get((mod, feat), (m[0], f'feat{feat:#x}'))
+        lane = 'probe' if evt == EVT_PROBE else (
+            f's{evt}' if typ == 1 else f's{evt}_num')
+        return (m[1], f[1], inst, lane)
+
+    def child_of(parent, text):
+        """在 parent 下找文本为 text 的子节点，没有就新建。"""
+        for i in range(parent.childCount()):
+            c = parent.child(i)
+            if c.text(0) == text:
+                return c
+        c = QTreeWidgetItem([text])
+        parent.addChild(c)
+        return c
+
+    def ensure_track_item(key):
+        """TRACKS 树懒构建：模块 > feature/实例 > 道名，叶子带勾选框。"""
+        if key in track_items:
+            return track_items[key]
+        mod_l, feat_l, inst, lane = key
+        mi = child_of(tree_tracks.invisibleRootItem(), mod_l)
+        fi = child_of(mi, feat_l + (f'/i{inst}' if inst else ''))
+        leaf = QTreeWidgetItem([lane])
+        leaf.setCheckState(0, Qt.Checked)     # 默认全选 = 与旧版全量导出一致
+        fi.addChild(leaf)
+        fi.setExpanded(True)
+        track_items[key] = leaf
+        return leaf
+
+    def ensure_mon_row(key, is_level):
+        """WAVE MONITOR 行懒构建：value | ago | spark | track 四列。"""
+        if key in mon_rows:
+            return mon_rows[key]
+        mod_l, feat_l, inst, lane = key
+        name = '/'.join([mod_l, feat_l + (f'/i{inst}' if inst else ''), lane])
+        row = QTreeWidgetItem(['-', '-', '', name])
+        if is_level:
+            row.setForeground(COL_VAL, QColor('#005cb8'))   # LEVEL：深蓝
+        else:
+            row.setForeground(COL_VAL, QColor('#8a5200'))   # NUM：深琥珀
+        mon.addTopLevelItem(row)
+        mon_rows[key] = (row, {'last_ts': None, 'open_ts': None,
+                               'wins': []})
+        return mon_rows[key]
+
+    def spark(wins):
+        """最近 8 个门窗口的相对宽度字符画。输入为窗口长度列表。"""
+        if not wins:
+            return ''
+        recent = wins[-SPARK_BLOCKS:]
+        hi = max(recent) or 1
+        return ''.join(
+            SPARK_FULL if w * 2 > hi else
+            (SPARK_EMPTY if w * 8 <= hi else '\u2592')   # 中档用 ▒
+            for w in recent)
 
     def esc(s):
-        """HTML 转义（& < >），防止 log 文本里的特殊字符破坏着色标签。"""
+        """HTML 转义（& < >），防止 log 文本破坏着色标签。"""
         return (s.replace('&', '&amp;').replace('<', '&lt;')
                 .replace('>', '&gt;'))
 
+    def match_filter(line):
+        """过滤匹配：filter_re 优先（re: 前缀），否则子串。空 = 全通过。"""
+        if filter_re[0] is not None:
+            return filter_re[0].search(line) is not None
+        if filter_sub[0]:
+            return filter_sub[0].lower() in line.lower()
+        return True
+
     def append_log(line):
-        """往 log 面板插一行，按关键词着色（err 红 / warn 橙 / ok 绿）。"""
-        low = line.lower()           # 统一小写再匹配（大小写不敏感）
+        """log 行渲染流水线：着色 + 本机时间戳前缀 + 过滤。
+
+        纯渲染函数（不写入 log_store），实时追加与历史重放共用。
+        wall 为该行的本机时间戳字符串（留底时生成，重放时原样复用）。
+        """
+        text = line.rstrip('\r\n')
+        if not match_filter(text):
+            return False
+        low = text.lower()
         if 'err' in low or 'fail' in low:
             style = STYLE_ERR
         elif 'warn' in low:
@@ -514,122 +737,372 @@ def run_gui(args, modules, features):
         elif 'ok' in low or 'ready' in low or 'done' in low:
             style = STYLE_OK
         else:
-            style = '%s'             # 无关键词：不加颜色标签
-        # 去掉行尾换行再插入（appendHtml 自带换行）
-        txt_log.appendHtml(style % esc(line.rstrip('\r\n')))
+            style = '%s'
+        ts_html = STYLE_TS % f'[{now_hms()}]'
+        txt_log.appendHtml(f'{ts_html} ' + style % esc(text))
+        return True
 
     def on_log_line(line):
-        """串口线程 log_line 信号的槽：直接追加显示。"""
-        append_log(line)
+        """log 信号槽：先入留底（快照/重放用），再渲染。
+
+        暂停时只积压不渲染，恢复时统一重放（从留底全量重建）。
+        """
+        log_store.append(line.rstrip('\r\n'))
+        if len(log_store) > LOG_MAX_BLOCKS:      # 与面板同步裁剪
+            del log_store[:len(log_store) - LOG_MAX_BLOCKS]
+        if btn_pause.isChecked():
+            pending_log.append(line)
+            return
+        if append_log(line) and (filter_re[0] is not None or filter_sub[0]):
+            update_log_counter()     # 过滤生效时命中数随新行实时更新
+
+    def replay_log():
+        """按当前过滤条件全量重建 log 面板（过滤历史行）。"""
+        txt_log.clear()
+        for text in log_store:
+            append_log(text)
+        update_log_counter()
+
+    def update_log_counter():
+        """log 统计双写：底部状态栏（留底总量）+ LOG 头部（过滤命中 n/m）。
+
+        无过滤时头部只显 'ok'，总量看底部（避免两处显示同一数字）。
+        """
+        lbl_stat_log.setText(f'log: {len(log_store)} lines')
+        if filter_re[0] is not None or filter_sub[0]:
+            n_hit = sum(1 for t in log_store if match_filter(t))
+            lbl_filter.setText(f'{n_hit}/{len(log_store)}')
+        else:
+            lbl_filter.setText('')
+
+    def on_filter_changed(text):
+        """过滤框变化：解析 re: 前缀，防抖后全量重放（历史也过滤）。"""
+        t = text.strip()
+        if t.startswith('re:'):
+            try:
+                filter_re[0] = re.compile(t[3:])
+                filter_sub[0] = ''
+                lbl_filter.setText('regex ok')
+            except re.error as e:
+                filter_re[0] = None
+                lbl_filter.setText(f're bad: {e}')
+                return
+        else:
+            filter_re[0] = None
+            filter_sub[0] = t
+        filter_timer.start(300)      # 停手 300ms 才重放，打字不卡
 
     def on_wave_record(rec):
-        """串口线程 wave_rec 信号的槽：入缓冲 + 右栏实时显示。"""
-        records.append(rec)          # 进总缓冲（surfer 导出用）
-        ts, wid, val = rec           # 解包：(时间戳, id, 值)
+        """wave 信号槽：入缓冲 + MONITOR 行更新 + 悬空门检测。"""
+        records.append(rec)
+        ts, wid, val = rec
         typ, mod, feat, inst, evt = decode_id(wid)
-        base = track_name(mod, feat, inst, evt, modules, features)   # 轨道名
-        if typ == 1:                 # LEVEL：显示 begin/end，蓝色
-            line = f'{ts:>10}  {wid:08X}  {"begin" if val else "end  "}  {base}'
-            style = STYLE_LVL
-        else:                        # NUM：显示数值，黄色
-            line = f'{ts:>10}  {wid:08X}  {val:<10}  {base}/num'
-            style = STYLE_NUM
-        txt_wave.appendHtml(style % esc(line))       # 右栏滚动显示
-        lbl_wave.setText(f'wave: {len(records)} records')   # 更新计数
+        key = track_key(wid)
+        row, st = ensure_mon_row(key, typ == 1)
+        ensure_track_item(key)
+        if typ == 1:                 # LEVEL 门：开/闭窗 + 窗宽序列
+            if val and st['open_ts'] is None:
+                st['open_ts'] = ts
+            elif not val and st['open_ts'] is not None:
+                st['wins'].append(ts - st['open_ts'])
+                if len(st['wins']) > 64:      # 窗宽序列限长（sparkline 用）
+                    del st['wins'][:32]
+                st['open_ts'] = None
+            if st['open_ts'] is not None:
+                # 门开着：OPEN! 红色（悬空现场证据）
+                row.setText(COL_SPARK, 'OPEN!')
+                row.setForeground(COL_SPARK, QColor('#c93030'))
+            else:
+                row.setText(COL_SPARK, spark(st['wins']))
+                row.setForeground(COL_SPARK, QColor('#005cb8'))
+            row.setText(COL_VAL, str(val))
+        else:                        # NUM：当前值即摘要
+            row.setText(COL_VAL, str(val))
+            row.setText(COL_SPARK, '')
+        st['last_ts'] = ts
+        st['last_wall'] = QDateTime.currentMSecsSinceEpoch()  # 本机到达时刻
+        lbl_wave.setText(f'wave: {len(records)}')
+        lbl_wave_stat.setText(f'wave: {len(records)}')
 
     def on_status(line):
-        """状态消息槽：显示到连接状态标签（开口失败/发送失败等）。"""
+        """状态消息槽：连接药丸变色提示（open failed 等）。"""
         lbl_conn.setText(line)
+        lbl_conn.setStyleSheet('background:#c93030;color:white;')
+
+    def set_conn_pill(ok, text):
+        """连接状态药丸：绿=连接，灰=断开，红=错误。"""
+        lbl_conn.setText(text)
+        color = '#1a9a4b' if ok else '#c8c8c8'
+        fg = 'white' if ok else '#666666'
+        lbl_conn.setStyleSheet(f'background:{color};color:{fg};')
+
+    def toggle_pause(checked):
+        """暂停槽：冻结显示；恢复时全量重放（积压行已在留底里）。"""
+        btn_pause.setText('\u25b6' if checked else '\u23f8')
+        if not checked:
+            replay_log()
+            pending_log.clear()
+
+    def toggle_record(checked):
+        """录制槽：原始字节流落盘 raw_rec_YYYYMMDD-HHMMSS.bin。"""
+        import datetime
+        if checked:
+            if worker[0] is None:            # 未连接不许录
+                btn_rec.setChecked(False)
+                return
+            path = os.path.join(
+                os.path.dirname(args.vcd), 'record_' +
+                datetime.datetime.now().strftime('%Y%m%d-%H%M%S') + '.bin')
+            rec_file[0] = open(path, 'wb')
+            btn_rec.setText('\u25cf rec')    # 录制中样式（红色由定时器闪）
+            btn_rec.setStyleSheet('background:#c93030;color:white;')
+            lbl_stat_vcd.setText(f'rec {os.path.basename(path)}')
+        else:
+            if rec_file[0] is not None:
+                rec_file[0].close()
+                rec_file[0] = None
+            btn_rec.setText('\u2b55 record')
+            btn_rec.setStyleSheet('')
 
     def toggle_connect():
         """连接/断开按钮槽：管理串口线程生命周期。"""
         if worker[0] is not None:    # 已连接 -> 断开
-            worker[0]._stop = True   # 通知线程退出读循环
-            worker[0].wait(1000)     # 最多等 1 秒线程结束
+            worker[0]._stop = True
+            worker[0].wait(1000)
             worker[0] = None
-            btn_conn.setText('connect')              # 按钮恢复绿色
-            btn_conn.setStyleSheet('background:#27ae60;color:white;border:none;'
-                                   'border-radius:4px;padding:4px 14px;')
-            lbl_conn.setText('disconnected')
+            btn_conn.setText('connect')
+            btn_pause.setEnabled(False)
+            set_conn_pill(False, 'disconnected')
             return
         try:
-            # 新建线程对象（参数来自工具栏下拉框当前值）
             w = SerialWorker(cb_port.currentText(),
                              int(cb_baud.currentText()), args.raw_dump)
         except Exception as e:
-            lbl_conn.setText(f'bad config: {e}')     # 配置非法（如波特率非数字）
+            set_conn_pill(False, f'bad config: {e}')
             return
-        w.log_line.connect(on_log_line)      # 三个信号接到对应槽
+        # 录制模式：把落盘钩子挂进 worker 读循环（write hook）
+        if rec_file[0] is not None:
+            f_ref = rec_file[0]
+            orig_feed = w.parser.feed
+
+            def feed_and_record(data):
+                f_ref.write(data)        # 原始字节落盘（回放=完整现场）
+                orig_feed(data)
+            w.parser.feed = feed_and_record
+        w.log_line.connect(on_log_line)
         w.wave_rec.connect(on_wave_record)
         w.status_line.connect(on_status)
-        w.start()                            # 启动线程（进入 run()）
+        w.start()
         worker[0] = w
-        btn_conn.setText('disconnect')       # 按钮变红色"断开"
-        btn_conn.setStyleSheet('background:#c0392b;color:white;border:none;'
-                               'border-radius:4px;padding:4px 14px;')
-        lbl_conn.setText(f'{cb_port.currentText()} @ {cb_baud.currentText()}')
+        btn_conn.setText('disconnect')
+        btn_pause.setEnabled(True)
+        set_conn_pill(True, f'{cb_port.currentText()} @ {cb_baud.currentText()}')
 
     def do_send():
-        """发送槽：按 hex/ascii 模式组包并写入串口（自动补 \\r\\n）。"""
+        """发送槽：hex/ascii 组包写入串口（自动补 \\r\\n）。"""
         if worker[0] is None or not ent_send.text():
-            return                           # 未连接或输入为空，忽略
+            return
         text = ent_send.text()
-        if cb_hex.isChecked():               # hex 模式：'01 03 AA' -> 字节
+        if cb_hex.isChecked():
             try:
-                # 允许空格/逗号分隔，也允许连写
                 payload = bytes.fromhex(text.replace(' ', '').replace(',', ''))
                 if not payload:
                     raise ValueError('empty')
             except ValueError as e:
-                lbl_conn.setText(f'bad hex: {e}')    # 非法 hex 提示，不发送
+                set_conn_pill(False, f'bad hex: {e}')
                 return
-        else:                                # ascii 模式：按原文编码
+        else:
             payload = text.encode('ascii', errors='replace')
-        if worker[0].write(payload + b'\r\n'):       # 统一补回车换行
-            ent_send.clear()                 # 发送成功才清空输入框
+        if worker[0].write(payload + b'\r\n'):
+            ent_send.clear()
+
+    def selected_keys():
+        """信号树勾选的轨道 key 集合（决定 surfer 导出谁）。"""
+        return {k for k, leaf in track_items.items()
+                if leaf.checkState(0) == Qt.Checked}
 
     def do_surfer():
-        """surfer 按钮：全量记录 -> live.vcd -> 拉起 Surfer.exe。"""
+        """surfer 按钮：勾选轨道 -> live.vcd -> 拉起 Surfer.exe。
+
+        导出结果提示放底部状态栏（全局文件事件），头部 lbl_wave 只显计数。
+        三种"导不出"情况分别提示（曾把"没勾选"误报成"没记录"，像 bug）：
+          1. records 本身为空 -> 'no wave records'
+          2. 勾选集为空（点过 none）-> 'all tracks unchecked'
+          3. 勾选与现有记录无交集（勾后 clear 过）-> '0/N match selection'
+        """
+        sel = selected_keys()
         if not records:
-            lbl_wave.setText('no wave records')      # 没数据不导出
+            lbl_stat_vcd.setText('no wave records')
+            return
+        if not sel:
+            lbl_stat_vcd.setText('all tracks unchecked (TRACKS > all?)')
+            return
+        recs = [r for r in records if track_key(r[1]) in sel]
+        if not recs:
+            lbl_stat_vcd.setText(f'0/{len(records)} match selection')
             return
         w = GzVcdWriter(args.vcd, modules, features)
-        w.export(records)                    # 覆盖写整个 VCD（全量重导）
-        # 启动 Surfer 前校验文件完整（缺 $enddefinitions = 写坏了）
+        w.export(recs)
         try:
             with open(args.vcd, 'r', encoding='ascii') as f:
                 if '$enddefinitions' not in f.read():
                     raise OSError('missing $enddefinitions')
         except OSError as e:
-            lbl_wave.setText(f'export corrupted: {e}')
+            lbl_stat_vcd.setText(f'export corrupted: {e}')
             return
-        lbl_wave.setText(f'{len(records)} records -> {args.vcd}')
+        import datetime
+        lbl_stat_vcd.setText(
+            f'live.vcd {len(recs)}/{len(records)} '
+            f'{datetime.datetime.now().strftime("%H:%M")}')
         if not args.no_surfer:
             try:
-                # Popen 非阻塞：Surfer 独立运行，不阻塞本 GUI
                 subprocess.Popen(
                     [args.surfer, os.path.abspath(args.vcd)],
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             except OSError as e:
-                lbl_wave.setText(f'surfer launch failed: {e}')
+                lbl_stat_vcd.setText(f'surfer launch failed: {e}')
+
+    def do_snapshot():
+        """snapshot 按钮：log + wave + raw + config 归档到快照目录。"""
+        import datetime
+        ts_dir = os.path.join(
+            os.path.dirname(args.vcd),
+            'snapshots', datetime.datetime.now().strftime('%Y%m%d-%H%M%S'))
+        os.makedirs(ts_dir, exist_ok=True)
+        with open(os.path.join(ts_dir, 'log.txt'), 'w',
+                  encoding='utf-8', errors='replace') as f:
+            f.write('\n'.join(log_store))    # 留底导出：完整、不受过滤影响
+        with open(os.path.join(ts_dir, 'wave.bin'), 'wb') as f:
+            for r in records:
+                f.write(struct.pack('<III', *r))
+        if worker[0] is not None and worker[0].raw:
+            with open(os.path.join(ts_dir, 'raw.bin'), 'wb') as f:
+                f.write(bytes(worker[0].raw))
+        with open(os.path.join(ts_dir, 'config.txt'), 'w',
+                  encoding='ascii') as f:
+            f.write(f'port={cb_port.currentText()}\n'
+                    f'baud={cb_baud.currentText()}\n'
+                    f'records={len(records)}\n')
+        lbl_stat_vcd.setText(f'snap {os.path.basename(ts_dir)}')
 
     def do_clear():
-        """clear 按钮：清空记录缓冲与右栏显示（重新抓一段）。"""
+        """clear all：清空 log（含留底）+ wave 记录缓冲/MONITOR/门摘要。"""
+        log_store.clear()
+        pending_log.clear()
+        txt_log.clear()
+        lbl_filter.setText('')
+        do_clear_wave()
+
+    def do_clear_log():
+        """LOG 面板 clear：清面板 + 留底（快照从留底出，必须同步）。"""
+        log_store.clear()
+        pending_log.clear()
+        txt_log.clear()
+        lbl_filter.setText('')
+        lbl_stat_log.setText('log: 0 lines')
+
+    def do_clear_wave():
+        """WAVE 面板 clear：清空记录缓冲/MONITOR 行/门摘要（勾选保留）。"""
         records.clear()
-        txt_wave.clear()
-        lbl_wave.setText('wave: 0 records')
+        mon.clear()
+        mon_rows.clear()
+        track_state.clear()
+        gate_bad[0] = 0
+        lbl_wave.setText('wave: 0')
+        lbl_wave_stat.setText('wave: 0')
 
-    # 发送框内按回车 = 点 tx 按钮
+    def do_sel_all():
+        """TRACKS 全选：surfer 导出全部轨道。"""
+        for leaf in track_items.values():
+            leaf.setCheckState(0, Qt.Checked)
+
+    def do_sel_none():
+        """TRACKS 全不选：surfer 导出被清空（提示无记录可导）。"""
+        for leaf in track_items.values():
+            leaf.setCheckState(0, Qt.Unchecked)
+
+    def tick_1s():
+        """1 秒定时：KB/s 统计 + ago 列刷新 + 悬空门计数 + 录制闪烁。"""
+        now = QDateTime.currentMSecsSinceEpoch()
+        if worker[0] is not None:
+            cur = len(worker[0].raw)
+            if byte_count[1] and now > byte_count[1]:
+                kb = (cur - byte_count[0]) / 1024.0 * 1000.0 / (
+                    now - byte_count[1])
+                lbl_stat_bw.setText(f'{kb:.1f} KB/s')
+            byte_count[0] = cur
+            byte_count[1] = now
+        else:
+            byte_count[1] = 0
+            lbl_stat_bw.setText('0 KB/s')
+        # ago 列：距最后一条记录的本机时间差（秒）
+        for key, (row, st) in mon_rows.items():
+            if st.get('last_wall') is not None:
+                ago = (now - st['last_wall']) / 1000.0
+                row.setText(COL_AGO,
+                            f'{ago:.1f}s' if ago < 600 else f'{ago/60:.0f}m')
+        # 悬空门计数：仍处于 begin 未 end 的门（超时靠颜色已高亮）
+        bad = sum(1 for _row, st in mon_rows.values()
+                  if st['open_ts'] is not None)
+        if bad:
+            lbl_stat_gate.setText(f'\u26a0 gate open {bad}')
+            lbl_stat_gate.setStyleSheet('color:#c93030;')
+        else:
+            lbl_stat_gate.setText('gate ok')
+            lbl_stat_gate.setStyleSheet('')
+        if rec_file[0] is not None:   # 录制中按钮闪烁
+            on = btn_rec.styleSheet() == ''
+            btn_rec.setStyleSheet('' if on else 'background:#c93030;color:white;')
+
+    # 定时器：1s 状态刷新 + 过滤重放防抖（300ms 停手才重建面板）
+    filter_timer = QTimer(win)
+    filter_timer.setSingleShot(True)
+    filter_timer.timeout.connect(replay_log)
+    tmr = QTimer(win)
+    tmr.timeout.connect(tick_1s)
+    tmr.start(1000)
+
+    # 控件接线
     ent_send.returnPressed.connect(do_send)
-
-    # 其余按钮接线
     btn_conn.clicked.connect(toggle_connect)
     btn_tx.clicked.connect(do_send)
-    btn_surfer.clicked.connect(do_surfer)
+    btn_pause.toggled.connect(toggle_pause)
+    btn_rec.toggled.connect(toggle_record)
+    btn_snap.clicked.connect(do_snapshot)
     btn_clear.clicked.connect(do_clear)
+    btn_clear_log.clicked.connect(do_clear_log)
+    btn_clear_wave.clicked.connect(do_clear_wave)
+    btn_sel_all.clicked.connect(do_sel_all)
+    btn_sel_none.clicked.connect(do_sel_none)
+    btn_surfer.clicked.connect(do_surfer)
+    edt_filter.lineEdit().textChanged.connect(on_filter_changed)
 
-    win.show()                       # 显示窗口
-    return app                       # 返回 app 供 main() 进事件循环
+    win.show()
+    # 多显示器修复：窗口强制放主屏中心并抢焦点（双屏下可能落在负坐标区）
+    try:
+        pri = app.primaryScreen().availableGeometry()
+        fg = win.frameGeometry()
+        win.move(pri.center() - fg.center())
+        win.raise_()
+        win.activateWindow()
+    except Exception:
+        pass
+    # winId() 强制 Qt 立即创建原生窗口（防"进程活着但屏幕无窗口"）
+    try:
+        print(f'[hub] native hwnd={int(win.winId()):#x} '
+              f'visible={win.isVisible()}', flush=True)
+    except Exception as e:
+        print(f'[hub] winId failed: {e}', flush=True)
+    print('[hub] GUI window shown', flush=True)
+    # 事件循环必须在 run_gui 内跑：win/控件都是本函数局部变量，
+    # 若 return 后再 exec，Python 引用被回收 -> 窗口被 GC 销毁。
+    rc = app.exec()
+    print(f'[hub] GUI exited, code={rc}', flush=True)
+    # 退出前收尾：录制文件落盘
+    if rec_file[0] is not None:
+        rec_file[0].close()
+        rec_file[0] = None
+    return rc
 
 
 def main():
@@ -674,8 +1147,7 @@ def main():
         return
 
     # ----- 实时模式：启动 GUI（阻塞到窗口关闭）-----
-    app = run_gui(args, modules, features)
-    sys.exit(app.exec())                     # 进入 Qt 事件循环
+    sys.exit(run_gui(args, modules, features))
 
 
 if __name__ == '__main__':

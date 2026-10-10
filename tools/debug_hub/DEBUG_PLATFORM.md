@@ -2,12 +2,66 @@
 
 > 供后续 AI / 开发者接续分析维护。描述现状、依据、协议、已知问题与路线。
 > 仓库：`https://github.com/Coy681/tx_ble.git`（SDK 根 = 本文件上级目录）。
-> 状态：**固件侧联调通过（2026-10-10，COM7 1M 波特率实测）**；上位机主力为 `debug_hub_qt.py`（PySide6），tkinter 版兜底。波形导出为 gz-VCD（层级化、按需声明）。
-> 最近更新：2026-10-10 — 波形导出为层级化裸 VCD（5.3）；Surfer 兼容坑与 scope 配对已记录（9.7/9.8）；adv 门悬空问题定位并修复（4.4、9.9）；上位机全部迁至 `tools/debug_hub/`（SDK 代码区只留固件侧 `debug/`）
+> 状态：**固件侧联调通过（2026-10-10，COM7 1M 波特率实测）**；上位机唯一 GUI 为 `debug_hub_qt.py`（PySide6，v1.1）。波形导出为层级化裸 VCD。产品定义见 §1。
+> 最近更新：2026-10-10 — v1.1：面板头部条（操作归属各自面板）、历史过滤（留底+重放）、状态栏左 log/右 wave 拆分、record 录制；删除 tkinter 版；浅色主题（VS Code Light+）；surfer 空导出三态提示修复
 
 ---
 
-## 1. 目标与背景
+## 1. 产品定义（2026-10-10 重新定义）
+
+> 从"工程师顺手写的调试脚本"升级为"产品"。差距不在框架，在**交互模型、信息密度、工作流闭环**。
+
+**一句话**：把"烧录 → 观察 → 定位 → 归档"做成一个不换窗口的闭环。
+
+**用户与场景**（唯一用户：嵌入式固件工程师，单板单口）：
+
+| 场景 | 痛点 | 产品应答 |
+|---|---|---|
+| 烧录后看板子活没活 | 开串口工具看文本 | 秒开 log 流，一眼看到心跳 |
+| adv 周期/门宽对不对 | 数打印、掐秒表 | TRACKS 门摘要直接读数，详细分析去 Surfer |
+| 异常抓回来慢慢看 | 抓包文件散落 | 一键 snapshot 带时间戳归档 |
+| 新模块加打点 | 翻文档回忆宏 | 本文件 3.3/9.9 即手册 |
+
+**界面形态（v1.1，2026-10-10 定稿并实现）**：
+
+```
+顶部(仅全局): [port baud connect ●药丸] [⏸] [⏺record] [📸snapshot] [clear all]
+┌─ LOG 40% ─────────────┬─ WAVE 35% ──────────┬─ TRACKS 25% ─┐
+│ [filter('re:')__]n/m clear │ [surfer▶] clear wave:N │ all none │ ← 各面板头部条
+│ 本机时间戳+着色         │ 每轨一行:            │ 信号树勾选    │
+│                       │ value|ago|▓▓░░|track │ =surfer导出   │
+│ [send to board___][hex][tx] │               │              │ ← LOG 底部
+└───────────────────────┴─────────────────────┴──────────────┘
+状态栏: log:N lines | live.vcd/rec/snap 提示 ...... wave:N | X KB/s | gate ok
+        ←— log 统计 ——→|←—— 全局文件事件 ——→|←———— wave 统计 ————→|
+```
+
+设计原则：
+- **操作归属各自面板**（面板头部条），顶部只留全局件（连接/暂停/录制/快照/全清）
+- WAVE MONITOR 取代旧"原始流"栏：每轨一行实时摘要，LEVEL 轨 sparkline
+  （最近 8 窗口相对宽度 `▓▓░░`），门未闭合显示红色 `OPEN!`
+- `⏸` 冻结显示不丢数据（留底继续收，恢复时全量重放）；`⏺record` 把原始
+  字节流落盘 `record_*.bin`（连接时挂 feed 钩子），录制中按钮红色闪烁
+- **log 过滤作用于历史**：留底列表（20000 条上限）+ 过滤变化 300ms 防抖
+  后全量重放；快照 log.txt 从留底导出（不受过滤影响，永远完整）
+- 状态栏左右分段：左 log 统计、中全局文件提示、右 wave 统计（recs/KB/s/
+  gate），与三栏布局一一对应
+- ago 列 = 距最后记录的本机墙钟差（固件 tick≠墙钟）
+- 浅色主题（VS Code Light+ 风格）；按钮宽度一律内容自适应（fit_btn，
+  固定像素会在不同字体/DPI 下裁字）
+- tkinter 版已删除（曾双版本内嵌同一核心，同步成本高；PySide6 环境已稳定）
+
+**明确不做**：不重写波形渲染（Surfer 是产品一部分，UI 是它的发射台）；不做仪表盘美化；不做多设备。
+
+**v0.2 实现说明**：
+- `snapshot` 按钮 → `snapshots/YYYYMMDD-HHMMSS/`：`log.txt` + `wave.bin`（12B 原格式，可直接 `--input` 回放）+ `raw.bin`（连接中才有，原始字节流保真）+ `config.txt`
+- TRACKS 树懒构建（首次出现的轨道自动挂入，默认全勾选 = 与旧版全量导出行为一致）；叶子第二列显示 LEVEL 门 `val=/win=`（win=`OPEN!` 即悬空门现场证据）
+- `surfer` 只导出勾选轨道；`clear` 重置门摘要但保留勾选
+- SerialWorker 常驻缓存 `self.raw` 原始字节流（快照用）
+
+---
+
+## 1.x 目标与背景（原始设计动因）
 
 在 Telink BLE SDK 上做软件逻辑分析仪（打点 → 串口 → PC 波形/日志），解决：
 
@@ -25,16 +79,15 @@
 │ 业务代码                      │  1M baud │ debug_hub_qt.py (PySide6)    │
 │  WAVE_EVENT / WAVE_LEVEL     │ ───────► │  ├ FrameParser: A5 帧状态机  │
 │      │                        │          │  ├ load_map: grep X-macro    │
-│ wave.c: 12B 记录打包          │          │  ├ 左栏: log 文本(着色/过滤) │
-│      │                        │          │  ├ 右栏: wave 原始流监视     │
-│ log.c: 文本格式化             │          │  └ [surfer]按钮: 全量记录     │
-│      ▼                        │          │     → live.vcd.gz → Surfer   │
-│ debug_port.c: rb+TX任务+UART │          │ Surfer (tools/debug_hub/) 做波形  │
-└──────────────────────────────┘          │    缩放/光标/信号树           │
-                                          └─────────────────────────────┘
+│ wave.c: 12B 记录打包          │          │  ├ LOG 栏: 文本(时间戳/过滤) │
+│      │                        │          │  ├ WAVE 栏: 每轨一行摘要     │
+│ log.c: 文本格式化             │          │  ├ TRACKS: 勾选=导出范围     │
+│      ▼                        │          │  └ [surfer▶]: 勾选轨道       │
+│ debug_port.c: rb+TX任务+UART │          │     → live.vcd → Surfer.exe  │
+└──────────────────────────────┘          └─────────────────────────────┘
 ```
 
-- **gz-VCD 是解耦层**：任何 EDA 工具（Surfer/GTKWave）都能打开，联调历史可回放
+- **VCD 是解耦层**：任何 EDA 工具（Surfer/GTKWave）都能打开，联调历史可回放
 - ISR 热路径（μs 级）**不打 wave 点**，用 GPIO trace（`TX_DEBUG_GPIO_ENABLE`）
 
 ## 3. 线上协议（唯一权威定义）
@@ -128,33 +181,29 @@ adv.c:1473  WAVE_LEVEL(ADV, LEGACY, 0, 1, 0);   // 门 end：step_sch_canceled�
 
 | 文件 | 说明 |
 |---|---|
-| `tools/debug_hub/debug_hub_qt.py` | **主力**。PySide6 界面（见 5.2） |
-| `tools/debug_hub/debug_hub.py` | tkinter 版（功能对齐，兜底用） |
+| `tools/debug_hub/debug_hub_qt.py` | **唯一 GUI**。PySide6（见 §1 界面形态 / 5.2） |
 | `tools/debug_hub/test_hub.py` | 端到端离线测试：合成流 → hub → 校验 VCD |
 | `tools/debug_hub/test_fst.py` | 测试 VCD 的层级 scope 与"只含出现过的信号" |
 | `tools/debug_hub/analyze_gates.py` | 门形分析：统计 live.vcd 各符号高电平窗口/边沿间隔，定位悬空门 |
 | `tools/debug_hub/surfer.exe` | 开源波形查看器（MIT），看 VCD（不支持 gz；也支持 FST） |
+| `tools/debug_hub/snapshots/` | 会话快照归档（snapshot 按钮产出） |
 
-（早期原型 `wave_view.py` 已删除，可从 git 历史找。）
+（早期原型 `wave_view.py`、tkinter 版 `debug_hub.py` 均已删除，可从 git 历史找。）
 
-两个上位机（hub/hub_qt）各自内嵌同一套核心（帧解析、X-macro grep、VCD writer），**修改协议时两处需同步**；后续可拆 `hub_core.py` 统一 import。
+### 5.2 Qt 版行为要点
 
-### 5.2 Qt 版界面与行为
-
-```
-工具栏: port▾ baud▾ [connect] 状态 | send [hex□] [tx] | filter▾ | [surfer][clear] wave:N
-┌──────── 左: log（着色文本, 2万行上限）────────┬──── 右: wave 原始流（同样上限）────┐
-│ 每行一条 log，关键词着色                        │ 每条记录一行: ts|id|begin|end/值|轨道│
-└───────────────────────────────────────────────┴──────────────────────────────────┘
-状态栏: id 映射统计
-```
+界面形态以 §1 为准（v1.1：面板头部条/历史过滤/状态栏分段）。补充实现要点：
 
 - 串口在 QThread worker 中读，Signal/Slot 投递 UI 线程；1M 波特率持续流不卡
-- **[surfer] 按钮**：把本次连接以来**全部**记录重写 `live.vcd.gz` 并拉起 Surfer（Surfer 不会自动刷新，重开即最新快照）
-- 右栏是**原始流监视**（确认数据在打印），精细分析全部交给 Surfer
+- **[surfer▶]**：把勾选轨道的记录重写 `live.vcd` 并拉起 Surfer（Surfer 不会自动刷新，重开即最新快照）；三种"导不出"在状态栏分别提示（没记录/没勾选/勾选与记录无交集）
 - 发送：ASCII 或 HEX（勾选），自动补 `\r\n`；板子侧经 `debug_port_rx_register` 回调接收
 - 命令行：`--port COM7 --baud 1000000 --input dump.bin --vcd … --no-surfer --raw-dump`
-- 离线模式：`--input dump.bin` 把串口助手抓的原始 dump 转 gz-VCD 回放
+- 离线模式：`--input dump.bin` 把串口助手抓的原始 dump 转 VCD 回放
+- **PySide6 局部窗口 GC 坑**：QMainWindow 等控件是 run_gui() 局部变量，
+  若 return 后再 exec()，引用被回收 → 窗口创建即销毁、进程空转（实测
+  hwnd 消失）。修复：事件循环必须在 run_gui() 内执行
+- **多显示器坑**：双屏（副屏负坐标）下 win.show() 可能落在不可见区域，
+  需显式移到主屏中心 + raise_/activateWindow()
 
 ### 5.3 波形导出（VCD，层级化，按需声明）
 
@@ -171,10 +220,10 @@ adv.c:1473  WAVE_LEVEL(ADV, LEGACY, 0, 1, 0);   // 门 end：step_sch_canceled�
 
 ## 6. 验证记录
 
-- `python tools/debug_hub/test_hub.py`：合成 log+wave+garbage 流 → 解帧/重同步/轨道名全部通过（tkinter 版）
+- `python tools/debug_hub/test_hub.py`：合成 log+wave+garbage 流 → 解帧/重同步/轨道名全部通过
 - `python tools/debug_hub/test_fst.py`：VCD 导出验证——scope 层级（`tx_ble > adv > LEGACY > s1`、`tx_ble > scheduler > STIMER > s2_num`）、只含出现过的信号、Surfer 完整解析（`Loaded the body`）
 - 真机（COM7, 1M）：raw dump 确认 `A5 01 0C [ts][id=0x81010001][val 1/0]` 帧流正确；`analyze_gates.py` 验证 adv 门修复后真实发送窗口 ~1.8ms、周期 ~24ms
-- Qt GUI 冒烟测试通过（启动/退出无异常）
+- Qt GUI 冒烟测试通过（OS 级 EnumWindows 验证窗口可见 + 存活）
 
 ## 7. 已知限制与路线
 
@@ -184,8 +233,8 @@ adv.c:1473  WAVE_LEVEL(ADV, LEGACY, 0, 1, 0);   // 门 end：step_sch_canceled�
 | 缓冲无上限 | records 列表只增（surfer 导出全量） | 长时间联调加环形上限或分片导出 |
 | ts 回绕 | u32 差值处理，未处理绝对回绕 | 桥内做 unwrap |
 | Surfer 刷新 | 手动按按钮重开 | 可调研 Surfer 的 VCD 流式/重载插件 |
-| log 仅着色 | 无正则过滤/搜索 | filter 已留 UI，未实现正则 |
-| 三份核心代码 | hub / hub_qt / wave_view 重复 | 拆 `hub_core.py` |
+| Replay 回放页 | record_*.bin 需 `--input` 命令行回放 | v1.2：Replay 页签（选快照目录 GUI 回放） |
+| 打点覆盖率 | 无量化 | v1.2：扫描 `WAVE_` 宏统计面板 |
 | GUI 中文 | 界面英文 | 按需 |
 | 带宽 | 定长 12B + 3B 帧头 | 撞带宽墙先降打点频率，勿急着压缩协议 |
 
@@ -200,7 +249,7 @@ cd cmake_builds/tx_text/TL32_ELF_MCULIB_V5F_GCC12_2
 pip install pyserial PySide6
 python tools/debug_hub/debug_hub_qt.py            # GUI 里选 COM/波特率 → connect
 python tools/debug_hub/debug_hub_qt.py --input dump.bin   # 离线 dump → VCD
-python tools/debug_hub/test_hub.py                # tkinter 版回归测试
+python tools/debug_hub/test_hub.py                # 回归测试（解析核心）
 python tools/debug_hub/test_fst.py                # VCD 层级/按需声明测试
 ```
 
@@ -214,3 +263,7 @@ python tools/debug_hub/test_fst.py                # VCD 层级/按需声明测�
 7. **VCD scope 平衡教训**：`$scope/$upscope` 必须严格配对（root 除外）。首版在"切换同级 feature"时只弹了一层 `$upscope`，scope 栈失配导致 Surfer 报 `wave_source` 错误且面板为空。修复后导出前应断言 `opens == ups + 1`（root 不闭）
 8. **Surfer 对 VCD 的兼容性坑**：本机构建的 Surfer ① 不识别 gzip（合法 gz 也报 UnknownFileFormat，窗口标题正常但内容空）；② VCD 必须 CRLF 行尾、vector 值 `b` 后必须有空格再接 id，否则 body 解析失败。排查方法：`surfer.exe <file> --command quit` 抓 stderr 日志比 GUI 信息全
 9. **LEVEL 门必须路径完备**：begin/end 是跨函数的状态机配对，end 必须覆盖**所有**离开该状态的路径（STOP/CANCELED/PASSED/默认路径），漏一条就产生悬空门（表现为空闲时段高电平、窗口长度异常大）。写打点前先枚举状态机的全部出口；用 `analyze_gates.py` 量化验证
+10. **log 过滤 = 留底 + 重放**：流式 appendHtml 渲染完即丢，历史无从筛起。留底列表（纯文本+上限）与面板并行维护，过滤变化 300ms 防抖后全量重放；实时行与重放共用同一渲染管线。附带收益：快照从留底导出，不受过滤影响
+11. **surfer 空导出必须三态提示**："没记录 / 没勾选 / 勾选与记录无交集"混报成一句，用户会以为有 bug（实测发生过）。错误提示要区分到可操作的动作（如 `TRACKS > all?`）
+12. **按钮尺寸禁用固定像素**：`setFixedWidth(48)` 在不同字体/DPI 下裁字；统一 `minimumWidth = minimumSizeHint().width() + pad` 内容自适应
+13. **QSS 裸 background 会被子控件继承**：面板头部条容器样式必须用 `#objectName` 选择器限定，否则按钮 hover/checked 态被冲淡（hex 按钮选中态几乎看不出来就是这么来的）
