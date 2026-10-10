@@ -1,5 +1,16 @@
 #!/usr/bin/env python3
-"""wave_demo.py - offline demo for wave_view.py, no hardware needed.
+# -*- coding: utf-8 -*-
+"""wave_demo.py - 【已过时，仅存档】早期 wave_view.py 的离线演示脚本。
+
+它配套的是已被取代的 matplotlib 原型（wave_view.py，已从仓库删除，
+git 历史可找回）。当前平台的离线演示/回归请用：
+    test_hub.py    （tkinter 版核心链路）
+    test_fst.py    （Qt 版 VCD 导出链路）
+保留本文件只是因为其合成"模拟 BLE 业务流"的思路可参考（广告/扫描/双连接
+的假数据构造），新代码不要基于它开发。
+
+---
+原说明：offline demo for wave_view.py, no hardware needed.
 
 Synthesizes a fake firmware wave stream (as if a BLE device was
 advertising, scanning and running 2 connections), then feeds it through
