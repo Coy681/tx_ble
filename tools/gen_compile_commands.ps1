@@ -26,7 +26,9 @@ $flags = @(
 ) + $incFlags
 
 $entries = @()
-Get-ChildItem -Path $root -Recurse -Filter *.c | Where-Object { $_.FullName -notmatch '\\\.git\\' } | ForEach-Object {
+# Exclude VCS internals and Kilo worktrees (stale copies break indexing)
+$exclude = '\\(\.git|\.kilo)\\'
+Get-ChildItem -Path $root -Recurse -Filter *.c | Where-Object { $_.FullName -notmatch '\\\.git\\' -and $_.FullName -notmatch $exclude } | ForEach-Object {
     $file = $_.FullName -replace '\\','/'
     $entries += [ordered]@{
         directory = $root -replace '\\','/'
@@ -36,5 +38,6 @@ Get-ChildItem -Path $root -Recurse -Filter *.c | Where-Object { $_.FullName -not
 }
 
 $out = Join-Path $root "compile_commands.json"
-$entries | ConvertTo-Json -Depth 5 | Set-Content -Path $out -Encoding UTF8
+# UTF8 without BOM: clangd's JSON parser rejects a BOM-prefixed file
+$entries | ConvertTo-Json -Depth 5 | Out-File -FilePath $out -Encoding ascii
 Write-Host "Wrote $out with $($entries.Count) entries"

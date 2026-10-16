@@ -417,10 +417,10 @@ _RAM_CODE void sch_start(void)
  _RAM_CODE void sch_irq_process(void)
 {
 	DEBUG_GPIO_HIGH(DBG_GPIO_1);
-    WAVE_LEVEL(SCHED,STIMER,0,1,1);
+    WAVE_LEVEL(SCHED,STIMER,IN_OUT,0,1);
     if(TASK_VALID(schCtrl.pRunningTask))
     {
-        WAVE_LEVEL(SCHED,SCH_START,0,1,0);
+        WAVE_LEVEL(SCHED,RUN,WINDOW,0,0);
         schCtrl.pRunningTask->cb(SCH_TASK_STOP,schCtrl.pRunningTask->id);
         if(schCtrl.pRunningTask->type == SCH_PERIODIC_TASK)
         {
@@ -433,11 +433,12 @@ _RAM_CODE void sch_start(void)
 
     if(TASK_VALID(schCtrl.pRunningTask))
     {
-        WAVE_LEVEL(SCHED,SCH_START,0,1,1);
+        WAVE_LEVEL(SCHED,RUN,WINDOW,0,1);
+        WAVE_EVENT(SCHED,RUN,TASK_ID,schCtrl.pRunningTask->id);
         schCtrl.pRunningTask->cb(SCH_TASK_START,schCtrl.pRunningTask->id);
     }
     sch_program_timer();
-    WAVE_LEVEL(SCHED,STIMER,0,1,0);
+    WAVE_LEVEL(SCHED,STIMER,IN_OUT,0,0);
 	DEBUG_GPIO_LOW(DBG_GPIO_1);
 }
 

@@ -36,9 +36,12 @@ WAVE_EVENT(...) ─> wave_pack() [ts|id|value 12字节] ─> debug_port_write()
 ### 2.1 三级 32-bit 结构
 
 ```
-32-bit id = [ type(1) | module(7) | feature(8) | instance(8) | evt(8) ]
-              记录类型   模块         特性           运行实例      事件号
+32-bit id = [ type(1) | module(7) | feature(8) | evt(8) | instance(4) | rsvd(4) ]
+              bit31     bit30-24    bit23-16     bit15-8    bit7-4      bit3-0
+              记录类型   模块         特性          事件号      运行实例     预留
 ```
+
+高 24 bit（type/module/feature/evt）是编译期静态轨道身份；低 8 bit（instance/rsvd）是运行时字段，`id & 0xFF` 可整体剥掉。
 
 （吸收自 AML 方案的 type/subsystem/module/feature/instance 五级树，压缩到固件单芯片够用的粒度：subsystem 由 module 空间兼任——tx_ble 目前只有 BT 一个子系统；type 从"展示形式"升级为记录语义位。）
 
@@ -47,8 +50,9 @@ WAVE_EVENT(...) ─> wave_pack() [ts|id|value 12字节] ─> debug_port_write()
   - `NUM` 数值类：value 即采样值，画数值/模拟曲线；探针（marker）= value 0 的 NUM
 - **module**：架构分层（adv/conn/scheduler/hci...），中央注册，稳定
 - **feature**：模块内功能单元（adv 的 legacy/ext/periodic），各模块自定义（原 sub 更名，与 AML 术语对齐）
-- **instance**：运行实例编号（conn handle、adv set handle、CE 序号...），**运行时数值**，不是编译期枚举——0~255 共 256 条固定分道，同一 feature 的所有实例在上位机对齐到同一组轨道
-- **evt**：事件号（0xFF = feature 级探针）；rsvd 第 4 级判定不变——AML 实践证实 instance 已覆盖多对象维度，若觉空间不够应拆 feature 而非加深
+- **evt**：事件号（0xFF = feature 级探针），紧挨 feature 位域——`(feature<<16 | evt<<8)` 连续拼出静态身份
+- **instance**：运行实例编号（conn handle、adv set handle、CE 序号...），**运行时数值**，不是编译期枚举——4 bit 共 16 条固定分道（并发对象数少，够用），同一 feature 的所有实例在上位机对齐到同一组轨道
+- **rsvd**（bit3-0）：预留扩展缓冲，evt 或 instance 需扩位时向它借位，不产生空洞；AML 实践证实 instance 已覆盖多对象维度，若觉空间不够应拆 feature 而非加深
 
 ### 2.2 拼接宏定义层级（token pasting）
 
@@ -62,12 +66,18 @@ WAVE_EVENT(...) ─> wave_pack() [ts|id|value 12字节] ─> debug_port_write()
     X(ADV, PERIODIC, 0x03)
 WAVE_FEAT_ENUM(WAVE_ADV_FEATS)
 
-/* 2. 打点处用短名，拼接 + 运行时 instance */
-WAVE_EVENT(ADV, EXT, 0x03, state);              /* 数值采样 */
-WAVE_LEVEL(ADV, EXT, advHandle, 0x01, on);      /* 电平边沿：任务窗口 */
-WAVE_EVENT_I(CONN, CE, ceIdx, 0x02, rssi);      /* 带实例的数值采样 */
-/*   展开: wave_event( WAVE_TYPE(WAVE_ID_I(ADV, EXT, inst), WAVE_TYPE_NUM) | 0x03, state )
- *        WAVE_ID 拼接出 WAVE_MOD_ADV(<<24) | WAVE_FEAT_ADV_EXT(<<16)，instance OR 进低 16 位 */
+/* 1.5 每个 feature 一张 evt 表：EVT token 即 host 显示名（小写），单列双用 */
+#define WAVE_ADV_LEGACY_EVTS(X)     \
+    X(ADV, LEGACY, WINDOW,  0x01)
+WAVE_EVT_ENUM(WAVE_ADV_LEGACY_EVTS)
+
+/* 2. 打点处用短名，拼接 + 运行时 instance（参数序对齐 id 位序：evt 在前 inst 在后） */
+WAVE_EVENT(ADV, EXT, PKT_COUNT, state);         /* 数值采样（evt = WAVE_EVT_* token） */
+WAVE_LEVEL(ADV, LEGACY, WINDOW, advHandle, on); /* 电平边沿：任务窗口 */
+WAVE_EVENT_I(CONN, CE, RSSI, ceIdx, rssi);      /* 带实例的数值采样 */
+/*   展开: wave_event( WAVE_TYPE(WAVE_EVT_ID_I(ADV, EXT, PKT_COUNT, inst), WAVE_TYPE_NUM), state )
+ *        WAVE_EVT_<MOD>_<FEAT>_<EVT> 枚举值携带 [module<<24|feature<<16|evt<<8]，
+ *        instance 运行时 OR 进低 4 位 */
 ```
 
 拼接机制：
@@ -75,7 +85,9 @@ WAVE_EVENT_I(CONN, CE, ceIdx, 0x02, rssi);      /* 带实例的数值采样 */
 | 宏 | 作用 |
 |----|------|
 | `WAVE_PASTE(a,b)` / `WAVE_PASTE3(a,b,c)` | 两级展开的 `##` 拼接（先展开参数再粘贴） |
-| `WAVE_ID(mod, feat)` / `WAVE_ID_I(mod, feat, inst)` | 拼 `WAVE_MOD_<mod>` 与 `WAVE_FEAT_<mod>_<feat>` 枚举 token，instance 运行时 OR 入 |
+| `WAVE_ID(mod, feat, evt)` / `WAVE_ID_I(mod, feat, evt, inst)` | 数值版：拼 `WAVE_FEAT_<mod>_<feat>` 枚举 token，evt 数值置 bit15-8、instance OR 入 bit7-4（参数序对齐 id 位序） |
+| `WAVE_EVT_ID(mod, feat, evt)` / `WAVE_EVT_ID_I(...)` | 语义版：拼 `WAVE_EVT_<mod>_<feat>_<evt>` 枚举 token（值已含 evt<<8），打点宏内部使用 |
+| `WAVE_EVT_ENUM(list)` | 把 feature 的 EVTS X-macro 列表展开成匿名 enum（`WAVE_EVT_ENUM_ITEM` 引用同 feature 的 `WAVE_FEAT_*` 值再 OR evt<<8） |
 | `WAVE_FEAT_ENUM(list)` | 把模块的 X-macro 列表展开成**匿名 enum**（无 typedef，多模块可各自调用不冲突） |
 | `WAVE_TYPE(id, type)` / `WAVE_TYPEOF(id)` | 置位/读取 bit31（LEVEL vs NUM） |
 | `WAVE_MOD_ID(mod, inst)` | 跳过 feature 层的模块级探针（feature=0 保留） |
@@ -98,19 +110,19 @@ WAVE_EVENT_I(CONN, CE, ceIdx, 0x02, rssi);      /* 带实例的数值采样 */
 | 宏 | 类型 | 时间戳 | 用途 |
 |----|------|--------|------|
 | `WAVE_EVENT(mod, feat, evt, value)` | NUM | 自动（`system_time()`） | 任务上下文常规数值打点 |
-| `WAVE_EVENT_I(mod, feat, inst, evt, value)` | NUM | 自动 | 带实例的数值打点（多连接/多广播） |
-| `WAVE_LEVEL(mod, feat, inst, state, on)` | LEVEL | 自动 | 状态/任务起止边沿，成对使用画门 |
+| `WAVE_EVENT_I(mod, feat, evt, inst, value)` | NUM | 自动 | 带实例的数值打点（多连接/多广播） |
+| `WAVE_LEVEL(mod, feat, state, inst, on)` | LEVEL | 自动 | 状态/任务起止边沿，成对使用画门 |
 | `WAVE_EVENT_AT(mod, feat, evt, ts, val)` | NUM | 手动 | ISR 捕获时刻、task 补发 |
-| `WAVE_LEVEL_AT(mod, feat, inst, state, on, ts)` | LEVEL | 手动 | ISR 捕获的精确起止沿 |
+| `WAVE_LEVEL_AT(mod, feat, state, inst, on, ts)` | LEVEL | 手动 | ISR 捕获的精确起止沿 |
 
-所有宏在 `TX_DEBUG_WAVE_ENABLE=0` 时空展开，零成本移除。
+所有宏在 `TX_DEBUG_WAVE_ENABLE=0` 时空展开，零成本移除。参数序与 id 位序对齐（evt 在前、inst 在后，evt 高位/inst 低位）。
 
 ### 3.2 记录格式（线格式）
 
 ```
 12 字节，小端：
 [0..3]  u32 timestamp   — system_time() 同单位（tick，1 tick = 1/CLOCK_TICK_US 秒）
-[4..7]  u32 id          — [type(1)|module(7)|feature(8)|instance(8)|evt(8)]
+[4..7]  u32 id          — [type(1)|module(7)|feature(8)|evt(8)|instance(4)|rsvd(4)]
 [8..11] u32 value       — LEVEL: 1=begin/0=end；NUM: 数据
 ```
 
@@ -120,31 +132,35 @@ WAVE_EVENT_I(CONN, CE, ceIdx, 0x02, rssi);      /* 带实例的数值采样 */
    ```c
    #define WAVE_ADV_FEATS(X)   X(ADV, LEGACY, 0x01)  X(ADV, EXT, 0x02)
    WAVE_FEAT_ENUM(WAVE_ADV_FEATS)
+
+   /* 每个 feature 一张 evt 表（语义道名，host 直接显示） */
+   #define WAVE_ADV_LEGACY_EVTS(X)   X(ADV, LEGACY, WINDOW, 0x01, "window")
+   WAVE_EVT_ENUM(WAVE_ADV_LEGACY_EVTS)
    ```
-2. **代码里打点**：
+2. **代码里打点**（evt 用 WAVE_EVT_* token）：
    ```c
    /* 数值：每个 ext adv event 的包计数 */
-   WAVE_EVENT(ADV, EXT, 0x01, advEvtCount);
+   WAVE_EVENT(ADV, EXT, PKT_COUNT, advEvtCount);
 
    /* 电平：adv event 窗口（开始/结束成对） */
-   WAVE_LEVEL(ADV, EXT, advHandle, 0x01, 1);
+   WAVE_LEVEL(ADV, LEGACY, WINDOW, advHandle, 1);
    ... radio activity ...
-   WAVE_LEVEL(ADV, EXT, advHandle, 0x01, 0);
+   WAVE_LEVEL(ADV, LEGACY, WINDOW, advHandle, 0);
 
    /* 多实例：per-connection 采样 */
-   WAVE_EVENT_I(CONN, CE, conn->handle, 0x02, rssi);
+   WAVE_EVENT_I(CONN, CE, RSSI, conn->handle, rssi);
 
    /* ISR 捕获 + 补发范式 */
    _u32 t = system_time();   /* radio irq 里记时刻 */
-   WAVE_EVENT_AT(RF, IRQ, 0x01, t, pktType);        /* task 里带原时刻发出 */
+   WAVE_EVENT_AT(RF, IRQ, PKT_TYPE, t, pktType);    /* task 里带原时刻发出 */
    ```
-3. **PC 端**：串口收流 → 剥 `[len][payload]` 块头 → 按 12 字节步长解析 → LEVEL 轨道画门、NUM 轨道画曲线
+3. **PC 端**：串口收流 → 剥 `[len][payload]` 块头 → 按 12 字节步长解析 → LEVEL 轨道画门、NUM 轨道画曲线；evt 道名查 EVTS 表显示语义名（查不到降级 `s<evt>`）
 
 ### 3.4 编号约定
 
 - feature 值与 event/evt 值都从 0x01 开始（0x00 保留：feature=0 表示模块级探针）
 - evt 0xFF = feature 级探针（原 marker 语义），不分配给普通事件
-- instance 用运行时对象号（handle/索引），固定轨道 0~255；实例结束后其轨道自然空白
+- instance 用运行时对象号（handle/索引），4 bit 固定轨道 0~15；实例结束后其轨道自然空白
 - LEVEL 必须成对（begin/end），配对键 = 完整 id（含 state 字节）；同一轨道可定义多个 state 门
 - 一条 WAVE 记录表达一个事实；要区分同探针的不同实例用 instance，不要造新 event
 

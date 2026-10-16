@@ -11,3 +11,4 @@ doc/HDT_study.md
 __pycache__/
 compile_commands.json
 *.vcd
+.kilo/

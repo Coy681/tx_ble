@@ -49,11 +49,40 @@
 /******************adv wave test******************/
 /* 1. 模块在自己的头文件里定义 feature 列表（谁的代码谁定义） */
 #define WAVE_ADV_FEATS(X)       \
-    X(ADV, LEGACY,   0x01)      \
-    X(ADV, EXT,      0x02)      \
-    X(ADV, PERIODIC, 0x03)
+    X(ADV, INFO,     0x01)      \
+    X(ADV, LEGACY,   0x02)      \
+    X(ADV, EXT,      0x03)      \
+    X(ADV, PERIODIC, 0x04)
 
 WAVE_FEAT_ENUM(WAVE_ADV_FEATS)
+
+#define WAVE_ADV_INFO_EVTS(X)\
+    X(ADV, INFO, PHY, 0x01)\
+    X(ADV, INFO, SCHE, 0x02)
+WAVE_EVT_ENUM(WAVE_ADV_INFO_EVTS)
+
+#define WAVE_ADV_LEGACY_EVTS(X)\
+    X(ADV, LEGACY, IN_OUT, 0x01)\
+    X(ADV, LEGACY, CHN, 0x02)
+WAVE_EVT_ENUM(WAVE_ADV_LEGACY_EVTS)
+
+#define WAVE_ADV_EXT_EVTS(X)\
+    X(ADV, EXT, IN_OUT, 0x01)\
+    X(ADV, EXT, CHN, 0x02)
+WAVE_EVT_ENUM(WAVE_ADV_EXT_EVTS)   
+
+#define WAVE_ADV_PERIODIC_EVTS(X)\
+    X(ADV, PERIODIC, IN_OUT, 0x01)\
+    X(ADV, PERIODIC, CHN, 0x02)
+WAVE_EVT_ENUM(WAVE_ADV_PERIODIC_EVTS)
+// /* evt tables: one per feature, EVT token doubles as host display name */
+// #define WAVE_SCHED_STIMER_EVTS(X)     \
+//     X(SCHED, STIMER, IN_OUT, 0x01)
+// WAVE_EVT_ENUM(WAVE_SCHED_STIMER_EVTS)
+
+// #define WAVE_SCHED_RUN_EVTS(X)  \
+//     X(SCHED, RUN, WINDOW, 0x01)
+// WAVE_EVT_ENUM(WAVE_SCHED_RUN_EVTS)
 
 typedef enum
 {

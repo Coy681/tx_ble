@@ -19,8 +19,8 @@
 /******************wave record format*************************/
 /* payload layout, little endian, 12 bytes:
  * [0..3]  u32 timestamp
- * [4..7]  u32 id = [type(1)|module(7)|feature(8)|instance(8)|evt(8)]
- *         evt byte is 0xFF-passthrough for feature-level probes
+ * [4..7]  u32 id = [type(1)|module(7)|feature(8)|evt(8)|instance(4)|rsvd(4)]
+ *         evt byte 0xFF = feature-level probe passthrough
  * [8..11] u32 value  (LEVEL: 1=begin/0=end; NUM: data)
  */
 #define WAVE_RECORD_SIZE        12

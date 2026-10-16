@@ -20,10 +20,19 @@
 /* 1. 模块在自己的头文件里定义 feature 列表（谁的代码谁定义） */
 #define WAVE_SCHED_FEATS(X)       \
     X(SCHED, STIMER,   0x01)      \
-    X(SCHED, SCH_START,0x02)      \
-    X(SCHED, SCH_STOP, 0x03)
+    X(SCHED, RUN,      0x02)      \
 
 WAVE_FEAT_ENUM(WAVE_SCHED_FEATS)
+
+/* evt tables: one per feature, EVT token doubles as host display name */
+#define WAVE_SCHED_STIMER_EVTS(X)     \
+    X(SCHED, STIMER, IN_OUT, 0x01)
+WAVE_EVT_ENUM(WAVE_SCHED_STIMER_EVTS)
+
+#define WAVE_SCHED_RUN_EVTS(X)  \
+    X(SCHED, RUN, WINDOW, 0x01) \
+    X(SCHED, RUN, TASK_ID, 0x02)
+WAVE_EVT_ENUM(WAVE_SCHED_RUN_EVTS)
 
 typedef enum
 {

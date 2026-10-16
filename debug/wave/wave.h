@@ -13,13 +13,14 @@
  *  - NUM sample: value is plotted as a number/analog curve. Markers are
  *    NUM records with value 0.
  *
- *  Call macros:
+ *  Call macros (argument order mirrors the id layout, evt above inst):
  *      WAVE_EVENT(mod, feat, evt, value)          numeric sample
- *      WAVE_LEVEL(mod, feat, inst, on)            begin/end edge
- *      WAVE_EVENT_I(mod, feat, inst, evt, value)  numeric with instance
+ *      WAVE_LEVEL(mod, feat, state, on)           begin/end edge
+ *      WAVE_EVENT_I(mod, feat, evt, inst, value)  numeric with instance
  *      WAVE_EVENT_AT / WAVE_LEVEL_AT              manual timestamp
- *  evt is the low 8 bits (event lane inside a feature); inst is the
- *  runtime object number (conn handle, adv set handle, 0~255).
+ *  evt/state is a WAVE_EVT_<MOD>_<FEAT>_<EVT> token from the feature's
+ *  EVTS X-macro list (semantic name; enum value carries the full static
+ *  id). inst is the runtime object number (0~15, id bit7-4).
  *
  *  PC side plots per event_id as waveform tracks.
  *  Never use in uS-level ISR hot paths - gpio trace is for that.
@@ -54,31 +55,36 @@ void wave_event(_u32 id, _u32 value);
 void wave_event_at(_u32 id, _u32 timestamp, _u32 value);
 
 /******************call macros********************************/
-/* numeric sample, no instance lane */
+/* numeric sample, no instance lane. evt = WAVE_EVT_* token */
 #define WAVE_EVENT(mod, feat, evt, value)           \
-    wave_event(WAVE_TYPE(WAVE_ID_I(mod, feat, WAVE_INST_0), WAVE_TYPE_NUM) | (evt), (value))
+    wave_event(WAVE_TYPE(WAVE_EVT_ID_I(mod, feat, evt, WAVE_INST_0), \
+                         WAVE_TYPE_NUM), (value))
 
 /* numeric sample on a specific instance */
-#define WAVE_EVENT_I(mod, feat, inst, evt, value)   \
-    wave_event(WAVE_TYPE(WAVE_ID_I(mod, feat, inst), WAVE_TYPE_NUM) | (evt), (value))
+#define WAVE_EVENT_I(mod, feat, evt, inst, value)   \
+    wave_event(WAVE_TYPE(WAVE_EVT_ID_I(mod, feat, evt, inst), \
+                         WAVE_TYPE_NUM), (value))
 
-/* level edge: on = 1 begin / 0 end. state is the lane (like evt byte).
- * A begin/end pair on the same (track, state) draws a gate. */
-#define WAVE_LEVEL(mod, feat, inst, state, on)      \
-    wave_event(WAVE_TYPE(WAVE_ID_I(mod, feat, inst), WAVE_TYPE_LEVEL) | (state), (on))
+/* level edge: on = 1 begin / 0 end. state = WAVE_EVT_* token (gate
+ * lane). A begin/end pair on the same (track, state) draws a gate. */
+#define WAVE_LEVEL(mod, feat, state, inst, on)      \
+    wave_event(WAVE_TYPE(WAVE_EVT_ID_I(mod, feat, state, inst), \
+                         WAVE_TYPE_LEVEL), (on))
 
 /* manual-timestamp variants */
 #define WAVE_EVENT_AT(mod, feat, evt, ts, val)          \
-    wave_event_at(WAVE_TYPE(WAVE_ID_I(mod, feat, WAVE_INST_0), WAVE_TYPE_NUM) | (evt), (ts), (val))
-#define WAVE_LEVEL_AT(mod, feat, inst, state, on, ts)   \
-    wave_event_at(WAVE_TYPE(WAVE_ID_I(mod, feat, inst), WAVE_TYPE_LEVEL) | (state), (ts), (on))
+    wave_event_at(WAVE_TYPE(WAVE_EVT_ID_I(mod, feat, evt, WAVE_INST_0), \
+                            WAVE_TYPE_NUM), (ts), (val))
+#define WAVE_LEVEL_AT(mod, feat, state, inst, on, ts)   \
+    wave_event_at(WAVE_TYPE(WAVE_EVT_ID_I(mod, feat, state, inst), \
+                            WAVE_TYPE_LEVEL), (ts), (on))
 
 #else
 #define WAVE_EVENT(mod, feat, evt, value)
-#define WAVE_EVENT_I(mod, feat, inst, evt, value)
-#define WAVE_LEVEL(mod, feat, inst, state, on)
+#define WAVE_EVENT_I(mod, feat, evt, inst, value)
+#define WAVE_LEVEL(mod, feat, state, inst, on)
 #define WAVE_EVENT_AT(mod, feat, evt, ts, val)
-#define WAVE_LEVEL_AT(mod, feat, inst, state, on, ts)
+#define WAVE_LEVEL_AT(mod, feat, state, inst, on, ts)
 #endif//TX_DEBUG_WAVE_ENABLE
 
 #endif /* DEBUG_WAVE_H_ */

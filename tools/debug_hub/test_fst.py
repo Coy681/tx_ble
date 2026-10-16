@@ -32,13 +32,16 @@ def rec(ts, wid, val):
 
 
 LEVEL = 0x80000000          # id 的 bit31：LEVEL 类型标记
+# id 位布局（2026-10-12）：
+# [type(1)|module(7)|feature(8)|evt(8)|instance(4)|rsvd(4)]
+#   bit31   bit30-24    bit23-16    bit15-8   bit7-4    bit3-0
 stream = b''                # 合成流
-stream += frame(0, b'boot ok\r\n')                                            # log 帧
-stream += frame(1, rec(100, LEVEL | (0x03 << 24) | (0x01 << 16) | 0x01, 1))   # adv/LEGACY 门 begin
-stream += frame(1, rec(250, LEVEL | (0x03 << 24) | (0x01 << 16) | 0x01, 0))   # 同门 end
-stream += frame(1, rec(300, (0x01 << 24) | (0x01 << 16) | 0x02, 42))          # scheduler NUM=42
-stream += b'\x00\x00zz'                                                       # 垃圾（重同步测试）
-stream += frame(0, b'done\r\n')                                               # log 帧
+stream += frame(0, b'boot ok\r\n')                                    # log 帧
+stream += frame(1, rec(100, LEVEL | (0x03 << 24) | (0x01 << 16) | (0x01 << 8), 1))   # adv/LEGACY 门 begin
+stream += frame(1, rec(250, LEVEL | (0x03 << 24) | (0x01 << 16) | (0x01 << 8), 0))   # 同门 end
+stream += frame(1, rec(300, (0x01 << 24) | (0x01 << 16) | (0x02 << 8), 42))          # scheduler NUM=42
+stream += b'\x00\x00zz'                                               # 垃圾（重同步测试）
+stream += frame(0, b'done\r\n')                                       # log 帧
 
 open('synth_stream.bin', 'wb').write(stream)        # 落盘输入样例
 # Qt 版离线导出

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""test_hub.py - tkinter 版 hub 的端到端离线回归测试。
+"""test_hub.py - hub 的端到端离线回归测试。
 
 流程：
   1. 在内存里合成一段"固件串口流"：log 帧 + wave 帧 + 故意混入的垃圾字节
-  2. 调用 debug_hub.py --input 离线模式解析并导出 VCD
+  2. 调用 debug_hub_qt.py --input 离线模式解析并导出 VCD
   3. 校验 stdout（log 文本回显）和 VCD 内容（scope 层级、信号、值变更）
 
 覆盖点：
@@ -34,16 +34,19 @@ def rec(ts, wid, val):
 
 
 stream = b''     # 待喂给 hub 的完整字节流
+# id 位布局（2026-10-12）：
+# [type(1)|module(7)|feature(8)|evt(8)|instance(4)|rsvd(4)]
+#   bit31   bit30-24    bit23-16    bit15-8   bit7-4    bit3-0
 # --- log 帧：验证文本通路 ---
 stream += frame(0, b'boot ok\r\n')
-# --- wave 帧：LEVEL 门 begin（id = LEVEL|adv<<24|LEGACY<<16|state1）---
+# --- wave 帧：LEVEL 门 begin（id = LEVEL|adv<<24|LEGACY<<16|evt1<<8）---
 LEVEL = 0x80000000
-stream += frame(1, rec(100, LEVEL | (0x03 << 24) | (0x01 << 16) | 0x01, 1))
+stream += frame(1, rec(100, LEVEL | (0x03 << 24) | (0x01 << 16) | (0x01 << 8), 1))
 stream += frame(0, b'adv started\r\n')
 # --- 同轨道 LEVEL end：与上面 begin 配对成门 ---
-stream += frame(1, rec(250, LEVEL | (0x03 << 24) | (0x01 << 16) | 0x01, 0))
-# --- NUM 采样：scheduler 模块 feature0x01 state2，值 42 ---
-stream += frame(1, rec(300, (0x01 << 24) | (0x01 << 16) | 0x02, 42))
+stream += frame(1, rec(250, LEVEL | (0x03 << 24) | (0x01 << 16) | (0x01 << 8), 0))
+# --- NUM 采样：scheduler 模块 feature0x01 evt2，值 42 ---
+stream += frame(1, rec(300, (0x01 << 24) | (0x01 << 16) | (0x02 << 8), 42))
 # --- 垃圾字节：测试解析器失步重同步能力（后面帧必须无损恢复）---
 stream += b'\x00\x00garbage'
 stream += frame(0, b'still alive\r\n')
@@ -52,7 +55,7 @@ stream += frame(1, rec(400, 0x00000000, 7))
 
 open('synth_stream.bin', 'wb').write(stream)   # 落盘：既是输入也是可复现样例
 # 以离线模式运行 hub（--no-surfer：不出波形窗口）
-r = subprocess.run([sys.executable, 'debug_hub.py', '--input', 'synth_stream.bin',
+r = subprocess.run([sys.executable, 'debug_hub_qt.py', '--input', 'synth_stream.bin',
                     '--vcd', 'synth_test.vcd', '--no-surfer'],
                    capture_output=True, text=True, timeout=60)
 print(r.stdout, r.stderr)                      # 回显 hub 输出（含 log 文本）

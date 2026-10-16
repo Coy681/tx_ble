@@ -1315,6 +1315,9 @@ static int adv_event_step_phy_send_advertising(void)
     #endif
     adv_prepare_phy(&currentSet->la.phy,currentSet->la.sch.anchorPoint,PHY_DIR_TX);
     LLSM->phy.start();
+	WAVE_EVENT(ADV,LEGACY,CHN,currentSet->la.phy.chn);
+	WAVE_LEVEL(ADV,LEGACY,IN_OUT,0,1);
+	// WAVE_LEVEL_AT(ADV,LEGACY,IN_OUT,0,1,currentSet->la.sch.anchorPoint);
     return 1;
 }
 _RAM_CODE
@@ -1415,6 +1418,7 @@ _RAM_CODE
 static int adv_event_step_default_process(void)
 {
 	LLSM->phy.stop();
+	// WAVE_LEVEL_AT(ADV,LEGACY,IN_OUT,0,0,system_time());
 	return 1;
 }
 
@@ -1442,6 +1446,8 @@ static int adv_event_step_sch_stop(void)
             ll_adv_task_timing_allocation(currentSet,currentSet->la.sch.anchorPoint,currentSet->la.sch.anchorPoint+currentSet->la.sch.interval,ADV_SCH_MAP_PRI);
         }
     }
+	WAVE_LEVEL(ADV,LEGACY,IN_OUT,0,0);
+	// WAVE_LEVEL_AT(ADV,LEGACY,IN_OUT,0,0,system_time());
     return 1;
 }
 
@@ -2012,6 +2018,7 @@ static void adv_phy_irq_callback(_u8 type)
         DEBUG_GPIO_HIGH(DBG_GPIO_10);
         DEBUG_GPIO_LOW(DBG_GPIO_10);
     }
+	WAVE_EVENT(ADV,INFO,PHY,type);
     adv_sequence_process(LL_PHY_EVENT_BASE+type);
 }
 
@@ -2043,6 +2050,7 @@ static void adv_sch_callback(_u8 type,_u8 id)
 	ASSERT(POINTER_VALID(LLSM));
 	advCtrl = (ll_internal_adv_ctrl_t*)LLSM->entity;
 	ASSERT(POINTER_VALID(advCtrl));
+	WAVE_EVENT(ADV,INFO,SCHE,type);
     adv_sequence_process(LL_SCH_EVENT_BASE+type);
 }
 

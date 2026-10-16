@@ -9,7 +9,7 @@
                                  [surfer] 按钮 -> 全量导出 live.vcd -> Surfer.exe
 
 wave 记录定长 12 字节（小端）：[u32 时间戳][u32 id][u32 值]
-id 位布局 = [type(1)|module(7)|feature(8)|instance(8)|evt(8)]：
+id 位布局 = [type(1)|module(7)|feature(8)|evt(8)|instance(4)|rsvd(4)]：
     LEVEL（bit31=1）: value 1=begin / 0=end，同轨道成对出现画成"门"
     NUM  （bit31=0）: value 就是采样数据，画成数值曲线
 轨道名来自固件头文件里的 X-macro 列表（WAVE_MODULE_LIST / WAVE_*_FEATS），
@@ -55,6 +55,15 @@ FEATS_BLOCK_RE = re.compile(
 # 匹配 feature 表项 X(模块短名, feature 短名, 值)，例如 X(ADV, LEGACY, 0x01)
 FEAT_ITEM_RE = re.compile(
     r'X\(\s*(\w+)\s*,\s*(\w+)\s*,\s*(0x[0-9A-Fa-f]+|\d+)\s*\)')
+# 匹配各 feature 的 evt 子表 "#define WAVE_XXX_EVTS(X) ...
+# X(SCHED, STIMER, WINDOW, 0x01)"
+# 边界：下一个 #define、紧跟的 WAVE_EVT_ENUM、或文件结尾
+EVT_LIST_RE = re.compile(
+    r'#define\s+WAVE_\w+_EVTS\s*\(X\)(.*?)(?=\n#define|\nWAVE_EVT_ENUM|\Z)', re.S)
+# 匹配 evt 表项 X(模块短名, feature短名, evt短名token, 值)；
+# token 小写后即 host 显示名（固件/host 单列双用）
+EVT_ITEM_RE = re.compile(
+    r'X\(\s*(\w+)\s*,\s*(\w+)\s*,\s*(\w+)\s*,\s*(0x[0-9A-Fa-f]+|\d+)\s*\)')
 
 
 def _num(tok):
@@ -70,16 +79,18 @@ def _strip_comments(text):
 
 
 def load_map(root):
-    """扫描 root 下所有 .h 头文件，grep 出 wave id 的模块/feature 注册表。
+    """扫描 root 下所有 .h 头文件，grep 出 wave id 的模块/feature/evt 注册表。
 
-    返回两个字典：
+    返回三个字典：
       modules  = {模块号: (短名, 显示名)}      例 {0x01: ('SCHED','scheduler')}
       features = {(模块号,feature号): (模块短名, feature短名)}
                  例 {(0x03,0x01): ('ADV','LEGACY')}
+      events   = {(模块号,feature号,evt号): 显示名(=token小写)}
+                 例 {(0x01,0x01,0x01): 'window'}
     设计要点：上位机与固件读同一份 X-macro 源 -> 改打点不用同步两边版本。
     """
     import pathlib                       # 延迟导入：只在需要扫描时加载
-    modules, features = {}, {}
+    modules, features, events = {}, {}, {}
     for h in pathlib.Path(root).rglob('*.h'):            # 递归遍历所有头文件
         if h.name.startswith('debug_hub'):               # 跳过本工具自己的文件
             continue
@@ -95,7 +106,16 @@ def load_map(root):
             for line in m.group(1).splitlines():         # 逐行找 X(...) 表项
                 fm = FEAT_ITEM_RE.search(line)
                 if not fm:
-                    continue                             # 该行不是 feature 表项
+                    # 四列 X(mod, feat, TOKEN, 值) 是 evt 表项特征：
+                    # 出现在 _FEATS 块里说明表名后缀写错（应为 _EVTS），
+                    # 显式告警而非静默漏收（用户配置错要可见）
+                    if re.search(
+                            r'X\(\s*\w+\s*,\s*\w+\s*,\s*\w+\s*,'
+                            r'\s*(0x[0-9A-Fa-f]+|\d+)\s*\)', line):
+                        print(f'[hub] WARN: 4-col evt entry inside _FEATS '
+                              f'block (name should end _EVTS): '
+                              f'{line.strip()[:60]}', flush=True)
+                    continue
                 mod_short, feat_short, feat_val = fm.groups()
                 # 用模块短名反查模块号（X(...) 里只有短名，没有模块号）
                 mod_id = next((k for k, (s, _l) in modules.items()
@@ -103,24 +123,73 @@ def load_map(root):
                 if mod_id is not None:
                     # 记录 (模块号, feature号) -> (模块短名, feature短名)
                     features[(mod_id, _num(feat_val))] = (mod_short, feat_short)
-    return modules, features
+        for m in EVT_LIST_RE.finditer(text):             # 最后收 evt 子表
+            for line in m.group(1).splitlines():
+                em = EVT_ITEM_RE.search(line)
+                if not em:
+                    continue                             # 该行不是 evt 表项
+                mod_short, feat_short, evt_short, evt_val = em.groups()
+                mod_id = next((k for k, (s, _l) in modules.items()
+                               if s == mod_short), None)
+                if mod_id is None:
+                    continue
+                # feature 短名反查 feature 号（复用已收的 features 表）
+                feat_id = next((fv for (mi, fv), (ms, fs) in features.items()
+                                if mi == mod_id and fs == feat_short), None)
+                if feat_id is not None:
+                    # token 即显示名（小写），如 WINDOW -> window
+                    events[(mod_id, feat_id, _num(evt_val))] = \
+                        vcd_safe(evt_short.lower())
+    return modules, features, events
+
+
+def lane_name(typ, mod, feat, evt, modules, features, events):
+    """evt 值 -> 信号道名：查 EVTS 表得语义名，查不到降级 s<evt>。
+
+    LEVEL -> 裸语义名（如 'window'）；NUM -> 语义名 + '_num'；
+    evt=0xFF 恒为 probe（feature 级探针，保留语义不进表）。
+    结果经 vcd_safe() 消毒：label 是自由文本，可能含非法字符。
+    """
+    if evt == EVT_PROBE:
+        return vcd_safe('probe')
+    label = events.get((mod, feat, evt))
+    if label is None:
+        raw = f's{evt}' if typ == 1 else f's{evt}_num'
+    else:
+        raw = label if typ == 1 else f'{label}_num'
+    return vcd_safe(raw).lower()
+
+
+def vcd_safe(name):
+    """把自由文本名字消毒成 VCD/Surfer 合法标识符。
+
+    VCD 标识符要求可打印 ASCII 且不能含空白；Surfer 实测对空格、
+    制表等直接拒绝（wave_source 解析错误）。规则：空白->下划线，
+    其余保留（token 来的名字是合法标识符，本函数只是防御层）。
+    """
+    name = name.replace('"', "'")
+    return '_'.join(name.split()) or 'x'
 
 
 def decode_id(w):
     """把 32 位 id 拆成五元组 (type, module, feature, instance, evt)。
 
-    id = [type(1)|module(7)|feature(8)|instance(8)|evt(8)]
+    id = [type(1)|module(7)|feature(8)|evt(8)|instance(4)|rsvd(4)]
+      bit31   bit30-24    bit23-16     bit15-8    bit7-4   bit3-0
     注意 module 用 0x7F 掩码：bit31 是 type，不能混进模块号。
+    rsvd（bit3-0）目前忽略。
     """
     return ((w >> 31) & 1, (w >> 24) & 0x7F, (w >> 16) & 0xFF,
-            (w >> 8) & 0xFF, w & 0xFF)
+            (w >> 4) & 0x0F, (w >> 8) & 0xFF)
 
 
-def track_name(mod, feat, inst, evt, modules, features):
+def track_name(mod, feat, inst, evt, modules, features, events=None,
+               typ=None):
     """把 id 五元组翻译成人类可读的轨道名字符串。
 
-    例：adv/LEGACY/i2/s1（模块/feature/实例/状态道）
-    未知 id 降级为数字命名（mod0x0/feat0x3），保证任何 id 都能显示。
+    例：scheduler/STIMER/i2/window（模块/feature/实例/事件道）
+    evt 查 EVTS 表得语义名（typ=1 用裸名，typ=0 加 _num）；查不到降级
+    s<evt>；未知 id 降级为数字命名，保证任何 id 都能显示。
     """
     # 查不到就用数字占位（m 元组 = (短名, 显示名)，这里取显示名）
     m = modules.get(mod, (f'mod{mod:#x}', f'mod{mod:#x}'))
@@ -128,18 +197,22 @@ def track_name(mod, feat, inst, evt, modules, features):
     parts = [m[1], f[1]]                 # 第 1、2 级：模块名/feature 名
     if inst:
         parts.append(f'i{inst}')         # 第 3 级：运行时实例号（0 则省略）
-    parts.append('probe' if evt == EVT_PROBE else f's{evt}')  # 第 4 级：事件道
+    if events is not None and typ is not None:
+        parts.append(lane_name(typ, mod, feat, evt, modules, features,
+                               events))  # 第 4 级：语义道名（含降级）
+    else:
+        parts.append('probe' if evt == EVT_PROBE else f's{evt}')
     return '/'.join(parts)               # 斜杠连接成层级路径
 
 
 # ================= 波形导出（VCD）=================
 
-def collect_tracks(records, modules, features):
+def collect_tracks(records, modules, features, events):
     """第一遍扫描：从记录集里收集"实际出现过的轨道"。
 
     返回集合 {(模块显示名, feature显示名, 实例号, 信号道名, 位宽)}：
-      LEVEL -> (…, 's<evt>', 1)   1-bit 电平线
-      NUM   -> (…, 's<evt>_num', 32)  32-bit 数值线
+      LEVEL -> (…, evt语义名/'s<evt>', 1)   1-bit 电平线
+      NUM   -> (…, evt语义名_num/'s<evt>_num', 32)  32-bit 数值线
     用途：VCD 只声明出现过的信号，Surfer 面板无空占位（用户要求）。
     """
     tracks = set()                       # set 自动去重：同轨道只留一份
@@ -147,11 +220,8 @@ def collect_tracks(records, modules, features):
         typ, mod, feat, inst, evt = decode_id(wid)
         m = modules.get(mod, (f'mod{mod:#x}', f'mod{mod:#x}'))   # 模块查表（含降级）
         f = features.get((mod, feat), (m[0], f'feat{feat:#x}'))  # feature 查表
-        if typ == 1:                                              # LEVEL：电平门
-            tracks.add((m[1], f[1], inst, f's{evt}', 1))
-        else:                                                     # NUM：数值采样
-            lane = 'probe' if evt == EVT_PROBE else f's{evt}_num'
-            tracks.add((m[1], f[1], inst, lane, 32))
+        lane = lane_name(typ, mod, feat, evt, modules, features, events)
+        tracks.add((m[1], f[1].lower(), inst, lane, 1 if typ == 1 else 32))
     return sorted(tracks)                # 排序保证每次导出的信号顺序稳定
 
 
@@ -168,14 +238,16 @@ class GzVcdWriter:
     用法：一次性 export(records)，二遍写完（先声明后数据）。
     """
 
-    def __init__(self, path, modules, features):
+    def __init__(self, path, modules, features, events):
         self.path = path                 # 输出文件路径（通常 live.vcd）
         self.modules = modules           # 模块映射表（load_map 产出）
         self.features = features         # feature 映射表
+        self.events = events             # evt 映射表（load_map 产出）
 
     def export(self, records):
         """两遍写法：第一遍收集轨道并声明，第二遍按时间序写值变更。"""
-        tracks = collect_tracks(records, self.modules, self.features)
+        tracks = collect_tracks(records, self.modules, self.features,
+                                self.events)
         # newline='\r\n'：Surfer 要求 CRLF（LF 会报 "expected an id"）
         with open(self.path, 'w', encoding='ascii', newline='\r\n') as f:
             # --- VCD 文件头（定义段）---
@@ -215,8 +287,11 @@ class GzVcdWriter:
                 sym = '!' * (1 + self._nsym // 94) + chr(33 + self._nsym % 94)
                 sym_of[(mod_l, feat_l, inst, lane)] = sym    # 记录符号映射
                 width_of[(mod_l, feat_l, inst, lane)] = width
-                # 声明信号：$var wire <位宽> <符号> $<名字> $end（名字里 / 换 _）
-                f.write(f'$var wire {width} {sym} ${lane.replace("/", "_")} $end\n')
+                # 拖入波形面板后只显示信号名，scope 层级会丢 -> 信号名
+                # 带全路径（module_feature_lane），多模块对比不用回树里看
+                full = f'{mod_l}_{feat_l}_{lane.replace("/", "_")}'
+                # 声明信号：$var wire <位宽> <符号> $<名字> $end
+                f.write(f'$var wire {width} {sym} ${full} $end\n')
             if cur_scope is not None:        # 声明结束，退回根 scope
                 if cur_scope[1] is not None:
                     f.write('$upscope $end\n')               # 弹 feature 层
@@ -230,13 +305,13 @@ class GzVcdWriter:
                 m = self.modules.get(mod, (f'm{mod}', f'mod{mod:#x}'))
                 # feature 只取显示名（第二维），组成与声明一致的 key
                 fl = self.features.get((mod, feat),
-                                       (m[0], f'feat{feat:#x}'))[1]
+                                       (m[0], f'feat{feat:#x}'))[1].lower()
+                key = (m[1], fl, inst,
+                       lane_name(typ, mod, feat, evt, self.modules,
+                                 self.features, self.events))
                 if typ == 1:                 # LEVEL：标量 0/1（无空格，紧贴 id）
-                    key = (m[1], fl, inst, f's{evt}')
                     v = '1' if val else '0'
                 else:                        # NUM：32bit 向量，b 与 id 间必须有空格
-                    lane = 'probe' if evt == EVT_PROBE else f's{evt}_num'
-                    key = (m[1], fl, inst, lane)
                     v = f'b{val & 0xFFFFFFFF:032b} '   # 空格是 VCD 规范要求
                 if key not in sym_of:
                     continue                 # 不在声明集里（理论上不会发生）
@@ -433,7 +508,7 @@ GATE_OPEN_LIMIT = 50_000       # 预留：门开启超过 50ms tick 视为悬空
 COL_VAL, COL_AGO, COL_SPARK, COL_TRACK = range(4)
 
 
-def run_gui(args, modules, features):
+def run_gui(args, modules, features, events):
     """构建并运行 Qt 界面（阻塞直到窗口关闭）。
 
     页面形态（v1.0）：
@@ -631,8 +706,14 @@ def run_gui(args, modules, features):
     btn_load_wave.setToolTip(
         'load a saved wave_*.bin (or snapshot wave.bin) for replay;\n'
         'records feed MONITOR/TRACKS, then check tracks + surfer as usual')
+    btn_rescan = QPushButton('rescan')
+    fit_btn(btn_rescan, 14)
+    btn_rescan.setToolTip(
+        're-grep firmware headers for module/feature/evt names after\n'
+        'editing X-macro tables; MONITOR/TRACKS rebuild with new names,\n'
+        'existing records are replayed (no data loss)')
     mon_head = panel_bar(QLabel('WAVE'), btn_surfer, btn_load_wave,
-                         btn_save_wave,
+                         btn_save_wave, btn_rescan,
                          btn_clear_wave, lbl_wave)
 
     # TRACKS 面板：全选/全不选（勾选 = surfer 导出范围）
@@ -705,7 +786,8 @@ def run_gui(args, modules, features):
     win.statusBar().addWidget(lbl_stat_bw)
     win.statusBar().addWidget(lbl_stat_gate)
     win.statusBar().addWidget(
-        QLabel(f'id map: {len(modules)} modules, {len(features)} features'))
+        QLabel(f'id map: {len(modules)} modules, {len(features)} features, '
+               f'{len(events)} evts'))
 
     # ---------------- 状态与回调 ----------------
     records = []                     # 全部 wave 记录（surfer 导出用）
@@ -732,9 +814,8 @@ def run_gui(args, modules, features):
         typ, mod, feat, inst, evt = decode_id(wid)
         m = modules.get(mod, (f'mod{mod:#x}', f'mod{mod:#x}'))
         f = features.get((mod, feat), (m[0], f'feat{feat:#x}'))
-        lane = 'probe' if evt == EVT_PROBE else (
-            f's{evt}' if typ == 1 else f's{evt}_num')
-        return (m[1], f[1], inst, lane)
+        lane = lane_name(typ, mod, feat, evt, modules, features, events)
+        return (m[1], f[1].lower(), inst, lane)
 
     def child_of(parent, text):
         """在 parent 下找文本为 text 的子节点，没有就新建。"""
@@ -906,9 +987,14 @@ def run_gui(args, modules, features):
             filter_sub[0] = t
         filter_timer.start(300)      # 停手 300ms 才重放，打字不卡
 
-    def on_wave_record(rec):
-        """wave 信号槽：入缓冲 + MONITOR 行更新 + 悬空门检测。"""
-        records.append(rec)
+    def _apply_wave(rec, is_new):
+        """wave 记录处理核心：MONITOR 行更新 + 悬空门检测。
+
+        is_new=False 时（rescan 重放）不重复入 records 缓冲、
+        不刷新 wave 计数（计数没变）。
+        """
+        if is_new:
+            records.append(rec)
         ts, wid, val = rec
         typ, mod, feat, inst, evt = decode_id(wid)
         key = track_key(wid)
@@ -935,8 +1021,13 @@ def run_gui(args, modules, features):
             row.setText(COL_SPARK, '')
         st['last_ts'] = ts
         st['last_wall'] = QDateTime.currentMSecsSinceEpoch()  # 本机到达时刻
-        lbl_wave.setText(f'wave: {len(records)}')
-        lbl_wave_stat.setText(f'wave: {len(records)}')
+        if is_new:
+            lbl_wave.setText(f'wave: {len(records)}')
+            lbl_wave_stat.setText(f'wave: {len(records)}')
+
+    def on_wave_record(rec):
+        """wave 信号槽：入缓冲 + MONITOR 行更新 + 悬空门检测。"""
+        _apply_wave(rec, True)
 
     def on_status(line):
         """状态消息槽：连接药丸变色提示（open failed 等）。"""
@@ -1075,7 +1166,7 @@ def run_gui(args, modules, features):
         if not recs:
             lbl_stat_vcd.setText(f'0/{len(records)} match selection')
             return
-        w = GzVcdWriter(args.vcd, modules, features)
+        w = GzVcdWriter(args.vcd, modules, features, events)
         w.export(recs)
         try:
             with open(args.vcd, 'r', encoding='ascii') as f:
@@ -1162,6 +1253,27 @@ def run_gui(args, modules, features):
         """⚙ uart 配置折叠切换：展开显示 port/baud/parity/flow 面板。"""
         cfg_row.setVisible(checked)
 
+    def do_rescan():
+        """rescan：重 grep 固件头文件刷新 id 映射，MONITOR/TRACKS 重建。
+
+        改 X-macro 表（模块/feature/evt 名）后无需重启上位机：重跑
+        load_map() -> 清掉按旧名字建的树（行/组/勾选缓存全失效）->
+        用新映射重放现有 records 重建树。数据不丢、串口不断开。
+        """
+        nonlocal modules, features, events
+        modules, features, events = load_map(args.root)
+        mon.clear()
+        mon_rows.clear()
+        mon_groups.clear()
+        track_items.clear()
+        tree_tracks.clear()
+        track_state.clear()
+        for r in records:            # 现有记录按新名字重放（只重建显示）
+            _apply_wave(r, False)
+        lbl_stat_vcd.setText(
+            f'rescanned: {len(modules)} modules, {len(features)} features, '
+            f'{len(events)} evts, {len(records)} records replayed')
+
     def do_snapshot():
         """snapshot 按钮：log + wave + raw + config 归档到快照目录。"""
         import datetime
@@ -1236,19 +1348,25 @@ def run_gui(args, modules, features):
         else:
             byte_count[1] = 0
             lbl_stat_bw.setText('0 KB/s')
-        # ago 列：距最后一条记录的本机时间差（秒）；组行聚合组内最近事件
+        # ago 列：距最后一条记录的本机时间差；组行聚合组内最近事件。
+        # 显示精度自适应：<1s 用 ms（高频流下 0.0s 恒定像卡死，实测坑），
+        # <60s 用 s，<1h 用分，更长用小时
+        def fmt_ago(ms):
+            if ms < 1000:
+                return f'{ms:.0f}ms'
+            if ms < 60000:
+                return f'{ms/1000:.1f}s'
+            if ms < 3600000:
+                return f'{ms/60000:.0f}m'
+            return f'{ms/3600000:.1f}h'
         for key, g in mon_groups.items():
             walls = [st.get('last_wall') for (_r, st) in mon_rows.values()
                      if _r.parent() is g and st.get('last_wall')]
             if walls:
-                ago = (now - max(walls)) / 1000.0
-                g.setText(COL_AGO,
-                          f'{ago:.1f}s' if ago < 600 else f'{ago/60:.0f}m')
+                g.setText(COL_AGO, fmt_ago(now - max(walls)))
         for key, (row, st) in mon_rows.items():
             if st.get('last_wall') is not None:
-                ago = (now - st['last_wall']) / 1000.0
-                row.setText(COL_AGO,
-                            f'{ago:.1f}s' if ago < 600 else f'{ago/60:.0f}m')
+                row.setText(COL_AGO, fmt_ago(now - st['last_wall']))
         # 悬空门计数：仍处于 begin 未 end 的门（超时靠颜色已高亮）
         bad = sum(1 for _row, st in mon_rows.values()
                   if st['open_ts'] is not None)
@@ -1283,6 +1401,7 @@ def run_gui(args, modules, features):
     btn_save_log.clicked.connect(do_save_log)
     btn_save_wave.clicked.connect(do_save_wave)
     btn_load_wave.clicked.connect(do_load_wave)
+    btn_rescan.clicked.connect(do_rescan)
     btn_setup.toggled.connect(toggle_setup)
     btn_sel_all.clicked.connect(do_sel_all)
     btn_sel_none.clicked.connect(do_sel_none)
@@ -1362,12 +1481,14 @@ def main():
             root = script_dir      # 独立 exe（无源码树）：无映射，id 降级显示
     else:
         root = os.path.abspath(args.root)
-    modules, features = load_map(root)       # 扫描固件头文件建映射
+    args.root = root                         # 回写：do_rescan 复用同一根目录
+    modules, features, events = load_map(root)   # 扫描固件头文件建映射
     LOG_STORE_MAX = args.log_max             # 留底上限（0=无限）
-    print(f'[hub] scanned: {len(modules)} modules, {len(features)} features')
+    print(f'[hub] scanned: {len(modules)} modules, {len(features)} features, '
+          f'{len(events)} evts')
 
     if args.input:                           # ----- 离线模式 -----
-        w = GzVcdWriter(args.vcd, modules, features)
+        w = GzVcdWriter(args.vcd, modules, features, events)
         data = open(args.input, 'rb').read() # 读整个抓包文件
         lines = []                           # log 帧收集
         recs = []                            # wave 记录收集
@@ -1381,7 +1502,7 @@ def main():
         return
 
     # ----- 实时模式：启动 GUI（阻塞到窗口关闭）-----
-    sys.exit(run_gui(args, modules, features))
+    sys.exit(run_gui(args, modules, features, events))
 
 
 if __name__ == '__main__':

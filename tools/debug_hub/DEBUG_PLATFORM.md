@@ -124,25 +124,30 @@
 [8..11] u32 value
 ```
 
-### 3.3 id 位布局（32 位）
+### 3.3 id 位布局（32 位，2026-10-12 重排）
 
 ```
-[type(1) | module(7) | feature(8) | instance(8) | evt(8)]
-  bit31     bit30-24   bit23-16     bit15-8        bit7-0
+[type(1) | module(7) | feature(8) | evt(8) | instance(4) | rsvd(4)]
+  bit31     bit30-24    bit23-16     bit15-8    bit7-4      bit3-0
 ```
 
 - `type`: 1=LEVEL（value 1=begin / 0=end 门）；0=NUM（value 为数据）；value=0 且 evt=0xFF 为 marker
 - `module`: 中央注册表 `WAVE_MODULE_LIST`（X-macro），SCHED=0x01 … APP=0x0B
 - `feature`: 各模块自建子表（"谁使用，谁定义"），如 `WAVE_ADV_FEATS`：LEGACY=0x01/EXT=0x02/PERIODIC=0x03
-- `instance`: **运行时值**（conn handle / adv set handle…），不进编译期枚举
-- `evt`: 同 feature 内的事件道；LEVEL 时语义为 state（门编号）；0xFF=feature 级探针
+- `evt`: 同 feature 内的事件道（编译期）；LEVEL 时语义为 state（门编号）；0xFF=feature 级探针。紧挨 feature（bit15-8），与 feature 枚举值连续拼接成"静态轨道身份"。**命名**：每个 feature 一张 `WAVE_<MOD>_<FEAT>_EVTS` X-macro 表（`X(mod, feat, EVT, 值)` 四列，紧挨 feature 表放），固件 `WAVE_EVT_ENUM` 生成 `WAVE_EVT_<MOD>_<FEAT>_<EVT>` 语义 token（打点用 token 不用裸数字），**EVT token 即 host 显示名**（host 收表时小写化，如 `WINDOW`→`window`），查不到降级 `s<evt>`
+- `instance`: **运行时值**（conn handle / adv set handle…），不进编译期枚举；4 bit=16 条固定分道（并发对象数少，够用）
+- `rsvd`(bit3-0): 预留扩展缓冲——evt 或 instance 需扩位时向它借位，不产生空洞
+- 高 24 bit（type/module/feature/evt）= 编译期静态身份，`id & 0xFF` 可整体剥掉运行时字段
 
 ### 3.4 关键约定
 
-- 层级省略只能从深往浅填零：module→feature→instance→evt
+- 层级省略只能从深往浅填零：module→feature→evt→instance
 - LEVEL 门配对键 = `(轨道, state)`；同键不可嵌套
-- 宏命名拼接依赖严格约定：`WAVE_MOD_<short>` / `WAVE_FEAT_<MOD>_<FEAT>`，改名必须成对
+- 宏命名拼接依赖严格约定：`WAVE_MOD_<short>` / `WAVE_FEAT_<MOD>_<FEAT>` / `WAVE_EVT_<MOD>_<FEAT>_<EVT>`，改名必须成对
+- feature 短名在同一 module 内**全局唯一**（token 只有 mod+feat 两级）——曾因 `WAVE_CORE_FEATS` 示例占用 `SCHED+TASK` 与业务表撞车报 redeclaration；示例已删，wave_id.h 只留机制不放数据
+- 改 FEATS/EVTS 表短名后必须全局搜同名打点一起改，否则编译期 undeclared identifier（这套方案的预期行为：静默错位变编译报错）
 - 上位机与固件共享同一 X-macro 源（host grep 头文件），未知 id 降级为数字命名，**无需同步发版**
+- **位布局变更（2026-10-12）**：instance 8bit→4bit（挪 bit7-4）、evt 挪 bit15-8、低 4bit 作 rsvd。旧 record_*.bin（instance 旧位 bit15-8）按新解码会错位，仅存量 3 个测试录像，不做兼容
 
 ## 4. 固件侧实现
 
@@ -173,11 +178,12 @@
 
 ```c
 // system/ble/controller/ll/module/adv/adv.c —— begin 一处、end 四处
-adv.c:1294  WAVE_LEVEL(ADV, LEGACY, 0, 1, 1);   // 门 begin：step_phy_send_advertising（EVENT_START）
-adv.c:1419  WAVE_LEVEL(ADV, LEGACY, 0, 1, 0);   // 门 end：step_default_process（PHY 事件路径）
-adv.c:1426  WAVE_LEVEL(ADV, LEGACY, 0, 1, 0);   // 门 end：step_sch_stop（EVENT_STOP）
-adv.c:1454  WAVE_LEVEL(ADV, LEGACY, 0, 1, 0);   // 门 end：step_sch_passed（EVENT_PASSED）
-adv.c:1473  WAVE_LEVEL(ADV, LEGACY, 0, 1, 0);   // 门 end：step_sch_canceled（EVENT_CANCELED）
+// （宏签名 v2：WAVE_LEVEL(mod, feat, state, inst, on)，evt 前_inst 后）
+adv.c:1294  WAVE_LEVEL(ADV, LEGACY, 1, 0, 1);   // 门 begin：step_phy_send_advertising（EVENT_START）
+adv.c:1419  WAVE_LEVEL(ADV, LEGACY, 1, 0, 0);   // 门 end：step_default_process（PHY 事件路径）
+adv.c:1426  WAVE_LEVEL(ADV, LEGACY, 1, 0, 0);   // 门 end：step_sch_stop（EVENT_STOP）
+adv.c:1454  WAVE_LEVEL(ADV, LEGACY, 1, 0, 0);   // 门 end：step_sch_passed（EVENT_PASSED）
+adv.c:1473  WAVE_LEVEL(ADV, LEGACY, 1, 0, 0);   // 门 end：step_sch_canceled（EVENT_CANCELED）
 ```
 
 实测 id = `0x81010001`（1M 波特率下真实发送窗口 ~1.8ms）。
